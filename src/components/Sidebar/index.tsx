@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   };
 
   return (
-    <div className={`w-[50px] h-full bg-gray-50 border-r border-gray-200 ${className}`}>
+    <div className={`w-[60px] h-full bg-gray-50 border-r border-gray-200 ${className}`}>
       <div className="flex flex-col items-center py-4 space-y-2">
         {navigationItems.map((item) => {
           const active = isActive(item);
@@ -48,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
               type="text"
               icon={item.icon}
               onClick={() => handleNavigation(item)}
-              className={`w-[40px] h-[40px] flex items-center justify-center transition-all duration-200 ${
+              className={`flex items-center justify-center transition-all duration-200 ${
                 active
                   ? '!bg-blue-50 !border-2 !border-blue-500 !shadow-sm'
                   : '!border-2 !border-transparent hover:!bg-gray-100'
@@ -58,9 +58,11 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '8px',
-                fontSize: '20px',
+                borderRadius: '10px',
+                fontSize: '26px',
                 color: active ? '#2563eb' : undefined,
+                width: '48px',
+                height: '48px',
               }}
             />
           );

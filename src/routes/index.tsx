@@ -17,6 +17,7 @@ export const routes = [
   {
     path: '/model',
     component: <ModelPage />,
+    children: ''
   },
 ];
 

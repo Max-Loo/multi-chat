@@ -1,9 +1,11 @@
 import React from 'react';
+import ModelTable from '@/components/ModelTable';
 
+// 模型管理页面
 const ModelPage: React.FC = () => {
   return (
-    <div className="flex items-center justify-center h-full">
-      <h1 className="text-3xl font-bold text-gray-800">模型</h1>
+    <div className="h-full">
+      <ModelTable />
     </div>
   );
 };

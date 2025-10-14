@@ -54,6 +54,42 @@ pnpm tsc
 2. Register it in the `invoke_handler` in the `run()` function
 3. Call it from frontend using `invoke("command_name", { args })`
 
+## Import Path Convention
+
+**IMPORTANT**: When importing modules within the project, always use the `@/` alias instead of relative paths like `../..`. The `@/` alias points to the `src/` directory.
+
+Example:
+```typescript
+// Correct
+import { Model } from '@/types/model';
+import { loadModels } from '@/store/storage/modelStorage';
+
+// Incorrect
+import { Model } from '../../types/model';
+import { loadModels } from '../storage/modelStorage';
+```
+
+## Code Documentation Requirements
+
+**IMPORTANT**: Always add Chinese comments above functions, types, variables, and other code elements. When modifying code, update comments accordingly when necessary.
+
+Examples:
+```typescript
+// 用户模型接口定义
+interface User {
+  id: string;
+  name: string;
+}
+
+// 从本地存储加载模型数据
+const loadModels = async (): Promise<Model[]> => {
+  // 实现逻辑
+};
+
+// 当前过滤文本状态
+const [filterText, setFilterText] = useState<string>('');
+```
+
 ## File Structure
 
 - `/src/` - React frontend code
