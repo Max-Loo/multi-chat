@@ -22,6 +22,11 @@ export const initializeModels = createAsyncThunk(
   }
 );
 
+interface DeleteModelParams {
+  modelId: string,
+  models: Model[]
+}
+
 // 异步action：删除指定模型
 export const deleteModel = createAsyncThunk(
   'models/delete',
@@ -29,10 +34,7 @@ export const deleteModel = createAsyncThunk(
     {
       modelId,
       models
-    } : {
-      modelId: string,
-      models: Model[]
-     },
+    } : DeleteModelParams,
     { rejectWithValue }
   ) => {
     try {

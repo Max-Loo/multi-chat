@@ -6,18 +6,20 @@ import { useAppSelector, useAppDispatch } from '@/hooks/redux';
 import { initializeModels, deleteModel } from '@/store/slices/modelSlice';
 import { generateMockModels } from '@/utils/mockData';
 import ModelProviderDisplay from './components/ModelProviderDisplay';
-import FilterInput from './components/FilterInput';
 import type { ColumnsType } from 'antd/es/table';
 import type { Model } from '@/types/model';
 import { debounce } from 'es-toolkit';
+import { useNavToPage } from '@/store/slices/modelPageSlice';
+import FilterInput from '@/components/FilterInput';
 
 // 模型表格主组件
 const ModelTable: React.FC = () => {
-  
   const dispatch = useAppDispatch();
   const { models, loading, error, initializationError } = useAppSelector(
     (state) => state.models
   );
+
+  const { navToAddPage } = useNavToPage()
 
   // 本地状态：过滤文本
   const [filterText, setFilterText] = useState<string>('');
@@ -54,6 +56,12 @@ const ModelTable: React.FC = () => {
     } catch (error) {
       message.error('模型删除失败');
     }
+  };
+
+  // 处理添加模型按钮点击
+  const handleAddModel = () => {
+    // 跳转到添加模型页面
+    navToAddPage()
   };
 
   // 加载mock数据（仅用于开发测试）
@@ -168,6 +176,7 @@ const ModelTable: React.FC = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
+            onClick={handleAddModel}
           >
             添加模型
           </Button>
@@ -184,6 +193,7 @@ const ModelTable: React.FC = () => {
         <FilterInput
           value={filterText}
           onChange={setFilterText}
+          placeholder='搜索昵称或备注'
         />
       </div>
 

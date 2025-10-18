@@ -1,3 +1,5 @@
+import { ModelProviderKeyEnum } from "@/utils/enums";
+
 // AI模型接口定义
 export interface Model {
   id: string;              // 模型唯一标识符
@@ -10,7 +12,7 @@ export interface Model {
 
 // 大模型服务商接口定义
 export interface ModelProvider {
-  key: string;             // 大模型服务商唯一标识
+  key: ModelProviderKeyEnum;             // 大模型服务商唯一标识
   name: string;            // 大模型服务商显示名称
   logoUrl?: string;        // 大模型服务商logo URL（可选）
 }

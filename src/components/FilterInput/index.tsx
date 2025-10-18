@@ -6,13 +6,15 @@ interface FilterInputProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  className?: string;
 }
 
 // 过滤器输入组件
 const FilterInput: React.FC<FilterInputProps> = ({
   value,
   onChange,
-  placeholder = '搜索昵称或备注'
+  placeholder = '搜索',
+  className,
 }) => {
   return (
     <Input
@@ -22,6 +24,7 @@ const FilterInput: React.FC<FilterInputProps> = ({
       onChange={(e) => onChange(e.target.value)}
       allowClear
       style={{ width: 300 }}
+      className={className}
     />
   );
 };

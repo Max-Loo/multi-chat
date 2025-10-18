@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import modelReducer from '@/store/slices/modelSlice';
+import modelPageReducer from '@/store/slices/modelPageSlice'
 
 // 创建Redux store实例
 export const store = configureStore({
   reducer: {
     models: modelReducer,  // 模型管理状态
+    modelPage: modelPageReducer,
   },
 });
 

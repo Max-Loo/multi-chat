@@ -21,8 +21,6 @@ export const loadModels = async (): Promise<Model[]> => {
   try {
     const store = await getStore();
     const models = await store.get<Model[]>(STORAGE_KEY);
-    console.log('读取文件');
-    
     return models || [];
   } catch (error) {
     console.error('Failed to load models:', error);

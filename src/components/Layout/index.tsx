@@ -23,9 +23,9 @@ const Layout: React.FC<LayoutProps> = ({ className = '' }) => {
           }
         >
           <Routes>
-            {routes.map((route, index) => (
+            {routes.map((route) => (
               <Route
-                key={index}
+                key={route.path}
                 path={route.path}
                 element={route.component}
               />

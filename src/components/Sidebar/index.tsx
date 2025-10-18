@@ -30,11 +30,15 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   ];
 
   const handleNavigation = (item: NavigationItem) => {
+    // 就在当前页面就不用跳转
+    if (location.pathname === item.path) return
+
     navigate(item.path);
   };
 
+  // 判断当前选中的按钮是哪个
   const isActive = (item: NavigationItem) => {
-    return location.pathname === item.path;
+    return location.pathname.startsWith(item.path)
   };
 
   return (
@@ -48,22 +52,12 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
               type="text"
               icon={item.icon}
               onClick={() => handleNavigation(item)}
-              className={`flex items-center justify-center transition-all duration-200 ${
+              className={`flex items-center justify-center transition-all duration-200 !w-12 !h-12 !text-2xl !rounded-xl ${
                 active
-                  ? '!bg-blue-50 !border-2 !border-blue-500 !shadow-sm'
-                  : '!border-2 !border-transparent hover:!bg-gray-100'
+                  ? '!bg-blue-50 !border-2 !border-blue-500 !shadow-sm !text-blue-500'
+                  : '!border-2 !border-transparent hover:!bg-gray-300'
               }`}
               title={item.name}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '10px',
-                fontSize: '26px',
-                color: active ? '#2563eb' : undefined,
-                width: '48px',
-                height: '48px',
-              }}
             />
           );
         })}
