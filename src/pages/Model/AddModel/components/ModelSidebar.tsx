@@ -5,8 +5,7 @@ import { MODEL_PROVIDERS } from "@/utils/constants"
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { LeftOutlined } from "@ant-design/icons"
 import { Avatar, Button } from "antd"
-import { debounce } from "es-toolkit"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 interface ModelSidebarProps {
   // 组件创建时默认选中的大模型
@@ -18,32 +17,32 @@ interface ModelSidebarProps {
 
 const ModelSidebar: React.FC<ModelSidebarProps> = ({
   value: selectedModelKey,
-  onChange
+  onChange,
 }) => {
   const { navToTablePage } = useNavToPage()
 
   // 本地状态：过滤文本
   const [filterText, setFilterText] = useState<string>('')
   const {
-    filteredList: filteredProviders
+    filteredList: filteredProviders,
    } = useDebouncedFilter(
-    filterText, 
+    filterText,
     MODEL_PROVIDERS,
     (provider) => provider.name.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
   )
 
   return (
-    <div className="p-2 w-[260px] h-full border-r border-gray-200 flex flex-col justify-start items-center">
+    <div className="flex flex-col items-center justify-start h-full w-70">
       {/* 表头部分 */}
       <div className="flex items-center justify-between w-full pb-2">
-        <Button className="!rounded-lg" onClick={navToTablePage}><LeftOutlined /></Button>
+        <Button className="rounded-lg!" onClick={navToTablePage}><LeftOutlined /></Button>
         <span className="text-lg">模型服务商</span>
       </div>
       <FilterInput
         value={filterText}
         onChange={setFilterText}
         placeholder='搜索模型'
-        className={`!w-full !rounded-lg`}
+        className={`w-full! rounded-lg!`}
       />
       {/* 可供选择的 */}
       {filteredProviders.map(provider => {
@@ -51,8 +50,8 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
           <Button
             key={provider.key}
             type="text"
-            className={`!w-full mt-1.5 !py-5 flex !justify-start !rounded-xl ${
-              provider.key === selectedModelKey && '!border-1 !bg-gray-100 !border-gray-300'
+            className={`w-full mt-1.5 py-5! flex justify-start! rounded-xl! ${
+              provider.key === selectedModelKey && 'border! bg-gray-100! border-gray-300!'
             }`}
             title={provider.name}
             onClick={() => onChange(provider.key)}

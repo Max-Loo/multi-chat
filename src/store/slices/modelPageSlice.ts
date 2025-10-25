@@ -6,12 +6,12 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 // 模型表格页面状态接口定义
 export interface ModelPageState {
   // 当前渲染的页面的key
-  key: ModelPageEnum; 
+  key: ModelPageEnum;
 }
 
 // 模型页面的初始状态
 const initialState: ModelPageState = {
-  key: ModelPageEnum.TABLE_PAGE
+  key: ModelPageEnum.TABLE_PAGE,
 }
 
 
@@ -24,7 +24,7 @@ const modelPageSlice = createSlice({
     setPageKey: (state, action: PayloadAction<ModelPageEnum>) => {
       state.key = action.payload
     },
-  }
+  },
 })
 
 // 导出action
@@ -44,7 +44,7 @@ export const useNavToPage = () => {
 
   return {
     navToAddPage,
-    navToTablePage
+    navToTablePage,
   }
 }
 

@@ -16,6 +16,7 @@
     "@reduxjs/toolkit": "^2.9.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "~2",
+    "@tauri-apps/plugin-shell": "^2.3.1",
     "@tauri-apps/plugin-store": "~2",
     "antd": "^5.27.4",
     "dayjs": "^1.11.18",
@@ -27,6 +28,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.38.0",
     "@tailwindcss/vite": "^4.1.14",
     "@tauri-apps/cli": "^2",
     "@types/node": "^24.7.2",

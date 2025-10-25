@@ -10,7 +10,7 @@ const getStore = async (): Promise<Store> => {
   if (!store) {
     store = await Store.load('model.json', {
       autoSave: false,
-      defaults: {}
+      defaults: {},
     });
   }
   return store!;

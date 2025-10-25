@@ -16,7 +16,7 @@ import FilterInput from '@/components/FilterInput';
 const ModelTable: React.FC = () => {
   const dispatch = useAppDispatch();
   const { models, loading, error, initializationError } = useAppSelector(
-    (state) => state.models
+    (state) => state.models,
   );
 
   const { navToAddPage } = useNavToPage()
@@ -33,18 +33,18 @@ const ModelTable: React.FC = () => {
       setFilteredModels(models.filter(model => {
         return model.nickname.toLowerCase().includes(filterText.toLowerCase()) ||
           (model.remark?.toLowerCase().includes(filterText.toLowerCase()) ?? false)
-        }
+        },
       ))
     }
   }, 300)
 
-  
+
     debouncedSetFilterModels(filterText)
     // 取消防抖函数
     return () => {
       debouncedSetFilterModels.cancel()
     }
-  },[filterText, models])
+  }, [filterText, models])
 
 
 
@@ -53,7 +53,7 @@ const ModelTable: React.FC = () => {
     try {
       await dispatch(deleteModel({ modelId, models })).unwrap();
       message.success('模型删除成功');
-    } catch (error) {
+    } catch {
       message.error('模型删除失败');
     }
   };
@@ -69,14 +69,14 @@ const ModelTable: React.FC = () => {
     try {
       const store = await Store.load('model.json', {
         autoSave: false,
-        defaults: {}
+        defaults: {},
       });
       const mockData = generateMockModels();
       await store.set('models', mockData);
       await store.save();
       dispatch(initializeModels());
       message.success('Mock数据加载成功');
-    } catch (error) {
+    } catch {
       message.error('Mock数据加载失败');
     }
   };
@@ -207,7 +207,7 @@ const ModelTable: React.FC = () => {
         locale={{
           emptyText: initializationError
             ? '请修复错误后重新加载数据'
-            : '暂无模型数据，点击"添加模型"创建第一个模型'
+            : '暂无模型数据，点击"添加模型"创建第一个模型',
         }}
       />
     </div>

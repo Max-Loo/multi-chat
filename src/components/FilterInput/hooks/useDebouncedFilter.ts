@@ -12,7 +12,7 @@ export const useDebouncedFilter = <T>(
   text: string,
   list: T[],
   predicate: (value: T, index: number, list: T[]) => unknown,
-  debounceMs: number = 200
+  debounceMs: number = 200,
 ) => {
   // 存储过滤后的列表状态
   const [filteredList, setFilteredList] = useState(list)
@@ -36,9 +36,9 @@ export const useDebouncedFilter = <T>(
     return () => {
       debouncedFilter.cancel()
     }
-  }, [text, list]) // 依赖项：当过滤文本或原始列表变化时重新执行效果
+  }, [text, list, debounceMs, predicate]) // 依赖项：当过滤文本或原始列表变化时重新执行效果
 
   return {
-    filteredList // 返回过滤后的列表数据
+    filteredList, // 返回过滤后的列表数据
   }
 }

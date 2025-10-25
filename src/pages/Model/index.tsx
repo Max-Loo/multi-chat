@@ -27,13 +27,12 @@ const useSwitchPage = () => {
     }
   }, [pageKey])
 
-
   useEffect(() => {
     return () => {
       // 在页面销毁的时候，重置成「模型列表」页面
       navToTablePage()
     }
-  }, [])
+  }, [navToTablePage])
 
   return {
     pageKey,
@@ -43,10 +42,9 @@ const useSwitchPage = () => {
 
 // 模型管理页面
 const ModelPage: React.FC = () => {
-  console.log('模型');
-  
+
   const { pageComponent } = useSwitchPage()
-  
+
   return (
     <div className="h-full">
       {pageComponent}

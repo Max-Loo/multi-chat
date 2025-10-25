@@ -4,10 +4,10 @@ import { loadModels, saveModels } from '@/store/storage/modelStorage';
 
 // 模型管理的初始状态
 const initialState: ModelState = {
-  models: [],                      // 所有模型列表
-  loading: false,                  // 加载状态
-  error: null,                     // 操作错误信息
-  initializationError: null,       // 初始化错误信息
+  models: [], // 所有模型列表
+  loading: false, // 加载状态
+  error: null, // 操作错误信息
+  initializationError: null, // 初始化错误信息
 };
 
 // 异步action：初始化模型数据
@@ -19,7 +19,7 @@ export const initializeModels = createAsyncThunk(
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to initialize models');
     }
-  }
+  },
 );
 
 interface DeleteModelParams {
@@ -33,9 +33,9 @@ export const deleteModel = createAsyncThunk(
   async (
     {
       modelId,
-      models
+      models,
     } : DeleteModelParams,
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
       const updatedModels = models.filter((model: Model) => model.id !== modelId);
@@ -44,7 +44,7 @@ export const deleteModel = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to delete model');
     }
-  }
+  },
 );
 
 // 模型管理的Redux slice

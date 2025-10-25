@@ -7,7 +7,7 @@ interface ModelProviderDisplayProps {
 }
 
 // 大模型服务商展示组件
-const ModelProviderDisplay: React.FC<ModelProviderDisplayProps> = ({ providerKey }) => {
+const ModelProviderDisplay: React.FC<ModelProviderDisplayProps> = React.memo(({ providerKey }) => {
   const provider = MODEL_PROVIDERS.find(p => p.key === providerKey);
 
   if (!provider) {
@@ -26,6 +26,6 @@ const ModelProviderDisplay: React.FC<ModelProviderDisplayProps> = ({ providerKey
       <span>{provider.name}</span>
     </Space>
   );
-};
+});
 
 export default ModelProviderDisplay;

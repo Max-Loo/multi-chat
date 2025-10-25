@@ -42,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   };
 
   return (
-    <div className={`w-[60px] h-full bg-gray-50 border-r border-gray-200 ${className}`}>
+    <div className={`w-auto h-full bg-gray-50 border-r border-gray-200 ${className}`}>
       <div className="flex flex-col items-center py-4 space-y-2">
         {navigationItems.map((item) => {
           const active = isActive(item);
@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
               type="text"
               icon={item.icon}
               onClick={() => handleNavigation(item)}
-              className={`flex items-center justify-center transition-all duration-200 !w-12 !h-12 !text-2xl !rounded-xl ${
+              className={`flex items-center justify-center transition-all duration-200 ml-1 mr-1 !w-10 !h-10 !text-xl !rounded-xl ${
                 active
                   ? '!bg-blue-50 !border-2 !border-blue-500 !shadow-sm !text-blue-500'
                   : '!border-2 !border-transparent hover:!bg-gray-300'
