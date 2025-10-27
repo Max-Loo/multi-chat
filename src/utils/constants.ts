@@ -8,19 +8,36 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
     name: '深度求索',
     logoUrl: 'https://deepseek.com/favicon.ico',
     officialSite: 'https://www.deepseek.com/',
-    defaultApiAddress: 'https://api.deepseek.com',
+    defaultConfig: {
+      apiAddress: 'https://api.deepseek.com',
+      modelList: [
+        { modelKey: 'deepseek-chat', modelName: 'DeepSeek Chat' },
+        { modelKey: 'deepseek-reasoner', modelName: 'DeepSeek Reasoner' },
+      ],
+    },
   },
   {
     key: ModelProviderKeyEnum.KIMI,
     name: '月之暗面',
     logoUrl: 'https://kimi.moonshot.cn/favicon.ico',
-    defaultApiAddress: 'https://api.moonshot.cn',
+    defaultConfig: {
+      apiAddress: 'https://api.moonshot.cn',
+      modelList: [
+        { modelKey: 'moonshot-v1-auto', modelName: 'moonshot-v1-auto' },
+      ],
+    },
   },
   {
     key: ModelProviderKeyEnum.BIG_MODEL,
     name: '智谱AI',
     logoUrl: 'https://bigmodel.cn/favicon.ico',
-    defaultApiAddress: 'https://open.bigmodel.cn/api/paas/v4/',
+    defaultConfig: {
+      apiAddress: 'https://open.bigmodel.cn/api/paas/v4/',
+      modelList: [
+        { modelKey: 'glm-4.5', modelName: 'GLM-4.5' },
+        { modelKey: 'glm-4.6', modelName: 'GLM-4.6' },
+      ],
+    },
   },
   // {
   //   key: ModelProviderKeyEnum.OPEN_AI,

@@ -22,6 +22,7 @@ export const initializeModels = createAsyncThunk(
   },
 );
 
+// 删除模型所需的参数
 interface DeleteModelParams {
   modelId: string,
   models: Model[]
@@ -42,10 +43,35 @@ export const deleteModel = createAsyncThunk(
       saveModels(updatedModels)
       return updatedModels;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to delete model');
+      return rejectWithValue(error instanceof Error ? error.message : '删除模型失败');
     }
   },
 );
+
+// 新增模型所需的参数
+interface CreateModelParams {
+  // 当前新增的模型
+  model: Model;
+  // 当前已有的模型列表
+  models: Model[]
+}
+
+// 异步action: 新增一个模型
+export const CreateModel = createAsyncThunk(
+  'model/add',
+  async ({
+    model,
+    models,
+  } : CreateModelParams, { rejectWithValue }) => {
+    try {
+      const updatedModels: Model[] = [...models, model]
+      saveModels(updatedModels)
+      return updatedModels
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : '新增模型失败');
+    }
+  },
+)
 
 // 模型管理的Redux slice
 const modelSlice = createSlice({
@@ -93,7 +119,22 @@ const modelSlice = createSlice({
       .addCase(deleteModel.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string || '删除文件失败';
-      });
+      })
+      // 添加模型开始
+      .addCase(CreateModel.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      // 添加模型成功
+      .addCase(CreateModel.fulfilled, (state, action) => {
+        state.loading = false;
+        state.models = action.payload;
+      })
+      // 添加模型失败
+      .addCase(CreateModel.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || '添加模型失败';
+      })
   },
 });
 

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import ModelTable from '@/pages/Model/ModelTable';
 import { useAppSelector } from '@/hooks/redux';
 import { ModelPageEnum } from './utils/enums';
-import AddModel from './AddModel';
+import CreateModel from './CreateModel';
 import { useNavToPage } from '@/store/slices/modelPageSlice';
 
 // 处理跳转页面逻辑的hooks
@@ -15,7 +15,7 @@ const useSwitchPage = () => {
     switch (pageKey) {
       // 跳转到添加模型页面
       case ModelPageEnum.ADD_PAGE: {
-        return <AddModel />
+        return <CreateModel />
       }
       // 跳转到模型列表页面
       case ModelPageEnum.TABLE_PAGE: {
@@ -46,7 +46,7 @@ const ModelPage: React.FC = () => {
   const { pageComponent } = useSwitchPage()
 
   return (
-    <div className="h-full">
+    <div className="h-full" id='modelRootElement'>
       {pageComponent}
     </div>
   );

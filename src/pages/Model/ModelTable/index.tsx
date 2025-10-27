@@ -1,16 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Table, Button, Space, Alert, Popconfirm, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Store } from '@tauri-apps/plugin-store';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
-import { initializeModels, deleteModel } from '@/store/slices/modelSlice';
-import { generateMockModels } from '@/utils/mockData';
+import { deleteModel } from '@/store/slices/modelSlice';
 import ModelProviderDisplay from './components/ModelProviderDisplay';
 import type { ColumnsType } from 'antd/es/table';
 import type { Model } from '@/types/model';
-import { debounce } from 'es-toolkit';
 import { useNavToPage } from '@/store/slices/modelPageSlice';
 import FilterInput from '@/components/FilterInput';
+import { useDebouncedFilter } from '@/components/FilterInput/hooks/useDebouncedFilter';
+import EditModelModal from './components/EditModelModal';
 
 // 模型表格主组件
 const ModelTable: React.FC = () => {
@@ -23,30 +22,27 @@ const ModelTable: React.FC = () => {
 
   // 本地状态：过滤文本
   const [filterText, setFilterText] = useState<string>('');
-  // 本地状态：过滤后的模型列表列表
-  const [filteredModels, setFilteredModels] = useState<Model[]>(models)
-  useEffect(() => {
-    const debouncedSetFilterModels = debounce((text: string) => {
-    if (!text) {
-      setFilteredModels(models)
-    } else {
-      setFilteredModels(models.filter(model => {
-        return model.nickname.toLowerCase().includes(filterText.toLowerCase()) ||
-          (model.remark?.toLowerCase().includes(filterText.toLowerCase()) ?? false)
-        },
-      ))
-    }
-  }, 300)
+  const {
+    filteredList: filteredModels,
+  } = useDebouncedFilter<Model>(
+    filterText,
+    models,
+    (model) => {
+      const {
+        nickname,
+        providerName,
+        modelName,
+        remark = '',
+      } = model
 
-
-    debouncedSetFilterModels(filterText)
-    // 取消防抖函数
-    return () => {
-      debouncedSetFilterModels.cancel()
-    }
-  }, [filterText, models])
-
-
+      return [
+        nickname,
+        providerName,
+        modelName,
+        remark,
+      ].map(item => item?.toLocaleLowerCase?.() || '').includes(filterText.toLocaleLowerCase())
+    },
+  )
 
   // 处理删除模型
   const handleDeleteModel = async (modelId: string) => {
@@ -64,22 +60,20 @@ const ModelTable: React.FC = () => {
     navToAddPage()
   };
 
-  // 加载mock数据（仅用于开发测试）
-  const handleLoadMockData = async () => {
-    try {
-      const store = await Store.load('model.json', {
-        autoSave: false,
-        defaults: {},
-      });
-      const mockData = generateMockModels();
-      await store.set('models', mockData);
-      await store.save();
-      dispatch(initializeModels());
-      message.success('Mock数据加载成功');
-    } catch {
-      message.error('Mock数据加载失败');
-    }
-  };
+  // 当前点击需要编辑的模型
+  const [currentEditingModel, setCurrentEditingModel] = useState<Model>()
+  // 控制编辑模型弹窗的开关
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  // 处理点击编辑模型按钮
+  const handleEditModel = (value: Model) => {
+    setCurrentEditingModel(value)
+    setIsModalOpen(true)
+  }
+  // 关闭编辑模型弹窗的回调
+  const onModalCancel = () => {
+    setIsModalOpen(false)
+  }
+
 
   // 表格列定义
   const columns: ColumnsType<Model> = [
@@ -87,25 +81,31 @@ const ModelTable: React.FC = () => {
       title: '昵称',
       dataIndex: 'nickname',
       key: 'nickname',
-      sorter: (a, b) => a.nickname.localeCompare(b.nickname),
+      sorter: (a, b) => a.nickname?.localeCompare(b.nickname),
     },
     {
       title: '大模型服务商',
-      dataIndex: 'provider',
-      key: 'provider',
-      render: (provider: string) => <ModelProviderDisplay providerKey={provider} />,
+      dataIndex: 'providerKey',
+      key: 'providerKey',
+      render: (providerKey: string) => <ModelProviderDisplay providerKey={providerKey} />,
     },
     {
       title: '模型名称',
       dataIndex: 'modelName',
       key: 'modelName',
-      sorter: (a, b) => a.modelName.localeCompare(b.modelName),
+      sorter: (a, b) => a.modelName?.localeCompare(b.modelName),
+    },
+    {
+      title: '最近更新时间',
+      dataIndex: 'updateAt',
+      key: 'updateAt',
+      sorter: (a, b) => a.updateAt?.localeCompare(b.updateAt),
     },
     {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
+      sorter: (a, b) => a.createdAt?.localeCompare(b.createdAt),
     },
     {
       title: '备注',
@@ -123,7 +123,7 @@ const ModelTable: React.FC = () => {
             type="text"
             icon={<EditOutlined />}
             size="small"
-            disabled
+            onClick={() => handleEditModel(record)}
           />
           <Popconfirm
             title="确认删除"
@@ -180,15 +180,6 @@ const ModelTable: React.FC = () => {
           >
             添加模型
           </Button>
-          {/* 开发环境下的mock数据按钮 */}
-          {import.meta.env.DEV && (
-            <Button
-              type="default"
-              onClick={handleLoadMockData}
-            >
-              加载Mock数据
-            </Button>
-          )}
         </Space>
         <FilterInput
           value={filterText}
@@ -209,6 +200,11 @@ const ModelTable: React.FC = () => {
             ? '请修复错误后重新加载数据'
             : '暂无模型数据，点击"添加模型"创建第一个模型',
         }}
+      />
+      <EditModelModal
+        modelProviderKey={currentEditingModel?.providerKey}
+        isModalOpen={isModalOpen}
+        onModalCancel={onModalCancel}
       />
     </div>
   );

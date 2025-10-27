@@ -1,19 +1,29 @@
 import OpenExternalBrowserButton from "@/components/OpenExternalBrowserButton"
-import { ModelProvider } from "@/types/model"
+import { ManualConfigModel, Model, ModelProvider } from "@/types/model"
 import { MODEL_PROVIDERS } from "@/utils/constants"
-import { ModelProviderKeyEnum } from "@/utils/enums"
+import { DateFormat, ModelProviderKeyEnum } from "@/utils/enums"
 import type { FormItemProps } from "antd"
 import { Button, Form, Input, Switch } from "antd"
 import type { ReactNode } from "react"
 import { useEffect, useMemo, useState } from "react"
+import ModelSelect from "./ModelSelect"
+import { v4 as uuidv4 } from 'uuid'
+import dayjs from "dayjs"
+import { isFunction } from "es-toolkit"
 
 interface ModelConfigFormProps {
   // 当前需要配置的模型供应商的Key
-  modelProviderKey: ModelProviderKeyEnum
+  modelProviderKey: ModelProviderKeyEnum;
+  // 表单校验成功后的回调，返回完整的模型数据
+  onFinish?: (model: Model) => void
 }
 
+/**
+ * 编辑模型相关的表单
+ */
 const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   modelProviderKey,
+  onFinish,
 }) => {
   const [form] = Form.useForm()
 
@@ -22,11 +32,31 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
     return MODEL_PROVIDERS.find(provider => provider.key === modelProviderKey) as ModelProvider
   }, [modelProviderKey])
 
+  // 表单的初始化值
+  const initialFormValues = useMemo(() => {
+    return {
+      apiAddress: currentProvider.defaultConfig.apiAddress,
+    }
+  }, [currentProvider])
+
+  // 新增操作下，切换模型供应商的时候，对表单进行还原填充
+  useEffect(() => {
+    form.resetFields()
+  }, [form, currentProvider])
+
   // 是否开启当前配置的模型
   const [isModelEnable, setIsModelEnable] = useState(true)
 
   // 对应每个表单项的配置，采用数组渲染
-  const formItemConfigs: Array<FormItemProps & {component?: ReactNode }> = [
+  const formItemConfigs: Array<FormItemProps & { component?: ReactNode }> = [
+    {
+      label: '模型昵称',
+      name: 'nickname',
+      rules: [
+        { required: true, message: '请输入当前模型的昵称' },
+      ],
+      component: <Input />,
+    },
     {
       label: 'API 密钥',
       name: 'apiKey',
@@ -44,17 +74,42 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
       component: <Input />,
     },
     {
+      label: '备注',
+      name: 'remark',
+      component: <Input.TextArea />,
+    },
+    {
       label: '模型',
       name: 'modelKey',
-      component: <Input />,
+      component: <ModelSelect options={currentProvider.defaultConfig.modelList} />,
+      rules: [
+        { required: true, message: '请选择你想要使用的具体模型' },
+      ],
     },
   ]
 
-  // 相关的数据发生变化的时候，对表单进行填充
-  useEffect(() => {
-    form.setFieldValue('apiAddress', currentProvider.defaultApiAddress)
 
-  }, [form, currentProvider])
+
+
+  // 表单校验成功后的回调
+  const onFormFinish = (values: ManualConfigModel) => {
+    const fullModel: Model = {
+      ...values,
+      id: uuidv4(),
+      createdAt: dayjs().format(DateFormat.DAY_AND_TIME),
+      updateAt: dayjs().format(DateFormat.DAY_AND_TIME),
+      providerName: currentProvider.name,
+      providerKey: currentProvider.key,
+      // 表单里面选择的是 modelKey，需要自己回填 modelName
+      modelName: currentProvider.defaultConfig.modelList.find(item => {
+        return item.modelKey === values.modelKey
+      })?.modelName || '',
+    }
+
+    if (isFunction(onFinish)) {
+      onFinish(fullModel)
+    }
+  }
 
   return (<>
     <div className="flex items-center justify-between">
@@ -71,7 +126,9 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
     <Form
       form={form}
       layout="inline"
+      onFinish={onFormFinish}
       className="flex flex-wrap gap-4"
+      initialValues={initialFormValues}
     >
       { formItemConfigs.map(item => (
         <Form.Item
