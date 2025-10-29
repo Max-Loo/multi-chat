@@ -48,27 +48,48 @@ export const deleteModel = createAsyncThunk(
   },
 );
 
-// 新增模型所需的参数
-interface CreateModelParams {
-  // 当前新增的模型
+interface BasicModelParams {
+  // 当前新增/编辑的模型
   model: Model;
   // 当前已有的模型列表
   models: Model[]
 }
 
 // 异步action: 新增一个模型
-export const CreateModel = createAsyncThunk(
+export const createModel = createAsyncThunk(
   'model/add',
   async ({
     model,
     models,
-  } : CreateModelParams, { rejectWithValue }) => {
+  } : BasicModelParams, { rejectWithValue }) => {
     try {
       const updatedModels: Model[] = [...models, model]
       saveModels(updatedModels)
       return updatedModels
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : '新增模型失败');
+    }
+  },
+)
+
+// 异步action: 编辑模型
+export const editModel = createAsyncThunk(
+  'model/edit',
+  async ({
+    model,
+    models,
+  } : BasicModelParams, { rejectWithValue }) => {
+    try {
+      const updatedModels: Model[] = models.map(item => {
+        // 替换掉当前列表中的model
+        if (item.id === model.id) {
+          return model
+        }
+        return item
+      })
+      return updatedModels
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : '编辑模型失败');
     }
   },
 )
@@ -121,19 +142,34 @@ const modelSlice = createSlice({
         state.error = action.payload as string || '删除文件失败';
       })
       // 添加模型开始
-      .addCase(CreateModel.pending, (state) => {
+      .addCase(createModel.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       // 添加模型成功
-      .addCase(CreateModel.fulfilled, (state, action) => {
+      .addCase(createModel.fulfilled, (state, action) => {
         state.loading = false;
         state.models = action.payload;
       })
       // 添加模型失败
-      .addCase(CreateModel.rejected, (state, action) => {
+      .addCase(createModel.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string || '添加模型失败';
+      })
+      // 编辑模型开始
+      .addCase(editModel.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      // 编辑模型成功
+      .addCase(editModel.fulfilled, (state, action) => {
+        state.loading = false;
+        state.models = action.payload;
+      })
+      // 编辑模型失败
+      .addCase(editModel.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || '编辑模型失败';
       })
   },
 });

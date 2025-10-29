@@ -34,6 +34,9 @@ export interface ManualConfigModel {
 // AI模型对象相关参数类型（完整的）
 export interface Model extends SystemConfigModel, ManualConfigModel {}
 
+// 编辑模型时，需要用到的对象类型
+export type EditableModel = Partial<Model>
+
 
 // 默认的可选模型列表
 export interface ModelDetail {

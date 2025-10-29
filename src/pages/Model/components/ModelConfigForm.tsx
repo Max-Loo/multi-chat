@@ -1,5 +1,5 @@
 import OpenExternalBrowserButton from "@/components/OpenExternalBrowserButton"
-import { ManualConfigModel, Model, ModelProvider } from "@/types/model"
+import { EditableModel, ManualConfigModel, Model, ModelProvider } from "@/types/model"
 import { MODEL_PROVIDERS } from "@/utils/constants"
 import { DateFormat, ModelProviderKeyEnum } from "@/utils/enums"
 import type { FormItemProps } from "antd"
@@ -15,7 +15,9 @@ interface ModelConfigFormProps {
   // 当前需要配置的模型供应商的Key
   modelProviderKey: ModelProviderKeyEnum;
   // 表单校验成功后的回调，返回完整的模型数据
-  onFinish?: (model: Model) => void
+  onFinish?: (model: Model) => void;
+  // 当是编辑模式的时候，会传入此参数
+  modelParams?: EditableModel;
 }
 
 /**
@@ -24,6 +26,7 @@ interface ModelConfigFormProps {
 const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   modelProviderKey,
   onFinish,
+  modelParams = {},
 }) => {
   const [form] = Form.useForm()
 
@@ -33,11 +36,12 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   }, [modelProviderKey])
 
   // 表单的初始化值
-  const initialFormValues = useMemo(() => {
+  const initialFormValues = useMemo<EditableModel>(() => {
     return {
       apiAddress: currentProvider.defaultConfig.apiAddress,
-    }
-  }, [currentProvider])
+      ...modelParams,
+    } satisfies EditableModel
+  }, [currentProvider, modelParams])
 
   // 新增操作下，切换模型供应商的时候，对表单进行还原填充
   useEffect(() => {
@@ -88,13 +92,22 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
     },
   ]
 
+  // 获取拼装完整后的model参数
+  const getFullModelParams = (manualConfig: ManualConfigModel): Model => {
+    if (modelParams?.id) {
+      // 当有id的情况下，表明是编辑模型，特殊处理参数
+      return {
+        ...(modelParams as Model),
+        id: modelParams.id,
+        ...manualConfig,
+        // 刷新更新时间
+        updateAt: dayjs().format(DateFormat.DAY_AND_TIME),
+      }
+    }
 
-
-
-  // 表单校验成功后的回调
-  const onFormFinish = (values: ManualConfigModel) => {
-    const fullModel: Model = {
-      ...values,
+    // 否则返回一个全新的model
+    return {
+      ...manualConfig,
       id: uuidv4(),
       createdAt: dayjs().format(DateFormat.DAY_AND_TIME),
       updateAt: dayjs().format(DateFormat.DAY_AND_TIME),
@@ -102,10 +115,14 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
       providerKey: currentProvider.key,
       // 表单里面选择的是 modelKey，需要自己回填 modelName
       modelName: currentProvider.defaultConfig.modelList.find(item => {
-        return item.modelKey === values.modelKey
+        return item.modelKey === manualConfig.modelKey
       })?.modelName || '',
     }
+  }
 
+  // 表单校验成功后的回调
+  const onFormFinish = (values: ManualConfigModel) => {
+    const fullModel: Model = getFullModelParams(values)
     if (isFunction(onFinish)) {
       onFinish(fullModel)
     }

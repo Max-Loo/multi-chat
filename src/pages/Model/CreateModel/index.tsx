@@ -5,7 +5,7 @@ import ModelConfigForm from '../components/ModelConfigForm';
 import { Model } from '@/types/model';
 import { useNavToPage } from '@/store/slices/modelPageSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
-import { CreateModel } from '@/store/slices/modelSlice';
+import { createModel } from '@/store/slices/modelSlice';
 import { message } from 'antd';
 
 // 添加模型页面
@@ -25,7 +25,7 @@ const AddModel: React.FC = () => {
   // 表单校验完成后的回调
   const onFormFinish = async (model: Model): Promise<void> => {
     try {
-      await dispatch(CreateModel({
+      await dispatch(createModel({
         model,
         models,
       })).unwrap()

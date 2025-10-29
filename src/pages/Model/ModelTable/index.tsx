@@ -203,6 +203,7 @@ const ModelTable: React.FC = () => {
       />
       <EditModelModal
         modelProviderKey={currentEditingModel?.providerKey}
+        modelParams={currentEditingModel}
         isModalOpen={isModalOpen}
         onModalCancel={onModalCancel}
       />

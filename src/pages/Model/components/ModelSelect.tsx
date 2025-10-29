@@ -16,6 +16,7 @@ interface ModelSelectProps {
 }
 
 const ModelSelect: React.FC<ModelSelectProps> = ({
+  value,
   options,
   onChange,
   className,
@@ -40,6 +41,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
         ${className}
         ${status === 'error' ? 'border-red-500' : ''}`
       }
+      value={value}
       onChange={(e) => onValueChange(e.target.value)}
     >
       { options.map(option => (
