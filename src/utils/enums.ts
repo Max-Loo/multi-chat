@@ -7,7 +7,7 @@ export const enum ModelProviderKeyEnum {
 }
 
 // 常用的日期时间格式
-export const enum DateFormat {
+export const enum DateFormatEnum {
   DAY = 'YYYY-MM-DD',
   TIME = 'HH:mm:ss',
   DAY_AND_TIME = DAY + ' ' + TIME

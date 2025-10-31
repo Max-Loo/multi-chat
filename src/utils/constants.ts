@@ -47,5 +47,3 @@ export const MODEL_PROVIDERS: ModelProvider[] = [
   // },
 ];
 
-// 本地存储的键名
-export const STORAGE_KEY = 'models';

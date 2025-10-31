@@ -1,7 +1,7 @@
 import OpenExternalBrowserButton from "@/components/OpenExternalBrowserButton"
 import { EditableModel, ManualConfigModel, Model, ModelProvider } from "@/types/model"
 import { MODEL_PROVIDERS } from "@/utils/constants"
-import { DateFormat, ModelProviderKeyEnum } from "@/utils/enums"
+import { DateFormatEnum, ModelProviderKeyEnum } from "@/utils/enums"
 import type { FormItemProps } from "antd"
 import { Button, Form, Input, Switch } from "antd"
 import type { ReactNode } from "react"
@@ -101,7 +101,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
         id: modelParams.id,
         ...manualConfig,
         // 刷新更新时间
-        updateAt: dayjs().format(DateFormat.DAY_AND_TIME),
+        updateAt: dayjs().format(DateFormatEnum.DAY_AND_TIME),
       }
     }
 
@@ -109,8 +109,8 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
     return {
       ...manualConfig,
       id: uuidv4(),
-      createdAt: dayjs().format(DateFormat.DAY_AND_TIME),
-      updateAt: dayjs().format(DateFormat.DAY_AND_TIME),
+      createdAt: dayjs().format(DateFormatEnum.DAY_AND_TIME),
+      updateAt: dayjs().format(DateFormatEnum.DAY_AND_TIME),
       providerName: currentProvider.name,
       providerKey: currentProvider.key,
       // 表单里面选择的是 modelKey，需要自己回填 modelName

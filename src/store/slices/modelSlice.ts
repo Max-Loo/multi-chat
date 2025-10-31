@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { Model, ModelState } from '@/types/model';
-import { loadModels, saveModels } from '@/store/storage/modelStorage';
+import { loadModels, saveModels } from '../vaults/modelVault';
 
 // 模型管理的初始状态
 const initialState: ModelState = {
