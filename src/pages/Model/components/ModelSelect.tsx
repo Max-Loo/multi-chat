@@ -4,7 +4,6 @@
 
 import { ModelDetail } from "@/types/model";
 import { Form, Radio } from "antd"
-import { isFunction } from "es-toolkit";
 
 interface ModelSelectProps {
   // 当前选择的模型的标识
@@ -18,7 +17,7 @@ interface ModelSelectProps {
 const ModelSelect: React.FC<ModelSelectProps> = ({
   value,
   options,
-  onChange,
+  onChange = () => {},
   className,
 }) => {
   // 处理校验时的报错相关信息
@@ -29,9 +28,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
 
   // 选中的值发生改变的回调
   const onValueChange = (value: string): void => {
-    if (isFunction(onChange)) {
-      onChange(value)
-    }
+    onChange(value)
   }
 
   return (

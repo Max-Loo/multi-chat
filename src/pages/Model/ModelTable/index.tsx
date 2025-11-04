@@ -45,9 +45,9 @@ const ModelTable: React.FC = () => {
   )
 
   // 处理删除模型
-  const handleDeleteModel = async (modelId: string) => {
+  const handleDeleteModel = async (model: Model) => {
     try {
-      await dispatch(deleteModel({ modelId, models })).unwrap();
+      await dispatch(deleteModel({ model, models })).unwrap();
       message.success('模型删除成功');
     } catch {
       message.error('模型删除失败');
@@ -128,7 +128,7 @@ const ModelTable: React.FC = () => {
           <Popconfirm
             title="确认删除"
             description={`确定要删除模型 "${record.nickname}" 吗？`}
-            onConfirm={() => handleDeleteModel(record.id)}
+            onConfirm={() => handleDeleteModel(record)}
             okText="确定"
             cancelText="取消"
           >

@@ -3,7 +3,6 @@ import ModelConfigForm from "../../components/ModelConfigForm"
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { useMemo } from "react"
 import { EditableModel, Model } from "@/types/model"
-import { isFunction } from "es-toolkit"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux"
 import { editModel } from "@/store/slices/modelSlice"
 
@@ -21,7 +20,7 @@ interface EditModelModalProps {
  */
 const EditModelModal: React.FC<EditModelModalProps> = ({
   isModalOpen,
-  onModalCancel,
+  onModalCancel = () => {},
   modelProviderKey,
   modelParams,
 }) => {
@@ -47,9 +46,7 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
     }
 
     // 让父组件关闭弹窗
-    if (isFunction(onModalCancel)) {
-      onModalCancel()
-    }
+    onModalCancel()
   }
 
 

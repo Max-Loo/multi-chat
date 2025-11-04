@@ -1,9 +1,16 @@
 import React from 'react';
+import ChatSidebar from './compoments/ChatSidebar';
 
 const ChatPage: React.FC = () => {
+
   return (
-    <div className="flex items-center justify-center h-full">
-      <h1 className="text-3xl font-bold text-gray-800">聊天</h1>
+    <div className="flex items-start justify-start h-full">
+      <div className="h-full border-r border-gray-200">
+        <ChatSidebar />
+      </div>
+      <div className="w-full h-full p-4">
+        2
+      </div>
     </div>
   );
 };

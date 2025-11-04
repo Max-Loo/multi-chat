@@ -9,7 +9,7 @@ import { createModel } from '@/store/slices/modelSlice';
 import { message } from 'antd';
 
 // 添加模型页面
-const AddModel: React.FC = () => {
+const CreateModel: React.FC = () => {
   const [
     selectedModelProviderKey,
     setSelectedModelProviderKey,
@@ -40,7 +40,7 @@ const AddModel: React.FC = () => {
 
   return (
     <div className="flex items-start justify-start h-full">
-      <div className="h-full p-2 border-r border-gray-200">
+      <div className="h-full border-r border-gray-200">
         <ModelSidebar
           value={selectedModelProviderKey}
           onChange={setSelectedModelProviderKey}
@@ -56,4 +56,4 @@ const AddModel: React.FC = () => {
   );
 };
 
-export default AddModel;
+export default CreateModel;

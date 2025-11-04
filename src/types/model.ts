@@ -67,11 +67,3 @@ export interface ModelProvider {
   // 默认的相关配置
   defaultConfig: DefaultModelProviderConfig
 }
-
-// 模型管理状态接口定义
-export interface ModelState {
-  models: Model[]; // 所有模型列表
-  loading: boolean; // 加载状态
-  error: string | null; // 操作错误信息
-  initializationError: string | null; // 初始化错误信息
-}

@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react"
 import ModelSelect from "./ModelSelect"
 import { v4 as uuidv4 } from 'uuid'
 import dayjs from "dayjs"
-import { isFunction } from "es-toolkit"
+
 
 interface ModelConfigFormProps {
   // 当前需要配置的模型供应商的Key
@@ -25,7 +25,7 @@ interface ModelConfigFormProps {
  */
 const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   modelProviderKey,
-  onFinish,
+  onFinish = () => {},
   modelParams = {},
 }) => {
   const [form] = Form.useForm()
@@ -123,9 +123,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   // 表单校验成功后的回调
   const onFormFinish = (values: ManualConfigModel) => {
     const fullModel: Model = getFullModelParams(values)
-    if (isFunction(onFinish)) {
-      onFinish(fullModel)
-    }
+    onFinish(fullModel)
   }
 
   return (<>

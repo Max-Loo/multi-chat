@@ -1,12 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
 import modelReducer from '@/store/slices/modelSlice';
 import modelPageReducer from '@/store/slices/modelPageSlice'
+import chatReducer from '@/store/slices/chatSlices'
 
 // 创建Redux store实例
 export const store = configureStore({
   reducer: {
-    models: modelReducer, // 模型管理状态
+    // 模型管理状态
+    models: modelReducer,
+    // 模型页面状态管理（列表页/新增页）
     modelPage: modelPageReducer,
+    chat: chatReducer,
   },
 });
 

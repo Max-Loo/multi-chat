@@ -8,8 +8,6 @@ import { Avatar, Button } from "antd"
 import { useState } from "react"
 
 interface ModelSidebarProps {
-  // 组件创建时默认选中的大模型
-  defaultValue?: ModelProviderKeyEnum
   // 当前选中的大模型
   value: ModelProviderKeyEnum
   onChange: (value: ModelProviderKeyEnum) => void
@@ -32,41 +30,45 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
   )
 
   return (
-    <div className="flex flex-col items-center justify-start h-full w-70">
+    <div className="flex flex-col items-center justify-start h-full w-60">
       {/* 表头部分 */}
-      <div className="flex items-center justify-between w-full pb-2">
-        <Button className="rounded-lg!" onClick={navToTablePage}><LeftOutlined /></Button>
-        <span className="text-lg">模型服务商</span>
+      <div className="p-2 border-b border-gray-300">
+        <div className="flex items-center justify-between w-full pb-2">
+          <Button className="rounded-lg!" onClick={navToTablePage}><LeftOutlined /></Button>
+          <span className="text-lg">模型服务商</span>
+        </div>
+        <FilterInput
+          value={filterText}
+          onChange={setFilterText}
+          placeholder='搜索模型'
+          className={`w-full! rounded-lg!`}
+        />
       </div>
-      <FilterInput
-        value={filterText}
-        onChange={setFilterText}
-        placeholder='搜索模型'
-        className={`w-full! rounded-lg!`}
-      />
       {/* 可供选择的 */}
-      {filteredProviders.map(provider => {
-        return (
-          <Button
-            key={provider.key}
-            type="text"
-            className={`w-full mt-1.5 py-5! flex justify-start! rounded-xl! ${
-              provider.key === selectedModelKey && 'border! bg-gray-100! border-gray-300!'
-            }`}
-            title={provider.name}
-            onClick={() => onChange(provider.key)}
-          >
-            {provider.logoUrl && (
-              <Avatar
-                size={30}
-                src={provider.logoUrl}
-                alt={provider.name}
-              />
-            )}
-            <span className="pl-2 text-base">{provider.name}</span>
-          </Button>
-        )
-      })}
+      <div className="pb-2">
+        {filteredProviders.map(provider => {
+          return (
+            <Button
+              key={provider.key}
+              type="text"
+              className={`w-full py-5! flex justify-start! rounded-none! ${
+                provider.key === selectedModelKey && 'bg-gray-200!'
+              }`}
+              title={provider.name}
+              onClick={() => onChange(provider.key)}
+            >
+              {provider.logoUrl && (
+                <Avatar
+                  size={30}
+                  src={provider.logoUrl}
+                  alt={provider.name}
+                />
+              )}
+              <span className="pl-2 text-base">{provider.name}</span>
+            </Button>
+          )
+        })}
+      </div>
     </div>
   )
 }

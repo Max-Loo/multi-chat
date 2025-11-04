@@ -6,6 +6,7 @@ interface FilterInputProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ const FilterInput: React.FC<FilterInputProps> = ({
   onChange,
   placeholder = '搜索',
   className,
+  autoFocus = false,
 }) => {
   return (
     <Input
@@ -25,6 +27,7 @@ const FilterInput: React.FC<FilterInputProps> = ({
       allowClear
       style={{ width: 300 }}
       className={className}
+      autoFocus={autoFocus}
     />
   );
 };

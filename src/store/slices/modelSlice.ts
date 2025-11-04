@@ -1,6 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { Model, ModelState } from '@/types/model';
+import { Model } from '@/types/model';
 import { loadModels, saveModels } from '../vaults/modelVault';
+
+// 模型管理状态接口定义
+interface ModelState {
+  models: Model[]; // 所有模型列表
+  loading: boolean; // 加载状态
+  error: string | null; // 操作错误信息
+  initializationError: string | null; // 初始化错误信息
+}
 
 // 模型管理的初始状态
 const initialState: ModelState = {
@@ -17,29 +25,30 @@ export const initializeModels = createAsyncThunk(
     try {
       return await loadModels();
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to initialize models');
+      throw new Error(error instanceof Error ? error.message : '初始化模型数据失败');
     }
   },
 );
 
-// 删除模型所需的参数
-interface DeleteModelParams {
-  modelId: string,
+
+interface BasicModelParams {
+  // 当前新增/编辑/删除的模型
+  model: Model;
+  // 当前已有的模型列表
   models: Model[]
 }
 
 // 异步action：删除指定模型
 export const deleteModel = createAsyncThunk(
   'models/delete',
-  async (
-    {
-      modelId,
-      models,
-    } : DeleteModelParams,
+  async ({
+    model,
+    models,
+  } : BasicModelParams,
     { rejectWithValue },
   ) => {
     try {
-      const updatedModels = models.filter((model: Model) => model.id !== modelId);
+      const updatedModels = models.filter((item: Model) => item.id !== model.id);
       saveModels(updatedModels)
       return updatedModels;
     } catch (error) {
@@ -48,12 +57,7 @@ export const deleteModel = createAsyncThunk(
   },
 );
 
-interface BasicModelParams {
-  // 当前新增/编辑的模型
-  model: Model;
-  // 当前已有的模型列表
-  models: Model[]
-}
+
 
 // 异步action: 新增一个模型
 export const createModel = createAsyncThunk(
