@@ -37,6 +37,7 @@ export default [
       }],
 
       // 删除多余空格的规则
+      'indent': ['error', 2], // 缩进只能是两个空格
       'no-trailing-spaces': 'error', // 行尾不能有多余的空格
       'no-multi-spaces': 'error', // 禁止使用多个空格
       'no-irregular-whitespace': 'error', // 禁止不规则的空白

@@ -27,10 +27,10 @@ const generateHardwareBasedPassword = (salt: string): string => {
   try {
     // 手机基础的信息
     const baseInfo = JSON.stringify({
-    platform: platform(),
-    version: version(),
-    dataDir: appDataDir(),
-  })
+      platform: platform(),
+      version: version(),
+      dataDir: appDataDir(),
+    })
     // 使用 PBKDF2 进行密钥派生
     const derivedKey = CryptoJS.PBKDF2(baseInfo, salt, {
       keySize: 256 / 32,

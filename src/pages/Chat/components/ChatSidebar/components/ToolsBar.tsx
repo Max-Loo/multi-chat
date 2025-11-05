@@ -1,0 +1,89 @@
+import FilterInput from "@/components/FilterInput"
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { createChat, setSelectedChatId } from "@/store/slices/chatSlices";
+import { LeftOutlined, MenuFoldOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
+import { Button } from "antd"
+import { isString } from "es-toolkit";
+import { JSX, useState } from "react"
+import { v4 as uuidv4 } from 'uuid'
+
+interface ToolsBarProps {
+  // 传入的是字符串的时候才能启用搜索按钮
+  filterText?: string;
+  onFilterChange?: (value: string) => void;
+}
+
+const ToolsBar: React.FC<ToolsBarProps> = ({
+  filterText,
+  onFilterChange = () => {},
+}) => {
+  const dispatch = useAppDispatch()
+  const { chatList } = useAppSelector((state) => state.chat)
+
+  // 是否展示搜索状态
+  const [isSearching, setIsSearching] = useState(false)
+
+  // 点击返回退出搜索
+  const quitSearch = () => {
+    setIsSearching(false)
+    // 重置搜索的关键字
+    onFilterChange('')
+  }
+
+  // 创建新的聊天
+  const handleCreateChat = async () => {
+
+    const chat = {
+      id: uuidv4(),
+      name: '',
+    }
+    await dispatch(createChat({ chat, chatList }))
+    // 创建成功后跳转到新建的聊天
+    await dispatch(setSelectedChatId(chat.id))
+  }
+
+  // 需要渲染的内容
+  let nodeContent: JSX.Element = <>
+    <Button className="rounded-lg! pr-5! pl-5!" icon={<MenuFoldOutlined />} />
+    <div>
+      {/* 传入一个正常的字符串才表示启用搜索按钮 */}
+      {isString(filterText) && <Button
+        className="rounded-lg!"
+        icon={<SearchOutlined />}
+        onClick={() => setIsSearching(true)}
+      />}
+      <Button
+        className="rounded-lg! ml-1"
+        icon={<PlusOutlined />}
+        onClick={handleCreateChat}
+      />
+    </div>
+  </>
+
+  if (isSearching) {
+    // 当开启搜索的时候，变更渲染内容
+    nodeContent = <>
+      <Button
+        className="rounded-lg! p-1!"
+        icon={<LeftOutlined />}
+        onClick={quitSearch}
+      />
+      <FilterInput
+        value={filterText || ''}
+        onChange={(value) => {
+          onFilterChange(value)
+        }}
+        className="ml-2"
+        autoFocus
+      />
+    </>
+  }
+
+  return (
+    <div className="flex items-center justify-between w-full">
+      {nodeContent}
+    </div>
+  )
+}
+
+export default ToolsBar

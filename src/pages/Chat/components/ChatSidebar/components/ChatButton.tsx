@@ -1,0 +1,160 @@
+import { useAppDispatch, useAppSelector } from "@/hooks/redux"
+import { deleteChat, editChat, setSelectedChatId } from "@/store/slices/chatSlices"
+import { Chat } from "@/types/chat"
+import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EllipsisOutlined } from "@ant-design/icons"
+import type { MenuProps } from 'antd'
+import { Button, Dropdown, Input, Modal } from "antd"
+import { JSX, useMemo, useState } from "react"
+
+interface ChatButtonProps {
+  // 当前选中要进行操作的聊天
+  chat: Chat
+}
+
+/**
+ * @description 聊天列表中的单个聊天按钮
+ */
+const ChatButton: React.FC<ChatButtonProps> = ({
+  chat,
+}) => {
+  const dispatch = useAppDispatch()
+  const {
+    chatList,
+    // 当前选中展示的聊天
+    selectedChatId,
+  } = useAppSelector((state) => state.chat)
+
+
+  // 点击聊天列表按钮
+  const onClickChat = (chat: Chat) => {
+    dispatch(setSelectedChatId(chat.id))
+  }
+
+  // 是否打开重命名的输入框
+  const [isRenaming, setIsRenaming] = useState(false)
+
+  const menuProps: MenuProps['items'] = useMemo(() => {
+    return [
+      {
+        label: '重命名',
+        key: 'rename',
+        icon: <EditOutlined />,
+        onClick: (menuInfo) => {
+          // 避免选中该聊天
+          menuInfo.domEvent.stopPropagation()
+
+          setIsRenaming(true)
+          // 填充原本的命名
+          setNewName(chat.name || '')
+        },
+      },
+      {
+        type: 'divider',
+      },
+      {
+        label: '删除',
+        key: 'delete',
+        icon: <DeleteOutlined/>,
+        className: 'text-red-500!',
+        onClick: (menuInfo) => {
+          // 避免选中该聊天
+          menuInfo.domEvent.stopPropagation()
+
+          Modal.warn({
+            maskClosable: true,
+            closable: true,
+            title: `是否确定删除「${chat.name}」`,
+            content: '聊天被删除后，所有相关聊天记录将无法找回',
+            onOk: () => {
+              dispatch(deleteChat({
+                chat,
+                chatList,
+              }))
+            },
+          })
+        },
+      },
+    ]
+  }, [chat, dispatch, chatList])
+
+
+  // 临时的重命名
+  const [newName, setNewName] = useState('')
+
+  // 取消重命名
+  const onCancelRename = () => {
+    setIsRenaming(false)
+  }
+
+  // 确认重命名
+  const onConfirmRename = () => {
+    dispatch(editChat({
+      chat: {
+        ...chat,
+        name: newName,
+      },
+      chatList,
+    }))
+  }
+
+  let nodeContext: JSX.Element = (
+    <Button
+      type="text"
+      className={`w-full py-5! flex justify-between! rounded-none! 
+        ${chat.id === selectedChatId && 'bg-gray-200!'} 
+        ${isRenaming && 'pl-1! pr-1!'}
+      `}
+      onClick={() => onClickChat(chat)}
+    >
+      <span className="pl-2 text-base">{chat.name || '未命名'}</span>
+      <Dropdown menu={{ items: menuProps }} trigger={['click']} arrow>
+        <EllipsisOutlined
+          name="More options"
+          className="text-xl!"
+          onClick={(e) => {
+          // 防止点击更多，导致选中这个聊天
+            e.stopPropagation()
+          }}
+        />
+      </Dropdown>
+
+    </Button>
+  )
+
+  // 打开编辑状态
+  if (isRenaming) {
+    nodeContext = (
+      <div
+        className={`flex items-center justify-center w-full h-11
+        ${chat.id === selectedChatId && 'bg-gray-200!'} 
+        `}
+      >
+        <Input
+          className="w-38.5! h-8.5"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+        />
+        <Button
+          color="green"
+          variant="filled"
+          icon={<CheckOutlined />}
+          onClick={onConfirmRename}
+          className="ml-1 mr-0.5"
+        />
+        <Button
+          color="danger"
+          variant="filled"
+          icon={<CloseOutlined />}
+          onClick={onCancelRename}
+          className="ml-0.5"
+        />
+      </div>
+    )
+  }
+
+
+  return nodeContext
+}
+
+
+export default ChatButton

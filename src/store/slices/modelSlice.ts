@@ -45,10 +45,18 @@ export const deleteModel = createAsyncThunk(
     model,
     models,
   } : BasicModelParams,
-    { rejectWithValue },
+  { rejectWithValue },
   ) => {
     try {
-      const updatedModels = models.filter((item: Model) => item.id !== model.id);
+      // 不使用filter，而是定位删除，是尽可能避免遍历整个数组
+      const updatedModels: Model[] = [...models]
+      const idx = updatedModels.findIndex(item => {
+        return item.id === model.id
+      })
+      if (idx !== -1) {
+        updatedModels.splice(idx, 1)
+      }
+
       saveModels(updatedModels)
       return updatedModels;
     } catch (error) {
@@ -84,13 +92,14 @@ export const editModel = createAsyncThunk(
     models,
   } : BasicModelParams, { rejectWithValue }) => {
     try {
-      const updatedModels: Model[] = models.map(item => {
-        // 替换掉当前列表中的model
-        if (item.id === model.id) {
-          return model
-        }
-        return item
-      })
+      const updatedModels: Model[] = [...models]
+
+      const idx = updatedModels.findIndex(item => item.id === model.id)
+      if (idx !== -1) {
+        updatedModels[idx] = { ...model }
+      }
+
+      saveModels(updatedModels)
       return updatedModels
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : '编辑模型失败');

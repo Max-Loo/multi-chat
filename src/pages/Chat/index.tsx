@@ -1,5 +1,6 @@
 import React from 'react';
-import ChatSidebar from './compoments/ChatSidebar';
+import ChatSidebar from './components/ChatSidebar';
+import ChatContent from './components/ChatContent';
 
 const ChatPage: React.FC = () => {
 
@@ -9,7 +10,7 @@ const ChatPage: React.FC = () => {
         <ChatSidebar />
       </div>
       <div className="w-full h-full p-4">
-        2
+        <ChatContent />
       </div>
     </div>
   );

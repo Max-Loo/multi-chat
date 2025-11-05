@@ -23,7 +23,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
   const [filterText, setFilterText] = useState<string>('')
   const {
     filteredList: filteredProviders,
-   } = useDebouncedFilter(
+  } = useDebouncedFilter(
     filterText,
     MODEL_PROVIDERS,
     (provider) => provider.name.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),

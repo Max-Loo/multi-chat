@@ -13,17 +13,17 @@ const useSwitchPage = () => {
   // 判断是渲染哪个页面
   const pageComponent = useMemo(() => {
     switch (pageKey) {
-      // 跳转到添加模型页面
-      case ModelPageEnum.ADD_PAGE: {
-        return <CreateModel />
-      }
-      // 跳转到模型列表页面
-      case ModelPageEnum.TABLE_PAGE: {
-        return <ModelTable />
-      }
-      default: {
-        return <ModelTable />
-      }
+    // 跳转到添加模型页面
+    case ModelPageEnum.ADD_PAGE: {
+      return <CreateModel />
+    }
+    // 跳转到模型列表页面
+    case ModelPageEnum.TABLE_PAGE: {
+      return <ModelTable />
+    }
+    default: {
+      return <ModelTable />
+    }
     }
   }, [pageKey])
 
