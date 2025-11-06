@@ -29,11 +29,9 @@ const initialState: ChatState = {
  */
 export const initializeChatList = createAsyncThunk(
   'chat/initialize',
-  async (_, { dispatch }) => {
+  async () => {
     try {
       const list: Chat[] = await loadChatList()
-      // 默认会选中第一条
-      dispatch(chatSlice.actions.setSelectedChatId(list[0]?.id || null))
       return list
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : '初始化聊天数据失败');

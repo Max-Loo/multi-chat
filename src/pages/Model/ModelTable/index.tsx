@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Alert, Popconfirm, message } from 'antd';
+import { Table, Button, Space, Alert, Popconfirm, message, TableColumnsType } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
 import { deleteModel } from '@/store/slices/modelSlice';
-import ModelProviderDisplay from './components/ModelProviderDisplay';
-import type { ColumnsType } from 'antd/es/table';
 import type { Model } from '@/types/model';
 import { useNavToPage } from '@/store/slices/modelPageSlice';
 import FilterInput from '@/components/FilterInput';
-import { useDebouncedFilter } from '@/components/FilterInput/hooks/useDebouncedFilter';
 import EditModelModal from './components/EditModelModal';
+import { useBasicModelTable } from '@/hooks/useBasicModelTable';
 
 // 模型表格主组件
 const ModelTable: React.FC = () => {
@@ -19,30 +17,6 @@ const ModelTable: React.FC = () => {
   );
 
   const { navToAddPage } = useNavToPage()
-
-  // 本地状态：过滤文本
-  const [filterText, setFilterText] = useState<string>('');
-  const {
-    filteredList: filteredModels,
-  } = useDebouncedFilter<Model>(
-    filterText,
-    models,
-    (model) => {
-      const {
-        nickname,
-        providerName,
-        modelName,
-        remark = '',
-      } = model
-
-      return [
-        nickname,
-        providerName,
-        modelName,
-        remark,
-      ].map(item => item?.toLocaleLowerCase?.() || '').includes(filterText.toLocaleLowerCase())
-    },
-  )
 
   // 处理删除模型
   const handleDeleteModel = async (model: Model) => {
@@ -74,45 +48,17 @@ const ModelTable: React.FC = () => {
     setIsModalOpen(false)
   }
 
+  // 一些基础的和模型列表相关的封装逻辑
+  const {
+    tableColumns,
+    filterText,
+    filteredModels,
+    setFilterText,
+  } = useBasicModelTable()
 
   // 表格列定义
-  const columns: ColumnsType<Model> = [
-    {
-      title: '昵称',
-      dataIndex: 'nickname',
-      key: 'nickname',
-      sorter: (a, b) => a.nickname?.localeCompare(b.nickname),
-    },
-    {
-      title: '大模型服务商',
-      dataIndex: 'providerKey',
-      key: 'providerKey',
-      render: (providerKey: string) => <ModelProviderDisplay providerKey={providerKey} />,
-    },
-    {
-      title: '模型名称',
-      dataIndex: 'modelName',
-      key: 'modelName',
-      sorter: (a, b) => a.modelName?.localeCompare(b.modelName),
-    },
-    {
-      title: '最近更新时间',
-      dataIndex: 'updateAt',
-      key: 'updateAt',
-      sorter: (a, b) => a.updateAt?.localeCompare(b.updateAt),
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      sorter: (a, b) => a.createdAt?.localeCompare(b.createdAt),
-    },
-    {
-      title: '备注',
-      dataIndex: 'remark',
-      key: 'remark',
-      render: (remark?: string) => remark || '-',
-    },
+  const columns: TableColumnsType<Model> = [
+    ...tableColumns,
     {
       title: '操作',
       key: 'actions',
@@ -142,7 +88,7 @@ const ModelTable: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ]
 
   return (
     <div className="p-6">
@@ -184,6 +130,7 @@ const ModelTable: React.FC = () => {
         <FilterInput
           value={filterText}
           onChange={setFilterText}
+          className='w-72!'
           placeholder='搜索昵称或备注'
         />
       </div>

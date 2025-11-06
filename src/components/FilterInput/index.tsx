@@ -25,7 +25,6 @@ const FilterInput: React.FC<FilterInputProps> = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       allowClear
-      style={{ width: 300 }}
       className={className}
       autoFocus={autoFocus}
     />

@@ -4,7 +4,7 @@ import { Chat } from "@/types/chat"
 import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EllipsisOutlined } from "@ant-design/icons"
 import type { MenuProps } from 'antd'
 import { Button, Dropdown, Input, Modal } from "antd"
-import { JSX, useMemo, useState } from "react"
+import React, { useMemo, useState } from "react"
 
 interface ChatButtonProps {
   // 当前选中要进行操作的聊天
@@ -14,7 +14,7 @@ interface ChatButtonProps {
 /**
  * @description 聊天列表中的单个聊天按钮
  */
-const ChatButton: React.FC<ChatButtonProps> = ({
+const ChatButton: React.FC<ChatButtonProps> = React.memo(({
   chat,
 }) => {
   const dispatch = useAppDispatch()
@@ -97,33 +97,10 @@ const ChatButton: React.FC<ChatButtonProps> = ({
     }))
   }
 
-  let nodeContext: JSX.Element = (
-    <Button
-      type="text"
-      className={`w-full py-5! flex justify-between! rounded-none! 
-        ${chat.id === selectedChatId && 'bg-gray-200!'} 
-        ${isRenaming && 'pl-1! pr-1!'}
-      `}
-      onClick={() => onClickChat(chat)}
-    >
-      <span className="pl-2 text-base">{chat.name || '未命名'}</span>
-      <Dropdown menu={{ items: menuProps }} trigger={['click']} arrow>
-        <EllipsisOutlined
-          name="More options"
-          className="text-xl!"
-          onClick={(e) => {
-          // 防止点击更多，导致选中这个聊天
-            e.stopPropagation()
-          }}
-        />
-      </Dropdown>
-
-    </Button>
-  )
 
   // 打开编辑状态
   if (isRenaming) {
-    nodeContext = (
+    return (
       <div
         className={`flex items-center justify-center w-full h-11
         ${chat.id === selectedChatId && 'bg-gray-200!'} 
@@ -153,8 +130,41 @@ const ChatButton: React.FC<ChatButtonProps> = ({
   }
 
 
-  return nodeContext
-}
+  return (
+    <Button
+      type="text"
+      className={`w-full py-5! flex justify-between! rounded-none! 
+        ${chat.id === selectedChatId && 'bg-gray-200!'} 
+        ${isRenaming && 'pl-1! pr-1!'}
+      `}
+      onClick={() => onClickChat(chat)}
+    >
+      <span className="pl-2 text-base">{chat.name || '未命名'}</span>
+      <Dropdown menu={{ items: menuProps }} trigger={['click']} arrow>
+        <EllipsisOutlined
+          name="More options"
+          className="text-xl!"
+          onClick={(e) => {
+          // 防止点击更多，导致选中这个聊天
+            e.stopPropagation()
+          }}
+        />
+      </Dropdown>
+    </Button>
+  )
+}, (prevProps, nextProps) => {
+  // 因为按钮只展示模型的昵称，所以当其没有发生变化的时候，就不需要重新渲染
+  const {
+    id,
+    name,
+  } = prevProps.chat
+  const {
+    id: nextId,
+    name: nextName,
+  } = nextProps.chat
+
+  return id === nextId && name === nextName
+})
 
 
 export default ChatButton

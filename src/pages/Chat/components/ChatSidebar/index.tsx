@@ -6,8 +6,6 @@ import { useAppSelector } from "@/hooks/redux"
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import ChatButton from "./components/ChatButton"
 
-// }
-
 const ChatSidebar: React.FC = () => {
 
   const {
@@ -33,7 +31,7 @@ const ChatSidebar: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-start h-full w-60">
-      <div className="w-full p-2 border-b border-gray-100">
+      <div className="w-full h-12 p-2 border-b border-gray-100">
         <ToolsBar
           filterText={filterText}
           onFilterChange={setFilterText}

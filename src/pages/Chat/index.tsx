@@ -9,7 +9,7 @@ const ChatPage: React.FC = () => {
       <div className="h-full border-r border-gray-200">
         <ChatSidebar />
       </div>
-      <div className="w-full h-full p-4">
+      <div className="w-full h-full">
         <ChatContent />
       </div>
     </div>
