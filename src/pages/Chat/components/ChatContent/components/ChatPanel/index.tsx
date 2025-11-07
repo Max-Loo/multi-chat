@@ -23,7 +23,7 @@ const ChatPanel: React.FC = () => {
 
   return <div className="flex flex-col items-center justify-start w-full h-full">
     {/* 头部 */}
-    <div className="flex items-center justify-between w-full pl-3 pr-3 border-b border-gray-200 min-h-12">
+    <div className="flex justify-center w-full pl-3 pr-3 border-b border-gray-200 min-h-12">
       <ChatPanelHeader
         selectedChat={typedSelectedChat}
         chatModelList={chatModelList}

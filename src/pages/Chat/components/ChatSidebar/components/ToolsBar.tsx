@@ -1,6 +1,6 @@
 import FilterInput from "@/components/FilterInput"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { createChat, setSelectedChatId } from "@/store/slices/chatSlices";
+import { createChat, setIsCollapsed, setSelectedChatId } from "@/store/slices/chatSlices";
 import { LeftOutlined, MenuFoldOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { Button } from "antd"
 import { isString } from "es-toolkit";
@@ -23,13 +23,6 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
   // 是否展示搜索状态
   const [isSearching, setIsSearching] = useState(false)
 
-  // 点击返回退出搜索
-  const quitSearch = () => {
-    setIsSearching(false)
-    // 重置搜索的关键字
-    onFilterChange('')
-  }
-
   // 创建新的聊天
   const handleCreateChat = async () => {
 
@@ -43,6 +36,13 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
   }
 
   if (isSearching) {
+    // 点击返回退出搜索
+    const quitSearch = () => {
+      setIsSearching(false)
+      // 重置搜索的关键字
+      onFilterChange('')
+    }
+
     // 当开启搜索的时候，变更渲染内容
     return <div className="flex items-center justify-between w-full">
       <Button
@@ -61,10 +61,19 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
     </div>
   }
 
+  // 隐藏聊天页侧边栏
+  const collapseSidebar = () => {
+    dispatch(setIsCollapsed(true))
+  }
+
   return (
     <div className="flex items-center justify-between w-full">
-      <Button className="rounded-lg! pr-5! pl-5!" icon={<MenuFoldOutlined />} />
-      <div>
+      <Button
+        className="rounded-lg! pr-5! pl-5!"
+        icon={<MenuFoldOutlined />}
+        onClick={collapseSidebar}
+      />
+      <div className="flex">
         {/* 传入一个正常的字符串才表示启用搜索按钮 */}
         {isString(filterText) && <Button
           className="rounded-lg!"

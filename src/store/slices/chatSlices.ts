@@ -12,6 +12,8 @@ interface ChatState {
   error: string | null;
   // 初始化错误信息
   initializationError: string | null;
+  // 聊天侧边栏是否折叠
+  isSidebarCollapsed: boolean;
 }
 
 // 聊天管理的初始状态
@@ -21,6 +23,7 @@ const initialState: ChatState = {
   error: null,
   selectedChatId: null,
   initializationError: null,
+  isSidebarCollapsed: false,
 };
 
 
@@ -152,6 +155,10 @@ const chatSlice = createSlice({
     clearInitializationError: (state) => {
       state.initializationError = null;
     },
+    // 设置侧边栏是否折叠
+    setIsCollapsed: (state, action: PayloadAction<boolean>) => {
+      state.isSidebarCollapsed = action.payload
+    },
   },
   // 处理异步action的状态变化
   extraReducers: (builder) => {
@@ -225,7 +232,8 @@ export const {
   clearInitializationError,
   setSelectedChatId,
   clearSelectChatId,
+  setIsCollapsed,
+  clearSameSelectedChatId,
 } = chatSlice.actions;
-
 // 导出reducer
 export default chatSlice.reducer;

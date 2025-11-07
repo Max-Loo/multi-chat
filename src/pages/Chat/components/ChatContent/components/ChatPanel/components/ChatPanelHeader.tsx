@@ -1,5 +1,7 @@
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { setIsCollapsed } from "@/store/slices/chatSlices";
 import { Chat, ChatModel } from "@/types/chat"
-import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
+import { MenuUnfoldOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, InputNumber } from "antd";
 
 interface ChatPanelHeaderProps {
@@ -18,9 +20,32 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
   columnCount,
   setColumnCount,
 }) => {
+  const dispatch = useAppDispatch()
 
-  return <>
-    <span className="text-lg">{selectedChat.name || '未命名'}</span>
+  const {
+    isSidebarCollapsed,
+  } = useAppSelector(state => state.chat)
+
+  // 展开侧边栏
+  const expandSidebar = () => {
+    dispatch(setIsCollapsed(false))
+  }
+
+  return (<div className="flex items-center justify-between w-full">
+    <div className="flex items-center justify-start">
+      {isSidebarCollapsed && <Button
+        className={`
+          rounded-lg! pr-5! pl-5! mr-2
+        `}
+        icon={<MenuUnfoldOutlined />}
+        onClick={expandSidebar}
+      />}
+      <span
+        className="text-lg"
+      >
+        {selectedChat.name || '未命名'}
+      </span>
+    </div>
     {chatModelList.length > 1 && <div className="flex items-center justify-start">
       <span>每行至多展示：</span>
       <InputNumber
@@ -44,7 +69,8 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
         disabled={columnCount <= 1}
         onClick={() => setColumnCount(columnCount - 1)}
       />
-    </div>}</>
+    </div>}
+  </div>)
 }
 
 

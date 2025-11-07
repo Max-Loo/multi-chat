@@ -1,15 +1,29 @@
 import React from 'react';
 import ChatSidebar from './components/ChatSidebar';
 import ChatContent from './components/ChatContent';
+import { useAppSelector } from '@/hooks/redux';
 
 const ChatPage: React.FC = () => {
+  const {
+    isSidebarCollapsed,
+  } = useAppSelector(state => state.chat)
 
   return (
-    <div className="flex items-start justify-start h-full">
-      <div className="h-full border-r border-gray-200">
+    <div className="flex items-start justify-start w-full h-full">
+      {/* 可隐藏的侧边栏 */}
+      <div
+        className={`
+          h-full overflow-hidden transition-all duration-300 ease-in-out
+          ${isSidebarCollapsed ? 'w-0' : 'w-60 border-r border-gray-200'}
+        `}
+      >
         <ChatSidebar />
       </div>
-      <div className="w-full h-full">
+      {/* 主内容 */}
+      <div
+        className={`
+          h-full grow overflow-x-auto
+        `}>
         <ChatContent />
       </div>
     </div>

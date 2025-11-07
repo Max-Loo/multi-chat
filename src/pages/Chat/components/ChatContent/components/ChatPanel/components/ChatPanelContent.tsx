@@ -56,7 +56,7 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
           {row.map(chat => {
             return <div
               key={chat.modelId}
-              className="box-border h-full border border-gray-300 grow"
+              className="box-border h-full border-b border-r border-gray-300 grow"
             >
               {chat.modelId}
             </div>
