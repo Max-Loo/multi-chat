@@ -13,7 +13,7 @@ const ChatPage: React.FC = () => {
       {/* 可隐藏的侧边栏 */}
       <div
         className={`
-          h-full overflow-hidden transition-all duration-300 ease-in-out
+          h-full overflow-hidden transition-all duration-300 ease-in-out shrink-0
           ${isSidebarCollapsed ? 'w-0' : 'w-60 border-r border-gray-200'}
         `}
       >

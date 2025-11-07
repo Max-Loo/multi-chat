@@ -14,7 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ className = '' }) => {
       <Sidebar />
 
       {/* 主内容区域 */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 h-full">
         <Suspense
           fallback={
             <div className="flex items-center justify-center h-full">

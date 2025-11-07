@@ -30,7 +30,7 @@ const ChatSidebar: React.FC = () => {
   )
 
   return (
-    <div className="flex flex-col items-center justify-start w-full h-full">
+    <div className="relative flex flex-col items-center justify-start w-full h-full">
       <div className="w-full h-12 p-2 border-b border-gray-100">
         <ToolsBar
           filterText={filterText}
@@ -53,6 +53,8 @@ const ChatSidebar: React.FC = () => {
           <div className="w-full min-h-40"></div>
         </Spin>}
       </div>
+      {/* 底部白色遮罩 */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-white to-transparent" />
     </div>
   )
 }
