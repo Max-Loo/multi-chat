@@ -6,7 +6,7 @@ import { Model } from '@/types/model';
 import { useNavToPage } from '@/store/slices/modelPageSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { createModel } from '@/store/slices/modelSlice';
-import { message } from 'antd';
+import { App } from 'antd';
 
 // 添加模型页面
 const CreateModel: React.FC = () => {
@@ -14,6 +14,10 @@ const CreateModel: React.FC = () => {
     selectedModelProviderKey,
     setSelectedModelProviderKey,
   ] = useState(ModelProviderKeyEnum.DEEPSEEK)
+
+  const {
+    message,
+  } = App.useApp()
 
   const { models } = useAppSelector(
     (state) => state.models,

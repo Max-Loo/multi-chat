@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Alert, Popconfirm, message, TableColumnsType } from 'antd';
+import { Table, Button, Space, Alert, Popconfirm, TableColumnsType, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
 import { deleteModel } from '@/store/slices/modelSlice';
@@ -15,6 +15,10 @@ const ModelTable: React.FC = () => {
   const { models, loading, error, initializationError } = useAppSelector(
     (state) => state.models,
   );
+
+  const {
+    message,
+  } = App.useApp()
 
   const { navToAddPage } = useNavToPage()
 

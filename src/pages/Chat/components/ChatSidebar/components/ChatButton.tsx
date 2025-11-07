@@ -3,7 +3,7 @@ import { deleteChat, editChat, setSelectedChatId } from "@/store/slices/chatSlic
 import { Chat } from "@/types/chat"
 import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EllipsisOutlined } from "@ant-design/icons"
 import type { MenuProps } from 'antd'
-import { Button, Dropdown, Input, Modal } from "antd"
+import { App, Button, Dropdown, Input } from "antd"
 import React, { useMemo, useState } from "react"
 
 interface ChatButtonProps {
@@ -23,6 +23,10 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
     // 当前选中展示的聊天
     selectedChatId,
   } = useAppSelector((state) => state.chat)
+
+  const {
+    modal,
+  } = App.useApp()
 
 
   // 点击聊天列表按钮
@@ -60,7 +64,7 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
           // 避免选中该聊天
           menuInfo.domEvent.stopPropagation()
 
-          Modal.warn({
+          modal.warning({
             maskClosable: true,
             closable: true,
             title: `是否确定删除「${chat.name}」`,
@@ -75,7 +79,7 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
         },
       },
     ]
-  }, [chat, dispatch, chatList])
+  }, [chat, dispatch, chatList, modal])
 
 
   // 临时的重命名

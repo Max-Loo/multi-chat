@@ -6,7 +6,7 @@ import { editChat } from "@/store/slices/chatSlices"
 import { Chat } from "@/types/chat"
 import { Model } from "@/types/model"
 import { DeleteOutlined } from "@ant-design/icons"
-import { Button, Checkbox, message, Table, TableColumnsType, Tag } from "antd"
+import { App, Button, Checkbox, Table, TableColumnsType, Tag } from "antd"
 import { isUndefined } from "es-toolkit"
 import { useMemo, useState } from "react"
 
@@ -20,6 +20,8 @@ const ModelSelect: React.FC = () => {
   } = useCurrentSelectedChat()
 
   const typedSelectedChat = selectedChat as Chat
+
+  const { message } = App.useApp()
 
   const {
     filterText,

@@ -1,4 +1,4 @@
-import { message, Modal } from "antd"
+import { App, Modal } from "antd"
 import ModelConfigForm from "../../components/ModelConfigForm"
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { useMemo } from "react"
@@ -28,6 +28,10 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
     (state) => state.models,
   );
   const dispatch = useAppDispatch()
+
+  const {
+    message,
+  } = App.useApp()
 
   const isOpen = useMemo(() => {
     return Boolean(isModalOpen ?? modelProviderKey)
