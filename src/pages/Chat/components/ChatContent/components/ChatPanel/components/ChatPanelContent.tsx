@@ -214,7 +214,7 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
     <div className="flex flex-col w-full h-full">
       {board.map((row, idx) => {
         return <div
-          className={`flex w-full h-1/${Math.ceil(chatModelList.length / columnCount)} overflow-y-auto`}
+          className={`flex w-full flex-1 overflow-y-auto`}
           key={idx}>
           {row.map(chat => {
             return <div
