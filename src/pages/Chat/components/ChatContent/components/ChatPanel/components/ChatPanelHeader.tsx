@@ -1,12 +1,10 @@
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { setIsCollapsed } from "@/store/slices/chatSlices";
-import { Chat, ChatModel } from "@/types/chat"
 import { MenuUnfoldOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, InputNumber } from "antd";
+import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 
 interface ChatPanelHeaderProps {
-  selectedChat: Chat;
-  chatModelList: ChatModel[];
   columnCount: number;
   setColumnCount: (value: number) => void;
 }
@@ -15,8 +13,6 @@ interface ChatPanelHeaderProps {
  * @description 聊天详情页的头部
  */
 const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
-  selectedChat,
-  chatModelList,
   columnCount,
   setColumnCount,
 }) => {
@@ -30,6 +26,11 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
   const expandSidebar = () => {
     dispatch(setIsCollapsed(false))
   }
+
+  const {
+    selectedChat,
+    chatModelList,
+  } = useTypedSelectedChat()
 
   return (
     <div className="flex items-center justify-between w-full h-12">

@@ -1,9 +1,8 @@
 import { ChatModel } from "@/types/chat"
 import { useMemo } from "react";
+import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 
 interface ChatPanelContentProps {
-  // selectedChat: Chat;
-  chatModelList: ChatModel[]
   columnCount: number;
 }
 
@@ -11,10 +10,12 @@ interface ChatPanelContentProps {
  * @description 聊天详情页的头部
  */
 const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
-  // selectedChat,
-  chatModelList,
   columnCount,
 }) => {
+
+  const {
+    chatModelList,
+  } = useTypedSelectedChat()
 
   // 将数组变成一个 n*m 的二维数组，每一行最多有 columnCount 个
   const board = useMemo<ChatModel[][]>(() => {
@@ -210,12 +211,13 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
       }`
 
   // 渲染成棋盘
-  return <div className="absolute top-0 left-0 w-full h-screen pt-12 pb-24">
+  return <div className="absolute top-0 left-0 w-full h-screen pt-12 pb-22">
     <div className="flex flex-col w-full h-full">
       {board.map((row, idx) => {
         return <div
           className={`flex w-full flex-1 overflow-y-auto`}
-          key={idx}>
+          key={idx}
+        >
           {row.map(chat => {
             return <div
               key={chat.modelId}
