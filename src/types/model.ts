@@ -53,17 +53,3 @@ export interface DefaultModelProviderConfig {
   // 可选择的模型
   modelList: ModelDetail[];
 }
-
-// 大模型服务商接口定义
-export interface ModelProvider {
-  // 大模型服务商唯一标识
-  key: ModelProviderKeyEnum;
-  // 大模型服务商显示名称
-  name: string;
-  // 大模型服务商logo URL（可选）
-  logoUrl?: string;
-  // 官网地址
-  officialSite?: string;
-  // 默认的相关配置
-  defaultConfig: DefaultModelProviderConfig
-}

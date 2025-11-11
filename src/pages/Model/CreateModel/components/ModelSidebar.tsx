@@ -1,11 +1,11 @@
 import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedFilter"
 import FilterInput from "@/components/FilterInput"
 import { useNavToPage } from "@/store/slices/modelPageSlice"
-import { MODEL_PROVIDERS } from "@/utils/constants"
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { LeftOutlined } from "@ant-design/icons"
 import { Avatar, Button } from "antd"
 import { useState } from "react"
+import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory"
 
 interface ModelSidebarProps {
   // 当前选中的大模型
@@ -25,7 +25,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
     filteredList: filteredProviders,
   } = useDebouncedFilter(
     filterText,
-    MODEL_PROVIDERS,
+    ModelProviderFactoryCreator.getFactoryMap().map(([, modelProviderFactory]) => modelProviderFactory.createModelProvider()),
     (provider) => provider.name.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
   )
 

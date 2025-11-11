@@ -1,6 +1,5 @@
 import OpenExternalBrowserButton from "@/components/OpenExternalBrowserButton"
-import { EditableModel, ManualConfigModel, Model, ModelProvider } from "@/types/model"
-import { MODEL_PROVIDERS } from "@/utils/constants"
+import { EditableModel, ManualConfigModel, Model } from "@/types/model"
 import { DateFormatEnum, ModelProviderKeyEnum } from "@/utils/enums"
 import type { FormItemProps } from "antd"
 import { Button, Form, Input, Switch } from "antd"
@@ -9,6 +8,7 @@ import { useEffect, useMemo, useState } from "react"
 import ModelSelect from "./ModelSelect"
 import { v4 as uuidv4 } from 'uuid'
 import dayjs from "dayjs"
+import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory"
 
 
 interface ModelConfigFormProps {
@@ -32,16 +32,21 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
 
   // 当前配置的提供商的相关信息
   const currentProvider = useMemo(() => {
-    return MODEL_PROVIDERS.find(provider => provider.key === modelProviderKey) as ModelProvider
+    return ModelProviderFactoryCreator.getFactory(modelProviderKey).createModelProvider()
   }, [modelProviderKey])
+
+  const {
+    modelList: defaultModelList,
+    apiAddress: apiAddressInstance,
+  } = currentProvider
 
   // 表单的初始化值
   const initialFormValues = useMemo<EditableModel>(() => {
     return {
-      apiAddress: currentProvider.defaultConfig.apiAddress,
+      apiAddress: apiAddressInstance.defaultApiAddress,
       ...modelParams,
     } satisfies EditableModel
-  }, [currentProvider, modelParams])
+  }, [apiAddressInstance, modelParams])
 
   // 新增操作下，切换模型供应商的时候，对表单进行还原填充
   useEffect(() => {
@@ -51,46 +56,67 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   // 是否开启当前配置的模型
   const [isModelEnable, setIsModelEnable] = useState(true)
 
+  const apiAddressValue = Form.useWatch<string>('apiAddress', form)
+
+
   // 对应每个表单项的配置，采用数组渲染
-  const formItemConfigs: Array<FormItemProps & { component?: ReactNode }> = [
-    {
-      label: '模型昵称',
-      name: 'nickname',
-      rules: [
-        { required: true, message: '请输入当前模型的昵称' },
-      ],
-      component: <Input />,
-    },
-    {
-      label: 'API 密钥',
-      name: 'apiKey',
-      rules: [
-        { required: true, message: '请输入你的 API 密钥' },
-      ],
-      component: <Input.Password />,
-    },
-    {
-      label: 'API 地址',
-      name: 'apiAddress',
-      rules: [
-        { required: true, message: '请输入服务商对应的 API 地址' },
-      ],
-      component: <Input />,
-    },
-    {
-      label: '备注',
-      name: 'remark',
-      component: <Input.TextArea />,
-    },
-    {
-      label: '模型',
-      name: 'modelKey',
-      component: <ModelSelect options={currentProvider.defaultConfig.modelList} />,
-      rules: [
-        { required: true, message: '请选择你想要使用的具体模型' },
-      ],
-    },
-  ]
+  const formItemConfigs = useMemo<Array<FormItemProps & { component?: ReactNode }>>(() => {
+
+    // 当输入 apiAddress 的输入框失焦的时候
+    const onApiAddressBlur = () => {
+      // 如果没有输入，则重置为默认地址
+      if (!apiAddressValue) {
+        form.setFieldValue('apiAddress', apiAddressInstance)
+      }
+    }
+
+    return [
+      {
+        label: '模型昵称',
+        name: 'nickname',
+        rules: [
+          { required: true, message: '请输入当前模型的昵称' },
+        ],
+        component: <Input />,
+      },
+      {
+        label: 'API 密钥',
+        name: 'apiKey',
+        rules: [
+          { required: true, message: '请输入你的 API 密钥' },
+        ],
+        component: <Input.Password />,
+      },
+      {
+        label: 'API 地址',
+        name: 'apiAddress',
+        rules: [
+          { required: true, message: '请输入服务商对应的 API 地址' },
+        ],
+        // 动态填充 apiAddress 的 extra 信息
+        extra: <>
+          <div className="flex items-center justify-between">
+            <span>{apiAddressInstance.getFetchApiAddress(apiAddressValue)}</span>
+            <span># 结尾表示自定义</span>
+          </div>
+        </>,
+        component: <Input onBlur={onApiAddressBlur}/>,
+      },
+      {
+        label: '备注',
+        name: 'remark',
+        component: <Input.TextArea />,
+      },
+      {
+        label: '模型',
+        name: 'modelKey',
+        component: <ModelSelect options={defaultModelList} />,
+        rules: [
+          { required: true, message: '请选择你想要使用的具体模型' },
+        ],
+      },
+    ]
+  }, [form, defaultModelList, apiAddressValue, apiAddressInstance])
 
   // 获取拼装完整后的model参数
   const getFullModelParams = (manualConfig: ManualConfigModel): Model => {
@@ -114,7 +140,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
       providerName: currentProvider.name,
       providerKey: currentProvider.key,
       // 表单里面选择的是 modelKey，需要自己回填 modelName
-      modelName: currentProvider.defaultConfig.modelList.find(item => {
+      modelName: defaultModelList.find(item => {
         return item.modelKey === manualConfig.modelKey
       })?.modelName || '',
     }

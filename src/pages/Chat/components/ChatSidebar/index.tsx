@@ -39,8 +39,8 @@ const ChatSidebar: React.FC = () => {
       </div>
       <div
         className={`pb-2 overflow-y-auto w-full
-          ${scrollbarClassname}`
-        }
+          ${scrollbarClassname}
+        `}
         onScroll={onScrollEvent}
       >
         {/* 带有 loading 效果 */}

@@ -18,7 +18,6 @@ const SendButton: React.FC<SendButtonProps> = ({
   onClick = () => {},
 }) => {
 
-
   return <>
     <Button
       className={`
@@ -62,9 +61,13 @@ const ChatPanelSender: React.FC = () => {
 
   const [sending, setSending] = useState(false)
 
+  // 要发送的内容
+  const [text, setText] = useState('')
+
   // 点击发送那妞
   const onClickSendBtn = () => {
     setSending(!sending)
+    console.log(text);
   }
 
   return (
@@ -73,6 +76,8 @@ const ChatPanelSender: React.FC = () => {
         <Input.TextArea
           className="w-full text-base! rounded-xl"
           autoSize={{ minRows: 2, maxRows: 10 }}
+          value={text}
+          onChange={(e) => { setText(e.target.value) }}
         >
         </Input.TextArea>
       </div>

@@ -4,6 +4,7 @@ import { useAppSelector } from "./redux";
 import { useState } from "react";
 import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedFilter";
 import { TableColumnsType } from "antd";
+import { ModelProviderKeyEnum } from "@/utils/enums";
 
 /**
  * @description 基础的模型列表相关逻辑
@@ -49,7 +50,7 @@ export const useBasicModelTable = () => {
       title: '大模型服务商',
       dataIndex: 'providerKey',
       key: 'providerKey',
-      render: (providerKey: string) => <ModelProviderDisplay providerKey={providerKey} />,
+      render: (providerKey: ModelProviderKeyEnum) => <ModelProviderDisplay providerKey={providerKey} />,
     },
     {
       title: '模型名称',

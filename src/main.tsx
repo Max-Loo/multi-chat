@@ -4,6 +4,9 @@ import { Provider } from "react-redux";
 import { store } from "@/store";
 import App from "./App";
 import '@ant-design/v5-patch-for-react-19';
+import { registerAllFactory } from "./lib/factory";
+
+registerAllFactory()
 
 // 渲染应用到DOM
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
