@@ -28,8 +28,12 @@ class Deepseek implements ModelProvider {
 
 
 class DeepseekFactory implements ModelProviderFactory {
-  createModelProvider = (): ModelProvider => {
-    return new Deepseek()
+  private modelProvider: ModelProvider
+  constructor () {
+    this.modelProvider = new Deepseek()
+  }
+  getModelProvider = (): ModelProvider => {
+    return this.modelProvider
   }
 }
 

@@ -26,8 +26,12 @@ class Kimi implements ModelProvider {
 
 
 class KimiFactory implements ModelProviderFactory {
-  createModelProvider = (): ModelProvider => {
-    return new Kimi()
+  private modelProvider: ModelProvider
+  constructor () {
+    this.modelProvider = new Kimi()
+  }
+  getModelProvider = (): ModelProvider => {
+    return this.modelProvider
   }
 }
 

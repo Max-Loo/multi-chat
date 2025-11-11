@@ -13,7 +13,7 @@ const ModelProviderDisplay: React.FC<ModelProviderDisplayProps> = React.memo(({ 
   let provider: ModelProvider
 
   try {
-    provider = ModelProviderFactoryCreator.getFactory(providerKey)?.createModelProvider()
+    provider = ModelProviderFactoryCreator.getFactory(providerKey)?.getModelProvider()
   } catch {
     return '123'
   }

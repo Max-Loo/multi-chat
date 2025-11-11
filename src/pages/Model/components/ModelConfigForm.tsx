@@ -32,7 +32,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
 
   // 当前配置的提供商的相关信息
   const currentProvider = useMemo(() => {
-    return ModelProviderFactoryCreator.getFactory(modelProviderKey).createModelProvider()
+    return ModelProviderFactoryCreator.getFactory(modelProviderKey).getModelProvider()
   }, [modelProviderKey])
 
   const {

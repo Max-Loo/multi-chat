@@ -23,9 +23,13 @@ export interface ModelProvider {
   readonly modelList: ModelDetail[];
 }
 
+/**
+ * @description 单例模式的工厂
+ */
 export interface ModelProviderFactory {
-  createModelProvider: () => ModelProvider
+  getModelProvider: () => ModelProvider
 }
+
 
 // 总的工厂函数出口
 export class ModelProviderFactoryCreator {

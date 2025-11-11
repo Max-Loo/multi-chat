@@ -27,8 +27,12 @@ class BigModel implements ModelProvider {
 
 
 class BigModelFactory implements ModelProviderFactory {
-  createModelProvider = (): ModelProvider => {
-    return new BigModel()
+  private modelProvider: ModelProvider
+  constructor () {
+    this.modelProvider = new BigModel()
+  }
+  getModelProvider = (): ModelProvider => {
+    return this.modelProvider
   }
 }
 
