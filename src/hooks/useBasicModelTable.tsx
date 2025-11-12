@@ -10,8 +10,8 @@ import { ModelProviderKeyEnum } from "@/utils/enums";
  * @description 基础的模型列表相关逻辑
  */
 export const useBasicModelTable = () => {
-  const { models } = useAppSelector(
-    (state) => state.models,
+  const models = useAppSelector(
+    (state) => state.models.models,
   );
 
   // 本地状态：过滤文本

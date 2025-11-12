@@ -6,9 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { setSelectedChatId } from '@/store/slices/chatSlices';
 
 const ChatPage: React.FC = () => {
-  const {
-    isSidebarCollapsed,
-  } = useAppSelector(state => state.chatPage)
+  const isSidebarCollapsed = useAppSelector(state => state.chatPage.isSidebarCollapsed)
 
   const dispatch = useAppDispatch()
 

@@ -7,10 +7,8 @@ import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import ChatButton from "./components/ChatButton"
 
 const ChatSidebar: React.FC = () => {
-  const {
-    chatList,
-    loading: chatListLoading,
-  } = useAppSelector((state) => state.chat)
+  const chatList = useAppSelector((state) => state.chat.chatList)
+  const chatListLoading = useAppSelector((state) => state.chat.loading)
 
   // 控制滚动条的相关逻辑
   const {

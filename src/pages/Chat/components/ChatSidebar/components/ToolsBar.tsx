@@ -19,11 +19,9 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
   onFilterChange = () => {},
 }) => {
   const dispatch = useAppDispatch()
-  const { chatList } = useAppSelector((state) => state.chat)
+  const chatList = useAppSelector((state) => state.chat.chatList)
 
-  const {
-    isShowChatPage,
-  } = useAppSelector(state => state.chatPage)
+  const isShowChatPage = useAppSelector(state => state.chatPage.isShowChatPage)
 
   // 是否展示搜索状态
   const [isSearching, setIsSearching] = useState(false)

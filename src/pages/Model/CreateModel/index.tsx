@@ -19,8 +19,8 @@ const CreateModel: React.FC = () => {
     message,
   } = App.useApp()
 
-  const { models } = useAppSelector(
-    (state) => state.models,
+  const models = useAppSelector(
+    (state) => state.models.models,
   );
   const dispatch = useAppDispatch()
 

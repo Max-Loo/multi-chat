@@ -19,9 +19,7 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
 }) => {
   const dispatch = useAppDispatch()
 
-  const {
-    isSidebarCollapsed,
-  } = useAppSelector(state => state.chatPage)
+  const isSidebarCollapsed = useAppSelector(state => state.chatPage.isSidebarCollapsed)
 
   // 展开侧边栏
   const expandSidebar = () => {

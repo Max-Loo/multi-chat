@@ -7,7 +7,7 @@ import { useNavToPage } from '@/store/slices/modelPageSlice';
 
 // 处理跳转页面逻辑的hooks
 const useSwitchPage = () => {
-  const { key: pageKey } = useAppSelector((state) => state.modelPage)
+  const pageKey = useAppSelector((state) => state.modelPage.key)
   const { navToTablePage } = useNavToPage()
 
   // 判断是渲染哪个页面

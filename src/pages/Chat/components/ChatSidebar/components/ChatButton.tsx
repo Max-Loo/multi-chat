@@ -19,11 +19,9 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
   chat,
 }) => {
   const dispatch = useAppDispatch()
-  const {
-    chatList,
-    // 当前选中展示的聊天
-    selectedChatId,
-  } = useAppSelector((state) => state.chat)
+
+  const chatList = useAppSelector((state) => state.chat.chatList)
+  const selectedChatId = useAppSelector((state) => state.chat.selectedChatId)
 
   const navigate = useNavigate()
 

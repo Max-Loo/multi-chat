@@ -24,9 +24,7 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
   modelProviderKey,
   modelParams,
 }) => {
-  const { models } = useAppSelector(
-    (state) => state.models,
-  );
+  const models = useAppSelector((state) => state.models.models);
   const dispatch = useAppDispatch()
 
   const {

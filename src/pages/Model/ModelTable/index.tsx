@@ -12,9 +12,10 @@ import { useBasicModelTable } from '@/hooks/useBasicModelTable';
 // 模型表格主组件
 const ModelTable: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { models, loading, error, initializationError } = useAppSelector(
-    (state) => state.models,
-  );
+  const models = useAppSelector((state) => state.models.models);
+  const loading = useAppSelector((state) => state.models.loading);
+  const error = useAppSelector((state) => state.models.error);
+  const initializationError = useAppSelector((state) => state.models.initializationError);
 
   const {
     message,

@@ -30,13 +30,10 @@ const ModelSelect: React.FC = () => {
     tableColumns,
   } = useBasicModelTable()
 
-  const {
-    models,
-    loading,
-  } = useAppSelector(state => state.models)
-  const {
-    chatList,
-  } = useAppSelector(state => state.chat)
+  const models = useAppSelector(state => state.models.models)
+  const loading = useAppSelector(state => state.models.loading)
+
+  const chatList = useAppSelector(state => state.chat.chatList)
 
   // 选中的模型ID的列表
   const [checkedModelIdList, setCheckedModelIdList] = useState<string[]>([])
