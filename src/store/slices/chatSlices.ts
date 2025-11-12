@@ -55,12 +55,6 @@ const chatSlice = createSlice({
     clearSelectChatId: (state) => {
       state.selectedChatId = null
     },
-    // 如果传入的聊天ID与当前选中ID相同，则清除选中聊天ID
-    clearSameSelectedChatId: (state, action: PayloadAction<string>) => {
-      if (state.selectedChatId === action.payload) {
-        state.selectedChatId = null
-      }
-    },
     // 清除操作错误信息
     clearError: (state) => {
       state.error = null;
@@ -146,7 +140,6 @@ export const {
   clearInitializationError,
   setSelectedChatId,
   clearSelectChatId,
-  clearSameSelectedChatId,
   createChat,
   editChat,
   deleteChat,
