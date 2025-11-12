@@ -3,7 +3,7 @@ import ModelConfigForm from "../../components/ModelConfigForm"
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { useMemo } from "react"
 import { EditableModel, Model } from "@/types/model"
-import { useAppDispatch, useAppSelector } from "@/hooks/redux"
+import { useAppDispatch } from "@/hooks/redux"
 import { editModel } from "@/store/slices/modelSlice"
 
 interface EditModelModalProps {
@@ -24,7 +24,6 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
   modelProviderKey,
   modelParams,
 }) => {
-  const models = useAppSelector((state) => state.models.models);
   const dispatch = useAppDispatch()
 
   const {
@@ -36,11 +35,10 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
   }, [isModalOpen, modelProviderKey])
 
   // 完成编辑校验成功后的回调
-  const onEditFinish = async (model: Model) => {
+  const onEditFinish = (model: Model): void => {
     try {
-      await dispatch(editModel({
+      dispatch(editModel({
         model,
-        models,
       }))
       message.success('模型编辑成功')
     } catch {

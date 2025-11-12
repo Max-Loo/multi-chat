@@ -12,7 +12,6 @@ import { useBasicModelTable } from '@/hooks/useBasicModelTable';
 // 模型表格主组件
 const ModelTable: React.FC = () => {
   const dispatch = useAppDispatch();
-  const models = useAppSelector((state) => state.models.models);
   const loading = useAppSelector((state) => state.models.loading);
   const error = useAppSelector((state) => state.models.error);
   const initializationError = useAppSelector((state) => state.models.initializationError);
@@ -24,9 +23,9 @@ const ModelTable: React.FC = () => {
   const { navToAddPage } = useNavToPage()
 
   // 处理删除模型
-  const handleDeleteModel = async (model: Model) => {
+  const handleDeleteModel = (model: Model): void => {
     try {
-      await dispatch(deleteModel({ model, models })).unwrap();
+      dispatch(deleteModel({ model }));
       message.success('模型删除成功');
     } catch {
       message.error('模型删除失败');

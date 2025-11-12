@@ -19,7 +19,6 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
   onFilterChange = () => {},
 }) => {
   const dispatch = useAppDispatch()
-  const chatList = useAppSelector((state) => state.chat.chatList)
 
   const isShowChatPage = useAppSelector(state => state.chatPage.isShowChatPage)
 
@@ -28,14 +27,14 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
 
   // 创建新的聊天
   const handleCreateChat = async () => {
-
     const chat = {
       id: uuidv4(),
       name: '',
     }
-    await dispatch(createChat({ chat, chatList }))
+
+    dispatch(createChat({ chat }))
     // 创建成功后跳转到新建的聊天
-    await dispatch(setSelectedChatId(chat.id))
+    dispatch(setSelectedChatId(chat.id))
   }
 
   if (isSearching) {

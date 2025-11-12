@@ -39,89 +39,6 @@ export const initializeChatList = createAsyncThunk(
   },
 )
 
-interface BasicChatParams {
-  // 新增/编辑/删除的聊天
-  chat: Chat;
-  // 当前的聊天列表
-  chatList: Chat[]
-}
-
-/**
- * @description 异步 action: 新增一个聊天
- */
-export const createChat = createAsyncThunk(
-  'chat/add',
-  async ({
-    chat,
-    chatList,
-  } : BasicChatParams, { rejectWithValue }) => {
-    try {
-      const newChatList: Chat[] = [chat, ...chatList]
-
-      saveChatList(newChatList)
-      return newChatList
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : '新增模型失败');
-    }
-  },
-)
-
-/**
- * @description 异步 action: 编辑一个聊天
- */
-export const editChat = createAsyncThunk(
-  'chat/edit',
-  async ({
-    chat,
-    chatList,
-  } : BasicChatParams, { rejectWithValue }) => {
-    try {
-      const newChatList: Chat[] = [...chatList]
-      const idx = newChatList.findIndex(item => item.id === chat.id)
-      if (idx !== -1) {
-        newChatList[idx] = { ...chat }
-      }
-
-      saveChatList(newChatList)
-      return newChatList
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : '新增模型失败');
-    }
-  },
-)
-
-/**
- * @description 异步 action: 删除一个聊天
- */
-export const deleteChat = createAsyncThunk(
-  'chat/delete',
-  async ({
-    chat,
-    chatList,
-  } : BasicChatParams, { rejectWithValue, dispatch }) => {
-    try {
-      // 不使用filter，而是定位删除，是尽可能避免遍历整个数组
-      const newChatList: Chat[] = [...chatList]
-      const idx = newChatList.findIndex(item => {
-        return item.id === chat.id
-      })
-      if (idx !== -1) {
-        newChatList.splice(idx, 1)
-      }
-
-      // 保存
-      saveChatList(newChatList)
-
-      // 判断「是否当前选中的聊天正好是需要被删除的」
-      dispatch(chatSlice.actions.clearSameSelectedChatId(chat.id))
-
-      return newChatList
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : '新增模型失败');
-    }
-  },
-)
-
 
 /**
  * @description chat 模块管理的 slice
@@ -152,6 +69,55 @@ const chatSlice = createSlice({
     clearInitializationError: (state) => {
       state.initializationError = null;
     },
+    // 新增聊天
+    createChat: (state, action: PayloadAction<{chat: Chat}>) => {
+      const newChatList: Chat[] = [action.payload.chat, ...state.chatList]
+
+      // 保存
+      state.chatList = newChatList
+      saveChatList(newChatList)
+    },
+    // 编辑聊天
+    editChat: (state, action: PayloadAction<{chat: Chat}>) => {
+      const {
+        chat,
+      } = action.payload
+
+      const newChatList: Chat[] = [...state.chatList]
+
+      const idx = newChatList.findIndex(item => item.id === chat.id)
+      if (idx !== -1) {
+        newChatList[idx] = { ...chat }
+      }
+
+      // 保存
+      state.chatList = newChatList
+      saveChatList(newChatList)
+    },
+    // 删除聊天
+    deleteChat: (state, action: PayloadAction<{chat: Chat}>) => {
+      const {
+        chat,
+      } = action.payload
+
+      // 不使用filter，而是定位删除，是尽可能避免遍历整个数组
+      const newChatList: Chat[] = [...state.chatList]
+      const idx = newChatList.findIndex(item => {
+        return item.id === chat.id
+      })
+      if (idx !== -1) {
+        newChatList.splice(idx, 1)
+      }
+
+      // 保存
+      state.chatList = newChatList
+      saveChatList(newChatList)
+
+      // 判断「是否当前选中的聊天正好是需要被删除的」
+      if (state.selectedChatId === chat.id) {
+        state.selectedChatId = null
+      }
+    },
   },
   // 处理异步action的状态变化
   extraReducers: (builder) => {
@@ -171,51 +137,6 @@ const chatSlice = createSlice({
         state.loading = false;
         state.initializationError = action.error.message || '初始化文件失败';
       })
-      // 新增聊天开始
-      .addCase(createChat.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      // 新增聊天成功
-      .addCase(createChat.fulfilled, (state, action) => {
-        state.loading = false;
-        state.chatList = action.payload;
-      })
-      // 新增聊天失败
-      .addCase(createChat.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || '删除聊天失败';
-      })
-      // 删除聊天开始
-      .addCase(deleteChat.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      // 删除聊天成功
-      .addCase(deleteChat.fulfilled, (state, action) => {
-        state.loading = false;
-        state.chatList = action.payload;
-      })
-      // 删除聊天失败
-      .addCase(deleteChat.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || '删除聊天失败';
-      })
-      // 编辑聊天开始
-      .addCase(editChat.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      // 编辑聊天成功
-      .addCase(editChat.fulfilled, (state, action) => {
-        state.loading = false;
-        state.chatList = action.payload;
-      })
-      // 编辑聊天失败
-      .addCase(editChat.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || '编辑聊天失败';
-      })
   },
 })
 
@@ -226,6 +147,9 @@ export const {
   setSelectedChatId,
   clearSelectChatId,
   clearSameSelectedChatId,
+  createChat,
+  editChat,
+  deleteChat,
 } = chatSlice.actions;
 
 // 导出reducer

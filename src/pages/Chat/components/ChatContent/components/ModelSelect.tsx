@@ -19,7 +19,9 @@ const ModelSelect: React.FC = () => {
 
   const typedSelectedChat = selectedChat as Chat
 
-  const { message } = App.useApp()
+  const {
+    message,
+  } = App.useApp()
 
   const {
     filterText,
@@ -30,8 +32,6 @@ const ModelSelect: React.FC = () => {
 
   const models = useAppSelector(state => state.models.models)
   const loading = useAppSelector(state => state.models.loading)
-
-  const chatList = useAppSelector(state => state.chat.chatList)
 
   // 选中的模型ID的列表
   const [checkedModelIdList, setCheckedModelIdList] = useState<string[]>([])
@@ -90,7 +90,7 @@ const ModelSelect: React.FC = () => {
   // 确认按钮的 loading 状态
   const [confirmLoading, setConfirmLoading] = useState(false)
   // 点击确定创建聊天
-  const onConfirm = async () => {
+  const onConfirm = () => {
     if (checkedModelIdList.length <= 0) {
       message.info('请选择你想要使用的模型')
       return
@@ -98,16 +98,21 @@ const ModelSelect: React.FC = () => {
 
     setConfirmLoading(true)
 
-    await dispatch(editChat({
-      chat: {
-        ...typedSelectedChat,
-        chatModelList: checkedModelIdList.map(id => ({
-          modelId: id,
-          chatHistory: [],
-        })),
-      },
-      chatList,
-    }))
+    try {
+      dispatch(editChat({
+        chat: {
+          ...typedSelectedChat,
+          chatModelList: checkedModelIdList.map(id => ({
+            modelId: id,
+            chatHistory: [],
+          })),
+        },
+      }))
+
+      message.success('编辑聊天成功')
+    } catch {
+      message.error('编辑聊天失败')
+    }
 
     setConfirmLoading(false)
   }

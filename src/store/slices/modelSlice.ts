@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Model } from '@/types/model';
 import { loadModels, saveModels } from '../vaults/modelVault';
 
@@ -31,81 +31,6 @@ export const initializeModels = createAsyncThunk(
 );
 
 
-interface BasicModelParams {
-  // 当前新增/编辑/删除的模型
-  model: Model;
-  // 当前已有的模型列表
-  models: Model[]
-}
-
-// 异步action：删除指定模型
-export const deleteModel = createAsyncThunk(
-  'models/delete',
-  async ({
-    model,
-    models,
-  } : BasicModelParams,
-  { rejectWithValue },
-  ) => {
-    try {
-      // 不使用filter，而是定位删除，是尽可能避免遍历整个数组
-      const updatedModels: Model[] = [...models]
-      const idx = updatedModels.findIndex(item => {
-        return item.id === model.id
-      })
-      if (idx !== -1) {
-        updatedModels.splice(idx, 1)
-      }
-
-      saveModels(updatedModels)
-      return updatedModels;
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : '删除模型失败');
-    }
-  },
-);
-
-
-
-// 异步action: 新增一个模型
-export const createModel = createAsyncThunk(
-  'model/add',
-  async ({
-    model,
-    models,
-  } : BasicModelParams, { rejectWithValue }) => {
-    try {
-      const updatedModels: Model[] = [...models, model]
-      saveModels(updatedModels)
-      return updatedModels
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : '新增模型失败');
-    }
-  },
-)
-
-// 异步action: 编辑模型
-export const editModel = createAsyncThunk(
-  'model/edit',
-  async ({
-    model,
-    models,
-  } : BasicModelParams, { rejectWithValue }) => {
-    try {
-      const updatedModels: Model[] = [...models]
-
-      const idx = updatedModels.findIndex(item => item.id === model.id)
-      if (idx !== -1) {
-        updatedModels[idx] = { ...model }
-      }
-
-      saveModels(updatedModels)
-      return updatedModels
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : '编辑模型失败');
-    }
-  },
-)
 
 // 模型管理的Redux slice
 const modelSlice = createSlice({
@@ -119,6 +44,49 @@ const modelSlice = createSlice({
     // 清除初始化错误信息
     clearInitializationError: (state) => {
       state.initializationError = null;
+    },
+    // 新建模型
+    createModel: (state, action: PayloadAction<{ model: Model }>) => {
+      const updatedModels: Model[] = [...state.models, action.payload.model]
+
+      // 保存
+      state.models = updatedModels
+      saveModels(updatedModels)
+    },
+    // 编辑模型
+    editModel: (state, action: PayloadAction<{ model: Model }>) => {
+      const {
+        model,
+      } = action.payload
+      const updatedModels: Model[] = [...state.models]
+
+      const idx = updatedModels.findIndex(item => item.id === model.id)
+      if (idx !== -1) {
+        updatedModels[idx] = { ...model }
+      }
+
+      // 保存
+      state.models = updatedModels
+      saveModels(updatedModels)
+    },
+    // 删除模型
+    deleteModel: (state, action: PayloadAction<{ model: Model }>) => {
+      const {
+        model,
+      } = action.payload
+
+      // 不使用filter，而是定位删除，是尽可能避免遍历整个数组
+      const updatedModels: Model[] = [...state.models]
+      const idx = updatedModels.findIndex(item => {
+        return item.id === model.id
+      })
+      if (idx !== -1) {
+        updatedModels.splice(idx, 1)
+      }
+
+      // 保存
+      state.models = updatedModels
+      saveModels(updatedModels)
     },
   },
   // 处理异步action的状态变化
@@ -139,56 +107,17 @@ const modelSlice = createSlice({
         state.loading = false;
         state.initializationError = action.error.message || '初始化文件失败';
       })
-      // 删除模型开始
-      .addCase(deleteModel.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      // 删除模型成功
-      .addCase(deleteModel.fulfilled, (state, action) => {
-        state.loading = false;
-        state.models = action.payload;
-      })
-      // 删除模型失败
-      .addCase(deleteModel.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string || '删除文件失败';
-      })
-      // 添加模型开始
-      .addCase(createModel.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      // 添加模型成功
-      .addCase(createModel.fulfilled, (state, action) => {
-        state.loading = false;
-        state.models = action.payload;
-      })
-      // 添加模型失败
-      .addCase(createModel.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string || '添加模型失败';
-      })
-      // 编辑模型开始
-      .addCase(editModel.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      // 编辑模型成功
-      .addCase(editModel.fulfilled, (state, action) => {
-        state.loading = false;
-        state.models = action.payload;
-      })
-      // 编辑模型失败
-      .addCase(editModel.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string || '编辑模型失败';
-      })
   },
 });
 
 // 导出actions
-export const { clearError, clearInitializationError } = modelSlice.actions;
+export const {
+  clearError,
+  clearInitializationError,
+  createModel,
+  editModel,
+  deleteModel,
+} = modelSlice.actions;
 
 // 导出reducer
 export default modelSlice.reducer;

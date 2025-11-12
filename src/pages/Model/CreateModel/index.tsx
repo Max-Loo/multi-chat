@@ -4,7 +4,7 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
 import ModelConfigForm from '../components/ModelConfigForm';
 import { Model } from '@/types/model';
 import { useNavToPage } from '@/store/slices/modelPageSlice';
-import { useAppDispatch, useAppSelector } from '@/hooks/redux';
+import { useAppDispatch } from '@/hooks/redux';
 import { createModel } from '@/store/slices/modelSlice';
 import { App } from 'antd';
 
@@ -19,20 +19,16 @@ const CreateModel: React.FC = () => {
     message,
   } = App.useApp()
 
-  const models = useAppSelector(
-    (state) => state.models.models,
-  );
   const dispatch = useAppDispatch()
 
   const { navToTablePage } = useNavToPage()
 
   // 表单校验完成后的回调
-  const onFormFinish = async (model: Model): Promise<void> => {
+  const onFormFinish = (model: Model): void => {
     try {
-      await dispatch(createModel({
+      dispatch(createModel({
         model,
-        models,
-      })).unwrap()
+      }))
 
       message.success('模型添加成功')
       // 返回到列表页面

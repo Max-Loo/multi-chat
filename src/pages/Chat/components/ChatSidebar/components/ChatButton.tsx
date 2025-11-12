@@ -20,13 +20,13 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
 }) => {
   const dispatch = useAppDispatch()
 
-  const chatList = useAppSelector((state) => state.chat.chatList)
   const selectedChatId = useAppSelector((state) => state.chat.selectedChatId)
 
   const navigate = useNavigate()
 
   const {
     modal,
+    message,
   } = App.useApp()
 
 
@@ -68,22 +68,28 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
           // 避免选中该聊天
           menuInfo.domEvent.stopPropagation()
 
+          const onOk = () => {
+            try {
+              dispatch(deleteChat({
+                chat,
+              }))
+              message.success('删除聊天成功')
+            } catch {
+              message.error('删除聊天失败')
+            }
+          }
+
           modal.warning({
             maskClosable: true,
             closable: true,
             title: `是否确定删除「${chat.name}」`,
             content: '聊天被删除后，所有相关聊天记录将无法找回',
-            onOk: () => {
-              dispatch(deleteChat({
-                chat,
-                chatList,
-              }))
-            },
+            onOk,
           })
         },
       },
     ]
-  }, [chat, dispatch, chatList, modal])
+  }, [chat, dispatch, modal, message])
 
 
   // 临时的重命名
@@ -96,13 +102,18 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
 
   // 确认重命名
   const onConfirmRename = () => {
-    dispatch(editChat({
-      chat: {
-        ...chat,
-        name: newName,
-      },
-      chatList,
-    }))
+    try {
+      dispatch(editChat({
+        chat: {
+          ...chat,
+          name: newName,
+        },
+      }))
+
+      message.success('编辑聊天成功')
+    } catch {
+      message.error('编辑聊天失败')
+    }
   }
 
 
