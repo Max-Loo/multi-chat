@@ -15,9 +15,7 @@ import { useMemo, useState } from "react"
  */
 const ModelSelect: React.FC = () => {
   const dispatch = useAppDispatch()
-  const {
-    selectedChat,
-  } = useCurrentSelectedChat()
+  const selectedChat = useCurrentSelectedChat()
 
   const typedSelectedChat = selectedChat as Chat
 

@@ -7,9 +7,7 @@ import { isNil } from "es-toolkit"
  * @description 聊天页面的具体内容
  */
 const ChatContent: React.FC = () => {
-  const {
-    selectedChat,
-  } = useCurrentSelectedChat()
+  const selectedChat = useCurrentSelectedChat()
 
   // 默认占位内容
   if (isNil(selectedChat)) {

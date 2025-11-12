@@ -18,7 +18,5 @@ export const useCurrentSelectedChat = () => {
     return chatList.find(chat => chat.id === selectedChatId) as Chat
   }, [selectedChatId, chatList])
 
-  return {
-    selectedChat,
-  }
+  return selectedChat
 }

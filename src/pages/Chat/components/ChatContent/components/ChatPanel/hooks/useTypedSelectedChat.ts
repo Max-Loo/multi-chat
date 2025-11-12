@@ -7,9 +7,7 @@ export const useTypedSelectedChat = (): {
   selectedChat: Chat;
   chatModelList: ChatModel[]
 } => {
-  const {
-    selectedChat,
-  } = useCurrentSelectedChat()
+  const selectedChat = useCurrentSelectedChat()
 
   const typedSelectedChat = useMemo(() => {
     return selectedChat as Chat
