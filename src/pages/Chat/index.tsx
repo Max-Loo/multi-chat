@@ -1,12 +1,26 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ChatSidebar from './components/ChatSidebar';
 import ChatContent from './components/ChatContent';
-import { useAppSelector } from '@/hooks/redux';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
+import { useSearchParams } from 'react-router-dom';
+import { setSelectedChatId } from '@/store/slices/chatSlices';
 
 const ChatPage: React.FC = () => {
   const {
     isSidebarCollapsed,
   } = useAppSelector(state => state.chatPage)
+
+  const dispatch = useAppDispatch()
+
+  const [searchParams] = useSearchParams();
+
+
+  useEffect(() => {
+    const chatId = searchParams.get('chatId')
+    if (chatId) {
+      dispatch(setSelectedChatId(chatId))
+    }
+  }, [dispatch, searchParams])
 
   return (
     <div className="flex items-start justify-start w-full h-full">

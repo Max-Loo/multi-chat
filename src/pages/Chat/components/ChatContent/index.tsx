@@ -1,7 +1,7 @@
 import { useCurrentSelectedChat } from "@/hooks/useCurrentSelectedChat"
-import { isNull } from "es-toolkit"
 import ModelSelect from "./components/ModelSelect"
 import ChatPanel from "./components/ChatPanel"
+import { isNil } from "es-toolkit"
 
 /**
  * @description 聊天页面的具体内容
@@ -12,7 +12,7 @@ const ChatContent: React.FC = () => {
   } = useCurrentSelectedChat()
 
   // 默认占位内容
-  if (isNull(selectedChat)) {
+  if (isNil(selectedChat)) {
     return (<div className="flex items-center justify-center w-full h-full text-4xl">
       选择聊天开聊！
     </div>)

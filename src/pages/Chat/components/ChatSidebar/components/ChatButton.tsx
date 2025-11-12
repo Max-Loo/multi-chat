@@ -1,10 +1,11 @@
 import { useAppDispatch, useAppSelector } from "@/hooks/redux"
-import { deleteChat, editChat, setSelectedChatId } from "@/store/slices/chatSlices"
+import { deleteChat, editChat } from "@/store/slices/chatSlices"
 import { Chat } from "@/types/chat"
 import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EllipsisOutlined } from "@ant-design/icons"
 import type { MenuProps } from 'antd'
 import { App, Button, Dropdown, Input } from "antd"
 import React, { useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 interface ChatButtonProps {
   // 当前选中要进行操作的聊天
@@ -24,6 +25,8 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
     selectedChatId,
   } = useAppSelector((state) => state.chat)
 
+  const navigate = useNavigate()
+
   const {
     modal,
   } = App.useApp()
@@ -31,7 +34,10 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
 
   // 点击聊天列表按钮
   const onClickChat = (chat: Chat) => {
-    dispatch(setSelectedChatId(chat.id))
+    // 跳转到对应的聊天详情
+    navigate(`/chat?${new URLSearchParams({
+      chatId: chat.id,
+    }).toString()}`)
   }
 
   // 是否打开重命名的输入框

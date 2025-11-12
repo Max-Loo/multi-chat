@@ -7,7 +7,6 @@ import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import ChatButton from "./components/ChatButton"
 
 const ChatSidebar: React.FC = () => {
-
   const {
     chatList,
     loading: chatListLoading,
@@ -21,6 +20,7 @@ const ChatSidebar: React.FC = () => {
 
   // 本地状态：过滤文本
   const [filterText, setFilterText] = useState<string>('')
+
   const {
     filteredList: filteredChatList,
   } = useDebouncedFilter(

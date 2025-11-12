@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { useAppSelector } from "./redux"
-import { isNull } from "es-toolkit"
+import { isNil } from "es-toolkit"
 import { Chat } from "@/types/chat"
 
 /**
@@ -13,7 +13,7 @@ export const useCurrentSelectedChat = () => {
   } = useAppSelector(state => state.chat)
 
   const selectedChat = useMemo(() => {
-    if (isNull(selectedChatId)) {
+    if (isNil(selectedChatId)) {
       return null
     }
 
