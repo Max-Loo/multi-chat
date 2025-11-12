@@ -6,7 +6,7 @@ import { useAppSelector } from '@/hooks/redux';
 const ChatPage: React.FC = () => {
   const {
     isSidebarCollapsed,
-  } = useAppSelector(state => state.chat)
+  } = useAppSelector(state => state.chatPage)
 
   return (
     <div className="flex items-start justify-start w-full h-full">

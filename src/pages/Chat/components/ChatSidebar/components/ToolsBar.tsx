@@ -1,6 +1,7 @@
 import FilterInput from "@/components/FilterInput"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { createChat, setIsCollapsed, setSelectedChatId } from "@/store/slices/chatSlices";
+import { setIsCollapsed } from "@/store/slices/chatPageSlices";
+import { createChat, setSelectedChatId } from "@/store/slices/chatSlices";
 import { LeftOutlined, MenuFoldOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { Button } from "antd"
 import { isString } from "es-toolkit";
@@ -19,6 +20,10 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
 }) => {
   const dispatch = useAppDispatch()
   const { chatList } = useAppSelector((state) => state.chat)
+
+  const {
+    isShowChatPage,
+  } = useAppSelector(state => state.chatPage)
 
   // 是否展示搜索状态
   const [isSearching, setIsSearching] = useState(false)
@@ -68,11 +73,11 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
 
   return (
     <div className="flex items-center justify-between w-full">
-      <Button
+      {isShowChatPage ? <Button
         className="rounded-lg! pr-5! pl-5!"
         icon={<MenuFoldOutlined />}
         onClick={collapseSidebar}
-      />
+      /> : <div></div>}
       <div className="flex">
         {/* 传入一个正常的字符串才表示启用搜索按钮 */}
         {isString(filterText) && <Button

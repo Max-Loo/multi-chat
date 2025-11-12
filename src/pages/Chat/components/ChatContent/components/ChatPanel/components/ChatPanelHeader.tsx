@@ -1,8 +1,9 @@
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { setIsCollapsed } from "@/store/slices/chatSlices";
+import { setIsCollapsed, setIsShowChatPage } from "@/store/slices/chatPageSlices";
 import { MenuUnfoldOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, InputNumber } from "antd";
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
+import { useEffect } from "react";
 
 interface ChatPanelHeaderProps {
   columnCount: number;
@@ -20,7 +21,7 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
 
   const {
     isSidebarCollapsed,
-  } = useAppSelector(state => state.chat)
+  } = useAppSelector(state => state.chatPage)
 
   // 展开侧边栏
   const expandSidebar = () => {
@@ -31,6 +32,14 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
     selectedChat,
     chatModelList,
   } = useTypedSelectedChat()
+
+  // 记录是否打开了具体聊天页面
+  useEffect(() => {
+    dispatch(setIsShowChatPage(true))
+    return () => {
+      dispatch(setIsShowChatPage(false))
+    }
+  }, [dispatch])
 
   return (
     <div className="flex items-center justify-between w-full h-12">
