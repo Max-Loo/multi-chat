@@ -22,12 +22,10 @@ const ChatPanel: React.FC = () => {
       columnCount={columnCount}
     />
     {/* 头部 */}
-    <div className="flex justify-center w-full pl-3 pr-3 border-b border-gray-200">
-      <ChatPanelHeader
-        columnCount={columnCount}
-        setColumnCount={setColumnCount}
-      />
-    </div>
+    <ChatPanelHeader
+      columnCount={columnCount}
+      setColumnCount={setColumnCount}
+    />
     {/* 内容部分 */}
     <div className="flex flex-col w-full grow">
       {/* 仅占位 */}

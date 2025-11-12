@@ -143,7 +143,7 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
       `}
       onClick={() => onClickChat(chat)}
     >
-      <span className="pl-2 text-base">{chat.name || '未命名'}</span>
+      <span className="pl-2 text-sm">{chat.name || '未命名'}</span>
       <Dropdown menu={{ items: menuProps }} trigger={['click']} arrow>
         <EllipsisOutlined
           name="More options"

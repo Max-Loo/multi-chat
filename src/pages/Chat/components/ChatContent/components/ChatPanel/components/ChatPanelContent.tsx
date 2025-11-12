@@ -221,7 +221,7 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
           {row.map(chat => {
             return <div
               key={chat.modelId}
-              className="box-border h-full p-2 overflow-y-auto border-b border-r border-gray-300 grow"
+              className="box-border h-full p-2 overflow-y-auto text-sm border-b border-r border-gray-300 grow"
             >
               {chat.modelId + str}
 

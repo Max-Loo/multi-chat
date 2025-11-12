@@ -42,7 +42,7 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
   }, [dispatch])
 
   return (
-    <div className="flex items-center justify-between w-full h-12">
+    <div className="flex items-center justify-between w-full h-12 pl-3 pr-3 border-b border-gray-200">
       <div className="flex items-center justify-start">
         {isSidebarCollapsed && <Button
           className={`
@@ -52,12 +52,12 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
           onClick={expandSidebar}
         />}
         <span
-          className="text-lg"
+          className="text-base"
         >
           {selectedChat.name || '未命名'}
         </span>
       </div>
-      {chatModelList.length > 1 && <div className="flex items-center justify-start">
+      {chatModelList.length > 1 && <div className="flex items-center justify-start text-sm">
         <span>每行至多展示：</span>
         <InputNumber
           controls={false}
