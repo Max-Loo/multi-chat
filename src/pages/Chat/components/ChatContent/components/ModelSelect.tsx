@@ -104,7 +104,7 @@ const ModelSelect: React.FC = () => {
           ...typedSelectedChat,
           chatModelList: checkedModelIdList.map(id => ({
             modelId: id,
-            chatHistory: [],
+            chatHistoryList: [],
           })),
         },
       }))

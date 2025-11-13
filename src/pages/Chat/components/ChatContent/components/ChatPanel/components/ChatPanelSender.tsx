@@ -1,10 +1,14 @@
 import { ArrowUpOutlined } from "@ant-design/icons";
 import { Button, Input } from "antd"
-import React, { useState } from "react"
+import { isNil, isString } from "es-toolkit";
+import React, { useMemo, useRef, useState } from "react"
+import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { startSendChatMessage } from "@/store/slices/chatModelSlices";
 
 interface SendButtonProps {
   // 是否处于发送状态
-  sending?: boolean;
+  isSending?: boolean;
   // 是否禁用按钮
   disabled?: boolean;
   // 按钮点击事件回调
@@ -13,7 +17,7 @@ interface SendButtonProps {
 
 // 封装发送按钮
 const SendButton: React.FC<SendButtonProps> = ({
-  sending = false,
+  isSending = false,
   disabled = false,
   onClick = () => {},
 }) => {
@@ -22,7 +26,7 @@ const SendButton: React.FC<SendButtonProps> = ({
     <Button
       className={`
         absolute! right-6! bottom-6! flex items-center justify-center p-0!
-        ${sending && 'border-0!'}
+        ${isSending && 'border-0!'}
         group
       `}
       color="primary"
@@ -31,9 +35,9 @@ const SendButton: React.FC<SendButtonProps> = ({
       disabled={disabled}
       shape="circle"
       size="large"
-      icon={!sending && <ArrowUpOutlined />}
+      icon={!isSending && <ArrowUpOutlined />}
     >
-      {sending && <>
+      {isSending && <>
         <div
           className={`
             absolute inset-0 border-4 rounded-full
@@ -53,21 +57,86 @@ const SendButton: React.FC<SendButtonProps> = ({
 }
 
 
-
 /**
  * @description 聊天内容发送框
  */
 const ChatPanelSender: React.FC = () => {
+  const dispatch = useAppDispatch()
 
-  const [sending, setSending] = useState(false)
+  const {
+    selectedChat,
+  } = useTypedSelectedChat()
+
+
+  // 当前在运行的聊天
+  const runningChat = useAppSelector(state => state.chatModel.runningChat)
+
+  // 将每个独立窗口的发送状态汇总起来
+  const isSending = useMemo(() => {
+    const chat = runningChat[selectedChat.id]
+
+    if (isNil(chat)) {
+      return false
+    }
+
+    return Object.values(chat).some(item => item.isSending)
+
+  }, [selectedChat, runningChat])
 
   // 要发送的内容
   const [text, setText] = useState('')
 
-  // 点击发送那妞
+  // 保存取消事件
+  const abortSendEventRef = useRef<AbortController | null>(null)
+
+  // 发送消息
+  const sendMessage = (message: string) => {
+    if (!isString(message) || !message.trim()) {
+      // 空消息不会发送
+      return
+    }
+    // 清空现有的输入
+    setText('')
+
+    const abortController = new AbortController()
+
+    dispatch(startSendChatMessage({
+      chat: selectedChat,
+      message,
+    }, { signal: abortController.signal }))
+
+    // 将取消事件保存下来，以便中断
+    abortSendEventRef.current = abortController
+  }
+
+  // 点击发送按钮
   const onClickSendBtn = () => {
-    setSending(!sending)
-    console.log(text);
+    if (isSending) {
+      // 如果处于发送状态，停止上次的发送事件
+      if (abortSendEventRef.current) {
+        abortSendEventRef.current.abort('取消')
+        abortSendEventRef.current = null
+      }
+      return
+    }
+
+    sendMessage(text)
+  }
+
+  // 按下回车按钮的回调，直接回车是发送，shift + enter 是换行
+  const onPressEnterBtn: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    if (!e.shiftKey) {
+      // 这里表面直接按下了回车
+      e.preventDefault()
+
+      if (isSending) {
+        // 如果处于发送状态，忽略回车事件
+        return
+      }
+
+      // 进行发送逻辑
+      sendMessage(text)
+    }
   }
 
   return (
@@ -78,12 +147,13 @@ const ChatPanelSender: React.FC = () => {
           autoSize={{ minRows: 2, maxRows: 10 }}
           value={text}
           onChange={(e) => { setText(e.target.value) }}
+          onPressEnter={onPressEnterBtn}
         >
         </Input.TextArea>
       </div>
       {/* 发送按钮 */}
       <SendButton
-        sending={sending}
+        isSending={isSending}
         onClick={onClickSendBtn}
       />
     </div>

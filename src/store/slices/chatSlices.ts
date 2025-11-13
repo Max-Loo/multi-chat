@@ -3,10 +3,11 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { loadChatList, saveChatList } from "../vaults/chatVault";
 
 interface ChatState {
+  // 所有聊天的列表
   chatList: Chat[];
   // 加载状态
   loading: boolean;
-  // 当前选中的聊天的Id
+  // 当前选中的要展示的聊天的Id
   selectedChatId: string | null;
   // 操作错误信息
   error: string | null;
@@ -40,6 +41,8 @@ export const initializeChatList = createAsyncThunk(
 )
 
 
+
+
 /**
  * @description chat 模块管理的 slice
  */
@@ -47,6 +50,10 @@ const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
+    // 设置当前的聊天列表
+    setChatList: (state, action: PayloadAction<Chat[]>) => {
+      state.chatList = [...action.payload]
+    },
     // 设置当前选中的聊天ID
     setSelectedChatId: (state, action: PayloadAction<string | null>) => {
       state.selectedChatId = action.payload

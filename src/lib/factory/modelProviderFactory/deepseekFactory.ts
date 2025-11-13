@@ -1,5 +1,5 @@
 import { ModelProviderKeyEnum } from "@/utils/enums"
-import { ApiAddress, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
+import { ApiAddress, FetchApi, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
 
 
 class DeepseekApiAddress implements ApiAddress {
@@ -14,6 +14,16 @@ class DeepseekApiAddress implements ApiAddress {
   }
 }
 
+class DeepseekFetchApi implements FetchApi {
+  getFetch = () => (message: string) => {
+    return new Promise<string>((resolve) => {
+      setTimeout(() => {
+        resolve(message)
+      }, 5000)
+    })
+  }
+}
+
 class Deepseek implements ModelProvider {
   readonly key = ModelProviderKeyEnum.DEEPSEEK
   readonly name = '深度求索'
@@ -24,6 +34,7 @@ class Deepseek implements ModelProvider {
     { modelKey: 'deepseek-chat', modelName: 'DeepSeek Chat' },
     { modelKey: 'deepseek-reasoner', modelName: 'DeepSeek Reasoner' },
   ]
+  readonly fetchApi = new DeepseekFetchApi()
 }
 
 

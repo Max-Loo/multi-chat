@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import modelReducer from '@/store/slices/modelSlice';
 import modelPageReducer from '@/store/slices/modelPageSlice'
 import chatReducer from '@/store/slices/chatSlices'
+import chatModelReducer from '@/store/slices/chatModelSlices'
 import chatPageReducer from '@/store/slices/chatPageSlices'
 
 // 创建Redux store实例
@@ -13,6 +14,7 @@ export const store = configureStore({
     modelPage: modelPageReducer,
     chat: chatReducer,
     chatPage: chatPageReducer,
+    chatModel: chatModelReducer,
   },
 });
 

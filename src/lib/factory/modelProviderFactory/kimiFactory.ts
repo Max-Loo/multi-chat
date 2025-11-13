@@ -1,5 +1,5 @@
 import { ModelProviderKeyEnum } from "@/utils/enums"
-import { ApiAddress, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
+import { ApiAddress, FetchApi, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
 
 
 class KimiApiAddress implements ApiAddress {
@@ -13,6 +13,16 @@ class KimiApiAddress implements ApiAddress {
   }
 }
 
+class KimiFetchApi implements FetchApi {
+  getFetch = () => (message: string) => {
+    return new Promise<string>((resolve) => {
+      setTimeout(() => {
+        resolve(message)
+      }, 10000)
+    })
+  }
+}
+
 class Kimi implements ModelProvider {
   readonly key = ModelProviderKeyEnum.KIMI
   readonly name = '月之暗面'
@@ -22,6 +32,7 @@ class Kimi implements ModelProvider {
   readonly modelList = [
     { modelKey: 'moonshot-v1-auto', modelName: 'moonshot-v1-auto' },
   ]
+  readonly fetchApi = new KimiFetchApi()
 }
 
 

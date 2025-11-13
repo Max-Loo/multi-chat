@@ -1,7 +1,7 @@
 // 针对每个模型的聊天实例
 export interface ChatModel {
   modelId: string;
-  chatHistory: [];
+  chatHistoryList: string[];
 }
 
 // 每个聊天实体的类型

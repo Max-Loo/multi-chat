@@ -1,6 +1,7 @@
 import { ChatModel } from "@/types/chat"
 import { useMemo } from "react";
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
+import { useAppSelector } from "@/hooks/redux";
 
 interface ChatPanelContentProps {
   columnCount: number;
@@ -14,8 +15,13 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
 }) => {
 
   const {
+    selectedChat,
     chatModelList,
   } = useTypedSelectedChat()
+
+
+  // 当前在运行的聊天
+  const runningChat = useAppSelector(state => state.chatModel.runningChat)
 
   // 将数组变成一个 n*m 的二维数组，每一行最多有 columnCount 个
   const board = useMemo<ChatModel[][]>(() => {
@@ -27,188 +33,6 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
     return list
   }, [columnCount, chatModelList])
 
-
-  const str = `
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }
-    </Splitter> <Splitter layout="vertical" lazy onResizeEnd={(sizes) => console.log('row', sizes)}>
-      {
-        board.map((row, idx) => {
-          return <Splitter.Panel
-            key={idx}
-          >
-            <Splitter lazy onResizeEnd={(sizes) => console.log('column', sizes)}>
-              {row.map(chat => {
-                return <Splitter.Panel
-                  key={chat.modelId}
-                >
-                  {chat.modelId}
-                </Splitter.Panel>
-              })}
-            </Splitter>
-          </Splitter.Panel>
-        })
-      }`
 
   // 渲染成棋盘
   return <div className="absolute top-0 left-0 w-full h-screen pt-12 pb-22">
@@ -223,8 +47,12 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
               key={chat.modelId}
               className="box-border h-full p-2 overflow-y-auto text-sm border-b border-r border-gray-300 grow"
             >
-              {chat.modelId + str}
-
+              {/* 具体渲染的内容 */}
+              {chat.modelId}
+              <div>---</div>
+              { runningChat[selectedChat.id]?.[chat.modelId]?.historyList?.map((history, idx) => <div key={idx}>{history}</div>)
+                || chat.chatHistoryList?.map((history, idx) => <div key={idx}>{history}</div>)
+              }
             </div>
           })}
         </div>

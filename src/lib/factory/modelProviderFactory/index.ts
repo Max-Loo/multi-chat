@@ -4,8 +4,15 @@ import { isUndefined } from "es-toolkit";
 
 
 export interface ApiAddress {
+  // 默认的请求地址（不完整）
   readonly defaultApiAddress: string;
+  // 获取完整的请求地址
   getFetchApiAddress: (url: string) => string;
+}
+
+export interface FetchApi {
+  // 获取请求方法
+  getFetch: () => (message: string) => Promise<string>
 }
 
 export interface ModelProvider {
@@ -21,6 +28,8 @@ export interface ModelProvider {
   readonly apiAddress: ApiAddress
   // 可选择的模型
   readonly modelList: ModelDetail[];
+  // 向服务商发送请求的相关逻辑
+  readonly fetchApi: FetchApi;
 }
 
 /**
@@ -46,15 +55,19 @@ export class ModelProviderFactoryCreator {
     return factory
   }
 
-  // 获取现有的已经注册的工厂列表
+  // 获取现有的已经注册的工厂 Map （键值对）
   static getFactoryMap = (): [ModelProviderKeyEnum, ModelProviderFactory][] => {
     return [...this.factories]
   }
 
+  // 获取现有的已经注册的工程列表
+  static getFactoryList = (): ModelProviderFactory[] => {
+    return [...this.factories.values()]
+  }
+
   // 注册新的大模型工厂
   static registerFactory = (key: ModelProviderKeyEnum, factory: ModelProviderFactory): void => {
-    console.log(key, factory);
-
+    // 避免重复注册
     if (!this.factories.has(key)) {
       this.factories.set(key, factory)
     }

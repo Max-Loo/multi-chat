@@ -25,7 +25,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
     filteredList: filteredProviders,
   } = useDebouncedFilter(
     filterText,
-    ModelProviderFactoryCreator.getFactoryMap().map(([, modelProviderFactory]) => modelProviderFactory.getModelProvider()),
+    ModelProviderFactoryCreator.getFactoryList().map((modelProviderFactory) => modelProviderFactory.getModelProvider()),
     (provider) => provider.name.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
   )
 
