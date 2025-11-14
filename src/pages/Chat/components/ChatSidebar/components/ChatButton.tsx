@@ -29,7 +29,6 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
     message,
   } = App.useApp()
 
-
   // 点击聊天列表按钮
   const onClickChat = (chat: Chat) => {
     // 跳转到对应的聊天详情
@@ -111,6 +110,7 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
       }))
 
       message.success('编辑聊天成功')
+      onCancelRename()
     } catch {
       message.error('编辑聊天失败')
     }
