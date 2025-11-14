@@ -45,7 +45,7 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
           {row.map(chat => {
             return <div
               key={chat.modelId}
-              className="box-border h-full p-2 overflow-y-auto text-sm border-b border-r border-gray-300 grow"
+              className="box-border flex-1 h-full p-2 overflow-y-auto text-sm border-b border-r border-gray-300"
             >
               {/* 具体渲染的内容 */}
               {chat.modelId}
