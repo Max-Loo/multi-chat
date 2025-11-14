@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from 'antd';
 import { MessageOutlined, RobotOutlined } from '@ant-design/icons';
 import type { NavigationItem } from '@/types/navigation';
+import { useCurrentSelectedChat } from '@/hooks/useCurrentSelectedChat';
+import { isNotNil } from 'es-toolkit';
+import { useNavigateToChat } from '@/hooks/useNavigateToPage';
 
 interface SidebarProps {
   className?: string;
@@ -11,6 +14,11 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const selectedChat = useCurrentSelectedChat()
+  const {
+    navigateToChat,
+  } = useNavigateToChat()
 
   const navigationItems: NavigationItem[] = [
     {
@@ -33,6 +41,14 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
     // 就在当前页面就不用跳转
     if (location.pathname === item.path) return
 
+    // 处理记忆「上一次点击查看的聊天」
+    if (item.path === '/chat' && isNotNil(selectedChat)) {
+      navigateToChat({
+        chatId: selectedChat.id,
+      })
+      return
+    }
+
     navigate(item.path);
   };
 
@@ -52,10 +68,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
               type="text"
               icon={item.icon}
               onClick={() => handleNavigation(item)}
-              className={`flex items-center justify-center transition-all duration-200 ml-1 mr-1 !w-10 !h-10 !text-xl !rounded-xl ${
+              className={`flex items-center justify-center transition-all duration-200 ml-1 mr-1 w-10! h-10! text-xl! rounded-xl! ${
                 active
-                  ? '!bg-blue-50 !border-2 !border-blue-500 !shadow-sm !text-blue-500'
-                  : '!border-2 !border-transparent hover:!bg-gray-300'
+                  ? 'bg-blue-50! border-2! border-blue-500! shadow-sm! text-blue-500!'
+                  : 'border-2! border-transparent! hover:bg-gray-300!'
               }`}
               title={item.name}
             />

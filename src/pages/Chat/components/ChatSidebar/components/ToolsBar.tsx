@@ -1,7 +1,8 @@
 import FilterInput from "@/components/FilterInput"
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useNavigateToChat } from "@/hooks/useNavigateToPage";
 import { setIsCollapsed } from "@/store/slices/chatPageSlices";
-import { createChat, setSelectedChatId } from "@/store/slices/chatSlices";
+import { createChat } from "@/store/slices/chatSlices";
 import { LeftOutlined, MenuFoldOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { Button } from "antd"
 import { isString } from "es-toolkit";
@@ -20,6 +21,10 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
 }) => {
   const dispatch = useAppDispatch()
 
+  const {
+    navigateToChat,
+  } = useNavigateToChat()
+
   const isShowChatPage = useAppSelector(state => state.chatPage.isShowChatPage)
 
   // 是否展示搜索状态
@@ -34,7 +39,9 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
 
     dispatch(createChat({ chat }))
     // 创建成功后跳转到新建的聊天
-    dispatch(setSelectedChatId(chat.id))
+    navigateToChat({
+      chatId: chat.id,
+    })
   }
 
   if (isSearching) {
