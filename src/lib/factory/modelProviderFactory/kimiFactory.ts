@@ -1,5 +1,6 @@
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { ApiAddress, FetchApi, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
+import { mockFetchStream } from "@/utils/mockFetchStream"
 
 
 class KimiApiAddress implements ApiAddress {
@@ -14,12 +15,15 @@ class KimiApiAddress implements ApiAddress {
 }
 
 class KimiFetchApi implements FetchApi {
-  getFetch = () => (message: string) => {
-    return new Promise<string>((resolve) => {
-      setTimeout(() => {
-        resolve(message)
-      }, 10000)
+  fetch = async function*(message: string, { signal }: { signal?: AbortSignal } = {}) {
+    const res = await mockFetchStream({
+      message,
+      max: 10,
+      delay: 500,
+      signal,
+      // stream: true,
     })
+    yield JSON.stringify(res)
   }
 }
 
@@ -32,17 +36,19 @@ class Kimi implements ModelProvider {
   readonly modelList = [
     { modelKey: 'moonshot-v1-auto', modelName: 'moonshot-v1-auto' },
   ]
-  readonly fetchApi = new KimiFetchApi()
 }
 
 
 class KimiFactory implements ModelProviderFactory {
-  private modelProvider: ModelProvider
-  constructor () {
-    this.modelProvider = new Kimi()
-  }
-  getModelProvider = (): ModelProvider => {
+  private modelProvider = new Kimi()
+  private fetchApi = new KimiFetchApi()
+
+  getModelProvider = () => {
     return this.modelProvider
+  }
+
+  getFetchApi = () => {
+    return this.fetchApi
   }
 }
 

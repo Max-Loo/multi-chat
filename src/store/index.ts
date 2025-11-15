@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import modelReducer from '@/store/slices/modelSlice';
-import modelPageReducer from '@/store/slices/modelPageSlice'
-import chatReducer from '@/store/slices/chatSlices'
-import chatModelReducer from '@/store/slices/chatModelSlices'
-import chatPageReducer from '@/store/slices/chatPageSlices'
+import modelReducer, { ModelSliceState } from '@/store/slices/modelSlice';
+import modelPageReducer, { ModelPageSliceState } from '@/store/slices/modelPageSlice'
+import chatReducer, { ChatSliceState } from '@/store/slices/chatSlices'
+import chatPageReducer, { ChatPageSliceState } from '@/store/slices/chatPageSlices'
+import { saveModelsMiddleware } from './middleware/chatMiddleware';
 
 // 创建Redux store实例
 export const store = configureStore({
@@ -14,12 +14,20 @@ export const store = configureStore({
     modelPage: modelPageReducer,
     chat: chatReducer,
     chatPage: chatPageReducer,
-    chatModel: chatModelReducer,
+  },
+  middleware: (getDefaultMiddleware) => {
+    return getDefaultMiddleware().prepend(saveModelsMiddleware.middleware)
   },
 });
 
 // 导出 RootState 类型
-export type RootState = ReturnType<typeof store.getState>;
+// export type RootState = ReturnType<typeof store.getState>;
+export type RootState = {
+  models: ModelSliceState;
+  modelPage: ModelPageSliceState;
+  chat: ChatSliceState;
+  chatPage: ChatPageSliceState
+};
 
 // 导出 AppDispatch 类型
 export type AppDispatch = typeof store.dispatch;

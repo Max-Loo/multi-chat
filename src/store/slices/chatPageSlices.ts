@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface ChatPageState {
+export interface ChatPageSliceState {
   // 聊天侧边栏是否折叠
   isSidebarCollapsed: boolean;
   // 是否位于具体聊天页面（目前只有在聊天页面才能折叠侧边栏，否则没有展开按钮来复原）
@@ -8,7 +8,7 @@ interface ChatPageState {
 }
 
 // 聊天页面管理的初始状态
-const initialState: ChatPageState = {
+const initialState: ChatPageSliceState = {
   isSidebarCollapsed: false,
   isShowChatPage: false,
 };

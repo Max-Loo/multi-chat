@@ -9,10 +9,9 @@ export interface ApiAddress {
   // 获取完整的请求地址
   getFetchApiAddress: (url: string) => string;
 }
-
 export interface FetchApi {
   // 获取请求方法
-  getFetch: () => (message: string) => Promise<string>
+  fetch: (message: string, configOptions?: { signal?: AbortSignal }) => AsyncIterable<string>;
 }
 
 export interface ModelProvider {
@@ -28,15 +27,14 @@ export interface ModelProvider {
   readonly apiAddress: ApiAddress
   // 可选择的模型
   readonly modelList: ModelDetail[];
-  // 向服务商发送请求的相关逻辑
-  readonly fetchApi: FetchApi;
 }
 
 /**
  * @description 单例模式的工厂
  */
 export interface ModelProviderFactory {
-  getModelProvider: () => ModelProvider
+  getModelProvider: () => ModelProvider;
+  getFetchApi: () => FetchApi;
 }
 
 

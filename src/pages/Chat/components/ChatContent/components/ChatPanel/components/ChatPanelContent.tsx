@@ -21,7 +21,7 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
 
 
   // 当前在运行的聊天
-  const runningChat = useAppSelector(state => state.chatModel.runningChat)
+  const runningChat = useAppSelector(state => state.chat.runningChat)
 
   // 将数组变成一个 n*m 的二维数组，每一行最多有 columnCount 个
   const board = useMemo<ChatModel[][]>(() => {
@@ -50,9 +50,11 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
               {/* 具体渲染的内容 */}
               {chat.modelId}
               <div>---</div>
-              { runningChat[selectedChat.id]?.[chat.modelId]?.historyList?.map((history, idx) => <div key={idx}>{history}</div>)
-                || chat.chatHistoryList?.map((history, idx) => <div key={idx}>{history}</div>)
-              }
+              {chat.chatHistoryList?.map((history, idx) => {
+                return <div key={idx}>{history}</div>
+              })}
+              <div>---</div>
+              <div>{ runningChat[selectedChat.id]?.[chat.modelId]?.history }</div>
             </div>
           })}
         </div>

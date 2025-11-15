@@ -4,7 +4,7 @@ import { isNil, isString } from "es-toolkit";
 import React, { useMemo, useRef, useState } from "react"
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
-import { startSendChatMessage } from "@/store/slices/chatModelSlices";
+import { startSendChatMessage } from "@/store/slices/chatSlices";
 
 interface SendButtonProps {
   // 是否处于发送状态
@@ -69,7 +69,7 @@ const ChatPanelSender: React.FC = () => {
 
 
   // 当前在运行的聊天
-  const runningChat = useAppSelector(state => state.chatModel.runningChat)
+  const runningChat = useAppSelector(state => state.chat.runningChat)
 
   // 将每个独立窗口的发送状态汇总起来
   const isSending = useMemo(() => {

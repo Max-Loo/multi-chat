@@ -1,5 +1,7 @@
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { ApiAddress, FetchApi, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
+import { ChatModelResponse, mockFetchStream } from "@/utils/mockFetchStream"
+import { isNull } from "es-toolkit"
 
 
 class DeepseekApiAddress implements ApiAddress {
@@ -15,12 +17,27 @@ class DeepseekApiAddress implements ApiAddress {
 }
 
 class DeepseekFetchApi implements FetchApi {
-  getFetch = () => (message: string) => {
-    return new Promise<string>((resolve) => {
-      setTimeout(() => {
-        resolve(message)
-      }, 5000)
+  fetch = async function*(message: string, { signal }: { signal?: AbortSignal } = {}) {
+    const fetchResponse = mockFetchStream({
+      message,
+      max: 10,
+      delay: 500,
+      signal,
+      stream: true,
     })
+
+    let tempRes: ChatModelResponse | null = null
+
+    for await (const element of fetchResponse) {
+      if (isNull(tempRes)) {
+        tempRes = element.data
+      } else {
+        tempRes.choices[0].message += element.data.choices[0].message
+      }
+
+      yield JSON.stringify(tempRes)
+    }
+
   }
 }
 
@@ -34,17 +51,19 @@ class Deepseek implements ModelProvider {
     { modelKey: 'deepseek-chat', modelName: 'DeepSeek Chat' },
     { modelKey: 'deepseek-reasoner', modelName: 'DeepSeek Reasoner' },
   ]
-  readonly fetchApi = new DeepseekFetchApi()
 }
 
 
 class DeepseekFactory implements ModelProviderFactory {
-  private modelProvider: ModelProvider
-  constructor () {
-    this.modelProvider = new Deepseek()
-  }
+  private modelProvider: Deepseek = new Deepseek()
+  private fetchApi: DeepseekFetchApi = new DeepseekFetchApi()
+
   getModelProvider = (): ModelProvider => {
     return this.modelProvider
+  }
+
+  getFetchApi = () => {
+    return this.fetchApi
   }
 }
 

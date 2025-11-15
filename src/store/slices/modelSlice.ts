@@ -3,7 +3,7 @@ import { Model } from '@/types/model';
 import { loadModels, saveModels } from '../vaults/modelVault';
 
 // 模型管理状态接口定义
-interface ModelState {
+export interface ModelSliceState {
   models: Model[]; // 所有模型列表
   loading: boolean; // 加载状态
   error: string | null; // 操作错误信息
@@ -11,7 +11,7 @@ interface ModelState {
 }
 
 // 模型管理的初始状态
-const initialState: ModelState = {
+const initialState: ModelSliceState = {
   models: [], // 所有模型列表
   loading: false, // 加载状态
   error: null, // 操作错误信息

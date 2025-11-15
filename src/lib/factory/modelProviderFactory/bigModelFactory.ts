@@ -1,5 +1,7 @@
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { ApiAddress, FetchApi, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
+import { ChatModelResponse, mockFetchStream } from "@/utils/mockFetchStream"
+import { isNull } from "es-toolkit"
 
 
 class BigModelApiAddress implements ApiAddress {
@@ -14,12 +16,27 @@ class BigModelApiAddress implements ApiAddress {
 }
 
 class BigModelFetchApi implements FetchApi {
-  getFetch = () => (message: string) => {
-    return new Promise<string>((resolve) => {
-      setTimeout(() => {
-        resolve(message)
-      }, 2000)
+  fetch = async function*(message: string, { signal }: { signal?: AbortSignal } = {}) {
+    const fetchResponse = mockFetchStream({
+      message,
+      max: 10,
+      delay: 500,
+      signal,
+      stream: true,
     })
+
+    let tempRes: ChatModelResponse | null = null
+
+    for await (const element of fetchResponse) {
+      if (isNull(tempRes)) {
+        tempRes = element.data
+      } else {
+        tempRes.choices[0].message += element.data.choices[0].message
+      }
+
+      yield JSON.stringify(tempRes)
+    }
+
   }
 }
 
@@ -33,17 +50,18 @@ class BigModel implements ModelProvider {
     { modelKey: 'glm-4.5', modelName: 'GLM-4.5' },
     { modelKey: 'glm-4.6', modelName: 'GLM-4.6' },
   ]
-  readonly fetchApi = new BigModelFetchApi()
 }
 
 
 class BigModelFactory implements ModelProviderFactory {
-  private modelProvider: ModelProvider
-  constructor () {
-    this.modelProvider = new BigModel()
-  }
-  getModelProvider = (): ModelProvider => {
+  private modelProvider = new BigModel()
+  private fetchApi = new BigModelFetchApi()
+  getModelProvider = () => {
     return this.modelProvider
+  }
+
+  getFetchApi = () => {
+    return this.fetchApi
   }
 }
 

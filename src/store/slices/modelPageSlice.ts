@@ -4,13 +4,13 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
 // 模型表格页面状态接口定义
-export interface ModelPageState {
+export interface ModelPageSliceState {
   // 当前渲染的页面的key
   key: ModelPageEnum;
 }
 
 // 模型页面的初始状态
-const initialState: ModelPageState = {
+const initialState: ModelPageSliceState = {
   key: ModelPageEnum.TABLE_PAGE,
 }
 

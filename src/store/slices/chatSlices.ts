@@ -1,8 +1,12 @@
 import { Chat } from "@/types/chat";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { loadChatList, saveChatList } from "../vaults/chatVault";
+import { loadChatList } from "../vaults/chatVault";
+import { RootState } from "..";
+import { Model } from "@/types/model";
+import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory";
+import { isError, isNotNil } from "es-toolkit";
 
-interface ChatState {
+export interface ChatSliceState {
   // 所有聊天的列表
   chatList: Chat[];
   // 加载状态
@@ -13,15 +17,21 @@ interface ChatState {
   error: string | null;
   // 初始化错误信息
   initializationError: string | null;
+  // 当前正在运行中的聊天（还有网络传输）。chatId - modelId - history
+  runningChat: Record<string, Record<string, {
+    isSending: boolean;
+    history: string;
+  }>>;
 }
 
 // 聊天管理的初始状态
-const initialState: ChatState = {
+const initialState: ChatSliceState = {
   chatList: [],
   loading: false,
   error: null,
   selectedChatId: null,
   initializationError: null,
+  runningChat: {},
 };
 
 
@@ -40,6 +50,92 @@ export const initializeChatList = createAsyncThunk(
   },
 )
 
+
+
+/**
+ * @description 针对某个聊天的每个模型来发送消息
+ */
+const sendMessage = createAsyncThunk<
+  void,
+  {
+    chat: Chat;
+    message: string;
+    model: Model;
+  }
+>(
+  'chatModel/sendMessage',
+  async({
+    chat,
+    message,
+    model,
+  }, { signal, dispatch }) => {
+    try {
+      const fetchApi = ModelProviderFactoryCreator.getFactory(model.providerKey).getFetchApi()
+
+      const fetchResponse = fetchApi.fetch(message, { signal })
+
+      for await (const element of fetchResponse) {
+
+        if (signal.aborted) {
+          break
+        }
+
+        dispatch(pushRunningChatHistory({
+          chat,
+          model,
+          message: element,
+        }))
+      }
+
+    } catch (error) {
+      throw new Error(isError(error) ? error.message : '失败')
+    }
+  },
+)
+
+
+/**
+ * @description 触发发送聊天消息
+ */
+export const startSendChatMessage = createAsyncThunk<
+  void,
+  {
+    chat: Chat;
+    message: string;
+  },
+  { state: RootState }
+>(
+  'chatModel/startSendChatMessage',
+  async({
+    chat,
+    message,
+  }, { getState, dispatch, signal }) => {
+    const state = getState()
+
+    const {
+      models,
+    } = state.models
+
+    const {
+      chatModelList = [],
+    } = chat
+
+    await Promise.all(chatModelList.map((chatModel) => {
+      const model = models.find(model => model.id === chatModel.modelId)
+      // model 可能因为被删除掉而是空的
+      if (isNotNil(model)) {
+        return dispatch(sendMessage({
+          chat,
+          message,
+          model,
+        }, {
+          // 传递令牌，使得能够中断
+          signal,
+        }))
+      }
+    }))
+  },
+)
 
 
 
@@ -76,7 +172,6 @@ const chatSlice = createSlice({
 
       // 保存
       state.chatList = newChatList
-      saveChatList(newChatList)
     },
     // 编辑聊天
     editChat: (state, action: PayloadAction<{chat: Chat}>) => {
@@ -93,7 +188,6 @@ const chatSlice = createSlice({
 
       // 保存
       state.chatList = newChatList
-      saveChatList(newChatList)
     },
     // 删除聊天
     deleteChat: (state, action: PayloadAction<{chat: Chat}>) => {
@@ -112,12 +206,25 @@ const chatSlice = createSlice({
 
       // 保存
       state.chatList = newChatList
-      saveChatList(newChatList)
 
       // 判断「是否当前选中的聊天正好是需要被删除的」
       if (state.selectedChatId === chat.id) {
         state.selectedChatId = null
       }
+    },
+    // 向当前聊天的聊天记录添加内容
+    pushRunningChatHistory: (state, action: PayloadAction<{
+      chat: Chat;
+      model: Model;
+      message: string;
+    }>) => {
+      const {
+        chat,
+        model,
+        message,
+      } = action.payload
+
+      state.runningChat[chat.id][model.id].history = message
     },
   },
   // 处理异步action的状态变化
@@ -138,8 +245,92 @@ const chatSlice = createSlice({
         state.loading = false;
         state.initializationError = action.error.message || '初始化文件失败';
       })
+      // 向某个模型发送消息 - 开始
+      .addCase(sendMessage.pending, (state, action) => {
+        const { chat, model } = action.meta.arg
+        // 带有结构初始化的逻辑
+        if (!state.runningChat[chat.id]) {
+          state.runningChat[chat.id] = {}
+        }
+
+        if (!state.runningChat[chat.id][model.id]) {
+          state.runningChat[chat.id][model.id] = {
+            isSending: true,
+            history: '',
+          }
+        } else {
+          state.runningChat[chat.id][model.id].isSending = true
+        }
+
+      })
+      // 具体每个模型发送消息完成后，将临时数据写回到数组
+      .addCase(
+        sendMessage.fulfilled,
+        (state, action) => {
+          const { chat, model } = action.meta.arg
+          const currentChatModel = state.runningChat[chat.id][model.id]
+          currentChatModel.isSending = false
+
+          // 除非在聊天的过程中被删除，否则都应该存在
+          const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
+          if (chatIdx === -1) return
+
+          const chatModelList = state.chatList[chatIdx].chatModelList
+          if (!Array.isArray(chatModelList)) return
+
+          const modelIdx = chatModelList.findIndex(item => item.modelId === model.id)
+          if (modelIdx === -1) return
+
+          if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
+            chatModelList[modelIdx].chatHistoryList = []
+          }
+          // 将临时的数据回写到总的数组中
+          chatModelList[modelIdx].chatHistoryList.push(currentChatModel.history)
+
+          // 清理临时数据
+          delete state.runningChat[chat.id][model.id]
+        },
+      )
+      // 具体每个模型发送消息完成后，取消发送状态，回写数据留给 startSendChatMessage 去做
+      .addCase(sendMessage.rejected, (state, action) => {
+        const { chat, model } = action.meta.arg
+        if (state.runningChat[chat.id]?.[model.id]) {
+          state.runningChat[chat.id][model.id].isSending = false
+        }
+
+        console.log('被 rejected', chat, model);
+
+      })
+      // 总的启动发送消息（它会比 sendMessage 先 rejected），将对应 chat 剩余的所有数据回写到数组中
+      .addCase(startSendChatMessage.rejected, (state, action) => {
+        const { chat } = action.meta.arg
+        const currentChat = state.runningChat[chat.id]
+        Object.entries(currentChat).forEach(([modelId, historyItem]) => {
+          // 除非在聊天的过程中被删除，否则都应该存在
+          const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
+          if (chatIdx === -1) return
+
+          const chatModelList = state.chatList[chatIdx].chatModelList
+          if (!Array.isArray(chatModelList)) return
+
+          const modelIdx = chatModelList.findIndex(item => item.modelId === modelId)
+          if (modelIdx === -1) return
+
+          if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
+            chatModelList[modelIdx].chatHistoryList = []
+          }
+          // 将临时的数据回写到总的数组中
+          chatModelList[modelIdx].chatHistoryList.push(historyItem.history)
+        })
+
+        // 清理临时数据
+        delete state.runningChat[chat.id]
+        console.log('总出口触发 reject');
+
+      })
   },
 })
+
 
 // 导出actions
 export const {
@@ -151,6 +342,10 @@ export const {
   editChat,
   deleteChat,
 } = chatSlice.actions;
+
+const {
+  pushRunningChatHistory,
+} = chatSlice.actions
 
 // 导出reducer
 export default chatSlice.reducer;
