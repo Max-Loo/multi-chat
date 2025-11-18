@@ -1,7 +1,7 @@
 import { ChatModel } from "@/types/chat"
 import { useMemo } from "react";
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
-import { useAppSelector } from "@/hooks/redux";
+import ChatPanelContentDetail from "./ChatPanelContentDetail";
 
 interface ChatPanelContentProps {
   columnCount: number;
@@ -15,13 +15,8 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
 }) => {
 
   const {
-    selectedChat,
     chatModelList,
   } = useTypedSelectedChat()
-
-
-  // 当前在运行的聊天
-  const runningChat = useAppSelector(state => state.chat.runningChat)
 
   // 将数组变成一个 n*m 的二维数组，每一行最多有 columnCount 个
   const board = useMemo<ChatModel[][]>(() => {
@@ -42,19 +37,15 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
           className={`flex w-full flex-1 overflow-y-auto`}
           key={idx}
         >
-          {row.map(chat => {
+          {row.map(chatModel => {
             return <div
-              key={chat.modelId}
+              key={chatModel.modelId}
               className="box-border flex-1 h-full p-2 overflow-y-auto text-sm border-b border-r border-gray-300"
             >
               {/* 具体渲染的内容 */}
-              {chat.modelId}
-              <div>---</div>
-              {chat.chatHistoryList?.map((history, idx) => {
-                return <div key={idx}>{history}</div>
-              })}
-              <div>---</div>
-              <div>{ runningChat[selectedChat.id]?.[chat.modelId]?.history }</div>
+              <ChatPanelContentDetail
+                chatModel={chatModel}
+              />
             </div>
           })}
         </div>

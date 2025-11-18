@@ -1,16 +1,35 @@
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { ApiAddress, FetchApi, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
 import { mockFetchStream } from "@/utils/mockFetchStream"
+import { isString } from "es-toolkit"
 
 
 class KimiApiAddress implements ApiAddress {
   readonly defaultApiAddress = 'https://api.moonshot.cn'
 
-  getFetchApiAddress = (url: string) => {
+  getOpenaiDisplayAddress = (url: string) => {
     if (url?.endsWith('#')) {
       return url.slice(0, url.length - 1)
     }
-    return url + '/v1/chat/completions'
+
+    return this.getOpenaiFetchAddress(url) + 'chat/completions'
+  }
+
+  getOpenaiFetchAddress = (url: string) => {
+    let actualUrl = url
+
+    // 默认会填充 预设的地址
+    if (!isString(actualUrl)) {
+      actualUrl = this.defaultApiAddress
+    }
+
+    if (actualUrl.endsWith('#')) {
+      actualUrl = actualUrl.slice(0, actualUrl.length - 1)
+    } else if (!actualUrl.endsWith('/')) {
+      actualUrl += '/v1/'
+    }
+
+    return actualUrl
   }
 }
 
@@ -21,7 +40,7 @@ class KimiFetchApi implements FetchApi {
       max: 10,
       delay: 500,
       signal,
-      // stream: true,
+      stream: true,
     })
     yield JSON.stringify(res)
   }

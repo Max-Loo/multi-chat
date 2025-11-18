@@ -14,8 +14,7 @@ saveModelsMiddleware.startListening({
     editChat,
     deleteChat,
   ),
-  effect: async (action, listenerApi) => {
-    console.log('chatList 发生了变化，需要保存', action, listenerApi.getState().chat.chatList);
+  effect: async (_, listenerApi) => {
     await saveChatList(listenerApi.getState().chat.chatList)
   },
 })

@@ -1,17 +1,35 @@
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { ApiAddress, FetchApi, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
 import { ChatModelResponse, mockFetchStream } from "@/utils/mockFetchStream"
-import { isNull } from "es-toolkit"
+import { isNull, isString } from "es-toolkit"
 
 
 class BigModelApiAddress implements ApiAddress {
-  readonly defaultApiAddress = 'https://open.bigmodel.cn/api'
+  readonly defaultApiAddress = 'https://open.bigmodel.cn/api/paas/v4/'
 
-  getFetchApiAddress = (url: string) => {
+  getOpenaiDisplayAddress = (url: string) => {
     if (url?.endsWith('#')) {
       return url.slice(0, url.length - 1)
     }
-    return url + '/paas/v4/chat/completions'
+
+    return this.getOpenaiFetchAddress(url) + 'chat/completions'
+  }
+
+  getOpenaiFetchAddress = (url: string) => {
+    let actualUrl = url
+
+    // 默认会填充 预设的地址
+    if (!isString(actualUrl)) {
+      actualUrl = this.defaultApiAddress
+    }
+
+    if (actualUrl.endsWith('#')) {
+      actualUrl = actualUrl.slice(0, actualUrl.length - 1)
+    } else if (!actualUrl.endsWith('/')) {
+      actualUrl += '/v1/'
+    }
+
+    return actualUrl
   }
 }
 

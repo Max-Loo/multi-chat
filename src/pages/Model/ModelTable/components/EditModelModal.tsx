@@ -58,7 +58,7 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
       footer={null}
       maskClosable={false}
       style={{ top: 'calc(var(--spacing) * 6)' }}
-      width={'60%'}
+      width={'80%'}
     >
       <div className="pt-6">
         {modelProviderKey && <ModelConfigForm

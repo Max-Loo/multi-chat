@@ -6,8 +6,10 @@ import { isUndefined } from "es-toolkit";
 export interface ApiAddress {
   // 默认的请求地址（不完整）
   readonly defaultApiAddress: string;
-  // 获取完整的请求地址
-  getFetchApiAddress: (url: string) => string;
+  // 获取在表单展示的请求地址
+  getOpenaiDisplayAddress: (url: string) => string;
+  // 获取向 Openai 插件请求时候的地址
+  getOpenaiFetchAddress: (url: string) => string;
 }
 export interface FetchApi {
   // 获取请求方法
