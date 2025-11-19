@@ -130,6 +130,7 @@ const ChatButton: React.FC<ChatButtonProps> = React.memo(({
         <Input
           className="w-38.5! h-8.5"
           value={newName}
+          autoFocus
           onChange={(e) => setNewName(e.target.value)}
         />
         <Button
