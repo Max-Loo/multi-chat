@@ -1,6 +1,8 @@
-import { ModelDetail } from "@/types/model";
+import { StandardizedHistoryRecord } from "@/types/chat";
+import { Model, ModelDetail } from "@/types/model";
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { isUndefined } from "es-toolkit";
+
 
 
 export interface ApiAddress {
@@ -11,9 +13,38 @@ export interface ApiAddress {
   // 获取向 Openai 插件请求时候的地址
   getOpenaiFetchAddress: (url: string) => string;
 }
+
+export interface FetchApiParams {
+  // 当前用到的模型，包含了许多参数
+  model: Model,
+  // 历史聊天记录，统一为 string ，具体格式由具体实现决定
+  historyList: string[],
+  // 最新的要发送的消息
+  message: string,
+}
+
+export interface FetchApiConfigOptions {
+  signal?: AbortSignal
+}
+
+/**
+ * @description 发送和处理 api 请求的相关逻辑
+ */
 export interface FetchApi {
-  // 获取请求方法
-  fetch: (message: string, configOptions?: { signal?: AbortSignal }) => AsyncIterable<string>;
+  // 发起请求，在里面应该自行处理并合并流式请求
+  fetch: (
+    params: FetchApiParams,
+    configOptions?: FetchApiConfigOptions,
+  ) => AsyncIterable<string>;
+}
+
+
+/**
+ * @description 处理渲染历史记录的相关逻辑
+ */
+export interface RenderHistory {
+  // 从聊天历史中获取到聊天的内容，内部自己知道 JSON.parse 后的格式
+  getHistoryRecord: (history: string) => StandardizedHistoryRecord
 }
 
 export interface ModelProvider {
@@ -37,6 +68,7 @@ export interface ModelProvider {
 export interface ModelProviderFactory {
   getModelProvider: () => ModelProvider;
   getFetchApi: () => FetchApi;
+  getRenderHtml: () => RenderHistory;
 }
 
 

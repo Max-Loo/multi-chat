@@ -1,10 +1,12 @@
-import { Chat } from "@/types/chat";
+import { Chat, ChatRoleEnum, UserMessageRecord } from "@/types/chat";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { loadChatList } from "../vaults/chatVault";
 import { RootState } from "..";
 import { Model } from "@/types/model";
 import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory";
-import { isError, isNotNil } from "es-toolkit";
+import { isNotNil } from "es-toolkit";
+import { v4 as uuidV4 } from 'uuid'
+import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
 
 export interface ChatSliceState {
   // 所有聊天的列表
@@ -61,6 +63,7 @@ const sendMessage = createAsyncThunk<
     chat: Chat;
     message: string;
     model: Model;
+    historyList: string[];
   }
 >(
   'chatModel/sendMessage',
@@ -68,27 +71,45 @@ const sendMessage = createAsyncThunk<
     chat,
     message,
     model,
+    historyList,
   }, { signal, dispatch }) => {
-    try {
-      const fetchApi = ModelProviderFactoryCreator.getFactory(model.providerKey).getFetchApi()
+    // 先将当前要发送的内容记录进历史记录
+    dispatch(pushChatHistory({
+      chat,
+      model,
+      message: JSON.stringify({
+        id: USER_MESSAGE_ID_PREFIX + uuidV4(),
+        role: ChatRoleEnum.USER,
+        content: message,
+        timestamp: Date.now(),
+        modelKey: model.modelKey,
+      } as UserMessageRecord),
+    }))
 
-      const fetchResponse = fetchApi.fetch(message, { signal })
+    // 获取请求方法
+    const fetchApi = ModelProviderFactoryCreator.getFactory(model.providerKey).getFetchApi()
 
-      for await (const element of fetchResponse) {
+    const fetchResponse = fetchApi.fetch(
+      {
+        model,
+        historyList,
+        message,
+      },
+      { signal },
+    )
 
-        if (signal.aborted) {
-          break
-        }
+    // 以流式响应处理，但每次的 element 都是最新完整内容，并非增量
+    for await (const element of fetchResponse) {
 
-        dispatch(pushRunningChatHistory({
-          chat,
-          model,
-          message: element,
-        }))
+      if (signal.aborted) {
+        break
       }
-
-    } catch (error) {
-      throw new Error(isError(error) ? error.message : '失败')
+      // 将每条记录放进运行中的记录，以便展示
+      dispatch(pushRunningChatHistory({
+        chat,
+        model,
+        message: element,
+      }))
     }
   },
 )
@@ -128,6 +149,7 @@ export const startSendChatMessage = createAsyncThunk<
           chat,
           message,
           model,
+          historyList: chatModel.chatHistoryList,
         }, {
           // 传递令牌，使得能够中断
           signal,
@@ -223,6 +245,34 @@ const chatSlice = createSlice({
 
       state.runningChat[chat.id][model.id].history = message
     },
+    // 向聊天历史记录添加内容
+    pushChatHistory: (state, action: PayloadAction<{
+      chat: Chat;
+      model: Model;
+      message: string;
+    }>) => {
+      const {
+        chat,
+        model,
+        message,
+      } = action.payload
+
+      // 除非在聊天的过程中被删除，否则都应该存在
+      const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
+      if (chatIdx === -1) return
+
+      const chatModelList = state.chatList[chatIdx].chatModelList
+      if (!Array.isArray(chatModelList)) return
+
+      const modelIdx = chatModelList.findIndex(item => item.modelId === model.id)
+      if (modelIdx === -1) return
+
+      if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
+        chatModelList[modelIdx].chatHistoryList = []
+      }
+      // 将消息写到历史记录的数组中
+      chatModelList[modelIdx].chatHistoryList.push(message)
+    },
   },
   // 处理异步action的状态变化
   extraReducers: (builder) => {
@@ -295,7 +345,7 @@ const chatSlice = createSlice({
           state.runningChat[chat.id][model.id].isSending = false
         }
 
-        console.log('被 rejected', chat, model);
+        console.log('被 rejected', chat, model, action.error);
 
       })
       // 总的启动发送消息（它会比 sendMessage 先 rejected），将对应 chat 剩余的所有数据回写到数组中
@@ -342,6 +392,7 @@ export const {
 
 const {
   pushRunningChatHistory,
+  pushChatHistory,
 } = chatSlice.actions
 
 // 导出reducer

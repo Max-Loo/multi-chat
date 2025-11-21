@@ -20,6 +20,9 @@ importers:
       '@tauri-apps/api':
         specifier: ^2
         version: 2.9.0
+      '@tauri-apps/plugin-http':
+        specifier: ~2.5.4
+        version: 2.5.4
       '@tauri-apps/plugin-opener':
         specifier: ~2
         version: 2.5.0
@@ -50,9 +53,15 @@ importers:
       es-toolkit:
         specifier: ^1.40.0
         version: 1.40.0
+      highlight.js:
+        specifier: ^11.11.1
+        version: 11.11.1
       marked:
         specifier: ^17.0.0
         version: 17.0.0
+      marked-highlight:
+        specifier: ^2.2.3
+        version: 2.2.3(marked@17.0.0)
       openai:
         specifier: ^6.9.0
         version: 6.9.0
@@ -68,9 +77,6 @@ importers:
       react-router-dom:
         specifier: ^7.9.4
         version: 7.9.4(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      rxjs:
-        specifier: ^7.8.2
-        version: 7.8.2
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
@@ -897,6 +903,9 @@ packages:
     engines: {node: '>= 10'}
     hasBin: true
 
+  '@tauri-apps/plugin-http@2.5.4':
+    resolution: {integrity: sha512-/i4U/9za3mrytTgfRn5RHneKubZE/dwRmshYwyMvNRlkWjvu1m4Ma72kcbVJMZFGXpkbl+qLyWMGrihtWB76Zg==}
+
   '@tauri-apps/plugin-opener@2.5.0':
     resolution: {integrity: sha512-B0LShOYae4CZjN8leiNDbnfjSrTwoZakqKaWpfoH6nXiJwt6Rgj6RnVIffG3DoJiKsffRhMkjmBV9VeilSb4TA==}
 
@@ -1323,6 +1332,10 @@ packages:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
 
+  highlight.js@11.11.1:
+    resolution: {integrity: sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==}
+    engines: {node: '>=12.0.0'}
+
   ignore@5.3.2:
     resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}
     engines: {node: '>= 4'}
@@ -1499,6 +1512,11 @@ packages:
 
   magic-string@0.30.19:
     resolution: {integrity: sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==}
+
+  marked-highlight@2.2.3:
+    resolution: {integrity: sha512-FCfZRxW/msZAiasCML4isYpxyQWKEEx44vOgdn5Kloae+Qc3q4XR7WjpKKf8oMLk7JP9ZCRd2vhtclJFdwxlWQ==}
+    peerDependencies:
+      marked: '>=4 <18'
 
   marked@17.0.0:
     resolution: {integrity: sha512-KkDYEWEEiYJw/KC+DVm1zzlpMQSMIu6YRltkcCvwheCp8HWPXCk9JwOmHJKBlGfzcpzcIt6x3sMnTsRm/51oDg==}
@@ -1927,9 +1945,6 @@ packages:
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
-  rxjs@7.8.2:
-    resolution: {integrity: sha512-dhKf903U/PQZY6boNNtAGdWbG85WAbjT/1xYoZIC7FAY0yWapOBQVsVrDl58W86//e1VpMNBtRV4MaXfdMySFA==}
-
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
 
@@ -2013,9 +2028,6 @@ packages:
     engines: {node: '>=18.12'}
     peerDependencies:
       typescript: '>=4.8.4'
-
-  tslib@2.8.1:
-    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -2758,6 +2770,10 @@ snapshots:
       '@tauri-apps/cli-win32-ia32-msvc': 2.9.0
       '@tauri-apps/cli-win32-x64-msvc': 2.9.0
 
+  '@tauri-apps/plugin-http@2.5.4':
+    dependencies:
+      '@tauri-apps/api': 2.9.0
+
   '@tauri-apps/plugin-opener@2.5.0':
     dependencies:
       '@tauri-apps/api': 2.9.0
@@ -3297,6 +3313,8 @@ snapshots:
 
   has-flag@4.0.0: {}
 
+  highlight.js@11.11.1: {}
+
   ignore@5.3.2: {}
 
   ignore@7.0.5: {}
@@ -3423,6 +3441,10 @@ snapshots:
   magic-string@0.30.19:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  marked-highlight@2.2.3(marked@17.0.0):
+    dependencies:
+      marked: 17.0.0
 
   marked@17.0.0: {}
 
@@ -3914,10 +3936,6 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
-  rxjs@7.8.2:
-    dependencies:
-      tslib: 2.8.1
-
   scheduler@0.27.0: {}
 
   scroll-into-view-if-needed@3.1.0:
@@ -3980,8 +3998,6 @@ snapshots:
   ts-api-utils@2.1.0(typescript@5.8.3):
     dependencies:
       typescript: 5.8.3
-
-  tslib@2.8.1: {}
 
   type-check@0.4.0:
     dependencies:

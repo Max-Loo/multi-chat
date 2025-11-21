@@ -11,6 +11,12 @@
     "store:default",
     "shell:allow-open",
     "stronghold:default",
-    "os:default"
+    "os:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://**" }
+      ]
+    }
   ]
 }

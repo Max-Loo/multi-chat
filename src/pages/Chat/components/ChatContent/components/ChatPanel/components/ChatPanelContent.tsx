@@ -2,6 +2,7 @@ import { ChatModel } from "@/types/chat"
 import { useMemo } from "react";
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 import ChatPanelContentDetail from "./ChatPanelContentDetail";
+import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
 
 interface ChatPanelContentProps {
   columnCount: number;
@@ -13,6 +14,11 @@ interface ChatPanelContentProps {
 const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
   columnCount,
 }) => {
+  // 控制滚动条的相关逻辑
+  const {
+    onScrollEvent,
+    scrollbarClassname,
+  } = useAdaptiveScrollbar()
 
   const {
     chatModelList,
@@ -40,7 +46,11 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
           {row.map(chatModel => {
             return <div
               key={chatModel.modelId}
-              className="box-border flex-1 h-full p-2 overflow-y-auto text-sm border-b border-r border-gray-300"
+              className={`flex-1 overflow-y-auto border-b border-r border-gray-300
+                pr-4 pl-4
+                ${scrollbarClassname}
+              `}
+              onScroll={onScrollEvent}
             >
               {/* 具体渲染的内容 */}
               <ChatPanelContentDetail
