@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Model } from '@/types/model';
-import { loadModels, saveModels } from '../vaults/modelVault';
+import { loadModels } from '../vaults/modelVault';
 
 // 模型管理状态接口定义
 export interface ModelSliceState {
@@ -47,27 +47,22 @@ const modelSlice = createSlice({
     },
     // 新建模型
     createModel: (state, action: PayloadAction<{ model: Model }>) => {
-      const updatedModels: Model[] = [...state.models, action.payload.model]
-
-      // 保存
-      state.models = updatedModels
-      saveModels(updatedModels)
+      state.models.push(action.payload.model)
     },
     // 编辑模型
     editModel: (state, action: PayloadAction<{ model: Model }>) => {
       const {
         model,
       } = action.payload
-      const updatedModels: Model[] = [...state.models]
 
-      const idx = updatedModels.findIndex(item => item.id === model.id)
+      const {
+        models,
+      } = state
+
+      const idx = models.findIndex(item => item.id === model.id)
       if (idx !== -1) {
-        updatedModels[idx] = { ...model }
+        models[idx] = { ...model }
       }
-
-      // 保存
-      state.models = updatedModels
-      saveModels(updatedModels)
     },
     // 删除模型
     deleteModel: (state, action: PayloadAction<{ model: Model }>) => {
@@ -75,18 +70,19 @@ const modelSlice = createSlice({
         model,
       } = action.payload
 
+      const {
+        models,
+      } = state
+
       // 不使用filter，而是定位删除，是尽可能避免遍历整个数组
-      const updatedModels: Model[] = [...state.models]
-      const idx = updatedModels.findIndex(item => {
+      const idx = models.findIndex(item => {
         return item.id === model.id
       })
-      if (idx !== -1) {
-        updatedModels.splice(idx, 1)
-      }
 
-      // 保存
-      state.models = updatedModels
-      saveModels(updatedModels)
+      if (idx !== -1) {
+        // 添加已删除标识，不执行真删除
+        models[idx].isDeleted = true
+      }
     },
   },
   // 处理异步action的状态变化

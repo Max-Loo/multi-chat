@@ -3,9 +3,9 @@ import type { RootState } from "..";
 import { saveChatList } from "../vaults/chatVault";
 import { createChat, deleteChat, editChat, startSendChatMessage } from "../slices/chatSlices";
 
-export const saveModelsMiddleware = createListenerMiddleware<RootState>()
+export const saveChatListMiddleware = createListenerMiddleware<RootState>()
 
-saveModelsMiddleware.startListening({
+saveChatListMiddleware.startListening({
   // 需要触发保存聊天记录的，都需要声明在这里
   matcher: isAnyOf(
     startSendChatMessage.fulfilled,

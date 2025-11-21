@@ -5,9 +5,10 @@ import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedF
 import { useAppSelector } from "@/hooks/redux"
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import ChatButton from "./components/ChatButton"
+import { useExistingChatList } from "@/hooks/useExistingChatList"
 
 const ChatSidebar: React.FC = () => {
-  const chatList = useAppSelector((state) => state.chat.chatList)
+  const chatList = useExistingChatList()
   const chatListLoading = useAppSelector((state) => state.chat.loading)
 
   // 控制滚动条的相关逻辑

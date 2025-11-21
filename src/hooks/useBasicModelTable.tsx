@@ -1,18 +1,16 @@
 import ModelProviderDisplay from "@/pages/Model/ModelTable/components/ModelProviderDisplay"
 import { Model } from "@/types/model"
-import { useAppSelector } from "./redux";
 import { useState } from "react";
 import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedFilter";
 import { TableColumnsType } from "antd";
 import { ModelProviderKeyEnum } from "@/utils/enums";
+import { useExistingModels } from "./useExistingModels";
 
 /**
  * @description 基础的模型列表相关逻辑
  */
 export const useBasicModelTable = () => {
-  const models = useAppSelector(
-    (state) => state.models.models,
-  );
+  const models = useExistingModels()
 
   // 本地状态：过滤文本
   const [filterText, setFilterText] = useState<string>('');

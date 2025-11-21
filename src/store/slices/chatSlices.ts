@@ -168,26 +168,21 @@ const chatSlice = createSlice({
     },
     // 新增聊天
     createChat: (state, action: PayloadAction<{chat: Chat}>) => {
-      const newChatList: Chat[] = [action.payload.chat, ...state.chatList]
-
-      // 保存
-      state.chatList = newChatList
+      state.chatList.push(action.payload.chat)
     },
     // 编辑聊天
     editChat: (state, action: PayloadAction<{chat: Chat}>) => {
       const {
         chat,
       } = action.payload
+      const {
+        chatList,
+      } = state
 
-      const newChatList: Chat[] = [...state.chatList]
-
-      const idx = newChatList.findIndex(item => item.id === chat.id)
+      const idx = chatList.findIndex(item => item.id === chat.id)
       if (idx !== -1) {
-        newChatList[idx] = { ...chat }
+        chatList[idx] = { ...chat }
       }
-
-      // 保存
-      state.chatList = newChatList
     },
     // 删除聊天
     deleteChat: (state, action: PayloadAction<{chat: Chat}>) => {
@@ -195,17 +190,19 @@ const chatSlice = createSlice({
         chat,
       } = action.payload
 
+      const {
+        chatList,
+      } = state
+
       // 不使用filter，而是定位删除，是尽可能避免遍历整个数组
-      const newChatList: Chat[] = [...state.chatList]
-      const idx = newChatList.findIndex(item => {
+      const idx = chatList.findIndex(item => {
         return item.id === chat.id
       })
-      if (idx !== -1) {
-        newChatList.splice(idx, 1)
-      }
 
-      // 保存
-      state.chatList = newChatList
+      if (idx !== -1) {
+        // 添加「已删除」标识，不执行真删除
+        chatList[idx].isDeleted = true
+      }
 
       // 判断「是否当前选中的聊天正好是需要被删除的」
       if (state.selectedChatId === chat.id) {

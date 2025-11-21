@@ -32,7 +32,10 @@ export interface ManualConfigModel {
 
 
 // AI模型对象相关参数类型（完整的）
-export interface Model extends SystemConfigModel, ManualConfigModel {}
+export interface Model extends SystemConfigModel, ManualConfigModel {
+  // 是否已经删除的标识
+  isDeleted?: boolean;
+}
 
 // 编辑模型时，需要用到的对象类型
 export type EditableModel = Partial<Model>

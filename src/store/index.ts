@@ -3,7 +3,7 @@ import modelReducer, { ModelSliceState } from '@/store/slices/modelSlice';
 import modelPageReducer, { ModelPageSliceState } from '@/store/slices/modelPageSlice'
 import chatReducer, { ChatSliceState } from '@/store/slices/chatSlices'
 import chatPageReducer, { ChatPageSliceState } from '@/store/slices/chatPageSlices'
-import { saveModelsMiddleware } from './middleware/chatMiddleware';
+import { saveChatListMiddleware } from './middleware/chatMiddleware';
 
 // 创建Redux store实例
 export const store = configureStore({
@@ -16,7 +16,7 @@ export const store = configureStore({
     chatPage: chatPageReducer,
   },
   middleware: (getDefaultMiddleware) => {
-    return getDefaultMiddleware().prepend(saveModelsMiddleware.middleware)
+    return getDefaultMiddleware().prepend(saveChatListMiddleware.middleware)
   },
 });
 

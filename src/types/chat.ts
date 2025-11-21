@@ -11,4 +11,6 @@ export interface Chat {
   name?: string;
   // 具体每个模型的聊天实例
   chatModelList?: ChatModel[];
+  // 标识是否已经删除，不执行真删除
+  isDeleted?: boolean;
 }
