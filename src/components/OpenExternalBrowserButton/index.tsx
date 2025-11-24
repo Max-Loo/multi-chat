@@ -2,8 +2,8 @@
  * 可以点击打开外部浏览器的按钮
  */
 
+import { useNavigateToExternalSite } from "@/hooks/useNavigateToExternalSite"
 import { ExportOutlined } from "@ant-design/icons"
-import { open } from "@tauri-apps/plugin-shell"
 import { Button } from "antd"
 
 interface ButtonProps {
@@ -17,13 +17,17 @@ const OpenExternalBrowserButton: React.FC<ButtonProps> = ({
   className = '',
 }) => {
 
+  const {
+    navToExternalSite,
+  } = useNavigateToExternalSite()
+
   if (!siteUrl) {
     return <></>
   }
 
   // 跳转到外部网站
   const navToOfficialSite = () => {
-    open(siteUrl)
+    navToExternalSite(siteUrl)
   }
 
   return (

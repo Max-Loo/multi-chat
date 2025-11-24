@@ -1,4 +1,4 @@
-import { Chat, ChatRoleEnum, UserMessageRecord } from "@/types/chat";
+import { Chat, ChatRoleEnum, StandardMessage } from "@/types/chat";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { loadChatList } from "../vaults/chatVault";
 import { RootState } from "..";
@@ -22,7 +22,7 @@ export interface ChatSliceState {
   // 当前正在运行中的聊天（还有网络传输）。chatId - modelId - history
   runningChat: Record<string, Record<string, {
     isSending: boolean;
-    history: string;
+    history: StandardMessage | null;
   }>>;
 }
 
@@ -63,7 +63,7 @@ const sendMessage = createAsyncThunk<
     chat: Chat;
     message: string;
     model: Model;
-    historyList: string[];
+    historyList: StandardMessage[];
   }
 >(
   'chatModel/sendMessage',
@@ -77,13 +77,14 @@ const sendMessage = createAsyncThunk<
     dispatch(pushChatHistory({
       chat,
       model,
-      message: JSON.stringify({
+      message: {
         id: USER_MESSAGE_ID_PREFIX + uuidV4(),
         role: ChatRoleEnum.USER,
         content: message,
-        timestamp: Date.now(),
+        timestamp: Date.now() / 1000,
         modelKey: model.modelKey,
-      } as UserMessageRecord),
+        finishReason: null,
+      },
     }))
 
     // 获取请求方法
@@ -235,7 +236,7 @@ const chatSlice = createSlice({
     pushRunningChatHistory: (state, action: PayloadAction<{
       chat: Chat;
       model: Model;
-      message: string;
+      message: StandardMessage;
     }>) => {
       const {
         chat,
@@ -249,7 +250,7 @@ const chatSlice = createSlice({
     pushChatHistory: (state, action: PayloadAction<{
       chat: Chat;
       model: Model;
-      message: string;
+      message: StandardMessage;
     }>) => {
       const {
         chat,
@@ -303,7 +304,7 @@ const chatSlice = createSlice({
         if (!state.runningChat[chat.id][model.id]) {
           state.runningChat[chat.id][model.id] = {
             isSending: true,
-            history: '',
+            history: null,
           }
         } else {
           state.runningChat[chat.id][model.id].isSending = true
@@ -332,7 +333,7 @@ const chatSlice = createSlice({
             chatModelList[modelIdx].chatHistoryList = []
           }
           // 将临时的数据回写到总的数组中
-          chatModelList[modelIdx].chatHistoryList.push(currentChatModel.history)
+          chatModelList[modelIdx].chatHistoryList.push(currentChatModel.history as StandardMessage)
 
           // 清理临时数据
           delete state.runningChat[chat.id][model.id]
@@ -367,7 +368,7 @@ const chatSlice = createSlice({
             chatModelList[modelIdx].chatHistoryList = []
           }
           // 将临时的数据回写到总的数组中
-          chatModelList[modelIdx].chatHistoryList.push(historyItem.history)
+          chatModelList[modelIdx].chatHistoryList.push(historyItem.history as StandardMessage)
         })
 
         // 清理临时数据

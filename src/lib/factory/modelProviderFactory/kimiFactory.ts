@@ -1,11 +1,11 @@
 import { ModelProviderKeyEnum } from "@/utils/enums"
-import { ApiAddress, FetchApi, FetchApiParams, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator, RenderHistory } from "."
+import { ApiAddress, FetchApi, FetchApiParams, ModelProvider, ModelProviderFactory, ModelProviderFactoryCreator } from "."
 import { isNil, isString, mergeWith } from "es-toolkit"
 import OpenAI from 'openai'
-import { ChatCompletionChunk } from "openai/resources/index.mjs"
 import { fetch } from '@tauri-apps/plugin-http'
-import { ChatRoleEnum, StandardizedHistoryRecord, UserMessageRecord } from "@/types/chat"
-import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants"
+import { ChatRoleEnum, StandardMessage } from "@/types/chat"
+import { getStandardRole } from "@/utils/utils"
+import { ChatCompletionMessageParam } from "openai/resources/index.mjs"
 
 class KimiApiAddress implements ApiAddress {
   readonly defaultApiAddress = 'https://api.moonshot.cn'
@@ -36,11 +36,65 @@ class KimiApiAddress implements ApiAddress {
   }
 }
 
+
+/**
+ * @description 流式响应体
+ * 参考 https://platform.moonshot.cn/docs/api/chat#%E8%BF%94%E5%9B%9E%E5%86%85%E5%AE%B9
+ */
+
+interface TokensUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  cached_tokens?: number;
+  total_tokens: number;
+}
+interface KimiStreamResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    delta: {
+      role: ChatRoleEnum;
+      // 真正聊天返回的内容
+      content: string;
+    }
+    finish_reason: string | null;
+    usage?: TokensUsage | null;
+  }>
+  system_fingerprint: string;
+}
+
+/**
+ * @description 常规响应体
+ */
+// interface KimiResponse {
+//   id: string;
+//   object: string;
+//   created: number;
+//   model: string;
+//   choices: Array<{
+//     index: number;
+//     message: {
+//       role: ChatRoleEnum;
+//       // 真正聊天返回的内容
+//       content: string;
+//     }
+//     finish_reason: string | null;
+//   }>
+//   usage: TokensUsage;
+//   system_fingerprint: string;
+// }
+
+
+
+
 class KimiFetchApi implements FetchApi {
   fetch = async function*(
     {
       model,
-      // historyList,
+      historyList,
       message,
     }: FetchApiParams,
     { signal }: { signal?: AbortSignal } = {},
@@ -62,6 +116,12 @@ class KimiFetchApi implements FetchApi {
     const response = await client.chat.completions.create({
       model: modelKey,
       messages: [
+        ...(historyList.map(history => {
+          return {
+            role: history.role,
+            content: history.content,
+          } as ChatCompletionMessageParam
+        })),
         { role: 'user', content: message },
       ],
       stream: true,
@@ -69,16 +129,24 @@ class KimiFetchApi implements FetchApi {
       signal,
     })
 
-    let tempChunk: ChatCompletionChunk | null = null
+    let tempChunk: KimiStreamResponse | null = null
 
     for await (const chunk of response) {
+      // 处理信号已经被中断
       if (signal?.aborted) {
         break
       }
+
+      // 强制转换成 kimi 的格式
+      const kimiChunk = chunk as KimiStreamResponse
+
       if (isNil(tempChunk)) {
-        tempChunk = chunk
+        // 临时保存完整的格式，为了保存在 raw 中
+        tempChunk = kimiChunk
+
+
       } else {
-        tempChunk = mergeWith(tempChunk, chunk, (targetValue, sourceValue, key) => {
+        tempChunk = mergeWith(tempChunk, kimiChunk, (targetValue, sourceValue, key) => {
           // 单独处理合并返回内容
           if (key === 'content') {
             return targetValue + sourceValue
@@ -86,65 +154,46 @@ class KimiFetchApi implements FetchApi {
         })
       }
 
-      yield JSON.stringify(tempChunk)
+
+      const {
+        id,
+        created,
+        model,
+        choices,
+      } = tempChunk
+
+      const {
+        finish_reason,
+        delta: {
+          role,
+          content,
+        },
+        usage,
+      } = choices[0]
+
+      // 拼装自己的格式
+      const tempMessage: StandardMessage = {
+        id,
+        timestamp: created,
+        modelKey: model,
+        finishReason: finish_reason,
+        role: getStandardRole(role),
+        content: content || '',
+        raw: JSON.stringify(tempChunk),
+      }
+
+      if (!isNil(usage)) {
+        tempMessage.tokensUsage = {
+          completion: usage.completion_tokens,
+          prompt: usage.prompt_tokens,
+          cached: usage.cached_tokens,
+        }
+      }
+
+      // 将自己的格式的消息返回给上一层
+      yield tempMessage
     }
 
-  }
-}
-
-// 参考 https://platform.moonshot.cn/docs/api/chat#%E8%BF%94%E5%9B%9E%E5%86%85%E5%AE%B9
-interface KimiStreamResponseRecord {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: Array<{
-    index: number;
-    delta: {
-      role: ChatRoleEnum;
-      // 真正聊天返回的内容
-      content: string;
-    }
-    finish_reason: string | null;
-    usage: {
-      prompt_tokens: number;
-      completion_tokens: number;
-      total_tokens:number
-    }
-  }>
-  system_fingerprint: string;
-}
-
-
-class KimiRenderHistory implements RenderHistory {
-  getHistoryRecord = (history: string): StandardizedHistoryRecord => {
-    const historyRecord = JSON.parse(history) as KimiStreamResponseRecord | UserMessageRecord
-    const {
-      id,
-    } = historyRecord
-
-    let role: ChatRoleEnum = ChatRoleEnum.USER
-    let content: string = ''
-
-    if (id.startsWith(USER_MESSAGE_ID_PREFIX)) {
-      const record = historyRecord as UserMessageRecord
-
-      role = record.role
-      content = record.content
-
-    } else {
-      const record = historyRecord as KimiStreamResponseRecord
-      // 理论上只有一条生成记录
-      const choice = record.choices[0] || {}
-      role = choice.delta.role
-      content = choice.delta.content
-    }
-
-    return {
-      id,
-      role,
-      content,
-    }
   }
 }
 
@@ -163,7 +212,6 @@ class Kimi implements ModelProvider {
 class KimiFactory implements ModelProviderFactory {
   private modelProvider = new Kimi()
   private fetchApi = new KimiFetchApi()
-  private renderHtml = new KimiRenderHistory()
 
   getModelProvider = () => {
     return this.modelProvider
@@ -171,10 +219,6 @@ class KimiFactory implements ModelProviderFactory {
 
   getFetchApi = () => {
     return this.fetchApi
-  }
-
-  getRenderHtml = () => {
-    return this.renderHtml
   }
 }
 

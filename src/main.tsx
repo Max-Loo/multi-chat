@@ -5,8 +5,10 @@ import { store } from "@/store";
 import App from "./App";
 import '@ant-design/v5-patch-for-react-19';
 import { registerAllFactory } from "./lib/factory";
+import { interceptClickAToJump } from "./lib/global";
 
 registerAllFactory()
+interceptClickAToJump()
 
 // 渲染应用到DOM
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

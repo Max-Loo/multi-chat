@@ -1,7 +1,7 @@
 // 针对每个模型的聊天实例
 export interface ChatModel {
   modelId: string;
-  chatHistoryList: string[];
+  chatHistoryList: StandardMessage[];
 }
 
 // 每个聊天实体的类型
@@ -16,39 +16,38 @@ export interface Chat {
 }
 
 // 聊天角色枚举值
-export const enum ChatRoleEnum {
+export enum ChatRoleEnum {
   // 留给特殊角色
   UNKNOWN = 'unknown',
-
   USER = 'user',
   SYSTEM = 'system',
   ASSISTANT = 'assistant',
   TOOL = 'tool',
+  DEVELOPER = 'developer'
 }
 
-// 用户发送的消息的类型
-export interface UserMessageRecord {
-  // 格式为：user_msg_xxxxx
+/**
+ * @description 将不同服务商返回的消息转换成统一的格式
+ */
+export interface StandardMessage {
+  // 唯一标识，不同类型的id应该有不同的前缀标识
   id: string;
-  // unix 时间戳
+  // unix 时间戳，以秒为单位
   timestamp: number;
   // 使用到的具体模型的 key
   modelKey: string;
-  // 角色标识，理论上固定为 user
+  // 角色标识
   role: ChatRoleEnum;
   // 要发送的内容
   content: string;
-}
-
-
-/**
- * @description 统一转换成方便拿来渲染的格式
- */
-export interface StandardizedHistoryRecord {
-  // 唯一标识的 id
-  id: string;
-  // 创建这条记录的角色
-  role: ChatRoleEnum;
-  // 对话的内容，应该为 markdown 格式
-  content: string;
+  // 本次对话结束的原因
+  finishReason: string | null;
+  // 该次对话的token消耗量
+  tokensUsage?: {
+    completion: number;
+    prompt: number;
+    cached?: number;
+  };
+  // 被序列化后的原始响应数据的字符串
+  raw?: string | null;
 }

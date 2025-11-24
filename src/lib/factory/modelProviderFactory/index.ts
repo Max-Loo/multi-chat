@@ -1,4 +1,4 @@
-import { StandardizedHistoryRecord } from "@/types/chat";
+import { StandardMessage } from "@/types/chat";
 import { Model, ModelDetail } from "@/types/model";
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { isUndefined } from "es-toolkit";
@@ -17,8 +17,8 @@ export interface ApiAddress {
 export interface FetchApiParams {
   // 当前用到的模型，包含了许多参数
   model: Model,
-  // 历史聊天记录，统一为 string ，具体格式由具体实现决定
-  historyList: string[],
+  // 历史聊天记录
+  historyList: StandardMessage[],
   // 最新的要发送的消息
   message: string,
 }
@@ -35,17 +35,9 @@ export interface FetchApi {
   fetch: (
     params: FetchApiParams,
     configOptions?: FetchApiConfigOptions,
-  ) => AsyncIterable<string>;
+  ) => AsyncIterable<StandardMessage>;
 }
 
-
-/**
- * @description 处理渲染历史记录的相关逻辑
- */
-export interface RenderHistory {
-  // 从聊天历史中获取到聊天的内容，内部自己知道 JSON.parse 后的格式
-  getHistoryRecord: (history: string) => StandardizedHistoryRecord
-}
 
 export interface ModelProvider {
   // 大模型服务商唯一标识
@@ -68,7 +60,6 @@ export interface ModelProvider {
 export interface ModelProviderFactory {
   getModelProvider: () => ModelProvider;
   getFetchApi: () => FetchApi;
-  getRenderHtml: () => RenderHistory;
 }
 
 
