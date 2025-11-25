@@ -9,6 +9,7 @@ import ModelSelect from "./ModelSelect"
 import { v4 as uuidv4 } from 'uuid'
 import dayjs from "dayjs"
 import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory"
+import { isBoolean } from "es-toolkit"
 
 
 interface ModelConfigFormProps {
@@ -53,8 +54,8 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
     form.resetFields()
   }, [form, currentProvider])
 
-  // 是否开启当前配置的模型
-  const [isModelEnable, setIsModelEnable] = useState(true)
+  // 是否开启当前配置的模型，默认新建的时候是 true
+  const [isModelEnable, setIsModelEnable] = useState(isBoolean(modelParams?.isEnable) ? modelParams.isEnable : true)
 
   const apiAddressValue = Form.useWatch<string>('apiAddress', form)
 
@@ -148,7 +149,11 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
 
   // 表单校验成功后的回调
   const onFormFinish = (values: ManualConfigModel) => {
-    const fullModel: Model = getFullModelParams(values)
+    const fullModel: Model = getFullModelParams({
+      ...values,
+      // 特殊处理「是否启用」的开关
+      isEnable: isModelEnable,
+    })
     onFinish(fullModel)
   }
 

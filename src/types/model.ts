@@ -28,6 +28,8 @@ export interface ManualConfigModel {
   apiAddress: string;
   // 备注信息（可选）
   remark?: string;
+  // 是否启用该模型
+  isEnable: boolean;
 }
 
 
