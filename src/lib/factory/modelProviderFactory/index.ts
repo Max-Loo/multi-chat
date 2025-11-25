@@ -12,6 +12,8 @@ export interface ApiAddress {
   getOpenaiDisplayAddress: (url: string) => string;
   // 获取向 Openai 插件请求时候的地址
   getOpenaiFetchAddress: (url: string) => string;
+  // 获取表单中关于地址描述的文案
+  getAddressFormDescription?: () => string;
 }
 
 export interface FetchApiParams {

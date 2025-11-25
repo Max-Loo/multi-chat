@@ -7,7 +7,7 @@ import { registerKimiFactory } from "./modelProviderFactory/kimiFactory"
  */
 export const registerAllFactory = () => {
   // 模型供应商相关工厂
-  registerBigModelFactory()
   registerDeepseekFactory()
+  registerBigModelFactory()
   registerKimiFactory()
 }

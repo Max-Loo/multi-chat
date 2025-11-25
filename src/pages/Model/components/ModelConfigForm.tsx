@@ -97,8 +97,12 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
         // 动态填充 apiAddress 的 extra 信息
         extra: <>
           <div className="flex flex-wrap justify-between w-full gap4">
-            <span className="max-w-full text-wrap wrap-anywhere">{apiAddressInstance.getOpenaiDisplayAddress(apiAddressValue)}</span>
-            <span className="ml-auto">/ 结尾会忽略v1，# 结尾表示自定义</span>
+            <span className="max-w-full text-wrap wrap-anywhere">
+              {apiAddressInstance.getOpenaiDisplayAddress(apiAddressValue)}
+            </span>
+            <span className="ml-auto">
+              {apiAddressInstance.getAddressFormDescription?.() || '/ 结尾会忽略v1，# 结尾表示自定义'}
+            </span>
           </div>
         </>,
         component: <Input onBlur={onApiAddressBlur}/>,

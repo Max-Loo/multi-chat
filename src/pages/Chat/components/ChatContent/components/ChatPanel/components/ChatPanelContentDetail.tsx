@@ -1,13 +1,13 @@
 import { useAppSelector } from "@/hooks/redux"
 import { ChatModel, ChatRoleEnum, StandardMessage } from "@/types/chat"
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat"
-import { useCallback, useMemo } from "react"
-import { Marked } from 'marked'
+import { JSX, useCallback, useMemo } from "react"
 import DOMPurify from 'dompurify';
-import { markedHighlight } from "marked-highlight";
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
-import { isNotNil } from "es-toolkit"
+import { isNil, isNotNil } from "es-toolkit"
+import markdownit from 'markdown-it'
+import { Alert, Spin, Tag } from "antd";
 
 interface ChatPanelContentDetailProps {
   chatModel: ChatModel
@@ -35,40 +35,29 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
 
   // 将 markdown 字符串转换成安全的 html 字符串
   const getCleanHtml = useCallback((dirtyMarkdown: string) => {
-    const marked = new Marked({
-      breaks: true,
-    }, markedHighlight({
-      async: false,
-      emptyLangClass: 'hljs rounded-md',
-      langPrefix: 'hljs rounded-xl language-',
-      highlight(code, lang) {
-        const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-        return hljs.highlight(code, { language }).value;
+
+    const marked = markdownit({
+      highlight: function (str, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          return `<pre><code class="hljs rounded-xl mt-2 mb-2 language-${lang}">${hljs.highlight(str, { language: lang }).value}</code></pre>`;
+        }
+        // 未识别语言也做默认高亮
+        return `<pre><code class="hljs rounded-xl mt-2 mb-2">${hljs.highlightAuto(str).value}</code></pre>`;
       },
-    }))
+    });
 
-    // 自定义复制按钮
-    // const renderer = new marked.Renderer();
-
-    // // renderer.code = ({ text, lang }) => {
-    // //   const langClass = lang ? `language-${lang}` : '';
-    // //   return <pre><code className="hljs ${langClass}">${text}</code></pre>
-    // // };
-
-    // // // 使用自定义 renderer
-    // // marked.setOptions({ renderer });
-
-    return DOMPurify.sanitize(marked.parse(dirtyMarkdown) as string)
+    return DOMPurify.sanitize(marked.render(dirtyMarkdown))
   }, [])
 
   // 组合起来的，进行循环渲染的列表
   const actualHistoryRecordList = useMemo<StandardMessage[]>(() => {
     const list: StandardMessage[] = Array.isArray(chatModel.chatHistoryList) ? [...chatModel.chatHistoryList] : []
 
-    const runningHistory = runningChat[selectedChat.id]?.[chatModel.modelId]?.history
+    const currentRunningChat = runningChat[selectedChat.id]?.[chatModel.modelId]
 
-    if (isNotNil(runningHistory)) {
-      list.push(runningHistory)
+
+    if (isNotNil(currentRunningChat) && isNotNil(currentRunningChat.history) && currentRunningChat.isSending) {
+      list.push(currentRunningChat.history)
     }
 
     return list
@@ -79,21 +68,40 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     selectedChat.id,
   ])
 
+  const getTitle = useCallback(() => {
+
+    if (isNil(currentModel)) {
+      return <Tag color="red">模型已删除</Tag>
+    }
+
+    let statusTag: JSX.Element | null = null
+
+    if (currentModel.isDeleted) {
+      statusTag = <Tag color="red">已删除</Tag>
+    }
+
+    if (!currentModel.isEnable) {
+      statusTag = <Tag color="orange">被禁用</Tag>
+    }
+
+    return <div className="flex items-center">
+      {`${currentModel.providerName} | ${currentModel.modelName} | ${currentModel.nickname}`}
+      <div className="ml-2">{statusTag}</div>
+    </div>
+
+
+  }, [currentModel])
+
 
   return <div className="flex flex-col items-center text-base">
-    {currentModel ? `${currentModel.providerName} | ${currentModel.modelName} | ${currentModel.nickname}` : '该模型已经被删除'}
+    {getTitle()}
     {actualHistoryRecordList.map(historyRecord => {
       const {
         id,
         role,
         content,
-        raw,
+        // reasoningContent,
       } = historyRecord
-      if (raw) {
-
-        console.log('raw', JSON.parse(raw));
-      }
-
 
       switch (role) {
         // 用户对话气泡
@@ -119,13 +127,22 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
             dangerouslySetInnerHTML={{
               __html: getCleanHtml(content),
             }}
-          ></div>
+          />
         }
         default: {
           return <div key={id}>{ content }</div>
         }
       }
     })}
+    {/* 展示可能的错误信息 */}
+    {
+      runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage
+      && <Alert
+        title={runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage}
+        type="error"
+        className="self-start"
+      />
+    }
   </div>
 }
 

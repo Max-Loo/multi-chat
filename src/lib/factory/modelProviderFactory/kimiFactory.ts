@@ -26,13 +26,20 @@ class KimiApiAddress implements ApiAddress {
       actualUrl = this.defaultApiAddress
     }
 
-    if (actualUrl.endsWith('#') || actualUrl.endsWith('/')) {
+    if ([
+      '#',
+      '/',
+    ].some(char => actualUrl.endsWith(char))) {
       actualUrl = actualUrl.slice(0, actualUrl.length - 1)
     } else {
       actualUrl += '/v1'
     }
 
     return actualUrl
+  }
+
+  getAddressFormDescription = () => {
+    return '/ 结尾会忽略v1，# 结尾表示自定义'
   }
 }
 
@@ -178,7 +185,7 @@ class KimiFetchApi implements FetchApi {
         modelKey: model,
         finishReason: finish_reason,
         role: getStandardRole(role),
-        content: content || '',
+        content,
         raw: JSON.stringify(tempChunk),
       }
 

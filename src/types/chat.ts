@@ -38,8 +38,10 @@ export interface StandardMessage {
   modelKey: string;
   // 角色标识
   role: ChatRoleEnum;
-  // 要发送的内容
+  // 发送或者接收的内容
   content: string;
+  // thinking / reasoning 模式下，思考的内容
+  reasoningContent?: string;
   // 本次对话结束的原因
   finishReason: string | null;
   // 该次对话的token消耗量

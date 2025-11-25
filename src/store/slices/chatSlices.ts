@@ -4,7 +4,7 @@ import { loadChatList } from "../vaults/chatVault";
 import { RootState } from "..";
 import { Model } from "@/types/model";
 import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory";
-import { isNotNil } from "es-toolkit";
+import { isNil, isNotNil } from "es-toolkit";
 import { v4 as uuidV4 } from 'uuid'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
 
@@ -23,6 +23,7 @@ export interface ChatSliceState {
   runningChat: Record<string, Record<string, {
     isSending: boolean;
     history: StandardMessage | null;
+    errorMessage?: string
   }>>;
 }
 
@@ -297,17 +298,19 @@ const chatSlice = createSlice({
       .addCase(sendMessage.pending, (state, action) => {
         const { chat, model } = action.meta.arg
         // 带有结构初始化的逻辑
-        if (!state.runningChat[chat.id]) {
+        if (isNil(state.runningChat[chat.id])) {
           state.runningChat[chat.id] = {}
         }
 
-        if (!state.runningChat[chat.id][model.id]) {
+        if (isNil(state.runningChat[chat.id][model.id])) {
           state.runningChat[chat.id][model.id] = {
             isSending: true,
             history: null,
+            errorMessage: '',
           }
         } else {
           state.runningChat[chat.id][model.id].isSending = true
+          state.runningChat[chat.id][model.id].errorMessage = ''
         }
 
       })
@@ -342,9 +345,10 @@ const chatSlice = createSlice({
       // 具体每个模型发送消息完成后，取消发送状态，回写数据留给 startSendChatMessage 去做
       .addCase(sendMessage.rejected, (state, action) => {
         const { chat, model } = action.meta.arg
-        if (state.runningChat[chat.id]?.[model.id]) {
-          state.runningChat[chat.id][model.id].isSending = false
-        }
+        const currentChatModel = state.runningChat[chat.id]?.[model.id]
+        currentChatModel.isSending = false
+        // 记录错误信息
+        currentChatModel.errorMessage = action?.error?.message || ''
 
         console.log('被 rejected', chat, model, action.error);
 
@@ -368,12 +372,10 @@ const chatSlice = createSlice({
             chatModelList[modelIdx].chatHistoryList = []
           }
           // 将临时的数据回写到总的数组中
-          chatModelList[modelIdx].chatHistoryList.push(historyItem.history as StandardMessage)
+          if (isNotNil(historyItem.history)) {
+            chatModelList[modelIdx].chatHistoryList.push(historyItem.history)
+          }
         })
-
-        // 清理临时数据
-        delete state.runningChat[chat.id]
-        console.log('总出口触发 reject');
 
       })
   },
