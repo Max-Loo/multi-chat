@@ -1,13 +1,15 @@
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { setIsCollapsed, setIsShowChatPage } from "@/store/slices/chatPageSlices";
 import { MenuUnfoldOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, InputNumber } from "antd";
+import { Button, InputNumber, Switch } from "antd";
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 import { useEffect } from "react";
 
 interface ChatPanelHeaderProps {
   columnCount: number;
   setColumnCount: (value: number) => void;
+  isSplitter: boolean;
+  setIsSplitter: (value: boolean) => void;
 }
 
 /**
@@ -16,6 +18,8 @@ interface ChatPanelHeaderProps {
 const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
   columnCount,
   setColumnCount,
+  isSplitter,
+  setIsSplitter,
 }) => {
   const dispatch = useAppDispatch()
 
@@ -56,6 +60,8 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
         </span>
       </div>
       {chatModelList.length > 1 && <div className="flex items-center justify-start text-sm">
+        <span>开启 Splitter：</span>
+        <Switch value={isSplitter} onChange={setIsSplitter} className="mr-2!" />
         <span>每行至多展示：</span>
         <InputNumber
           controls={false}

@@ -5,7 +5,7 @@ import { Chat } from "@/types/chat"
 import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EllipsisOutlined } from "@ant-design/icons"
 import type { MenuProps } from 'antd'
 import { App, Button, Dropdown, Input } from "antd"
-import React, { useMemo, useState } from "react"
+import { memo, useMemo, useState } from "react"
 
 interface ChatButtonProps {
   // 当前选中要进行操作的聊天
@@ -15,7 +15,7 @@ interface ChatButtonProps {
 /**
  * @description 聊天列表中的单个聊天按钮
  */
-const ChatButton: React.FC<ChatButtonProps> = React.memo(({
+const ChatButton = memo<ChatButtonProps>(({
   chat,
 }) => {
   const dispatch = useAppDispatch()

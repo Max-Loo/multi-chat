@@ -13,9 +13,12 @@ export const useAdaptiveScrollbar = ({
   /** 入参 */
   hideDebounceMs = 500,
 }: useAdaptiveScrollbarParams = {}) : {
-  /** 返回值 */
+  // 通过类来控制 scrollbar 样式
   scrollbarClassname: string;
-  onScrollEvent: () => void
+  // 触发滚动事件
+  onScrollEvent: () => void;
+  // 是否处于滚动中，当外部需要该状态做一些判断的时候可以使用
+  isScrolling: boolean;
 } => {
   // 控制当前是否滚动
   const [isScrolling, setIsScrolling] = useState(false)
@@ -47,6 +50,7 @@ export const useAdaptiveScrollbar = ({
 
   return {
     scrollbarClassname,
+    isScrolling,
     onScrollEvent: () => {
       showScrollbar()
     },

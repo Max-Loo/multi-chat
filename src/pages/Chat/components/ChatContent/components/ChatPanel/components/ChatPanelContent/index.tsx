@@ -1,11 +1,12 @@
 import { ChatModel } from "@/types/chat"
 import { useMemo } from "react";
-import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
-import ChatPanelContentDetail from "./ChatPanelContentDetail";
-import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
+import { useTypedSelectedChat } from "../../hooks/useTypedSelectedChat";
+import ChatPanelContentDetail from "./components/ChatPanelContentDetail";
+import { Splitter } from "antd";
 
 interface ChatPanelContentProps {
   columnCount: number;
+  isSplitter: boolean;
 }
 
 /**
@@ -13,12 +14,8 @@ interface ChatPanelContentProps {
  */
 const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
   columnCount,
+  isSplitter,
 }) => {
-  // 控制滚动条的相关逻辑
-  const {
-    onScrollEvent,
-    scrollbarClassname,
-  } = useAdaptiveScrollbar()
 
   const {
     chatModelList,
@@ -35,6 +32,38 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
   }, [columnCount, chatModelList])
 
 
+  if (isSplitter && chatModelList.length > 1) {
+    return <div className="absolute top-0 left-0 w-full h-screen pt-12 pb-22">
+      <Splitter orientation="vertical" lazy>
+        {
+          board.map((row, idx) => {
+            return <Splitter.Panel
+              key={idx}
+            >
+              <Splitter lazy>
+                {row.map(chatModel => {
+                  return <Splitter.Panel
+                    key={chatModel.modelId}
+                  >
+                    <div
+                      className={``}
+                    >
+
+                      {/* 具体渲染的内容 */}
+                      <ChatPanelContentDetail
+                        chatModel={chatModel}
+                      />
+                    </div>
+                  </Splitter.Panel>
+                })}
+              </Splitter>
+            </Splitter.Panel>
+          })
+        }
+      </Splitter>
+    </div>
+  }
+
   // 渲染成棋盘
   return <div className="absolute top-0 left-0 w-full h-screen pt-12 pb-22">
     <div className="flex flex-col w-full h-full">
@@ -46,11 +75,9 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
           {row.map(chatModel => {
             return <div
               key={chatModel.modelId}
-              className={`flex-1 overflow-y-auto border-b border-r border-gray-300
-                pr-4 pl-4
-                ${scrollbarClassname}
+              className={`
+                flex-1 min-w-0 border-b border-r border-gray-300
               `}
-              onScroll={onScrollEvent}
             >
               {/* 具体渲染的内容 */}
               <ChatPanelContentDetail

@@ -66,6 +66,8 @@ interface KimiStreamResponse {
       role: ChatRoleEnum;
       // 真正聊天返回的内容
       content: string;
+      // 当为 thinking 模型的时候，在输出真正内容（content）前的推理内容
+      reasoning_content: string | null;
     }
     finish_reason: string | null;
     usage?: TokensUsage | null;
@@ -155,8 +157,16 @@ class KimiFetchApi implements FetchApi {
       } else {
         tempChunk = mergeWith(tempChunk, kimiChunk, (targetValue, sourceValue, key) => {
           // 单独处理合并返回内容
-          if (key === 'content') {
-            return targetValue + sourceValue
+          if ([
+            'reasoning_content',
+            'content',
+          ].includes(key)) {
+            let str = isString(targetValue) ? targetValue : ''
+
+            if (isString(sourceValue)) {
+              str += sourceValue
+            }
+            return str
           }
         })
       }
@@ -174,6 +184,7 @@ class KimiFetchApi implements FetchApi {
         delta: {
           role,
           content,
+          reasoning_content,
         },
         usage,
       } = choices[0]
@@ -185,7 +196,8 @@ class KimiFetchApi implements FetchApi {
         modelKey: model,
         finishReason: finish_reason,
         role: getStandardRole(role),
-        content,
+        content: content || '',
+        reasoningContent: reasoning_content || '',
         raw: JSON.stringify(tempChunk),
       }
 
@@ -212,6 +224,7 @@ class Kimi implements ModelProvider {
   readonly apiAddress = new KimiApiAddress()
   readonly modelList = [
     { modelKey: 'moonshot-v1-auto', modelName: 'moonshot-v1-auto' },
+    { modelKey: 'kimi-k2-thinking', modelName: 'kimi-k2-thinking' },
   ]
 }
 

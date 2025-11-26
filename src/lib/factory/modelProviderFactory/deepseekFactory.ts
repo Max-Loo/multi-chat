@@ -93,9 +93,9 @@ interface DeepseekStreamResponse {
     delta: {
       role: ChatRoleEnum;
       // 真正聊天返回的内容
-      content: string;
+      content: string | null;
       // 当为 reasoner 模型的时候，在输出真正内容（content）前的推理内容
-      reasoning_content: string;
+      reasoning_content: string | null;
     }
     // 该 choice 的对数概率信息。
     logprobs: ChoiceLogprobs | null;
@@ -150,6 +150,7 @@ class DeepseekFetchApi implements FetchApi {
     let tempChunk: DeepseekStreamResponse | null = null
 
     for await (const chunk of response) {
+
       // 处理信号已经被中断
       if (signal?.aborted) {
         break
@@ -167,14 +168,18 @@ class DeepseekFetchApi implements FetchApi {
         tempChunk = mergeWith(tempChunk, deepseekChunk, (targetValue, sourceValue, key) => {
           // 单独处理合并返回内容
           if ([
-            'reason_content',
+            'reasoning_content',
             'content',
           ].includes(key)) {
-            return targetValue + sourceValue
+            let str = isString(targetValue) ? targetValue : ''
+
+            if (isString(sourceValue)) {
+              str += sourceValue
+            }
+            return str
           }
         })
       }
-
 
       const {
         id,
@@ -200,8 +205,8 @@ class DeepseekFetchApi implements FetchApi {
         modelKey: model,
         finishReason: finish_reason,
         role: getStandardRole(role),
-        content: content,
-        reasoningContent: reasoning_content,
+        content: content || '',
+        reasoningContent: reasoning_content || '',
         raw: JSON.stringify(tempChunk),
       }
 

@@ -1,0 +1,42 @@
+import { useAppSelector } from "@/hooks/redux";
+import { ChatModel } from "@/types/chat";
+import { Tag } from "antd";
+import { isNil } from "es-toolkit";
+import { JSX, memo, useMemo } from "react";
+
+interface DetailTitleProps {
+  chatModel: ChatModel
+}
+
+const DetailTitle = memo<DetailTitleProps>(({
+  chatModel,
+}) => {
+  // 模型列表
+  const models = useAppSelector(state => state.models.models)
+  // 当前展示的模型在模型列表里面的完整版
+  const currentModel = useMemo(() => {
+    return models.find(model => model.id === chatModel.modelId)
+  }, [chatModel, models])
+
+  if (isNil(currentModel)) {
+    return <Tag color="red">模型已删除</Tag>
+  }
+
+  let statusTag: JSX.Element | null = null
+
+  if (currentModel.isDeleted) {
+    statusTag = <Tag color="red">已删除</Tag>
+  }
+
+  if (!currentModel.isEnable) {
+    statusTag = <Tag color="orange">被禁用</Tag>
+  }
+
+  return <div className="flex items-center">
+    {`${currentModel.providerName} | ${currentModel.modelName} | ${currentModel.nickname}`}
+    <div className="ml-2">{statusTag}</div>
+  </div>
+})
+
+
+export default DetailTitle
