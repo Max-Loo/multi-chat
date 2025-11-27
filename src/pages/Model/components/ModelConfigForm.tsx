@@ -101,7 +101,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
               {apiAddressInstance.getOpenaiDisplayAddress(apiAddressValue)}
             </span>
             <span className="ml-auto">
-              {apiAddressInstance.getAddressFormDescription?.() || '/ 结尾会忽略v1，# 结尾表示自定义'}
+              {apiAddressInstance.getAddressFormDescription?.() || '# 结尾表示自定义'}
             </span>
           </div>
         </>,

@@ -5,6 +5,7 @@ import React, { useMemo, useRef, useState } from "react"
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { startSendChatMessage } from "@/store/slices/chatSlices";
+import { platform } from '@tauri-apps/plugin-os';
 
 interface SendButtonProps {
   // 是否处于发送状态
@@ -123,6 +124,9 @@ const ChatPanelSender: React.FC = () => {
     sendMessage(text)
   }
 
+  // 记录最近一次 compositionEnd 事件的 timestamp
+  const [compositionEndTimestamp, setCompositionEndTimestamp] = useState(0)
+
   // 按下回车按钮的回调，直接回车是发送，shift + enter 是换行
   const onPressEnterBtn: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (!e.shiftKey) {
@@ -130,14 +134,28 @@ const ChatPanelSender: React.FC = () => {
       e.preventDefault()
 
       if (isSending) {
-        // 如果处于发送状态，忽略回车事件
+      // 如果处于发送状态，忽略回车事件
+        return
+      }
+
+      /**
+       * @link https://bugs.webkit.org/show_bug.cgi?id=165004
+       * 在 MAC 端的 safari 中，isComposing 属性无效，导致在中文输入法下，按下 Enter 键而错误触发
+       * 且在 safari 中，onCompositionEnd 事件会在 onKeyDown 事件前触发；（正确情况下应该是反过来）
+       * hack - 直接判断两个触发事件的间隔是否满足一定时间差
+       */
+      const currentPlatform = platform();
+      if (currentPlatform === 'macos' && Math.abs(e.timeStamp - compositionEndTimestamp) < 100) {
         return
       }
 
       // 进行发送逻辑
       sendMessage(text)
+
     }
   }
+
+
 
   return (
     <div className="relative w-full h-22 bg-gray-50">
@@ -148,8 +166,8 @@ const ChatPanelSender: React.FC = () => {
           value={text}
           onChange={(e) => { setText(e.target.value) }}
           onPressEnter={onPressEnterBtn}
-        >
-        </Input.TextArea>
+          onCompositionEnd={(e) => { setCompositionEndTimestamp(e.timeStamp) }}
+        />
       </div>
       {/* 发送按钮 */}
       <SendButton

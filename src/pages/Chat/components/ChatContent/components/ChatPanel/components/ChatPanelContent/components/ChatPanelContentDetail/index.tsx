@@ -41,7 +41,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
   return <div
     className={`
       flex flex-col items-center text-base h-full overflow-y-auto
-      pl-3
+      pt-2 pb-4 pl-3
       ${isScrolling ? 'pr-0.5' : 'pr-3'}
       ${scrollbarClassname}
     `}

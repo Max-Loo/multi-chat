@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 import markdownit from 'markdown-it'
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface ChatBubbleProps {
   // 是否为正在生成中的气泡，设置为 true 才会有加载动画
@@ -44,7 +44,15 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     reasoningContent,
   } = historyRecord
 
+
   const [thinkingExpanded, setThinkingExpanded] = useState(isRunningBubble && true)
+
+  useEffect(() => {
+    // 思考完毕以后，折叠思考内容
+    if (content) {
+      setThinkingExpanded(false)
+    }
+  }, [content])
 
   // 是否处于 thinking 状态
   const thinkingLoading = useMemo(() => {
@@ -69,6 +77,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     case ChatRoleEnum.ASSISTANT: {
       return <Bubble
         className="w-full mt-3"
+        classNames={{
+          body: 'w-full',
+        }}
         content={content}
         variant="borderless"
         placement="start"

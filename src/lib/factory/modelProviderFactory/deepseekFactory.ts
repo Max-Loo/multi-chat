@@ -129,7 +129,6 @@ class DeepseekFetchApi implements FetchApi {
       fetch,
     })
 
-    // Deepseek 默认开启流式响应
     const response = await client.chat.completions.create({
       model: modelKey,
       messages: [
@@ -141,6 +140,7 @@ class DeepseekFetchApi implements FetchApi {
         })),
         { role: 'user', content: message },
       ],
+      // Deepseek 默认开启流式响应
       stream: true,
     }, {
       signal,

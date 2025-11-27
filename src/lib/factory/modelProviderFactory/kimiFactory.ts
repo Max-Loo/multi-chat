@@ -121,7 +121,6 @@ class KimiFetchApi implements FetchApi {
       fetch,
     })
 
-    // Kimi 默认开启流式响应
     const response = await client.chat.completions.create({
       model: modelKey,
       messages: [
@@ -133,6 +132,7 @@ class KimiFetchApi implements FetchApi {
         })),
         { role: 'user', content: message },
       ],
+      // Kimi 默认开启流式响应
       stream: true,
     }, {
       signal,
