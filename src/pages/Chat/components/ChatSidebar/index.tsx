@@ -52,8 +52,6 @@ const ChatSidebar: React.FC = () => {
           <div className="w-full min-h-40"></div>
         </Spin>}
       </div>
-      {/* 底部白色遮罩 */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-white to-transparent" />
     </div>
   )
 }
