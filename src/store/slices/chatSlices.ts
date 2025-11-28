@@ -89,7 +89,9 @@ const sendMessage = createAsyncThunk<
     }))
 
     // 获取请求方法
-    const fetchApi = ModelProviderFactoryCreator.getFactory(model.providerKey).getFetchApi()
+    const {
+      fetchApi,
+    } = ModelProviderFactoryCreator.getFactory(model.providerKey).getModelProvider()
 
     const fetchResponse = fetchApi.fetch(
       {
