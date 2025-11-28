@@ -135,9 +135,9 @@ src/
 ### 数据持久化
 
 应用使用 Tauri 的 Store 插件进行数据持久化，数据存储位置：
-- Windows: `%APPDATA%\com.luyuexing.multi-chat`
-- macOS: `~/Library/Application Support/com.luyuexing.multi-chat`
-- Linux: `~/.config/com.luyuexing.multi-chat`
+- Windows: `%APPDATA%\com.<username>.multi-chat`
+- macOS: `~/Library/Application Support/com.<username>.multi-chat`
+- Linux: `~/.config/com.<username>.multi-chat`
 
 ## 推荐开发环境
 
