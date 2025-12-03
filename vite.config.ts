@@ -17,7 +17,7 @@ export default defineConfig(async () => ({
     }),
     tailwindcss(),
     visualizer({
-      open: true, // 自动打开浏览器
+      // open: true, // 自动打开浏览器
       gzipSize: true, // 显示 gzip 后大小
       brotliSize: true,
       filename: 'dist/stats.html', // 生成文件
