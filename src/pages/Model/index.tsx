@@ -14,16 +14,16 @@ const useSwitchPage = () => {
   const pageComponent = useMemo(() => {
     switch (pageKey) {
     // 跳转到添加模型页面
-    case ModelPageEnum.ADD_PAGE: {
-      return <CreateModel />
-    }
-    // 跳转到模型列表页面
-    case ModelPageEnum.TABLE_PAGE: {
-      return <ModelTable />
-    }
-    default: {
-      return <ModelTable />
-    }
+      case ModelPageEnum.ADD_PAGE: {
+        return <CreateModel />
+      }
+      // 跳转到模型列表页面
+      case ModelPageEnum.TABLE_PAGE: {
+        return <ModelTable />
+      }
+      default: {
+        return <ModelTable />
+      }
     }
   }, [pageKey])
 
