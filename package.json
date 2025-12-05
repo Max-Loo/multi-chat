@@ -1,14 +1,17 @@
 {
   "name": "multi-chat",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "web:dev": "vite",
+    "web:build": "tsc && vite build",
     "lint": "eslint ./src",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "update-version": "node scripts/update-version.js"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",

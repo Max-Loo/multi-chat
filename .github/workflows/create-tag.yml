@@ -1,0 +1,82 @@
+name: Create and Push Tag
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+# 设置工作流权限
+permissions:
+  contents: write  # 允许写入仓库内容（包括创建和推送标签）
+
+jobs:
+  create-and-push-tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整的Git历史记录，以便创建标签
+          token: ${{ secrets.PAT_TOKEN }}  # 使用PAT以便触发其他工作流
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Check if package.json exists and extract version
+        id: check-version
+        run: |
+          if [ ! -f "package.json" ]; then
+            echo "Error: package.json not found in repository root"
+            exit 1
+          fi
+          
+          # 检查package.json中是否有version字段
+          if ! node -e "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version" 2>/dev/null; then
+            echo "Error: version field not found in package.json"
+            exit 1
+          fi
+          
+          # 提取版本号
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Found version: $VERSION"
+          
+      - name: Check if tag already exists
+        id: check-tag
+        run: |
+          TAG_NAME="v${{ steps.check-version.outputs.version }}"
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $TAG_NAME already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $TAG_NAME does not exist"
+          fi
+          
+      - name: Create and push tag
+        if: steps.check-tag.outputs.exists == 'false'
+        run: |
+          TAG_NAME="v${{ steps.check-version.outputs.version }}"
+          echo "Creating tag: $TAG_NAME"
+          
+          # 配置Git用户信息
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 创建标签
+          git tag -a "$TAG_NAME" -m "Release version ${{ steps.check-version.outputs.version }}"
+          
+          # 推送标签到远程仓库
+          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git "$TAG_NAME"
+          
+          echo "Tag $TAG_NAME created and pushed successfully"
+          
+      - name: Skip tag creation
+        if: steps.check-tag.outputs.exists == 'true'
+        run: |
+          echo "Skipping tag creation as tag v${{ steps.check-version.outputs.version }} already exists"
