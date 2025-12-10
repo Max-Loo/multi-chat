@@ -352,7 +352,7 @@ const chatSlice = createSlice({
         // 记录错误信息
         currentChatModel.errorMessage = action?.error?.message || ''
 
-        console.log('被 rejected', chat, model, action.error);
+        console.log('被 rejected', chat, model, action);
 
       })
       // 总的启动发送消息（它会比 sendMessage 先 rejected），将对应 chat 剩余的所有数据回写到数组中

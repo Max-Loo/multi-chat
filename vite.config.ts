@@ -51,5 +51,27 @@ export default defineConfig(async () => ({
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
     },
+    proxy: {
+      // 匹配 /deepseek/xxx
+      '/deepseek': {
+        target: 'https://api.deepseek.com',
+        changeOrigin: true,
+        secure: true,
+        // 去掉前缀再转发
+        rewrite: (path) => path.replace(/^\/deepseek/, ''),
+      },
+      '/kimi': {
+        target: 'https://api.moonshot.cn',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/kimi/, ''),
+      },
+      '/bigmodel': {
+        target: 'https://open.bigmodel.cn/api/paas/v4',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/bigmodel/, ''),
+      },
+    },
   },
 }));

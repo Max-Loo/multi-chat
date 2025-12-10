@@ -3,12 +3,40 @@ import OpenAI from "openai"
 import { StandardMessage } from "@/types/chat"
 import { FetchApi, FetchApiParams } from "../index"
 import { Model } from "@/types/model"
+import { ModelProviderKeyEnum } from "@/utils/enums"
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
+const originFetch = fetch
 
 /**
  * @description 流式 API 请求处理的抽象基类
  * 提供通用的流处理逻辑，子类只需实现特定的配置和解析逻辑
  */
 export abstract class BaseFetchApi<T> implements FetchApi {
+  /**
+   * 在开发环境下，会返回专用 baseUrl，配合 vite 实现代理服务器，具体见 vite.config.ts 中的配置
+   * @param key 判断在代理服务器中传发到哪个 target 的重要依据
+   * @returns 开发环境下的专用 baseUrl，正式环境会返回 null
+   */
+  protected readonly getDevEnvBaseUrl = (key?: ModelProviderKeyEnum): string | null => {
+    if (import.meta.env.DEV && key) {
+      return location.origin + `/${key}`
+    }
+
+    return null
+  }
+
+  /**
+   * 在正式环境，使用 tauri 的 fetch 方法；在开发环境，使用原生的 fetch 方法
+   * @returns fetch 方法
+   */
+  protected readonly getFetchFunc = (): typeof originFetch => {
+    if (import.meta.env.DEV) {
+      return originFetch
+    }
+
+    return tauriFetch
+  }
+
   /**
    * 创建 OpenAI 客户端，子类必须实现
    * @param model 模型配置

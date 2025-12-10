@@ -5,7 +5,6 @@ import { ConfigurableModelProvider } from "../base/ConfigurableModelProvider"
 import { Model, ModelDetail } from "@/types/model"
 import { StandardMessage } from "@/types/chat"
 import OpenAI from "openai"
-import { fetch } from '@tauri-apps/plugin-http'
 import { ChatRoleEnum } from "@/types/chat"
 import { getStandardRole } from "@/utils/utils"
 
@@ -70,11 +69,13 @@ interface KimiStreamResponse {
  */
 class KimiFetchApi extends BaseFetchApi<KimiStreamResponse> {
   createClient = (model: Model): OpenAI => {
+    const apiAddress = this.getDevEnvBaseUrl(ModelProviderKeyEnum.KIMI) || model.apiAddress
+
     return new OpenAI({
       apiKey: model.apiKey,
-      baseURL: model.apiAddress,
+      baseURL: (new KimiApiAddress()).getOpenaiFetchAddress(apiAddress),
       dangerouslyAllowBrowser: true,
-      fetch,
+      fetch: this.getFetchFunc(),
     })
   }
 
