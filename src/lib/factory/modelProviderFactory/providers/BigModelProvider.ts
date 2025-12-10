@@ -5,7 +5,6 @@ import { ConfigurableModelProvider } from "../base/ConfigurableModelProvider"
 import { Model, ModelDetail } from "@/types/model"
 import { StandardMessage } from "@/types/chat"
 import OpenAI from "openai"
-import { fetch } from '@tauri-apps/plugin-http'
 import { ChatRoleEnum } from "@/types/chat"
 import { getStandardRole } from "@/utils/utils"
 
@@ -66,11 +65,13 @@ interface BigModelStreamResponse {
  */
 class BigModelFetchApi extends BaseFetchApi<BigModelStreamResponse> {
   createClient = (model: Model): OpenAI => {
+    const apiAddress = this.getDevEnvBaseUrl(ModelProviderKeyEnum.BIG_MODEL) || model.apiAddress
+
     return new OpenAI({
       apiKey: model.apiKey,
-      baseURL: model.apiAddress,
+      baseURL: (new BigModelApiAddress).getOpenaiFetchAddress(apiAddress),
       dangerouslyAllowBrowser: true,
-      fetch,
+      fetch: this.getFetchFunc(),
     })
   }
 
