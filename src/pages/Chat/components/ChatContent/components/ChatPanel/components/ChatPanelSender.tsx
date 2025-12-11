@@ -1,11 +1,12 @@
 import { ArrowUpOutlined } from "@ant-design/icons";
 import { Button, Input } from "antd"
-import { isNil, isString } from "es-toolkit";
-import React, { useMemo, useRef, useState } from "react"
+import { isString } from "es-toolkit";
+import React, { useRef, useState } from "react"
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
-import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useAppDispatch } from "@/hooks/redux";
 import { startSendChatMessage } from "@/store/slices/chatSlices";
 import { platform } from '@tauri-apps/plugin-os';
+import { useIsChatSending } from "../hooks/useIsChatSending";
 
 interface SendButtonProps {
   // 是否处于发送状态
@@ -36,9 +37,9 @@ const SendButton: React.FC<SendButtonProps> = ({
       disabled={disabled}
       shape="circle"
       size="large"
-      icon={!isSending && <ArrowUpOutlined />}
+      title={isSending ? '停止发送' : '发送消息'}
     >
-      {isSending && <>
+      {isSending ? <>
         <div
           className={`
             absolute inset-0 border-4 rounded-full
@@ -48,10 +49,10 @@ const SendButton: React.FC<SendButtonProps> = ({
             group-hover:border-blue-200
           `}
         ></div>
-        <div className="absolute inset-0 flex items-center justify-center w-full h-full rounded-full">
-          <div className="w-3 h-3 bg-blue-500 rounded-sm group-hover:bg-blue-400"></div>
+        <div className="absolute inset-0 flex items-center justify-center w-full h-full rounded-xl">
+          <div className="w-2.5 h-2.5 bg-blue-500 rounded-sm group-hover:bg-blue-400"></div>
         </div>
-      </>}
+      </> : <ArrowUpOutlined /> }
     </Button>
   </>
 
@@ -68,21 +69,9 @@ const ChatPanelSender: React.FC = () => {
     selectedChat,
   } = useTypedSelectedChat()
 
-
-  // 当前在运行的聊天
-  const runningChat = useAppSelector(state => state.chat.runningChat)
-
-  // 将每个独立窗口的发送状态汇总起来
-  const isSending = useMemo(() => {
-    const chat = runningChat[selectedChat.id]
-
-    if (isNil(chat)) {
-      return false
-    }
-
-    return Object.values(chat).some(item => item.isSending)
-
-  }, [selectedChat, runningChat])
+  const {
+    isSending,
+  } = useIsChatSending()
 
   // 要发送的内容
   const [text, setText] = useState('')
