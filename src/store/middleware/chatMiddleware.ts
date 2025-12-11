@@ -1,7 +1,13 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import type { RootState } from "..";
 import { saveChatList } from "../vaults/chatVault";
-import { createChat, deleteChat, editChat, startSendChatMessage } from "../slices/chatSlices";
+import {
+  createChat,
+  deleteChat,
+  editChat,
+  editChatName,
+  startSendChatMessage,
+} from "../slices/chatSlices";
 
 export const saveChatListMiddleware = createListenerMiddleware<RootState>()
 
@@ -12,6 +18,7 @@ saveChatListMiddleware.startListening({
     startSendChatMessage.rejected,
     createChat,
     editChat,
+    editChatName,
     deleteChat,
   ),
   effect: async (_, listenerApi) => {

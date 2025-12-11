@@ -165,6 +165,8 @@ export const startSendChatMessage = createAsyncThunk<
 
 
 
+
+
 /**
  * @description chat 模块管理的 slice
  */
@@ -208,6 +210,27 @@ const chatSlice = createSlice({
       const idx = chatList.findIndex(item => item.id === chat.id)
       if (idx !== -1) {
         chatList[idx] = { ...chat }
+      }
+    },
+    // 编辑聊天的名称
+    editChatName: (
+      state,
+      action: PayloadAction<{
+        name: string,
+        id: string
+      }>,
+    ) => {
+      const {
+        id,
+        name,
+      } = action.payload
+      const {
+        chatList,
+      } = state
+
+      const idx = chatList.findIndex(item => item.id === id)
+      if (idx !== -1) {
+        chatList[idx].name = name
       }
     },
     // 删除聊天
@@ -392,6 +415,7 @@ export const {
   clearSelectChatId,
   createChat,
   editChat,
+  editChatName,
   deleteChat,
 } = chatSlice.actions;
 
