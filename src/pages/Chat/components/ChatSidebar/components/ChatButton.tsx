@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from "@/hooks/redux"
 import { useNavigateToChat } from "@/hooks/useNavigateToPage"
-import { deleteChat, editChat } from "@/store/slices/chatSlices"
+import { deleteChat, editChatName } from "@/store/slices/chatSlices"
 import { Chat } from "@/types/chat"
 import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EllipsisOutlined } from "@ant-design/icons"
 import type { MenuProps } from 'antd'
@@ -103,12 +103,17 @@ const ChatButton = memo<ChatButtonProps>(({
 
   // 确认重命名
   const onConfirmRename = () => {
+    // 避免没有意义的编辑
+    if (newName === chat.name) {
+      onCancelRename()
+      return
+    }
+
     try {
-      dispatch(editChat({
-        chat: {
-          ...chat,
-          name: newName,
-        },
+      // 因为当前组件被 memo，并不一定能获取到最新的 chat，故使用 editChatName 而不是 editChat
+      dispatch(editChatName({
+        id: chat.id,
+        name: newName,
       }))
 
       message.success('编辑聊天成功')
