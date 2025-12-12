@@ -51,7 +51,9 @@ export interface ModelProvider {
   // 官网地址
   readonly officialSite?: string;
   // 请求地址
-  readonly apiAddress: ApiAddress
+  readonly apiAddress: ApiAddress;
+  // 请求处理逻辑
+  readonly fetchApi: FetchApi;
   // 可选择的模型
   readonly modelList: ModelDetail[];
 }
@@ -61,7 +63,6 @@ export interface ModelProvider {
  */
 export interface ModelProviderFactory {
   getModelProvider: () => ModelProvider;
-  getFetchApi: () => FetchApi;
 }
 
 

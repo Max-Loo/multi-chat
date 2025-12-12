@@ -89,7 +89,9 @@ const sendMessage = createAsyncThunk<
     }))
 
     // 获取请求方法
-    const fetchApi = ModelProviderFactoryCreator.getFactory(model.providerKey).getFetchApi()
+    const {
+      fetchApi,
+    } = ModelProviderFactoryCreator.getFactory(model.providerKey).getModelProvider()
 
     const fetchResponse = fetchApi.fetch(
       {
@@ -163,6 +165,8 @@ export const startSendChatMessage = createAsyncThunk<
 
 
 
+
+
 /**
  * @description chat 模块管理的 slice
  */
@@ -206,6 +210,27 @@ const chatSlice = createSlice({
       const idx = chatList.findIndex(item => item.id === chat.id)
       if (idx !== -1) {
         chatList[idx] = { ...chat }
+      }
+    },
+    // 编辑聊天的名称
+    editChatName: (
+      state,
+      action: PayloadAction<{
+        name: string,
+        id: string
+      }>,
+    ) => {
+      const {
+        id,
+        name,
+      } = action.payload
+      const {
+        chatList,
+      } = state
+
+      const idx = chatList.findIndex(item => item.id === id)
+      if (idx !== -1) {
+        chatList[idx].name = name
       }
     },
     // 删除聊天
@@ -350,7 +375,7 @@ const chatSlice = createSlice({
         // 记录错误信息
         currentChatModel.errorMessage = action?.error?.message || ''
 
-        console.log('被 rejected', chat, model, action.error);
+        console.log('被 rejected', chat, model, action);
 
       })
       // 总的启动发送消息（它会比 sendMessage 先 rejected），将对应 chat 剩余的所有数据回写到数组中
@@ -390,6 +415,7 @@ export const {
   clearSelectChatId,
   createChat,
   editChat,
+  editChatName,
   deleteChat,
 } = chatSlice.actions;
 
