@@ -7,9 +7,12 @@ import { useNavToPage } from '@/store/slices/modelPageSlice';
 import { useAppDispatch } from '@/hooks/redux';
 import { createModel } from '@/store/slices/modelSlice';
 import { App } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 // 添加模型页面
 const CreateModel: React.FC = () => {
+  const { t } = useTranslation()
+
   const [
     selectedModelProviderKey,
     setSelectedModelProviderKey,
@@ -30,11 +33,11 @@ const CreateModel: React.FC = () => {
         model,
       }))
 
-      message.success('模型添加成功')
+      message.success(t($ => $.model.addModelSuccess))
       // 返回到列表页面
       navToTablePage()
     } catch {
-      message.error('模型添加失败')
+      message.error(t($ => $.model.addModelFailed))
     }
   }
 

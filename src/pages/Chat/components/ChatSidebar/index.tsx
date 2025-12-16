@@ -6,8 +6,10 @@ import { useAppSelector } from "@/hooks/redux"
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import ChatButton from "./components/ChatButton"
 import { useExistingChatList } from "@/hooks/useExistingChatList"
+import { useTranslation } from "react-i18next"
 
 const ChatSidebar: React.FC = () => {
+  const { t } = useTranslation()
   const chatList = useExistingChatList()
   const chatListLoading = useAppSelector((state) => state.chat.loading)
 
@@ -48,7 +50,7 @@ const ChatSidebar: React.FC = () => {
             chat={chat}
             key={chat.id}
           />
-        }) : <Spin spinning={chatListLoading} tip="加载中">
+        }) : <Spin spinning={chatListLoading} tip={t($ => $.chat.loading)}>
           <div className="w-full min-h-40"></div>
         </Spin>}
       </div>

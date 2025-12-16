@@ -1,0 +1,7 @@
+{
+  "bigModel": "智谱AI",
+  "kimi": "月之暗面",
+  "deepseek": "深度求索",
+  "apiAddressCustom": "# 结尾表示自定义",
+  "apiAddressKimi": "/ 结尾会忽略v1，# 结尾表示自定义"
+}

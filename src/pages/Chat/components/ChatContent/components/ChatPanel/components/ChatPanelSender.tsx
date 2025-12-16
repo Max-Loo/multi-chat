@@ -7,6 +7,7 @@ import { useAppDispatch } from "@/hooks/redux";
 import { startSendChatMessage } from "@/store/slices/chatSlices";
 import { platform } from '@tauri-apps/plugin-os';
 import { useIsChatSending } from "../hooks/useIsChatSending";
+import { useTranslation } from "react-i18next";
 
 interface SendButtonProps {
   // 是否处于发送状态
@@ -23,6 +24,7 @@ const SendButton: React.FC<SendButtonProps> = ({
   disabled = false,
   onClick = () => {},
 }) => {
+  const { t } = useTranslation()
 
   return <>
     <Button
@@ -37,7 +39,7 @@ const SendButton: React.FC<SendButtonProps> = ({
       disabled={disabled}
       shape="circle"
       size="large"
-      title={isSending ? '停止发送' : '发送消息'}
+      title={isSending ? t($ => $.chat.stopSending) : t($ => $.chat.sendMessage)}
     >
       {isSending ? <>
         <div
@@ -63,6 +65,8 @@ const SendButton: React.FC<SendButtonProps> = ({
  * @description 聊天内容发送框
  */
 const ChatPanelSender: React.FC = () => {
+  const { t } = useTranslation()
+
   const dispatch = useAppDispatch()
 
   const {
@@ -104,7 +108,7 @@ const ChatPanelSender: React.FC = () => {
     if (isSending) {
       // 如果处于发送状态，停止上次的发送事件
       if (abortSendEventRef.current) {
-        abortSendEventRef.current.abort('取消')
+        abortSendEventRef.current.abort(t($ => $.common.cancel))
         abortSendEventRef.current = null
       }
       return

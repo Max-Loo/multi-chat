@@ -1,17 +1,19 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from 'antd';
-import { MessageOutlined, RobotOutlined } from '@ant-design/icons';
+import { MessageOutlined, RobotOutlined, SettingOutlined } from '@ant-design/icons';
 import type { NavigationItem } from '@/types/navigation';
 import { useCurrentSelectedChat } from '@/hooks/useCurrentSelectedChat';
 import { isNotNil } from 'es-toolkit';
 import { useNavigateToChat } from '@/hooks/useNavigateToPage';
+import { useTranslation } from 'react-i18next';
 
 interface SidebarProps {
   className?: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,22 +22,26 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
     navigateToChat,
   } = useNavigateToChat()
 
-  const navigationItems: NavigationItem[] = [
+  const navigationItems = useMemo<NavigationItem[]>(() => [
     {
       id: 'chat',
-      name: '聊天',
+      name: t($ => $.navigation.chat),
       icon: <MessageOutlined />,
       path: '/chat',
-      color: 'text-blue-500',
     },
     {
       id: 'model',
-      name: '模型',
+      name: t($ => $.navigation.model),
       icon: <RobotOutlined />,
       path: '/model',
-      color: 'text-purple-500',
     },
-  ];
+    {
+      id: 'setting',
+      name: t($ => $.navigation.setting),
+      icon: <SettingOutlined />,
+      path: '/setting',
+    },
+  ], [t]);
 
   const handleNavigation = (item: NavigationItem) => {
     // 就在当前页面就不用跳转

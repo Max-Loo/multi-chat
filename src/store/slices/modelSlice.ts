@@ -25,7 +25,7 @@ export const initializeModels = createAsyncThunk(
     try {
       return await loadModels();
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : '初始化模型数据失败');
+      throw new Error(error instanceof Error ? error.message : 'Failed to initialize model data');
     }
   },
 );
@@ -101,7 +101,7 @@ const modelSlice = createSlice({
       // 初始化模型数据失败
       .addCase(initializeModels.rejected, (state, action) => {
         state.loading = false;
-        state.initializationError = action.error.message || '初始化文件失败';
+        state.initializationError = action.error.message || 'Failed to initialize file';
       })
   },
 });

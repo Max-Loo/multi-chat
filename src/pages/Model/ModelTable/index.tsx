@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Table, Button, Space, Alert, Popconfirm, TableColumnsType, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
@@ -8,6 +8,7 @@ import { useNavToPage } from '@/store/slices/modelPageSlice';
 import FilterInput from '@/components/FilterInput';
 import EditModelModal from './components/EditModelModal';
 import { useBasicModelTable } from '@/hooks/useBasicModelTable';
+import { useTranslation } from 'react-i18next';
 
 // 模型表格主组件
 const ModelTable: React.FC = () => {
@@ -15,6 +16,7 @@ const ModelTable: React.FC = () => {
   const loading = useAppSelector((state) => state.models.loading);
   const error = useAppSelector((state) => state.models.error);
   const initializationError = useAppSelector((state) => state.models.initializationError);
+  const { t } = useTranslation()
 
   const {
     message,
@@ -23,14 +25,14 @@ const ModelTable: React.FC = () => {
   const { navToAddPage } = useNavToPage()
 
   // 处理删除模型
-  const handleDeleteModel = (model: Model): void => {
+  const handleDeleteModel = useCallback((model: Model): void => {
     try {
       dispatch(deleteModel({ model }));
-      message.success('模型删除成功');
+      message.success(t($ => $.model.deleteModelSuccess));
     } catch {
-      message.error('模型删除失败');
+      message.error(t($ => $.model.deleteModelFailed));
     }
-  };
+  }, [dispatch, message, t]);
 
   // 处理添加模型按钮点击
   const handleAddModel = () => {
@@ -43,10 +45,11 @@ const ModelTable: React.FC = () => {
   // 控制编辑模型弹窗的开关
   const [isModalOpen, setIsModalOpen] = useState(false)
   // 处理点击编辑模型按钮
-  const handleEditModel = (value: Model) => {
+  const handleEditModel = useCallback((value: Model) => {
     setCurrentEditingModel(value)
     setIsModalOpen(true)
-  }
+  }, [setCurrentEditingModel, setIsModalOpen])
+
   // 关闭编辑模型弹窗的回调
   const onModalCancel = () => {
     setIsModalOpen(false)
@@ -61,10 +64,10 @@ const ModelTable: React.FC = () => {
   } = useBasicModelTable()
 
   // 表格列定义
-  const columns: TableColumnsType<Model> = [
+  const columns = React.useMemo<TableColumnsType<Model>>(() => [
     ...tableColumns,
     {
-      title: '操作',
+      title: t($ => $.table.operation),
       key: 'actions',
       width: 120,
       render: (_, record) => (
@@ -76,11 +79,11 @@ const ModelTable: React.FC = () => {
             onClick={() => handleEditModel(record)}
           />
           <Popconfirm
-            title="确认删除"
-            description={`确定要删除模型 "${record.nickname}" 吗？`}
+            title={t($ => $.model.confirmDelete)}
+            description={t($ => $.model.confirmDeleteDescription, { nickname: record.nickname })}
             onConfirm={() => handleDeleteModel(record)}
-            okText="确定"
-            cancelText="取消"
+            okText={t($ => $.common.confirm)}
+            cancelText={t($ => $.common.cancel)}
           >
             <Button
               type="text"
@@ -92,14 +95,14 @@ const ModelTable: React.FC = () => {
         </Space>
       ),
     },
-  ]
+  ], [handleEditModel, handleDeleteModel, tableColumns, t])
 
   return (
     <div className="p-6">
       {/* 显示初始化错误 */}
       {initializationError && (
         <Alert
-          message="数据加载失败"
+          title={t($ => $.model.dataLoadFailed)}
           description={initializationError}
           type="error"
           showIcon
@@ -111,7 +114,7 @@ const ModelTable: React.FC = () => {
       {/* 显示操作错误 */}
       {error && (
         <Alert
-          message="操作失败"
+          title={t($ => $.model.operationFailed)}
           description={error}
           type="error"
           showIcon
@@ -128,14 +131,14 @@ const ModelTable: React.FC = () => {
             icon={<PlusOutlined />}
             onClick={handleAddModel}
           >
-            添加模型
+            {t($ => $.model.addModel)}
           </Button>
         </Space>
         <FilterInput
           value={filterText}
           onChange={setFilterText}
           className='w-72!'
-          placeholder='搜索昵称或备注'
+          placeholder={t($ => $.model.searchPlaceholder)}
         />
       </div>
 
@@ -148,8 +151,8 @@ const ModelTable: React.FC = () => {
         pagination={false}
         locale={{
           emptyText: initializationError
-            ? '请修复错误后重新加载数据'
-            : '暂无模型数据，点击"添加模型"创建第一个模型',
+            ? t($ => $.model.fixErrorReload)
+            : t($ => $.model.noModelData),
         }}
       />
       <EditModelModal

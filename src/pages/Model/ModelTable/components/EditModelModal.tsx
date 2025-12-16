@@ -5,6 +5,7 @@ import { useMemo } from "react"
 import { EditableModel, Model } from "@/types/model"
 import { useAppDispatch } from "@/hooks/redux"
 import { editModel } from "@/store/slices/modelSlice"
+import { useTranslation } from "react-i18next"
 
 interface EditModelModalProps {
   // 是否打开弹窗
@@ -25,6 +26,7 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
   modelParams,
 }) => {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
 
   const {
     message,
@@ -40,9 +42,9 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
       dispatch(editModel({
         model,
       }))
-      message.success('模型编辑成功')
+      message.success(t($ => $.model.editModelSuccess))
     } catch {
-      message.error('模型编辑失败')
+      message.error(t($ => $.model.editModelFailed))
     }
 
     // 让父组件关闭弹窗

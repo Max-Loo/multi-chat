@@ -20,7 +20,7 @@
       "@/*": ["./src/*"],
       "@components/*": ["./src/components/*"],
       "@pages/*": ["./src/pages/*"],
-      "@routes/*": ["./src/routes/*"],
+      "@routes/*": ["src/router/*"],
       "@types/*": ["./src/types/*"],
       "@styles/*": ["./src/styles/*"]
     },
