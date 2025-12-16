@@ -9,12 +9,14 @@ import { DeleteOutlined } from "@ant-design/icons"
 import { App, Button, Checkbox, Table, TableColumnsType, Tag } from "antd"
 import { isUndefined } from "es-toolkit"
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 /**
  * @description 新建聊天的时候提供选择模型
  */
 const ModelSelect: React.FC = () => {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
   const selectedChat = useCurrentSelectedChat()
 
   const typedSelectedChat = selectedChat as Chat
@@ -92,7 +94,7 @@ const ModelSelect: React.FC = () => {
   // 点击确定创建聊天
   const onConfirm = () => {
     if (checkedModelIdList.length <= 0) {
-      message.info('请选择你想要使用的模型')
+      message.info(t($ => $.chat.selectModelHint))
       return
     }
 
@@ -109,9 +111,9 @@ const ModelSelect: React.FC = () => {
         },
       }))
 
-      message.success('编辑聊天成功')
+      message.success(t($ => $.chat.editChatSuccess))
     } catch {
-      message.error('编辑聊天失败')
+      message.error(t($ => $.chat.editChatFailed))
     }
 
     setConfirmLoading(false)
@@ -150,12 +152,12 @@ const ModelSelect: React.FC = () => {
           type="primary"
           onClick={onConfirm}
         >
-        确认
+          {t($ => $.common.confirm)}
         </Button>
         <FilterInput
           value={filterText}
           onChange={setFilterText}
-          placeholder='搜索昵称或备注'
+          placeholder={t($ => $.chat.searchPlaceholder)}
           className="h-8 ml-2 w-72!"
         />
       </div>

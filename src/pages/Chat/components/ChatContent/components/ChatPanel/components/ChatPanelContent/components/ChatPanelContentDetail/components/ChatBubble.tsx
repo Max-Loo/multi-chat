@@ -5,6 +5,7 @@ import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 import markdownit from 'markdown-it'
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ChatBubbleProps {
   // 是否为正在生成中的气泡，设置为 true 才会有加载动画
@@ -37,6 +38,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   historyRecord,
   isRunningBubble = false,
 }) => {
+  const { t } = useTranslation()
 
   const {
     role,
@@ -61,8 +63,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   // think 组件的 title
   const thinkingTitle = useMemo(() => {
-    return thinkingLoading ? '思考中...' : '思考完毕'
-  }, [thinkingLoading])
+    return thinkingLoading ? t($ => $.chat.thinking) : t($ => $.chat.thinkingComplete)
+  }, [thinkingLoading, t])
 
   switch (role) {
     // 用户对话气泡

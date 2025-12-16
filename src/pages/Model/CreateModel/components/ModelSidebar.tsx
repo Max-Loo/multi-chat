@@ -6,6 +6,7 @@ import { LeftOutlined } from "@ant-design/icons"
 import { Avatar, Button } from "antd"
 import { useState } from "react"
 import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory"
+import { useTranslation } from "react-i18next"
 
 interface ModelSidebarProps {
   // 当前选中的大模型
@@ -17,6 +18,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
   value: selectedModelKey,
   onChange,
 }) => {
+  const { t } = useTranslation()
   const { navToTablePage } = useNavToPage()
 
   // 本地状态：过滤文本
@@ -35,12 +37,12 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
       <div className="p-2 border-b border-gray-300">
         <div className="flex items-center justify-between w-full pb-2">
           <Button className="rounded-lg!" onClick={navToTablePage}><LeftOutlined /></Button>
-          <span className="text-lg">模型服务商</span>
+          <span className="text-lg">{t($ => $.model.modelProvider)}</span>
         </div>
         <FilterInput
           value={filterText}
           onChange={setFilterText}
-          placeholder='搜索模型'
+          placeholder={t($ => $.model.searchModel)}
           className={`w-full! rounded-lg!`}
         />
       </div>

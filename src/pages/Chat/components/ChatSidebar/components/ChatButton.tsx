@@ -6,6 +6,7 @@ import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EllipsisOut
 import type { MenuProps } from 'antd'
 import { App, Button, Dropdown, Input } from "antd"
 import { memo, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 interface ChatButtonProps {
   // 当前选中要进行操作的聊天
@@ -19,6 +20,7 @@ const ChatButton = memo<ChatButtonProps>(({
   chat,
 }) => {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
 
   const selectedChatId = useAppSelector((state) => state.chat.selectedChatId)
 
@@ -45,7 +47,7 @@ const ChatButton = memo<ChatButtonProps>(({
   const menuProps: MenuProps['items'] = useMemo(() => {
     return [
       {
-        label: '重命名',
+        label: t($ => $.chat.rename),
         key: 'rename',
         icon: <EditOutlined />,
         onClick: (menuInfo) => {
@@ -61,7 +63,7 @@ const ChatButton = memo<ChatButtonProps>(({
         type: 'divider',
       },
       {
-        label: '删除',
+        label: t($ => $.chat.delete),
         key: 'delete',
         icon: <DeleteOutlined/>,
         className: 'text-red-500!',
@@ -74,23 +76,23 @@ const ChatButton = memo<ChatButtonProps>(({
               dispatch(deleteChat({
                 chat,
               }))
-              message.success('删除聊天成功')
+              message.success(t($ => $.chat.deleteChatSuccess))
             } catch {
-              message.error('删除聊天失败')
+              message.error(t($ => $.chat.deleteChatFailed))
             }
           }
 
           modal.warning({
             maskClosable: true,
             closable: true,
-            title: `是否确定删除「${chat.name}」`,
-            content: '聊天被删除后，所有相关聊天记录将无法找回',
+            title: `${t($ => $.chat.confirmDelete)}「${chat.name}」`,
+            content: t($ => $.chat.deleteChatConfirm),
             onOk,
           })
         },
       },
     ]
-  }, [chat, dispatch, modal, message])
+  }, [chat, dispatch, modal, message, t])
 
 
   // 临时的重命名
@@ -116,10 +118,10 @@ const ChatButton = memo<ChatButtonProps>(({
         name: newName,
       }))
 
-      message.success('编辑聊天成功')
+      message.success(t($ => $.chat.editChatSuccess))
       onCancelRename()
     } catch {
-      message.error('编辑聊天失败')
+      message.error(t($ => $.chat.editChatFailed))
     }
   }
 
@@ -166,7 +168,7 @@ const ChatButton = memo<ChatButtonProps>(({
       `}
       onClick={() => onClickChat(chat)}
     >
-      <span className="pl-2 text-sm">{chat.name || '未命名'}</span>
+      <span className="pl-2 text-sm">{chat.name || t($ => $.chat.unnamed)}</span>
       <Dropdown menu={{ items: menuProps }} trigger={['click']} arrow>
         <EllipsisOutlined
           name="More options"

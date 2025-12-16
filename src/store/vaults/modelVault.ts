@@ -20,8 +20,8 @@ export const loadModels = async (): Promise<Model[]> => {
 
     return models
   } catch (error) {
-    console.error('获取模型列表失败', error);
-    throw new Error('从本地获取模型列表失败')
+    console.error('Failed to get model list', error);
+    throw new Error('Failed to load model list from local storage')
   }
 }
 
@@ -38,7 +38,7 @@ export const saveModels = async (models: Model[]): Promise<void> => {
 
     await stronghold.save()
   } catch (error) {
-    console.error('保存模型列表失败', error);
-    throw new Error('向本地保存模型列表失败')
+    console.error('Failed to save model list', error);
+    throw new Error('Failed to save model list to local storage')
   }
 }

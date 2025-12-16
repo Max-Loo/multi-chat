@@ -5,7 +5,6 @@ export type NavigationItem = {
   name: string;
   icon: ReactNode;
   path: string;
-  color: string;
 };
 
 export type NavigationItems = NavigationItem[];

@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
-import routes from '@/routes';
+import FullscreenLoading from '../FullscreenLoading';
 
 interface LayoutProps {
   className?: string;
@@ -12,25 +12,10 @@ const Layout: React.FC<LayoutProps> = ({ className = '' }) => {
     <div className={`flex h-screen bg-white ${className}`}>
       {/* 左侧导航栏 */}
       <Sidebar />
-
       {/* 主内容区域 */}
       <div className="flex-1 h-full">
-        <Suspense
-          fallback={
-            <div className="flex items-center justify-center h-full">
-              <div className="text-gray-500">加载中...</div>
-            </div>
-          }
-        >
-          <Routes>
-            {routes.map((route) => (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={route.component}
-              />
-            ))}
-          </Routes>
+        <Suspense fallback={<FullscreenLoading />}>
+          <Outlet />
         </Suspense>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 interface FilterInputProps {
   value: string;
@@ -14,13 +15,18 @@ interface FilterInputProps {
 const FilterInput: React.FC<FilterInputProps> = ({
   value,
   onChange,
-  placeholder = '搜索',
+  placeholder,
   className,
   autoFocus = false,
 }) => {
+  const { t } = useTranslation();
+
+  // 如果没有传入placeholder，则使用默认的国际化文本
+  const finalPlaceholder = placeholder || t($ => $.common.search);
+
   return (
     <Input
-      placeholder={placeholder}
+      placeholder={finalPlaceholder}
       prefix={<SearchOutlined />}
       value={value}
       onChange={(e) => onChange(e.target.value)}

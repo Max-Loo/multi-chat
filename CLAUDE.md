@@ -12,6 +12,7 @@ This is a Tauri + React + TypeScript desktop application. It combines a Rust bac
 - Entry point: `src/main.tsx`
 - Main component: `src/App.tsx`
 - Uses React Compiler for optimization
+- Internationalization: i18next + react-i18next
 - Port: 1420 (fixed for Tauri)
 
 **Backend**: Rust + Tauri 2.0
@@ -154,6 +155,41 @@ const [filterText, setFilterText] = useState<string>('');
         *   **本次迭代中，你如何具体应用了** **KISS, YAGNI, DRY, SOLID** **原则**，并简要说明其带来的好处（例如，代码量减少、可读性提高、扩展性增强）。
         *   **遇到的挑战**以及如何克服。
         *   **下一步的明确计划和建议。**
+
+## Internationalization (i18n)
+
+### Configuration
+- Main configuration: `src/lib/i18n.ts`
+- Language files location: `src/locales/`
+- Supported languages: Chinese (zh), English (en)
+- Default language: English (fallback)
+- Language detection priority:
+  1. Local storage (`multi-chat-language`)
+  2. System language (if supported)
+  3. Default fallback (en)
+
+### Language File Structure
+```
+src/locales/
+├── en/
+│   ├── common.json    # Common UI text
+│   ├── model.json     # Model-related text
+│   ├── setting.json   # Settings-related text
+│   └── table.json     # Table-related text
+└── zh/
+```
+
+### Key Functions
+- `initI18n()`: Initialize i18n configuration
+- `getLocalesResources()`: Load all language resources dynamically
+- `changeAppLanguage()`: Change application language
+- `getDefaultAppLanguage()`: Get default language based on system/local storage
+
+### Adding New Language Support
+1. Create new language directory in `src/locales/`
+2. Add language code to `SUPPORTED_LANGUAGE_LIST` in `src/utils/constants.ts`
+3. Copy and translate all JSON files from existing language
+4. Restart application
 
 ## File Structure
 

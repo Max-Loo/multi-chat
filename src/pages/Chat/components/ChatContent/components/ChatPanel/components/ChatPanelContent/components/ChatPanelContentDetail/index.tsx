@@ -10,6 +10,7 @@ import RunningChatBubble from "./components/RunningChatBubble";
 import { ArrowDownOutlined } from "@ant-design/icons";
 import { useIsChatSending } from "../../../../hooks/useIsChatSending";
 import { isNil } from "es-toolkit";
+import { useTranslation } from "react-i18next";
 
 interface ChatPanelContentDetailProps {
   chatModel: ChatModel
@@ -21,6 +22,7 @@ interface ChatPanelContentDetailProps {
 const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
   chatModel,
 }) => {
+  const { t } = useTranslation()
   const {
     selectedChat,
   } = useTypedSelectedChat()
@@ -121,18 +123,6 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
         historyRecord={historyRecord}
       />
     })}
-    {historyList.map(historyRecord => {
-      return <ChatBubble
-        key={historyRecord.id}
-        historyRecord={historyRecord}
-      />
-    })}
-    {historyList.map(historyRecord => {
-      return <ChatBubble
-        key={historyRecord.id}
-        historyRecord={historyRecord}
-      />
-    })}
     {/* 单独展示正在生成的消息 */}
     <RunningChatBubble chatModel={chatModel} />
     {/* 展示可能的错误信息 */}
@@ -149,7 +139,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
       <Button
         onClick={scrollToBottom}
         className="absolute! bottom-24 border-0!"
-        title="滚动到底部"
+        title={t($ => $.chat.scrollToBottom)}
         shape="circle"
         size="large"
         type="primary"

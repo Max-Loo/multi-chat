@@ -1,16 +1,18 @@
 import ModelProviderDisplay from "@/pages/Model/ModelTable/components/ModelProviderDisplay"
 import { Model } from "@/types/model"
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedFilter";
 import { TableColumnsType } from "antd";
 import { ModelProviderKeyEnum } from "@/utils/enums";
 import { useExistingModels } from "./useExistingModels";
+import { useTranslation } from "react-i18next";
 
 /**
  * @description 基础的模型列表相关逻辑
  */
 export const useBasicModelTable = () => {
   const models = useExistingModels()
+  const { t } = useTranslation()
 
   // 本地状态：过滤文本
   const [filterText, setFilterText] = useState<string>('');
@@ -37,45 +39,45 @@ export const useBasicModelTable = () => {
     },
   )
 
-  const tableColumns: TableColumnsType<Model> = [
+  const tableColumns: TableColumnsType<Model> = useMemo(() => [
     {
-      title: '昵称',
+      title: t($ => $.table.nickname),
       dataIndex: 'nickname',
       key: 'nickname',
       sorter: (a, b) => a.nickname?.localeCompare(b.nickname),
     },
     {
-      title: '大模型服务商',
+      title: t($ => $.table.modelProvider),
       dataIndex: 'providerKey',
       key: 'providerKey',
       render: (providerKey: ModelProviderKeyEnum) => <ModelProviderDisplay providerKey={providerKey} />,
     },
     {
-      title: '模型名称',
+      title: t($ => $.table.modelName),
       dataIndex: 'modelName',
       key: 'modelName',
       sorter: (a, b) => a.modelName?.localeCompare(b.modelName),
     },
     {
-      title: '最近更新时间',
+      title: t($ => $.table.lastUpdateTime),
       dataIndex: 'updateAt',
       key: 'updateAt',
       sorter: (a, b) => a.updateAt?.localeCompare(b.updateAt),
     },
     {
-      title: '创建时间',
+      title: t($ => $.table.createTime),
       dataIndex: 'createdAt',
       key: 'createdAt',
       sorter: (a, b) => a.createdAt?.localeCompare(b.createdAt),
     },
     {
-      title: '备注',
+      title: t($ => $.common.remark),
       dataIndex: 'remark',
       key: 'remark',
       render: (remark?: string) => remark || '-',
     },
 
-  ]
+  ], [t])
 
   return {
     tableColumns,
