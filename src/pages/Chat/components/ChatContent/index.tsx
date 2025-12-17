@@ -2,17 +2,19 @@ import { useCurrentSelectedChat } from "@/hooks/useCurrentSelectedChat"
 import ModelSelect from "./components/ModelSelect"
 import ChatPanel from "./components/ChatPanel"
 import { isNil } from "es-toolkit"
+import { useTranslation } from "react-i18next"
 
 /**
  * @description 聊天页面的具体内容
  */
 const ChatContent: React.FC = () => {
   const selectedChat = useCurrentSelectedChat()
+  const { t } = useTranslation()
 
   // 默认占位内容
   if (isNil(selectedChat)) {
     return (<div className="flex items-center justify-center w-full h-full text-4xl">
-      选择聊天开聊！
+      {t($ => $.chat.selectChatToStart)}
     </div>)
   }
 

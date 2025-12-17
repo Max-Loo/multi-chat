@@ -21,5 +21,6 @@
   "searchPlaceholder": "Search by nickname or remark",
   "modelDeleted": "Model Deleted",
   "deleted": "Deleted",
-  "disabled": "Disabled"
+  "disabled": "Disabled",
+  "selectChatToStart": "Select a chat to start!"
 }

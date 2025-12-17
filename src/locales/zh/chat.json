@@ -21,5 +21,6 @@
   "searchPlaceholder": "搜索昵称或备注",
   "modelDeleted": "模型已删除",
   "deleted": "已删除",
-  "disabled": "被禁用"
+  "disabled": "被禁用",
+  "selectChatToStart": "选择聊天开聊！"
 }
