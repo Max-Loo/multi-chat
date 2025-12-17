@@ -3,7 +3,7 @@ import ModelSidebar from './components/ModelSidebar';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import ModelConfigForm from '../components/ModelConfigForm';
 import { Model } from '@/types/model';
-import { useNavToPage } from '@/store/slices/modelPageSlice';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '@/hooks/redux';
 import { createModel } from '@/store/slices/modelSlice';
 import { App } from 'antd';
@@ -23,8 +23,7 @@ const CreateModel: React.FC = () => {
   } = App.useApp()
 
   const dispatch = useAppDispatch()
-
-  const { navToTablePage } = useNavToPage()
+  const navigate = useNavigate()
 
   // 表单校验完成后的回调
   const onFormFinish = (model: Model): void => {
@@ -35,7 +34,7 @@ const CreateModel: React.FC = () => {
 
       message.success(t($ => $.model.addModelSuccess))
       // 返回到列表页面
-      navToTablePage()
+      navigate('/model/table')
     } catch {
       message.error(t($ => $.model.addModelFailed))
     }

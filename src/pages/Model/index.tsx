@@ -1,53 +1,11 @@
-import React, { useEffect, useMemo } from 'react';
-import ModelTable from '@/pages/Model/ModelTable';
-import { useAppSelector } from '@/hooks/redux';
-import { ModelPageEnum } from './utils/enums';
-import CreateModel from './CreateModel';
-import { useNavToPage } from '@/store/slices/modelPageSlice';
-
-// 处理跳转页面逻辑的hooks
-const useSwitchPage = () => {
-  const pageKey = useAppSelector((state) => state.modelPage.key)
-  const { navToTablePage } = useNavToPage()
-
-  // 判断是渲染哪个页面
-  const pageComponent = useMemo(() => {
-    switch (pageKey) {
-    // 跳转到添加模型页面
-      case ModelPageEnum.ADD_PAGE: {
-        return <CreateModel />
-      }
-      // 跳转到模型列表页面
-      case ModelPageEnum.TABLE_PAGE: {
-        return <ModelTable />
-      }
-      default: {
-        return <ModelTable />
-      }
-    }
-  }, [pageKey])
-
-  useEffect(() => {
-    return () => {
-      // 在页面销毁的时候，重置成「模型列表」页面
-      navToTablePage()
-    }
-  }, [navToTablePage])
-
-  return {
-    pageKey,
-    pageComponent,
-  }
-}
+import React from 'react';
+import { Outlet } from 'react-router-dom';
 
 // 模型管理页面
 const ModelPage: React.FC = () => {
-
-  const { pageComponent } = useSwitchPage()
-
   return (
-    <div className="h-full" id='modelRootElement'>
-      {pageComponent}
+    <div className="h-full w-full">
+      <Outlet />
     </div>
   );
 };
