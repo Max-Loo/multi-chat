@@ -4,7 +4,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
 import { deleteModel } from '@/store/slices/modelSlice';
 import type { Model } from '@/types/model';
-import { useNavToPage } from '@/store/slices/modelPageSlice';
+import { useNavigate } from 'react-router-dom';
 import FilterInput from '@/components/FilterInput';
 import EditModelModal from './components/EditModelModal';
 import { useBasicModelTable } from '@/hooks/useBasicModelTable';
@@ -22,7 +22,7 @@ const ModelTable: React.FC = () => {
     message,
   } = App.useApp()
 
-  const { navToAddPage } = useNavToPage()
+  const navigate = useNavigate()
 
   // 处理删除模型
   const handleDeleteModel = useCallback((model: Model): void => {
@@ -37,7 +37,7 @@ const ModelTable: React.FC = () => {
   // 处理添加模型按钮点击
   const handleAddModel = () => {
     // 跳转到添加模型页面
-    navToAddPage()
+    navigate('/model/add') // 使用相对路径跳转
   };
 
   // 当前点击需要编辑的模型

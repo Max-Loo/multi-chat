@@ -5,8 +5,11 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 // 懒加载页面组件
 const ChatPage = lazy(() => import('@/pages/Chat'));
 const ModelPage = lazy(() => import('@/pages/Model'));
+const ModelTable = lazy(() => import('@/pages/Model/ModelTable'));
+const CreateModel = lazy(() => import('@/pages/Model/CreateModel'));
 const SettingPage = lazy(() => import('@/pages/Setting'));
 const GeneralSetting = lazy(() => import('@/pages/Setting/components/GeneralSetting'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const router = createBrowserRouter([
   {
@@ -24,6 +27,20 @@ const router = createBrowserRouter([
       {
         path: 'model',
         element: <ModelPage />,
+        children: [
+          {
+            index: true,
+            element: <Navigate to="table" replace />,
+          },
+          {
+            path: 'table',
+            element: <ModelTable />,
+          },
+          {
+            path: 'add',
+            element: <CreateModel />,
+          },
+        ],
       },
       {
         path: 'setting',
