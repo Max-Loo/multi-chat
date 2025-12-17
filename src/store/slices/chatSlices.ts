@@ -48,7 +48,7 @@ export const initializeChatList = createAsyncThunk(
       const list: Chat[] = await loadChatList()
       return list
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : '初始化聊天数据失败');
+      throw new Error(error instanceof Error ? error.message : 'Failed to initialize chat data');
     }
   },
 )
@@ -317,7 +317,7 @@ const chatSlice = createSlice({
       // 初始化模型数据失败
       .addCase(initializeChatList.rejected, (state, action) => {
         state.loading = false;
-        state.initializationError = action.error.message || '初始化文件失败';
+        state.initializationError = action.error.message || 'Failed to initialize file';
       })
       // 向某个模型发送消息 - 开始
       .addCase(sendMessage.pending, (state, action) => {
@@ -375,7 +375,7 @@ const chatSlice = createSlice({
         // 记录错误信息
         currentChatModel.errorMessage = action?.error?.message || ''
 
-        console.log('被 rejected', chat, model, action);
+        console.log('Request rejected', chat, model, action);
 
       })
       // 总的启动发送消息（它会比 sendMessage 先 rejected），将对应 chat 剩余的所有数据回写到数组中

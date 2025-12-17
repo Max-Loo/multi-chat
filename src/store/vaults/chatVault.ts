@@ -22,8 +22,8 @@ export const loadChatList = async(): Promise<Chat[]> => {
 
     return chatList
   } catch (error) {
-    console.error('获取聊天列表失败', error);
-    throw new Error('从本地获取聊天列表失败')
+    console.error('Failed to get chat list', error);
+    throw new Error('Failed to load chat list from local storage')
   }
 }
 
@@ -40,7 +40,7 @@ export const saveChatList = async (chatList: Chat[]): Promise<void> => {
 
     await stronghold.save()
   } catch (error) {
-    console.error('保存聊天列表失败', error);
-    throw new Error('向本地保存聊天列表失败')
+    console.error('Failed to save chat list', error);
+    throw new Error('Failed to save chat list to local storage')
   }
 }

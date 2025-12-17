@@ -1,11 +1,12 @@
 import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedFilter"
 import FilterInput from "@/components/FilterInput"
-import { useNavToPage } from "@/store/slices/modelPageSlice"
+import { useNavigate } from "react-router-dom"
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { LeftOutlined } from "@ant-design/icons"
 import { Avatar, Button } from "antd"
 import { useState } from "react"
 import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory"
+import { useTranslation } from "react-i18next"
 
 interface ModelSidebarProps {
   // 当前选中的大模型
@@ -17,7 +18,8 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
   value: selectedModelKey,
   onChange,
 }) => {
-  const { navToTablePage } = useNavToPage()
+  const { t } = useTranslation()
+  const navigate = useNavigate()
 
   // 本地状态：过滤文本
   const [filterText, setFilterText] = useState<string>('')
@@ -34,13 +36,18 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
       {/* 表头部分 */}
       <div className="p-2 border-b border-gray-300">
         <div className="flex items-center justify-between w-full pb-2">
-          <Button className="rounded-lg!" onClick={navToTablePage}><LeftOutlined /></Button>
-          <span className="text-lg">模型服务商</span>
+          <Button
+            className="rounded-lg!"
+            onClick={() => navigate('/model/table')}
+          >
+            <LeftOutlined />
+          </Button>
+          <span className="text-lg">{t($ => $.model.modelProvider)}</span>
         </div>
         <FilterInput
           value={filterText}
           onChange={setFilterText}
-          placeholder='搜索模型'
+          placeholder={t($ => $.model.searchModel)}
           className={`w-full! rounded-lg!`}
         />
       </div>

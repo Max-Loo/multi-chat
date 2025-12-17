@@ -8,6 +8,7 @@ import { Button } from "antd"
 import { isString } from "es-toolkit";
 import { useState } from "react"
 import { v4 as uuidv4 } from 'uuid'
+import { useTranslation } from "react-i18next"
 
 interface ToolsBarProps {
   // 传入的是字符串的时候才能启用搜索按钮
@@ -19,6 +20,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
   filterText,
   onFilterChange = () => {},
 }) => {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
 
   const {
@@ -79,6 +81,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
     <div className="flex items-center justify-between w-full">
       {isShowChatPage ? <Button
         className="rounded-lg! pr-5! pl-5!"
+        title={t($ => $.chat.hideSidebar)}
         icon={<MenuFoldOutlined />}
         onClick={collapseSidebar}
       /> : <div></div>}
@@ -87,12 +90,14 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
         {isString(filterText) && <Button
           className="rounded-lg!"
           icon={<SearchOutlined />}
+          title={t($ => $.common.search)}
           onClick={() => setIsSearching(true)}
         />}
         <Button
           className="rounded-lg! ml-1"
           icon={<PlusOutlined />}
           onClick={handleCreateChat}
+          title={t($ => $.chat.createChat)}
         />
       </div>
     </div>

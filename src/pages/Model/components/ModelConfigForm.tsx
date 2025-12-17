@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid'
 import dayjs from "dayjs"
 import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory"
 import { isBoolean } from "es-toolkit"
+import { useTranslation } from "react-i18next"
 
 
 interface ModelConfigFormProps {
@@ -29,6 +30,8 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   onFinish = () => {},
   modelParams = {},
 }) => {
+  const { t } = useTranslation()
+
   const [form] = Form.useForm()
 
   // 当前配置的提供商的相关信息
@@ -73,26 +76,26 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
 
     return [
       {
-        label: '模型昵称',
+        label: t($ => $.model.modelNickname),
         name: 'nickname',
         rules: [
-          { required: true, message: '请输入当前模型的昵称' },
+          { required: true, message: t($ => $.model.modelNicknameRequired) },
         ],
         component: <Input />,
       },
       {
-        label: 'API 密钥',
+        label: t($ => $.model.apiKey),
         name: 'apiKey',
         rules: [
-          { required: true, message: '请输入你的 API 密钥' },
+          { required: true, message: t($ => $.model.apiKeyRequired) },
         ],
         component: <Input.Password />,
       },
       {
-        label: 'API 地址',
+        label: t($ => $.model.apiAddress),
         name: 'apiAddress',
         rules: [
-          { required: true, message: '请输入服务商对应的 API 地址' },
+          { required: true, message: t($ => $.model.apiAddressRequired) },
         ],
         // 动态填充 apiAddress 的 extra 信息
         extra: <>
@@ -101,27 +104,27 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
               {apiAddressInstance.getOpenaiDisplayAddress(apiAddressValue)}
             </span>
             <span className="ml-auto">
-              {apiAddressInstance.getAddressFormDescription?.() || '# 结尾表示自定义'}
+              {apiAddressInstance.getAddressFormDescription?.() || t($ => $.provider.apiAddressCustom)}
             </span>
           </div>
         </>,
         component: <Input onBlur={onApiAddressBlur}/>,
       },
       {
-        label: '备注',
+        label: t($ => $.common.remark),
         name: 'remark',
         component: <Input.TextArea />,
       },
       {
-        label: '模型',
+        label: t($ => $.model.model),
         name: 'modelKey',
         component: <ModelSelect options={defaultModelList} />,
         rules: [
-          { required: true, message: '请选择你想要使用的具体模型' },
+          { required: true, message: t($ => $.model.modelRequired) },
         ],
       },
     ]
-  }, [form, defaultModelList, apiAddressValue, apiAddressInstance])
+  }, [form, defaultModelList, apiAddressValue, apiAddressInstance, t])
 
   // 获取拼装完整后的model参数
   const getFullModelParams = (manualConfig: ManualConfigModel): Model => {
@@ -194,7 +197,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
         </Form.Item>
       ))}
       <Form.Item label={null} className="flex items-center justify-end w-full grow">
-        <Button type="primary" htmlType="submit">提交</Button>
+        <Button type="primary" htmlType="submit">{t($ => $.common.submit)}</Button>
       </Form.Item>
     </Form>
   </>)

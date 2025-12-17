@@ -1,0 +1,8 @@
+{
+  "nickname": "Nickname",
+  "modelProvider": "Model Provider",
+  "modelName": "Model Name",
+  "lastUpdateTime": "Last Update Time",
+  "createTime": "Create Time",
+  "operation": "Operation"
+}

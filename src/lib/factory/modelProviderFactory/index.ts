@@ -75,7 +75,7 @@ export class ModelProviderFactoryCreator {
     const factory = this.factories.get(key)
 
     if (isUndefined(factory)) {
-      throw new Error(`还不支持当前的大模型服务商类型：${key}`)
+      throw new Error(`Unsupported model provider type: ${key}`)
     }
 
     return factory

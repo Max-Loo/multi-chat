@@ -4,6 +4,7 @@ import { MenuUnfoldOutlined, MinusOutlined, PlusOutlined } from "@ant-design/ico
 import { Button, InputNumber, Switch } from "antd";
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ChatPanelHeaderProps {
   columnCount: number;
@@ -22,6 +23,7 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
   setIsSplitter,
 }) => {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
 
   const isSidebarCollapsed = useAppSelector(state => state.chatPage.isSidebarCollapsed)
 
@@ -50,13 +52,14 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
           className={`
           rounded-lg! pr-5! pl-5! mr-2
         `}
+          title={t($ => $.chat.showSidebar)}
           icon={<MenuUnfoldOutlined />}
           onClick={expandSidebar}
         />}
         <span
           className="text-base"
         >
-          {selectedChat.name || '未命名'}
+          {selectedChat.name || t($ => $.chat.unnamed)}
         </span>
       </div>
       {chatModelList.length > 1 && <div className="flex items-center justify-start text-sm">

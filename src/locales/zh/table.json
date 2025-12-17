@@ -1,0 +1,8 @@
+{
+  "nickname": "昵称",
+  "modelProvider": "大模型服务商",
+  "modelName": "模型名称",
+  "lastUpdateTime": "最近更新时间",
+  "createTime": "创建时间",
+  "operation": "操作"
+}

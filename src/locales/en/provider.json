@@ -1,0 +1,7 @@
+{
+  "bigModel": "Zhipu AI",
+  "kimi": "Moonshot AI",
+  "deepseek": "Deepseek",
+  "apiAddressCustom": "# ending indicates custom",
+  "apiAddressKimi": "/ ending will ignore v1, # ending indicates custom"
+}

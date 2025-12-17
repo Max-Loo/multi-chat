@@ -40,6 +40,7 @@
 - **状态管理**: Redux Toolkit
 - **路由**: React Router v7
 - **样式**: Tailwind CSS
+- **国际化**: i18next + react-i18next
 - **桌面框架**: Tauri 2
 - **构建工具**: Vite
 
@@ -117,12 +118,56 @@ src/
 │   ├── Chat/         # 聊天页面
 │   └── Model/        # 模型管理页面
 ├── hooks/            # 自定义 Hooks
+├── lib/              # 核心库
+│   ├── i18n.ts       # 国际化配置
+│   └── global.ts     # 全局配置
+├── locales/          # 国际化语言文件
+│   ├── en/           # 英文语言包
+│   │   ├── common.json
+│   │   ├── navigation.json
+│   │   ├── model.json
+│   │   ├── chat.json
+│   │   ├── provider.json
+│   │   ├── setting.json
+│   │   └── table.json
+│   └── zh/           # 中文语言包
 ├── store/            # Redux 状态管理
 │   ├── slices/       # Redux 切片
 │   └── vaults/       # 数据持久化
 ├── types/            # TypeScript 类型定义
 └── utils/            # 工具函数
 ```
+
+## 国际化配置
+
+### 支持的语言
+- 中文 (zh)
+- 英文 (en)
+
+### 语言文件结构
+语言文件位于 `src/locales/` 目录下，按语言代码分类：
+- 每种语言包含多个 JSON 文件，按功能模块划分：
+  - `common.json`: 通用文本（按钮、操作等）
+  - `navigation.json`: 导航菜单文本
+  - `model.json`: 模型管理相关文本
+  - `chat.json`: 聊天相关文本
+  - `provider.json`: 模型提供商文本
+  - `setting.json`: 设置相关文本
+  - `table.json`: 表格相关文本
+
+### 语言切换机制
+1. 优先级顺序：
+   - 本地存储的语言设置
+   - 系统语言（如果支持）
+   - 默认语言（英文）
+2. 语言设置存储在 `localStorage` 中，键名为 `multi-chat-language`
+3. 使用 `i18next` 和 `react-i18next` 实现国际化功能
+
+### 添加新语言支持
+1. 在 `src/locales/` 下创建新的语言目录（如 `fr/`）
+2. 复制现有语言文件结构并翻译内容
+3. 在 `src/utils/constants.ts` 中的 `SUPPORTED_LANGUAGE_LIST` 添加新语言代码
+4. 重启应用使新语言生效
 
 ## 开发说明
 

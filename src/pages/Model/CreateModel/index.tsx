@@ -3,13 +3,16 @@ import ModelSidebar from './components/ModelSidebar';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import ModelConfigForm from '../components/ModelConfigForm';
 import { Model } from '@/types/model';
-import { useNavToPage } from '@/store/slices/modelPageSlice';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '@/hooks/redux';
 import { createModel } from '@/store/slices/modelSlice';
 import { App } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 // 添加模型页面
 const CreateModel: React.FC = () => {
+  const { t } = useTranslation()
+
   const [
     selectedModelProviderKey,
     setSelectedModelProviderKey,
@@ -20,8 +23,7 @@ const CreateModel: React.FC = () => {
   } = App.useApp()
 
   const dispatch = useAppDispatch()
-
-  const { navToTablePage } = useNavToPage()
+  const navigate = useNavigate()
 
   // 表单校验完成后的回调
   const onFormFinish = (model: Model): void => {
@@ -30,11 +32,11 @@ const CreateModel: React.FC = () => {
         model,
       }))
 
-      message.success('模型添加成功')
+      message.success(t($ => $.model.addModelSuccess))
       // 返回到列表页面
-      navToTablePage()
+      navigate('/model/table')
     } catch {
-      message.error('模型添加失败')
+      message.error(t($ => $.model.addModelFailed))
     }
   }
 

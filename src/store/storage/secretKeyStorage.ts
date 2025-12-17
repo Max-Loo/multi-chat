@@ -43,8 +43,8 @@ const generateHardwareBasedPassword = (salt: string): string => {
 
     return finalPassword
   } catch (error) {
-    console.error('生成派生密钥的时候失败', error);
-    throw new Error('无法生成派生密钥')
+    console.error('Failed to generate derived key', error);
+    throw new Error('Unable to generate derived key')
   }
 }
 
@@ -53,19 +53,19 @@ const loadPassword = async (): Promise<string | undefined> => {
   try {
     return settingStore.get<string>(LocalStorageKeyEnum.password)
   } catch (error) {
-    console.error('加载本地密钥失败', error)
-    throw new Error('加载本地密钥失败')
+    console.error('Failed to load local key', error)
+    throw new Error('Failed to load local key')
   }
 }
 
 // 保存本地密钥，理论上只会在第一次生成的时候执行一次
 const savePassword = async (password: string): Promise<void> => {
-  return settingStore.setAndSave(LocalStorageKeyEnum.password, password, '保存本地密钥失败')
+  return settingStore.setAndSave(LocalStorageKeyEnum.password, password, 'Failed to save local key')
 }
 
 // 将盐值保存在本地
 const saveSalt = async (salt: string): Promise<void> => {
-  return settingStore.setAndSave(LocalStorageKeyEnum.salt, salt, '保存本地盐值失败')
+  return settingStore.setAndSave(LocalStorageKeyEnum.salt, salt, 'Failed to save local salt')
 }
 
 
