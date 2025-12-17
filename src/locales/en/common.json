@@ -4,5 +4,7 @@
   "search": "Search",
   "remark": "Remark",
   "cancel": "Cancel",
-  "confirm": "Confirm"
+  "confirm": "Confirm",
+  "pageNotFound": "Page not found",
+  "goBack": "Go back"
 }

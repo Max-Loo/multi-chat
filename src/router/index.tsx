@@ -39,6 +39,15 @@ const router = createBrowserRouter([
           },
         ],
       },
+      // 兜底路由，匹配所有未定义的路径
+      {
+        path: '*',
+        element: <Navigate to="/404" replace />,
+      },
+      {
+        path: '404',
+        element: <NotFound />,
+      },
     ],
   },
 ]);

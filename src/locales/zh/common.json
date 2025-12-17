@@ -4,5 +4,7 @@
   "search": "搜索",
   "remark": "备注",
   "cancel": "取消",
-  "confirm": "确定"
+  "confirm": "确定",
+  "pageNotFound": "页面不存在",
+  "goBack": "返回"
 }
