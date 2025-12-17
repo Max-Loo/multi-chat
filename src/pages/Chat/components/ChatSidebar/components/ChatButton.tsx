@@ -85,7 +85,7 @@ const ChatButton = memo<ChatButtonProps>(({
           modal.warning({
             maskClosable: true,
             closable: true,
-            title: `${t($ => $.chat.confirmDelete)}「${chat.name}」`,
+            title: `${t($ => $.chat.confirmDelete)}「${chat.name || t($ => $.chat.unnamed)}」`,
             content: t($ => $.chat.deleteChatConfirm),
             onOk,
           })

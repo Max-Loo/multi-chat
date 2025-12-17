@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2025/12/17 21:52:35
+// 生成时间: 2025/12/17 22:05:24
 
 interface Resources {
   translation: {
@@ -28,6 +28,7 @@ interface Resources {
       modelDeleted: string;
       deleted: string;
       disabled: string;
+      selectChatToStart: string;
     };
     common: {
       submit: string;
