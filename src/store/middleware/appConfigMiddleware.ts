@@ -11,8 +11,12 @@ saveDefaultAppLanguage.startListening({
     setAppLanguage,
   ),
   effect: async (_, listenerApi) => {
-    const currentLang = listenerApi.getState().appConfig.language
-    localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, currentLang)
-    await changeAppLanguage(currentLang)
+    try {
+      const currentLang = listenerApi.getState().appConfig.language
+      localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, currentLang)
+      await changeAppLanguage(currentLang)
+    } catch (error) {
+      console.error('Failed to change app language:', error)
+    }
   },
 })

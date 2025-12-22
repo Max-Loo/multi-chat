@@ -382,6 +382,12 @@ const chatSlice = createSlice({
       .addCase(startSendChatMessage.rejected, (state, action) => {
         const { chat } = action.meta.arg
         const currentChat = state.runningChat[chat.id]
+
+        // 如果没有runningChat记录，直接返回
+        if (!currentChat) {
+          return
+        }
+
         Object.entries(currentChat).forEach(([modelId, historyItem]) => {
           // 除非在聊天的过程中被删除，否则都应该存在
           const chatIdx = state.chatList.findIndex(item => item.id === chat.id)

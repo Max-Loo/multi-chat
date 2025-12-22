@@ -26,3 +26,6 @@ target
 
 # local claude config
 .claude
+
+# project files
+coverage

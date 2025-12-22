@@ -2,200 +2,156 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## 项目概述
 
-This is a Tauri + React + TypeScript desktop application. It combines a Rust backend (Tauri) with a React frontend, using Vite as the build tool.
+基于 Tauri + React + TypeScript 的桌面应用，结合 Rust 后端和 React 前端，使用 Vite 构建。
 
-## Architecture
+## 技术栈
 
-**Frontend**: React 19 + TypeScript + Vite
-- Entry point: `src/main.tsx`
-- Main component: `src/App.tsx`
-- Uses React Compiler for optimization
-- Internationalization: i18next + react-i18next
-- Port: 1420 (fixed for Tauri)
+### 前端
+- **框架**: React 19 + TypeScript + Vite
+- **UI**: Ant Design + Ant Design X
+- **状态管理**: Redux Toolkit
+- **路由**: React Router v7
+- **样式**: Tailwind CSS
+- **国际化**: i18next + react-i18next
+- **测试**: Vitest
+- **优化**: React Compiler
 
-**Backend**: Rust + Tauri 2.0
-- Entry point: `src-tauri/src/main.rs` → `src-tauri/src/lib.rs`
-- Commands defined in `lib.rs` using `#[tauri::command]`
-- Tauri configuration: `src-tauri/tauri.conf.json`
+### 后端
+- **框架**: Rust + Tauri 2.0
+- **插件**: tauri-plugin-store、tauri-plugin-stronghold、tauri-plugin-opener、tauri-plugin-http、tauri-plugin-shell、tauri-plugin-os
 
-**Communication**: Frontend calls Rust functions via `@tauri-apps/api/core` invoke() method
+### 开发配置
+- **包管理器**: pnpm
+- **TypeScript**: 严格模式
+- **端口**: 1420
 
-## Development Commands
+## 项目结构
+
+```
+multi-chat/
+├── src/                     # React 前端
+│   ├── components/          # 公共组件
+│   ├── pages/              # 页面组件
+│   ├── hooks/              # 自定义 Hooks
+│   ├── lib/                # 核心库
+│   ├── locales/            # 国际化语言文件
+│   ├── store/              # Redux 状态管理
+│   │   ├── slices/         # 状态切片
+│   │   ├── middleware/     # 中间件
+│   │   ├── storage/        # 数据持久化
+│   │   └── vaults/         # 安全存储
+│   ├── types/              # TypeScript 类型定义
+│   ├── utils/              # 工具函数
+│   └── __tests__/          # 测试文件
+├── src-tauri/              # Rust 后端
+├── public/                 # 静态资源
+├── .trae/                  # 项目配置和规范
+└── dist/                   # 构建输出（gitignore）
+```
+
+## 开发命令
 
 ```bash
-# Install dependencies
+# 依赖
 pnpm install
 
-# Run development server (starts both frontend and backend)
-pnpm tauri dev
+# 开发
+pnpm dev              # 启动前后端
+pnpm web:dev          # 仅前端
 
-# Build for production
-pnpm tauri build
+# 构建
+pnpm build            # 生产构建
+pnpm web:build        # Web 构建
 
-# Run linting
-pnpm lint
+# 检查
+pnpm lint             # 代码检查
+pnpm tsc              # 类型检查
 
-# Type checking
-pnpm tsc
+# 测试
+pnpm test:run         # 运行测试
+pnpm test:coverage    # 测试覆盖率
+
+# 工具
+pnpm generate-i18n-types  # 生成国际化类型
+pnpm update-version       # 更新版本
 ```
 
-## Key Technical Details
+## 代码规范
 
-- **Package Manager**: pnpm
-- **TypeScript**: Strict mode enabled, ES2020 target
-- **ESLint**: Configured with TypeScript, React Hooks, and React Refresh rules
-- **React Compiler**: Enabled via babel-plugin-react-compiler for optimization
-- **Tauri Plugin**: Uses tauri-plugin-opener for file opening capabilities
+### 基础规范
+- **缩进**: 2 个空格
+- **路径别名**: `@/` 引用 src 目录
+- **命名规范**:
+  - 组件: PascalCase
+  - 工具函数: camelCase
+  - 常量: UPPER_SNAKE_CASE
 
-## Adding New Tauri Commands
-
-1. Add the command function in `src-tauri/src/lib.rs` with `#[tauri::command]` attribute
-2. Register it in the `invoke_handler` in the `run()` function
-3. Call it from frontend using `invoke("command_name", { args })`
-
-## Import Path Convention
-
-**IMPORTANT**: When importing modules within the project, always use the `@/` alias instead of relative paths like `../..`. The `@/` alias points to the `src/` directory.
-
-Example:
-```typescript
-// Correct
-import { Model } from '@/types/model';
-import { loadModels } from '@/store/storage/modelStorage';
-
-// Incorrect
-import { Model } from '../../types/model';
-import { loadModels } from '../storage/modelStorage';
-```
-
-## Code Documentation Requirements
-
-**IMPORTANT**: Always add Chinese comments above functions, types, variables, and other code elements. When modifying code, update comments accordingly when necessary.
-
-### JSDoc 函数注释格式
-
-**IMPORTANT**: 对于函数参数注释，必须使用 JSDoc 标准格式：
+### TypeScript
+- 严格模式检查
+- 明确的类型注解
+- JSDoc 注释格式
 
 ```typescript
 /**
- * 函数的简要描述
- * @param paramName 参数的详细描述
- * @param paramName2 参数2的详细描述，可以更详细地说明参数的作用和用法
+ * 函数描述
+ * @param param 参数描述
  */
 ```
 
-**关键要点：**
-1. 使用 `/** */` 块注释格式（双星号开头）
-2. 每个参数使用 `@param` 标签
-3. 参数名后面跟空格，然后是参数描述
-4. 描述应该详细说明参数的作用、类型和使用方式
-5. 遵循项目的中文注释要求
+### 组件规范
+- 函数组件 + React Hooks
+- 组件名 PascalCase
+- 文件名与组件名一致
+- 自定义 Hooks 以 `use` 开头
 
-Examples:
-```typescript
-// 用户模型接口定义
-interface User {
-  id: string;
-  name: string;
-}
+## Tauri 命令开发
 
-// 从本地存储加载模型数据
-const loadModels = async (): Promise<Model[]> => {
-  // 实现逻辑
-};
+1. 在 `src-tauri/src/lib.rs` 中添加 `#[tauri::command]` 函数
+2. 在 `invoke_handler` 中注册命令
+3. 前端通过 `invoke("command_name", { args })` 调用
 
-// 当前过滤文本状态
-const [filterText, setFilterText] = useState<string>('');
-```
+## 国际化
 
-## Code Implement Requirements
+- **配置**: `src/lib/i18n.ts`
+- **语言文件**: `src/locales/`
+- **支持语言**: 中文 (zh)、英文 (en)
+- **语言存储**: localStorage (`multi-chat-language`)
 
-**IMPORTANT**: 
-你是一名经验丰富的软件开发工程师，专注于构建高内聚、低耦合、高性能、可维护、健壮的解决方案。
-
-你的任务是：**审查、理解并迭代式地实现/改进用户提交给你的需求。**
-
-在整个工作流程中，你必须内化并严格遵循以下核心编程原则，确保你的每次输出和建议都体现这些理念：
-
-*   **简单至上 (KISS):** 追求代码和设计的极致简洁与直观，避免不必要的复杂性。
-*   **精益求精 (YAGNI):** 仅实现当前明确所需的功能，抵制过度设计和不必要的未来特性预留。
-*   **坚实基础 (SOLID):**
-    *   **S (单一职责):** 各组件、类、函数只承担一项明确职责。
-    *   **O (开放/封闭):** 功能扩展无需修改现有代码。
-    *   **L (里氏替换):** 子类型可无缝替换其基类型。
-    *   **I (接口隔离):** 接口应专一，避免“胖接口”。
-    *   **D (依赖倒置):** 依赖抽象而非具体实现。
-*   **杜绝重复 (DRY):** 识别并消除代码或逻辑中的重复模式，提升复用性。
-
-**请严格遵循以下工作流程和输出要求：**
-
-1.  **深入理解与初步分析（理解阶段）：**
-    *   详细审阅提供的[资料/代码/项目描述]，全面掌握其当前架构、核心组件、业务逻辑及痛点。
-    *   在理解的基础上，初步识别项目中潜在的**KISS, YAGNI, DRY, SOLID**原则应用点或违背现象。
-
-2.  **明确目标与迭代规划（规划阶段）：**
-    *   基于用户需求和对现有项目的理解，清晰定义本次迭代的具体任务范围和可衡量的预期成果。
-    *   在规划解决方案时，优先考虑如何通过应用上述原则，实现更简洁、高效和可扩展的改进，而非盲目增加功能。
-
-3.  **分步实施与具体改进（执行阶段）：**
-    *   详细说明你的改进方案，并将其拆解为逻辑清晰、可操作的步骤。
-    *   针对每个步骤，具体阐述你将如何操作，以及这些操作如何体现**KISS, YAGNI, DRY, SOLID**原则。例如：
-        *   “将此模块拆分为更小的服务，以遵循SRP和OCP。”
-        *   “为避免DRY，将重复的XXX逻辑抽象为通用函数。”
-        *   “简化了Y功能的用户流，体现KISS原则。”
-        *   “移除了Z冗余设计，遵循YAGNI原则。”
-    *   重点关注[项目类型，例如：代码质量优化 / 架构重构 / 功能增强 / 用户体验提升 / 性能调优 / 可维护性改善 / Bug修复]的具体实现细节。
-
-4.  **总结、反思与展望（汇报阶段）：**
-    *   提供一个清晰、结构化且包含**实际代码/设计变动建议（如果适用）**的总结报告。
-    *   报告中必须包含：
-        *   **本次迭代已完成的核心任务**及其具体成果。
-        *   **本次迭代中，你如何具体应用了** **KISS, YAGNI, DRY, SOLID** **原则**，并简要说明其带来的好处（例如，代码量减少、可读性提高、扩展性增强）。
-        *   **遇到的挑战**以及如何克服。
-        *   **下一步的明确计划和建议。**
-
-## Internationalization (i18n)
-
-### Configuration
-- Main configuration: `src/lib/i18n.ts`
-- Language files location: `src/locales/`
-- Supported languages: Chinese (zh), English (en)
-- Default language: English (fallback)
-- Language detection priority:
-  1. Local storage (`multi-chat-language`)
-  2. System language (if supported)
-  3. Default fallback (en)
-
-### Language File Structure
+### 语言文件结构
 ```
 src/locales/
-├── en/
-│   ├── common.json    # Common UI text
-│   ├── model.json     # Model-related text
-│   ├── setting.json   # Settings-related text
-│   └── table.json     # Table-related text
-└── zh/
+├── en/  # 英文
+├── zh/  # 中文
+└── README.md
 ```
 
-### Key Functions
-- `initI18n()`: Initialize i18n configuration
-- `getLocalesResources()`: Load all language resources dynamically
-- `changeAppLanguage()`: Change application language
-- `getDefaultAppLanguage()`: Get default language based on system/local storage
+修改配置后运行 `pnpm generate-i18n-types`。
 
-### Adding New Language Support
-1. Create new language directory in `src/locales/`
-2. Add language code to `SUPPORTED_LANGUAGE_LIST` in `src/utils/constants.ts`
-3. Copy and translate all JSON files from existing language
-4. Restart application
+## 测试
 
-## File Structure
+- **框架**: Vitest
+- **测试文件**: `__tests__` 目录，`.test.ts` 或 `.test.tsx` 后缀
+- **覆盖率要求**:
+  - 分支: 85%+
+  - 函数: 95%+
+  - 行数: 90%+
+  - 语句: 90%+
 
-- `/src/` - React frontend code
-- `/src-tauri/` - Rust backend code
-- `/public/` - Static assets
-- `/dist/` - Build output (gitignored)
+## 编程原则
+
+1. **KISS**: 简洁直观
+2. **YAGNI**: 仅实现明确需求
+3. **SOLID**: 面向对象设计原则
+4. **DRY**: 避免重复
+
+## 重要提醒
+
+- 不提交 API 密钥等敏感信息
+- 及时删除未使用代码
+- 提交前运行 `pnpm lint`
+- 优先使用已有工具函数和组件
+- 新增依赖需评估必要性
 
 
