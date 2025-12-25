@@ -3,7 +3,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { loadChatList } from "../vaults/chatVault";
 import { RootState } from "..";
 import { Model } from "@/types/model";
-import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory";
+import { getProviderFactory } from "@/lib/factory/modelProviderFactory";
 import { isNil, isNotNil } from "es-toolkit";
 import { v4 as uuidV4 } from 'uuid'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
@@ -48,7 +48,7 @@ export const initializeChatList = createAsyncThunk(
       const list: Chat[] = await loadChatList()
       return list
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to initialize chat data');
+      throw new Error(error instanceof Error ? error.message : 'Failed to initialize chat data', { cause: error });
     }
   },
 )
@@ -91,7 +91,7 @@ const sendMessage = createAsyncThunk<
     // 获取请求方法
     const {
       fetchApi,
-    } = ModelProviderFactoryCreator.getFactory(model.providerKey).getModelProvider()
+    } = getProviderFactory(model.providerKey).getModelProvider()
 
     const fetchResponse = fetchApi.fetch(
       {

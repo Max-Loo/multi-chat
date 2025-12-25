@@ -66,37 +66,41 @@ export interface ModelProviderFactory {
 }
 
 
-// 总的工厂函数出口
-export class ModelProviderFactoryCreator {
-  private static factories: Map<ModelProviderKeyEnum, ModelProviderFactory> = new Map();
+// 工厂注册表（模块内部私有变量）
+const factories: Map<ModelProviderKeyEnum, ModelProviderFactory> = new Map();
 
-  // 根据 key 获取对应的大模型服务商创建工程
-  static getFactory = (key: ModelProviderKeyEnum): ModelProviderFactory => {
-    const factory = this.factories.get(key)
+/**
+ * 根据 key 获取对应的大模型服务商工厂
+ * @param key 模型提供商的键
+ * @returns 对应的模型工厂
+ */
+export const getProviderFactory = (key: ModelProviderKeyEnum): ModelProviderFactory => {
+  const factory = factories.get(key)
 
-    if (isUndefined(factory)) {
-      throw new Error(`Unsupported model provider type: ${key}`)
-    }
-
-    return factory
+  if (isUndefined(factory)) {
+    throw new Error(`Unsupported model provider type: ${key}`)
   }
 
-  // 获取现有的已经注册的工厂 Map （键值对）
-  static getFactoryMap = (): [ModelProviderKeyEnum, ModelProviderFactory][] => {
-    return [...this.factories]
-  }
+  return factory
+}
 
-  // 获取现有的已经注册的工程列表
-  static getFactoryList = (): ModelProviderFactory[] => {
-    return [...this.factories.values()]
-  }
+/**
+ * 获取现有的已经注册的工厂 Map（键值对）
+ * @returns 工厂 Map
+ */
+export const getProviderFactoryMap = (): Map<ModelProviderKeyEnum, ModelProviderFactory> => {
+  return factories
+}
 
-  // 注册新的大模型工厂
-  static registerFactory = (key: ModelProviderKeyEnum, factory: ModelProviderFactory): void => {
-    // 避免重复注册
-    if (!this.factories.has(key)) {
-      this.factories.set(key, factory)
-    }
+/**
+ * 注册新的大模型工厂
+ * @param key 模型提供商的键
+ * @param factory 要注册的工厂
+ */
+export const registerProviderFactory = (key: ModelProviderKeyEnum, factory: ModelProviderFactory): void => {
+  // 避免重复注册
+  if (!factories.has(key)) {
+    factories.set(key, factory)
   }
 }
 

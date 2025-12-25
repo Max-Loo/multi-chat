@@ -9,8 +9,8 @@ import ChatBubble from "./components/ChatBubble"
 import RunningChatBubble from "./components/RunningChatBubble";
 import { ArrowDownOutlined } from "@ant-design/icons";
 import { useIsChatSending } from "../../../../hooks/useIsChatSending";
-import { isNil } from "es-toolkit";
-import { useTranslation } from "react-i18next";
+import { isNil } from "es-toolkit"
+import { useTranslation } from "react-i18next" 
 
 interface ChatPanelContentDetailProps {
   chatModel: ChatModel
@@ -46,7 +46,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
   const {
     onScrollEvent,
     scrollbarClassname,
-    isScrolling,
+    isScrolling
   } = useAdaptiveScrollbar()
 
   // 状态：是否需要滚动条（内容超出容器高度）

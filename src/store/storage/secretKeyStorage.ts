@@ -44,7 +44,7 @@ const generateHardwareBasedPassword = (salt: string): string => {
     return finalPassword
   } catch (error) {
     console.error('Failed to generate derived key', error);
-    throw new Error('Unable to generate derived key')
+    throw new Error('Unable to generate derived key', { cause: error })
   }
 }
 
@@ -54,7 +54,7 @@ const loadPassword = async (): Promise<string | undefined> => {
     return settingStore.get<string>(LocalStorageKeyEnum.password)
   } catch (error) {
     console.error('Failed to load local key', error)
-    throw new Error('Failed to load local key')
+    throw new Error('Failed to load local key', { cause: error })
   }
 }
 

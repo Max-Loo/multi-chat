@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Space, Avatar } from 'antd';
-import { ModelProvider, ModelProviderFactoryCreator } from '@/lib/factory/modelProviderFactory';
+import { ModelProvider, getProviderFactory } from '@/lib/factory/modelProviderFactory';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
 interface ModelProviderDisplayProps {
@@ -10,7 +10,7 @@ interface ModelProviderDisplayProps {
 // 大模型服务商展示组件
 const ModelProviderDisplay = memo<ModelProviderDisplayProps>(({ providerKey }) => {
 
-  const provider: ModelProvider = ModelProviderFactoryCreator.getFactory(providerKey)?.getModelProvider()
+  const provider: ModelProvider = getProviderFactory(providerKey).getModelProvider()
 
   if (!provider) {
     return <span>{providerKey}</span>;

@@ -21,7 +21,7 @@ class LazySettingStore extends LazyStore {
       await settingStore.save();
     } catch (error) {
       console.error(message, error)
-      throw new Error(message)
+      throw new Error(message, { cause: error })
     }
   }
 }

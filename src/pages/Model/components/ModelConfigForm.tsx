@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react"
 import ModelSelect from "./ModelSelect"
 import { v4 as uuidv4 } from 'uuid'
 import dayjs from "dayjs"
-import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory"
+import { getProviderFactory } from "@/lib/factory/modelProviderFactory"
 import { isBoolean } from "es-toolkit"
 import { useTranslation } from "react-i18next"
 
@@ -36,7 +36,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
 
   // 当前配置的提供商的相关信息
   const currentProvider = useMemo(() => {
-    return ModelProviderFactoryCreator.getFactory(modelProviderKey).getModelProvider()
+    return getProviderFactory(modelProviderKey).getModelProvider()
   }, [modelProviderKey])
 
   const {

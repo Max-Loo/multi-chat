@@ -5,7 +5,7 @@
  * 用于在发布前自动更新版本号
  */
 
-import fs from 'fs';
+import fs from 'fs'
 import path from 'path';
 import { fileURLToPath } from 'url';
 

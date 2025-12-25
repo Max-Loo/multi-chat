@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { store } from "@/store";
 import './main.css'
-import { registerAllFactory } from "./lib/factory";
 import { interceptClickAToJump } from "./lib/global";
 import FullscreenLoading from "./components/FullscreenLoading";
 import { App as AntdApp } from 'antd';
@@ -13,19 +12,18 @@ import { initI18n } from '@/lib/i18n';
 import { initializeModels } from "@/store/slices/modelSlice";
 import { initializeChatList } from "@/store/slices/chatSlices";
 import { initializeAppLanguage } from "@/store/slices/appConfigSlices";
+import { registerAllProviders } from "./lib/factory/modelProviderFactory/ProviderRegistry";
 
 const rootDom = ReactDOM.createRoot(document.getElementById("root") as HTMLElement)
 
 // 先预渲染一个开屏动画
 rootDom.render(<FullscreenLoading />)
 
-registerAllFactory()
+registerAllProviders()
 interceptClickAToJump()
 
 // 阻断式的初始化逻辑（渲染前需要保证初始化完成
-const InterruptiveInitPromise = Promise.all([
-  initI18n(),
-])
+const InterruptiveInitPromise = initI18n()
 
 // 可以异步完成的初始化逻辑
 store.dispatch(initializeModels())
