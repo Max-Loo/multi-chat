@@ -25,7 +25,7 @@ export const initializeModels = createAsyncThunk(
     try {
       return await loadModels();
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to initialize model data');
+      throw new Error(error instanceof Error ? error.message : 'Failed to initialize model data', { cause: error });
     }
   },
 );

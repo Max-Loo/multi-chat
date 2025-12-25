@@ -5,7 +5,7 @@ import { ModelProviderKeyEnum } from "@/utils/enums"
 import { LeftOutlined } from "@ant-design/icons"
 import { Avatar, Button } from "antd"
 import { useState } from "react"
-import { ModelProviderFactoryCreator } from "@/lib/factory/modelProviderFactory"
+import { getProviderFactoryMap } from "@/lib/factory/modelProviderFactory"
 import { useTranslation } from "react-i18next"
 
 interface ModelSidebarProps {
@@ -27,7 +27,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
     filteredList: filteredProviders,
   } = useDebouncedFilter(
     filterText,
-    ModelProviderFactoryCreator.getFactoryList().map((modelProviderFactory) => modelProviderFactory.getModelProvider()),
+    [...getProviderFactoryMap().values()].map((modelProviderFactory) => modelProviderFactory.getModelProvider()),
     (provider) => provider.name.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
   )
 

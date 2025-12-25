@@ -21,7 +21,7 @@ export const loadModels = async (): Promise<Model[]> => {
     return models
   } catch (error) {
     console.error('Failed to get model list', error);
-    throw new Error('Failed to load model list from local storage')
+    throw new Error('Failed to load model list from local storage', { cause: error })
   }
 }
 
@@ -39,6 +39,6 @@ export const saveModels = async (models: Model[]): Promise<void> => {
     await stronghold.save()
   } catch (error) {
     console.error('Failed to save model list', error);
-    throw new Error('Failed to save model list to local storage')
+    throw new Error('Failed to save model list to local storage', { cause: error })
   }
 }

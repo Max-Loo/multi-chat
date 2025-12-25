@@ -1,0 +1,11 @@
+echo "🔍 Running lint check before commit..."
+pnpm lint
+
+# 检查 lint 是否通过
+if [ $? -ne 0 ]; then
+  echo "❌ Lint 检查失败，请修复错误后再提交"
+  echo "💡 提示: 运行 'pnpm lint' 查看具体错误"
+  exit 1
+fi
+
+echo "✅ Lint 检查通过"
