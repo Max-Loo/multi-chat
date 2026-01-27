@@ -24,5 +24,5 @@ target
 *.sln
 *.sw?
 
-# local claude config
-.claude
+# local file
+*.local.json
