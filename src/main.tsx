@@ -5,7 +5,6 @@ import { store } from "@/store";
 import './main.css'
 import { interceptClickAToJump } from "./lib/global";
 import FullscreenLoading from "./components/FullscreenLoading";
-import { App as AntdApp } from 'antd';
 import { RouterProvider } from 'react-router-dom';
 import router from './router';
 import { initI18n } from '@/lib/i18n';
@@ -13,6 +12,8 @@ import { initializeModels } from "@/store/slices/modelSlice";
 import { initializeChatList } from "@/store/slices/chatSlices";
 import { initializeAppLanguage } from "@/store/slices/appConfigSlices";
 import { registerAllProviders } from "./lib/factory/modelProviderFactory/ProviderRegistry";
+import { ConfirmProvider } from "@/hooks/useConfirm";
+import { Toaster } from "./components/ui/sonner";
 
 const rootDom = ReactDOM.createRoot(document.getElementById("root") as HTMLElement)
 
@@ -36,9 +37,10 @@ await InterruptiveInitPromise
 rootDom.render(
   <React.StrictMode>
     <Provider store={store}>
-      <AntdApp>
+      <ConfirmProvider>
         <RouterProvider router={router} />
-      </AntdApp>
+        <Toaster />
+      </ConfirmProvider>
     </Provider>
   </React.StrictMode>,
 )

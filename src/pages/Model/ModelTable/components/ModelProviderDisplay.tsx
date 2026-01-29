@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Space, Avatar } from 'antd';
+import { Avatar } from '@/components/ui/avatar';
 import { ModelProvider, getProviderFactory } from '@/lib/factory/modelProviderFactory';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
@@ -17,16 +17,14 @@ const ModelProviderDisplay = memo<ModelProviderDisplayProps>(({ providerKey }) =
   }
 
   return (
-    <Space>
+    <div className="flex items-center gap-2">
       {provider.logoUrl && (
-        <Avatar
-          size={24}
-          src={provider.logoUrl}
-          alt={provider.name}
-        />
+        <Avatar className="h-6 w-6">
+          <img src={provider.logoUrl} alt={provider.name} />
+        </Avatar>
       )}
       <span>{provider.name}</span>
-    </Space>
+    </div>
   );
 });
 

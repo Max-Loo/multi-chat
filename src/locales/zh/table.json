@@ -4,5 +4,7 @@
   "modelName": "模型名称",
   "lastUpdateTime": "最近更新时间",
   "createTime": "创建时间",
-  "operation": "操作"
+  "operation": "操作",
+  "emptyData": "暂无数据",
+  "loading": "加载中..."
 }

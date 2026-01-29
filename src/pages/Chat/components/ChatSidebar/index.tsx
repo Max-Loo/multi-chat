@@ -1,15 +1,13 @@
 import ToolsBar from "./components/ToolsBar"
-import { Spin } from "antd"
-import { useState } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useState, useRef, useEffect } from "react"
 import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedFilter"
 import { useAppSelector } from "@/hooks/redux"
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import ChatButton from "./components/ChatButton"
 import { useExistingChatList } from "@/hooks/useExistingChatList"
-import { useTranslation } from "react-i18next"
 
 const ChatSidebar: React.FC = () => {
-  const { t } = useTranslation()
   const chatList = useExistingChatList()
   const chatListLoading = useAppSelector((state) => state.chat.loading)
 
@@ -22,6 +20,9 @@ const ChatSidebar: React.FC = () => {
   // 本地状态：过滤文本
   const [filterText, setFilterText] = useState<string>('')
 
+  // 滚动容器 ref
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
   const {
     filteredList: filteredChatList,
   } = useDebouncedFilter(
@@ -29,6 +30,18 @@ const ChatSidebar: React.FC = () => {
     chatList,
     (chat) => chat.name?.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
   )
+
+  // 添加 passive 监听器
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    container.addEventListener('scroll', onScrollEvent, { passive: true })
+
+    return () => {
+      container.removeEventListener('scroll', onScrollEvent)
+    }
+  }, [onScrollEvent])
 
   return (
     <div className="relative flex flex-col items-center justify-start w-full h-full">
@@ -39,10 +52,10 @@ const ChatSidebar: React.FC = () => {
         />
       </div>
       <div
+        ref={scrollContainerRef}
         className={`pb-2 overflow-y-auto w-full
           ${scrollbarClassname}
         `}
-        onScroll={onScrollEvent}
       >
         {/* 带有 loading 效果 */}
         {!chatListLoading ? filteredChatList.map(chat => {
@@ -50,9 +63,13 @@ const ChatSidebar: React.FC = () => {
             chat={chat}
             key={chat.id}
           />
-        }) : <Spin spinning={chatListLoading} tip={t($ => $.chat.loading)}>
-          <div className="w-full min-h-40"></div>
-        </Spin>}
+        }) : (
+          <div className="w-full p-2 space-y-2">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton key={index} className="h-11 w-full" />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

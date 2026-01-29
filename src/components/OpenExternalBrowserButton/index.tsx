@@ -3,8 +3,8 @@
  */
 
 import { useNavigateToExternalSite } from "@/hooks/useNavigateToExternalSite"
-import { ExportOutlined } from "@ant-design/icons"
-import { Button } from "antd"
+import { ExternalLink } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface ButtonProps {
   // 要打开的网址
@@ -32,11 +32,12 @@ const OpenExternalBrowserButton: React.FC<ButtonProps> = ({
 
   return (
     <Button
-      type="text"
-      className={`${className}`}
-      icon={<ExportOutlined />}
+      variant="ghost"
+      className={className}
       onClick={navToOfficialSite}
-    />
+    >
+      <ExternalLink className="h-4 w-4" />
+    </Button>
   )
 }
 

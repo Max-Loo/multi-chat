@@ -1,5 +1,6 @@
-import { ArrowUpOutlined } from "@ant-design/icons";
-import { Button, Input } from "antd"
+import { ArrowUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { isString } from "es-toolkit";
 import React, { useRef, useState } from "react"
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
@@ -29,32 +30,27 @@ const SendButton: React.FC<SendButtonProps> = ({
   return <>
     <Button
       className={`
-        absolute! right-6! bottom-6! flex items-center justify-center p-0!
-        ${isSending && 'border-0!'}
-        group
+        relative flex items-center justify-center p-0 h-10 w-10 rounded-full
+        bg-gray-900 text-white hover:bg-gray-800
+        shadow-md hover:shadow-lg
+        transition-all group shrink-0
       `}
-      color="primary"
-      variant="solid"
       onClick={onClick}
       disabled={disabled}
-      shape="circle"
-      size="large"
       title={isSending ? t($ => $.chat.stopSending) : t($ => $.chat.sendMessage)}
     >
       {isSending ? <>
         <div
           className={`
             absolute inset-0 border-4 rounded-full
-            border-blue-300 border-t-blue-500
-            animate-spin w-full h-full bg-white
-            group-hover:border-t-blue-400
-            group-hover:border-blue-200
+            border-gray-300 border-t-gray-600
+            animate-spin
           `}
         ></div>
-        <div className="absolute inset-0 flex items-center justify-center w-full h-full rounded-xl">
-          <div className="w-2.5 h-2.5 bg-blue-500 rounded-sm group-hover:bg-blue-400"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
         </div>
-      </> : <ArrowUpOutlined /> }
+      </> : <ArrowUp size={20} />}
     </Button>
   </>
 
@@ -122,12 +118,13 @@ const ChatPanelSender: React.FC = () => {
 
   // 按下回车按钮的回调，直接回车是发送，shift + enter 是换行
   const onPressEnterBtn: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
-    if (!e.shiftKey) {
-      // 这里表面直接按下了回车
+    // 只有按下 Enter 键且没有按 Shift 键时才发送消息
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // 阻止默认行为（换行）
       e.preventDefault()
 
       if (isSending) {
-      // 如果处于发送状态，忽略回车事件
+        // 如果处于发送状态，忽略回车事件
         return
       }
 
@@ -144,29 +141,33 @@ const ChatPanelSender: React.FC = () => {
 
       // 进行发送逻辑
       sendMessage(text)
-
     }
   }
 
 
 
   return (
-    <div className="relative w-full h-22 bg-gray-50">
-      <div className="absolute bottom-0 left-0 w-full p-4">
-        <Input.TextArea
-          className="w-full text-base! rounded-xl"
-          autoSize={{ minRows: 2, maxRows: 10 }}
+    <div className="relative z-10 w-full px-4 py-3 bg-background border-t border-border">
+      <div className="relative flex items-end gap-3">
+        <Textarea
+          className={`
+            flex-1 text-base rounded-lg border border-input bg-background
+            shadow-md px-4 py-3 min-h-20 max-h-80 resize-none
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+            transition-all
+          `}
+          placeholder={t($ => $.chat.typeMessage)}
           value={text}
           onChange={(e) => { setText(e.target.value) }}
-          onPressEnter={onPressEnterBtn}
+          onKeyDown={onPressEnterBtn}
           onCompositionEnd={(e) => { setCompositionEndTimestamp(e.timeStamp) }}
         />
+        {/* 发送按钮 */}
+        <SendButton
+          isSending={isSending}
+          onClick={onClickSendBtn}
+        />
       </div>
-      {/* 发送按钮 */}
-      <SendButton
-        isSending={isSending}
-        onClick={onClickSendBtn}
-      />
     </div>
   )
 }

@@ -1,8 +1,8 @@
-import { ChatModel } from "@/types/chat"
-import { useMemo } from "react";
+import React, { useMemo } from "react";
+import { ChatModel } from "@/types/chat";
 import { useTypedSelectedChat } from "../../hooks/useTypedSelectedChat";
 import ChatPanelContentDetail from "./components/ChatPanelContentDetail";
-import { Splitter } from "antd";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 interface ChatPanelContentProps {
   columnCount: number;
@@ -33,39 +33,36 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
 
 
   if (isSplitter && chatModelList.length > 1) {
-    return <div className="absolute top-0 left-0 w-full h-screen pt-12 pb-22">
-      <Splitter orientation="vertical" lazy>
-        {
-          board.map((row, idx) => {
-            return <Splitter.Panel
-              key={idx}
-            >
-              <Splitter lazy>
-                {row.map(chatModel => {
-                  return <Splitter.Panel
-                    key={chatModel.modelId}
-                  >
-                    <div
-                      className={``}
-                    >
-
-                      {/* 具体渲染的内容 */}
-                      <ChatPanelContentDetail
-                        chatModel={chatModel}
-                      />
-                    </div>
-                  </Splitter.Panel>
-                })}
-              </Splitter>
-            </Splitter.Panel>
-          })
-        }
-      </Splitter>
-    </div>
+    return (
+      <div className="absolute top-0 left-0 w-full h-screen pt-12 pb-22">
+        <ResizablePanelGroup orientation="vertical">
+          {board.map((row, idx) => (
+            <React.Fragment key={idx}>
+              <ResizablePanel defaultSize={100 / board.length}>
+                <ResizablePanelGroup orientation="horizontal">
+                  {row.map((chatModel, cellIdx) => (
+                    <React.Fragment key={chatModel.modelId}>
+                      <ResizablePanel defaultSize={100 / row.length}>
+                        <div className="h-full w-full">
+                          {/* 具体渲染的内容 */}
+                          <ChatPanelContentDetail chatModel={chatModel} />
+                        </div>
+                      </ResizablePanel>
+                      {cellIdx < row.length - 1 && <ResizableHandle withHandle />}
+                    </React.Fragment>
+                  ))}
+                </ResizablePanelGroup>
+              </ResizablePanel>
+              {idx < board.length - 1 && <ResizableHandle withHandle />}
+            </React.Fragment>
+          ))}
+        </ResizablePanelGroup>
+      </div>
+    );
   }
 
   // 渲染成棋盘
-  return <div className="absolute top-0 left-0 w-full h-screen pt-12 pb-22">
+  return <div className="absolute top-0 left-0 w-full h-screen pt-12 pb-24">
     <div className="flex flex-col w-full h-full">
       {board.map((row, idx) => {
         return <div

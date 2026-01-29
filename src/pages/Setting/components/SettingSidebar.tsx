@@ -1,6 +1,6 @@
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
-import { Button } from "antd";
-import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom"
 
@@ -25,6 +25,9 @@ const SettingSidebar: React.FC = () => {
     scrollbarClassname,
   } = useAdaptiveScrollbar()
 
+  // 滚动容器 ref
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
   // 需要渲染的按钮列表
   const settingList = useMemo<SettingButton[]>(() => {
     return [
@@ -46,24 +49,31 @@ const SettingSidebar: React.FC = () => {
     navigate(path)
   }
 
+  // 添加 passive 监听器
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    container.addEventListener('scroll', onScrollEvent, { passive: true })
+
+    return () => {
+      container.removeEventListener('scroll', onScrollEvent)
+    }
+  }, [onScrollEvent])
+
   return <div
+    ref={scrollContainerRef}
     className={`p-2 overflow-y-auto w-full h-full
       flex flex-col justify-start items-center
       ${scrollbarClassname}
     `}
-    onScroll={onScrollEvent}
   >
     {settingList.map(item => {
       return <Button
         key={item.path}
-        color="default"
-        variant="filled"
-        size="large"
-        className={`
-          w-full mb-2
-          ${selectedBtnPath === item.path && 'bg-gray-300!'}
-          hover:bg-gray-200!
-        `}
+        variant="default"
+        size="lg"
+        className="w-full mb-2"
         onClick={() => onClickSettingBtn(item)}
       >
         {item.name}

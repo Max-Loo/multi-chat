@@ -9,6 +9,8 @@
   "deleteChatConfirm": "After the chat is deleted, all related chat records will be unrecoverable",
   "editChatSuccess": "Chat edited successfully",
   "editChatFailed": "Failed to edit chat",
+  "configureChatSuccess": "Chat configured successfully",
+  "configureChatFailed": "Failed to configure chat",
   "stopSending": "Stop Sending",
   "hideSidebar": "Hide Sidebar",
   "showSidebar": "Show Sidebar",
@@ -22,5 +24,9 @@
   "modelDeleted": "Model Deleted",
   "deleted": "Deleted",
   "disabled": "Disabled",
-  "selectChatToStart": "Select a chat to start!"
+  "selectChatToStart": "Select a chat to start!",
+  "enableSplitter": "Enable Splitter：",
+  "maxPerRow": "Max per row：",
+  "itemsUnit": "",
+  "typeMessage": "Enter your message..."
 }

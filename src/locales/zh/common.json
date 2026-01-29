@@ -6,5 +6,7 @@
   "cancel": "取消",
   "confirm": "确定",
   "pageNotFound": "页面不存在",
+  "pageNotFoundDescription": "抱歉，您访问的页面不存在",
+  "warning": "警告",
   "goBack": "返回"
 }
