@@ -49,8 +49,35 @@ pnpm tsc
 - **TypeScript**: 严格模式已启用，ES2020 目标
 - **ESLint**: 配置了 TypeScript、React Hooks 和 React Refresh 规则
 - **React Compiler**: 通过 babel-plugin-react-compiler 启用以进行优化
-- **Tauri 插件**: 使用 tauri-plugin-opener 实现文件打开功能
+- **Tauri 插件**:
+  - `tauri-plugin-opener`: 文件打开功能
+  - `tauri-plugin-keyring`: 主密钥安全存储（系统钥匙串）
+  - `tauri-plugin-store`: 键值存储（用于模型和聊天数据持久化）
+  - `tauri-plugin-shell`: Shell 命令执行
+  - `tauri-plugin-http`: HTTP 请求
+  - `tauri-plugin-os`: 操作系统信息
 - **UI 组件**: shadcn/ui 预构建 UI 组件库
+- **加密存储**:
+  - 主密钥：Web Crypto API 生成 + tauri-plugin-keyring 存储
+  - 数据加密：AES-256-GCM 字段级加密
+
+### 应用启动初始化流程
+
+应用启动时按以下顺序执行初始化：
+
+1. **阻断式初始化**（必须完成后才能渲染）：
+   - 国际化初始化（`initI18n()`）
+   - **主密钥初始化（`initializeMasterKey()`）**
+     - 检查系统钥匙串中是否存在主密钥
+     - 不存在则使用 Web Crypto API 生成新的 256-bit 随机密钥
+     - 将密钥存储到系统钥匙串（macOS Keychain / Windows Credential Manager）
+
+2. **异步初始化**（并行执行）：
+   - 模型数据加载（依赖主密钥进行解密）
+   - 聊天列表加载
+   - 应用语言配置加载
+
+**重要**: 主密钥初始化必须在模型数据加载之前完成，否则无法解密 API 密钥。
 
 ## 添加新的 Tauri 命令
 
@@ -67,7 +94,9 @@ pnpm tsc
 ```typescript
 // 正确
 import { Model } from "@/types/model";
-import { loadModels } from "@/store/storage/modelStorage";
+import { loadModelsFromJson } from "@/store/storage/jsonStorage";
+import { initializeMasterKey } from "@/store/keyring/masterKey";
+import { encryptField, decryptField } from "@/utils/crypto";
 
 // 错误
 import { Model } from "../../types/model";

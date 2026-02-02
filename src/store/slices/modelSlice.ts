@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Model } from '@/types/model';
-import { loadModels } from '../vaults/modelVault';
+import { loadModelsFromJson } from '../storage';
 
 // 模型管理状态接口定义
 export interface ModelSliceState {
@@ -23,7 +23,7 @@ export const initializeModels = createAsyncThunk(
   'models/initialize',
   async () => {
     try {
-      return await loadModels();
+      return await loadModelsFromJson();
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to initialize model data', { cause: error });
     }

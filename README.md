@@ -36,8 +36,10 @@
 ### 🔒 数据安全
 
 - 本地数据存储，保护隐私
-- API 密钥安全加密存储
-- 🚧 支持数据导入/导出
+- API 密钥使用 AES-256-GCM 加密存储
+- 主密钥通过 `tauri-plugin-keyring` 安全存储到系统钥匙串
+- 敏感数据字段级加密，非敏感数据明文存储
+- 数据存储为 JSON 格式，便于备份和查看
 
 ## 技术栈
 
@@ -139,9 +141,10 @@ src/
 │   └── zh/           # 中文语言包
 ├── store/            # Redux 状态管理
 │   ├── slices/       # Redux 切片
-│   └── vaults/       # 数据持久化
+│   ├── keyring/      # 主密钥管理（tauri-plugin-keyring）
+│   └── storage/      # 数据持久化（JSON 文件 + 加密）
 ├── types/            # TypeScript 类型定义
-└── utils/            # 工具函数
+└── utils/            # 工具函数（加密等）
 ```
 
 ## 国际化配置
@@ -190,11 +193,26 @@ src/
 
 ### 数据持久化
 
-应用使用 Tauri 的 Store 插件进行数据持久化，数据存储位置：
+应用使用 @tauri-apps/plugin-store 插件进行数据持久化，数据存储位置：
 
-- Windows: `%APPDATA%\com.<username>.multi-chat`
-- macOS: `~/Library/Application Support/com.<username>.multi-chat`
-- Linux: `~/.config/com.<username>.multi-chat`
+- **Windows**: `%APPDATA%\multi-chat`
+- **macOS**: `~/Library/Application Support/multi-chat`
+- **Linux**: `~/.config/multi-chat`
+
+#### 数据文件
+
+- `models.json`: 模型配置（API 密钥字段已加密）
+- `chats.json`: 聊天记录
+
+#### 加密机制
+
+- **算法**: AES-256-GCM（认证加密）
+- **密钥管理**:
+  - 主密钥由 Web Crypto API 生成（256-bit 随机密钥）
+  - 主密钥存储在系统安全存储（macOS 钥匙串 / Windows DPAPI / Linux Secret Service）
+  - 使用 `tauri-plugin-keyring` 统一管理跨平台密钥存储
+- **加密格式**: `enc:base64(ciphertext + auth_tag + nonce)`
+- **仅支持桌面端**: 不支持移动端（iOS/Android）
 
 ## 推荐开发环境
 

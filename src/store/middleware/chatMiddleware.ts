@@ -1,6 +1,6 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import type { RootState } from "..";
-import { saveChatList } from "../vaults/chatVault";
+import { saveChatsToJson } from "../storage";
 import {
   createChat,
   deleteChat,
@@ -9,7 +9,7 @@ import {
   startSendChatMessage,
 } from "../slices/chatSlices";
 
-export const saveChatListMiddleware = createListenerMiddleware<RootState>()
+export const saveChatListMiddleware = createListenerMiddleware<RootState>();
 
 saveChatListMiddleware.startListening({
   // 需要触发保存聊天记录的，都需要声明在这里
@@ -19,9 +19,9 @@ saveChatListMiddleware.startListening({
     createChat,
     editChat,
     editChatName,
-    deleteChat,
+    deleteChat
   ),
   effect: async (_, listenerApi) => {
-    await saveChatList(listenerApi.getState().chat.chatList)
+    await saveChatsToJson(listenerApi.getState().chat.chatList);
   },
-})
+});

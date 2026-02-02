@@ -8,6 +8,7 @@ import FullscreenLoading from "./components/FullscreenLoading";
 import { RouterProvider } from 'react-router-dom';
 import router from './router';
 import { initI18n } from '@/lib/i18n';
+import { initializeMasterKey } from "@/store/keyring/masterKey";
 import { initializeModels } from "@/store/slices/modelSlice";
 import { initializeChatList } from "@/store/slices/chatSlices";
 import { initializeAppLanguage } from "@/store/slices/appConfigSlices";
@@ -23,8 +24,11 @@ rootDom.render(<FullscreenLoading />)
 registerAllProviders()
 interceptClickAToJump()
 
-// 阻断式的初始化逻辑（渲染前需要保证初始化完成
-const InterruptiveInitPromise = initI18n()
+// 阻断式的初始化逻辑（渲染前需要保证初始化完成）
+const InterruptiveInitPromise = Promise.all([
+  initI18n(),
+  initializeMasterKey(),
+]);
 
 // 可以异步完成的初始化逻辑
 store.dispatch(initializeModels())
