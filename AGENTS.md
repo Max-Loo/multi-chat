@@ -79,6 +79,97 @@ pnpm tsc
 
 **重要**: 主密钥初始化必须在模型数据加载之前完成，否则无法解密 API 密钥。
 
+### 跨平台兼容性
+
+**背景**: 项目支持两种运行模式 - Tauri 桌面模式和 Web 浏览器模式。某些 Tauri 插件 API 在 Web 环境中不可用，需要提供降级方案。
+
+**兼容层设计**:
+
+项目使用 **Null Object 模式** 和 **环境检测** 来实现跨平台兼容：
+
+1. **环境检测**: 通过 `window.__TAURI__` 对象判断运行环境
+2. **统一 API**: 提供与 Tauri 原生 API 一致的接口
+3. **降级实现**: Web 环境使用 Null Object 模式，避免运行时错误
+4. **功能标记**: 通过 `isSupported()` 方法让调用者判断功能可用性
+
+**兼容层目录结构**:
+
+```
+src/utils/tauriCompat/
+├── index.ts          # 统一导出所有兼容层 API
+├── env.ts            # 环境检测工具
+└── shell.ts          # Shell 插件兼容层
+```
+
+**使用示例**:
+
+```typescript
+// 导入兼容层 API（使用 @/ 别名）
+import { isTauri, Command, shell } from '@/utils/tauriCompat';
+
+// 环境检测
+if (isTauri()) {
+  console.log('运行在 Tauri 桌面环境');
+} else {
+  console.log('运行在 Web 浏览器环境');
+}
+
+// 使用 Shell API
+const cmd = Command.create('ls', ['-la']);
+if (cmd.isSupported()) {
+  const output = await cmd.execute();
+  console.log(output.stdout);
+} else {
+  console.log('Shell 功能在 Web 环境中不可用');
+}
+
+// 使用 shell.open
+shell.open('https://example.com');
+```
+
+**已实现兼容层**:
+
+- **Shell 插件** (`@/utils/tauriCompat/shell.ts`)
+  - `Command.create()`: 创建 Shell 命令
+  - `shell.open()`: 打开 URL 或文件
+    - Tauri 环境: 使用 `@tauri-apps/plugin-shell` 原生实现（支持 URL 和本地文件）
+    - Web 环境: 使用 `window.open()` 作为浏览器替代方案（仅支持 URL）
+  - Web 环境 Shell 命令: 返回 Null Object 实现（不执行实际操作）
+
+**Web 端功能差异**:
+
+以下功能在 Web 环境中的行为与 Tauri 环境不同：
+
+- `shell.open()`:
+  - Tauri 环境: 支持打开 URL 和本地文件路径
+  - Web 环境: 仅支持打开 URL（使用 `window.open()`），不支持本地文件路径
+  - `isSupported()`: 在两种环境中均返回 `true`
+
+- `Command.execute()`:
+  - Tauri 环境: 执行真实的 Shell 命令
+  - Web 环境: 返回模拟的成功结果（Null Object 模式），不实际执行命令
+  - `isSupported()`: Tauri 环境返回 `true`，Web 环境返回 `false`
+
+**为其他插件添加兼容层**:
+
+如果需要为其他 Tauri 插件（如 `keyring`、`store`）添加 Web 兼容层，遵循以下步骤：
+
+1. 在 `src/utils/tauriCompat/` 下创建新模块（如 `keyring.ts`）
+2. 导入 Tauri 原生 API 和环境检测函数
+3. 创建兼容接口（包含 `isSupported()` 方法）
+4. 实现两个类：
+   - Tauri 环境：封装原生 API
+   - Web 环境：Null Object 实现
+5. 在 `index.ts` 中导出新模块的 API
+6. 更新使用该插件的代码，替换导入路径为 `@/utils/tauriCompat`
+
+**重要规范**:
+
+- **始终使用 `@/` 别名导入兼容层**，不使用相对路径
+- 所有兼容层 API 必须提供 `isSupported()` 方法
+- Web 环境的实现永不抛出异常，始终返回 resolved Promise
+- 保持与 Tauri 原生 API 的类型一致性
+
 ## 添加新的 Tauri 命令
 
 1. 在 `src-tauri/src/lib.rs` 中使用 `#[tauri::command]` 属性添加命令函数

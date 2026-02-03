@@ -1,6 +1,6 @@
 import { LOCAL_STORAGE_PREFIX, SUPPORTED_LANGUAGE_LIST } from '@/utils/constants';
 import { locale } from '@tauri-apps/plugin-os';
-import { open } from '@tauri-apps/plugin-shell';
+import { shell } from '@/utils/tauriCompat';
 
 /**
  * 拦截全局的 a 标签跳转页面事件
@@ -16,7 +16,7 @@ export const interceptClickAToJump = () => {
       // 判断是否是外部链接（非本地路由）
       if (url.origin !== window.location.origin) {
         event.preventDefault();
-        await open(url.href);
+        await shell.open(url.href);
       }
     }
   });
