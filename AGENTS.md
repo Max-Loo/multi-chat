@@ -98,14 +98,15 @@ pnpm tsc
 src/utils/tauriCompat/
 ├── index.ts          # 统一导出所有兼容层 API
 ├── env.ts            # 环境检测工具
-└── shell.ts          # Shell 插件兼容层
+├── shell.ts          # Shell 插件兼容层
+└── os.ts             # OS 插件兼容层
 ```
 
 **使用示例**:
 
 ```typescript
 // 导入兼容层 API（使用 @/ 别名）
-import { isTauri, Command, shell } from '@/utils/tauriCompat';
+import { isTauri, Command, shell, locale } from '@/utils/tauriCompat';
 
 // 环境检测
 if (isTauri()) {
@@ -113,6 +114,10 @@ if (isTauri()) {
 } else {
   console.log('运行在 Web 浏览器环境');
 }
+
+// 使用 OS API
+const language = await locale();
+console.log(language); // "zh-CN" 或 "en-US" 等
 
 // 使用 Shell API
 const cmd = Command.create('ls', ['-la']);
@@ -136,6 +141,13 @@ shell.open('https://example.com');
     - Web 环境: 使用 `window.open()` 作为浏览器替代方案（仅支持 URL）
   - Web 环境 Shell 命令: 返回 Null Object 实现（不执行实际操作）
 
+- **OS 插件** (`@/utils/tauriCompat/os.ts`)
+  - `locale()`: 获取系统或浏览器语言设置
+    - Tauri 环境: 使用 `@tauri-apps/plugin-os` 原生实现，返回操作系统语言
+    - Web 环境: 使用 `navigator.language` API，返回浏览器首选语言
+    - 返回格式: BCP 47 语言标签（如 "zh-CN"、"en-US"）
+    - 注意: Web 环境使用浏览器语言而非系统语言，用户可通过应用设置手动调整
+
 **Web 端功能差异**:
 
 以下功能在 Web 环境中的行为与 Tauri 环境不同：
@@ -150,23 +162,50 @@ shell.open('https://example.com');
   - Web 环境: 返回模拟的成功结果（Null Object 模式），不实际执行命令
   - `isSupported()`: Tauri 环境返回 `true`，Web 环境返回 `false`
 
+- `locale()`:
+  - Tauri 环境: 返回操作系统语言设置
+  - Web 环境: 返回浏览器首选语言设置
+  - 无 `isSupported()` 方法: 功能在两种环境始终可用
+
 **为其他插件添加兼容层**:
 
 如果需要为其他 Tauri 插件（如 `keyring`、`store`）添加 Web 兼容层，遵循以下步骤：
 
 1. 在 `src/utils/tauriCompat/` 下创建新模块（如 `keyring.ts`）
 2. 导入 Tauri 原生 API 和环境检测函数
-3. 创建兼容接口（包含 `isSupported()` 方法）
-4. 实现两个类：
+3. 创建兼容接口（对于功能降级的 API，包含 `isSupported()` 方法）
+4. 实现两个类（或函数）：
    - Tauri 环境：封装原生 API
-   - Web 环境：Null Object 实现
+   - Web 环境：Null Object 实现（对于有降级方案的 API，使用浏览器原生 API）
 5. 在 `index.ts` 中导出新模块的 API
 6. 更新使用该插件的代码，替换导入路径为 `@/utils/tauriCompat`
+7. 在 AGENTS.md 中添加相应的文档说明
+
+**参考示例**:
+- OS 插件兼容层 (`src/utils/tauriCompat/os.ts`) - 实现了基于函数的兼容层，Web 环境使用浏览器 API 降级
+- Shell 插件兼容层 (`src/utils/tauriCompat/shell.ts`) - 实现了基于类的兼容层，包含 `isSupported()` 方法
+
+**平台检测替换说明**:
+
+在某些情况下，可能不需要为 Tauri 插件 API 创建完整的兼容层，而是直接使用浏览器原生 API 替换：
+
+- **示例**: 项目中使用 `@tauri-apps/plugin-os` 的 `platform()` API 检测 macOS 平台（用于 Safari 中文输入法 bug 处理）
+- **替换方案**: 直接使用 `navigator.userAgent` 进行浏览器平台检测
+- **实现**:
+  ```typescript
+  // 检测是否为 macOS 平台的 Safari 浏览器
+  const isMacSafari = (): boolean => {
+    const ua = navigator.userAgent;
+    return /Mac|macOS/.test(ua) && /Safari/.test(ua) && !/Chrome|Edge|Firefox/.test(ua);
+  };
+  ```
+- **优势**: 减少对 Tauri API 的依赖，提升 Web 环境的独立性
 
 **重要规范**:
 
 - **始终使用 `@/` 别名导入兼容层**，不使用相对路径
-- 所有兼容层 API 必须提供 `isSupported()` 方法
+- 对于功能降级的 API，必须提供 `isSupported()` 方法
+- 对于有浏览器替代方案的 API（如 `locale()`），可以不提供 `isSupported()` 方法（功能始终可用）
 - Web 环境的实现永不抛出异常，始终返回 resolved Promise
 - 保持与 Tauri 原生 API 的类型一致性
 

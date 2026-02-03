@@ -6,7 +6,6 @@ import React, { useRef, useState } from "react"
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 import { useAppDispatch } from "@/hooks/redux";
 import { startSendChatMessage } from "@/store/slices/chatSlices";
-import { platform } from '@tauri-apps/plugin-os';
 import { useIsChatSending } from "../hooks/useIsChatSending";
 import { useTranslation } from "react-i18next";
 
@@ -56,6 +55,16 @@ const SendButton: React.FC<SendButtonProps> = ({
 
 }
 
+/**
+ * 检测是否为 macOS 平台的 Safari 浏览器
+ * 用于处理 Safari 中文输入法的 Enter 键 bug
+ *
+ * @returns {boolean} 如果是 macOS Safari 则返回 true，否则返回 false
+ */
+const isMacSafari = (): boolean => {
+  const ua = navigator.userAgent;
+  return /Mac|macOS/.test(ua) && /Safari/.test(ua) && !/Chrome|Edge|Firefox/.test(ua);
+};
 
 /**
  * @description 聊天内容发送框
@@ -134,8 +143,7 @@ const ChatPanelSender: React.FC = () => {
        * 且在 safari 中，onCompositionEnd 事件会在 onKeyDown 事件前触发；（正确情况下应该是反过来）
        * hack - 直接判断两个触发事件的间隔是否满足一定时间差
        */
-      const currentPlatform = platform();
-      if (currentPlatform === 'macos' && Math.abs(e.timeStamp - compositionEndTimestamp) < 100) {
+      if (isMacSafari() && Math.abs(e.timeStamp - compositionEndTimestamp) < 100) {
         return
       }
 

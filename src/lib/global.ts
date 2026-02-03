@@ -1,6 +1,5 @@
 import { LOCAL_STORAGE_PREFIX, SUPPORTED_LANGUAGE_LIST } from '@/utils/constants';
-import { locale } from '@tauri-apps/plugin-os';
-import { shell } from '@/utils/tauriCompat';
+import { locale, shell } from '@/utils/tauriCompat';
 
 /**
  * 拦截全局的 a 标签跳转页面事件
