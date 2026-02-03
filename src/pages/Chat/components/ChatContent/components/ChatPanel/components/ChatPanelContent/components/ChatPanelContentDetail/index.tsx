@@ -153,7 +153,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     {needsScrollbar && !isAtBottom && (
       <Button
         onClick={scrollToBottom}
-        className="absolute bottom-24 rounded-full h-12 w-12"
+        className="absolute bottom-[110px] rounded-full h-10 w-10 bg-gray-900 text-white shadow-md hover:shadow-lg hover:bg-gray-800 transition-all"
         title={t($ => $.chat.scrollToBottom)}
         size="icon"
       >
@@ -161,13 +161,13 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
           <div
             className={`
             absolute inset-0 border-4 rounded-full
-            border-blue-300 border-t-blue-500
+            border-gray-300 border-t-gray-600
             animate-spin w-full h-full bg-white
-            group-hover:border-t-blue-400
-            group-hover:border-blue-200
           `}
           ></div>
-          <ArrowDown className="text-blue-500 group-hover:text-blue-400" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ArrowDown className="text-gray-700" />
+          </div>
         </> : <ArrowDown />}
       </Button>
     )}
