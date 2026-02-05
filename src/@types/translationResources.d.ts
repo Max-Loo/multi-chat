@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/2/5 22:16:46
+// 生成时间: 2026/2/5 22:38:26
 
 interface Resources {
   translation: {
@@ -47,6 +47,8 @@ interface Resources {
       pageNotFoundDescription: string;
       warning: string;
       goBack: string;
+      show: string;
+      hide: string;
     };
     model: {
       addModel: string;

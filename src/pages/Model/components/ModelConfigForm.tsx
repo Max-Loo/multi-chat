@@ -7,6 +7,7 @@ import { DateFormatEnum, ModelProviderKeyEnum } from "@/utils/enums"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { z } from "zod"
@@ -209,8 +210,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
             <FormItem field={field} className="w-full grow xl:w-[calc(50%-16px)]">
               <FormLabel className="text-base">{t($ => $.model.apiKey)}</FormLabel>
               <FormControl>
-                <Input
-                  type="password"
+                <PasswordInput
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}

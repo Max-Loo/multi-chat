@@ -8,5 +8,7 @@
   "pageNotFound": "页面不存在",
   "pageNotFoundDescription": "抱歉，您访问的页面不存在",
   "warning": "警告",
-  "goBack": "返回"
+  "goBack": "返回",
+  "show": "显示",
+  "hide": "隐藏"
 }
