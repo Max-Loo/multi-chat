@@ -13,6 +13,9 @@
  * // 导入 OS 插件 API
  * import { locale } from '@/utils/tauriCompat';
  *
+ * // 导入 HTTP 插件 API
+ * import { fetch, getFetchFunc, type RequestInfo } from '@/utils/tauriCompat';
+ *
  * if (isTauri()) {
  *   console.log('运行在 Tauri 桌面环境');
  * } else {
@@ -29,6 +32,10 @@
  *   const output = await cmd.execute();
  *   console.log(output.stdout);
  * }
+ *
+ * // 使用 HTTP API
+ * const response = await fetch('https://api.example.com/data');
+ * const data = await response.json();
  * ```
  */
 
@@ -40,6 +47,10 @@ export { Command, shell } from './shell';
 
 // OS 插件兼容层
 export { locale } from './os';
+
+// HTTP 插件兼容层
+export { fetch, getFetchFunc } from './http';
+export type { RequestInfo, FetchFunc } from './http';
 
 // 重新导出 Tauri 类型供外部使用
 export type { ChildProcess } from '@tauri-apps/plugin-shell';

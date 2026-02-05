@@ -99,14 +99,15 @@ src/utils/tauriCompat/
 ├── index.ts          # 统一导出所有兼容层 API
 ├── env.ts            # 环境检测工具
 ├── shell.ts          # Shell 插件兼容层
-└── os.ts             # OS 插件兼容层
+├── os.ts             # OS 插件兼容层
+└── http.ts           # HTTP 插件兼容层
 ```
 
 **使用示例**:
 
 ```typescript
 // 导入兼容层 API（使用 @/ 别名）
-import { isTauri, Command, shell, locale } from '@/utils/tauriCompat';
+import { isTauri, Command, shell, locale, fetch, getFetchFunc, type RequestInfo } from '@/utils/tauriCompat';
 
 // 环境检测
 if (isTauri()) {
@@ -130,6 +131,14 @@ if (cmd.isSupported()) {
 
 // 使用 shell.open
 shell.open('https://example.com');
+
+// 使用 HTTP API（直接调用 fetch）
+const response = await fetch('https://api.example.com/data');
+const data = await response.json();
+
+// 使用 HTTP API（获取 fetch 函数实例）
+const fetchFunc = getFetchFunc();
+const response2 = await fetchFunc('https://api.example.com/data');
 ```
 
 **已实现兼容层**:
@@ -147,6 +156,78 @@ shell.open('https://example.com');
     - Web 环境: 使用 `navigator.language` API，返回浏览器首选语言
     - 返回格式: BCP 47 语言标签（如 "zh-CN"、"en-US"）
     - 注意: Web 环境使用浏览器语言而非系统语言，用户可通过应用设置手动调整
+
+- **HTTP 插件** (`@/utils/tauriCompat/http.ts`)
+  - `fetch()`: 统一的 fetch 函数，根据环境自动选择实现
+    - 开发环境：使用原生 Web `fetch` API（便于调试）
+    - 生产环境 + Tauri 平台：使用 `@tauri-apps/plugin-http` 的 `fetch`（系统代理、证书管理）
+    - 生产环境 + Web 平台：使用原生 Web `fetch` API
+  - `getFetchFunc()`: 获取 fetch 函数实例，用于第三方库注入或自定义封装
+    - 适用于为第三方库（如 Axios）注入 fetch 函数
+    - 适用于封装自定义的请求方法
+  - 类型定义：
+    - `RequestInfo`: 自定义类型 `type RequestInfo = string | URL | Request`
+    - `FetchFunc`: fetch 函数类型
+    - 其他类型（RequestInit、Response、Headers、Request）：直接使用原生类型定义
+
+  **使用场景示例**：
+
+  ```typescript
+  // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
+  import { fetch } from '@/utils/tauriCompat';
+
+  const response = await fetch('https://api.example.com/data');
+  const data = await response.json();
+
+  // 场景 2：使用 getFetchFunc 封装自定义请求方法
+  import { getFetchFunc, type RequestInfo } from '@/utils/tauriCompat';
+
+  class ApiClient {
+    private fetch: ReturnType<typeof getFetchFunc>;
+
+    constructor() {
+      this.fetch = getFetchFunc();
+    }
+
+    async request(url: string, options?: RequestInit) {
+      const response = await this.fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    }
+  }
+
+  const client = new ApiClient();
+  const data = await client.request('https://api.example.com/data');
+
+  // 场景 3：注入第三方库（如 Axios）
+  import { getFetchFunc } from '@/utils/tauriCompat';
+  import axios from 'axios';
+
+  const api = axios.create({
+    adapter: getFetchFunc(),
+  });
+
+  const response = await api.get('https://api.example.com/data');
+  ```
+
+  **环境判断逻辑**：
+
+  ```
+  IF (开发模式: import.meta.env.DEV === true) THEN
+    使用原生 Web fetch
+  ELSE IF (生产 Tauri 平台: window.__TAURI__ 存在) THEN
+    使用 @tauri-apps/plugin-http 的 fetch
+  ELSE (生产 Web 平台)
+    使用原生 Web fetch
+  ```
+
+  **类型说明**：
+
+  - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
+  - 其他类型（RequestInit、Response、Headers、Request）：直接使用全局原生类型定义，避免重复
+  - TypeScript 类型系统会自动推导，确保类型安全
 
 **Web 端功能差异**:
 
@@ -167,6 +248,89 @@ shell.open('https://example.com');
   - Web 环境: 返回浏览器首选语言设置
   - 无 `isSupported()` 方法: 功能在两种环境始终可用
 
+- `fetch()`:
+  - 开发环境：在 Tauri 和 Web 环境中均使用原生 Web `fetch`
+  - 生产环境 Tauri：使用 `@tauri-apps/plugin-http` 的 `fetch`（支持系统代理、证书管理）
+  - 生产环境 Web：使用原生 Web `fetch`
+  - 无 `isSupported()` 方法: 功能在两种环境始终可用
+  - API 行为一致：与标准 Fetch API 完全兼容
+
+**HTTP 插件兼容层迁移指南**:
+
+如果你的项目当前直接使用 `@tauri-apps/plugin-http`，需要将其替换为兼容层 API：
+
+**迁移前**：
+
+```typescript
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+
+const response = await tauriFetch('https://api.example.com/data');
+const data = await response.json();
+```
+
+**迁移后**：
+
+```typescript
+import { fetch } from '@/utils/tauriCompat';
+
+const response = await fetch('https://api.example.com/data');
+const data = await response.json();
+```
+
+**自定义 fetch 函数获取的场景**：
+
+```typescript
+// 迁移前
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+
+class ApiClient {
+  private fetch = tauriFetch;
+
+  async request(url: string, options?: RequestInit) {
+    return this.fetch(url, options);
+  }
+}
+
+// 迁移后
+import { getFetchFunc } from '@/utils/tauriCompat';
+
+class ApiClient {
+  private fetch = getFetchFunc();
+
+  async request(url: string, options?: RequestInit) {
+    return this.fetch(url, options);
+  }
+}
+```
+
+**第三方库注入场景（如 Axios）**：
+
+```typescript
+// 迁移前
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import axios from 'axios';
+
+const api = axios.create({
+  adapter: tauriFetch,
+});
+
+// 迁移后
+import { getFetchFunc } from '@/utils/tauriCompat';
+import axios from 'axios';
+
+const api = axios.create({
+  adapter: getFetchFunc(),
+});
+```
+
+**环境差异说明**：
+
+- **开发环境**：迁移后使用原生 Web fetch，可在浏览器 DevTools 中查看网络请求（调试更方便）
+- **生产环境 Tauri**：使用 Tauri fetch，获得系统代理和证书管理能力
+- **生产环境 Web**：使用原生 Web fetch，确保在浏览器中正常运行
+
+**重要**：开发环境无法测试 Tauri fetch 的特定行为（如系统代理），需要在生产环境中验证。
+ 
 **为其他插件添加兼容层**:
 
 如果需要为其他 Tauri 插件（如 `keyring`、`store`）添加 Web 兼容层，遵循以下步骤：

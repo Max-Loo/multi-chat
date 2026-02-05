@@ -7,6 +7,7 @@ import { StandardMessage } from "@/types/chat"
 import OpenAI from "openai"
 import { ChatRoleEnum } from "@/types/chat"
 import { getStandardRole } from "@/utils/utils"
+import { getFetchFunc } from '@/utils/tauriCompat/http'
 
 /**
  * @description Kimi API 地址处理器
@@ -75,7 +76,7 @@ class KimiFetchApi extends BaseFetchApi<KimiStreamResponse> {
       apiKey: model.apiKey,
       baseURL: (new KimiApiAddress()).getOpenaiFetchAddress(apiAddress),
       dangerouslyAllowBrowser: true,
-      fetch: this.getFetchFunc(),
+      fetch: getFetchFunc(),
     })
   }
 

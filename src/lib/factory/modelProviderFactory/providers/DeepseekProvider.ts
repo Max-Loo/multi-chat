@@ -7,6 +7,7 @@ import { StandardMessage } from "@/types/chat"
 import OpenAI from "openai"
 import { ChatRoleEnum } from "@/types/chat"
 import { getStandardRole } from "@/utils/utils"
+import { getFetchFunc } from '@/utils/tauriCompat/http'
 
 /**
  * @description Deepseek API 地址处理器
@@ -94,7 +95,7 @@ class DeepseekFetchApi extends BaseFetchApi<DeepseekStreamResponse> {
       apiKey: model.apiKey,
       baseURL: (new DeepseekApiAddress).getOpenaiFetchAddress(apiAddress),
       dangerouslyAllowBrowser: true,
-      fetch: this.getFetchFunc(),
+      fetch: getFetchFunc(),
     })
   }
 
