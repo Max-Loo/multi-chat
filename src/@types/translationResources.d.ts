@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/1/29 21:07:11
+// 生成时间: 2026/2/5 22:16:46
 
 interface Resources {
   translation: {
@@ -62,6 +62,8 @@ interface Resources {
       modelRequired: string;
       addModelSuccess: string;
       addModelFailed: string;
+      editModel: string;
+      editModelDescription: string;
       editModelSuccess: string;
       editModelFailed: string;
       deleteModelSuccess: string;

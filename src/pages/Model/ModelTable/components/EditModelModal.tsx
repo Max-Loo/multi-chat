@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import ModelConfigForm from "../../components/ModelConfigForm"
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { useMemo } from "react"
@@ -52,13 +52,15 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onModalCancel()}>
       <DialogContent className="max-w-[80%] top-[6%] translate-y-[calc(-6%+0px)]">
-        <div className="pt-6">
-          {modelProviderKey && <ModelConfigForm
-            modelProviderKey={modelProviderKey}
-            modelParams={modelParams}
-            onFinish={onEditFinish}
-          />}
-        </div>
+        <DialogHeader>
+          <DialogTitle>{t($ => $.model.editModel)}</DialogTitle>
+          <DialogDescription>{t($ => $.model.editModelDescription)}</DialogDescription>
+        </DialogHeader>
+        {modelProviderKey && <ModelConfigForm
+          modelProviderKey={modelProviderKey}
+          modelParams={modelParams}
+          onFinish={onEditFinish}
+        />}
       </DialogContent>
     </Dialog>
   )
