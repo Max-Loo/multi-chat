@@ -16,6 +16,12 @@
  * // 导入 HTTP 插件 API
  * import { fetch, getFetchFunc, type RequestInfo } from '@/utils/tauriCompat';
  *
+ * // 导入 Store 插件 API
+ * import { createLazyStore, type StoreCompat } from '@/utils/tauriCompat';
+ *
+ * // 导入 Keyring 插件 API
+ * import { setPassword, getPassword, deletePassword, isKeyringSupported } from '@/utils/tauriCompat';
+ *
  * if (isTauri()) {
  *   console.log('运行在 Tauri 桌面环境');
  * } else {
@@ -36,6 +42,17 @@
  * // 使用 HTTP API
  * const response = await fetch('https://api.example.com/data');
  * const data = await response.json();
+ *
+ * // 使用 Store API
+ * const store = createLazyStore('models.json');
+ * await store.init();
+ * await store.set('models', modelList);
+ * await store.save();
+ * const models = await store.get<Model[]>('models');
+ *
+ * // 使用 Keyring API
+ * await setPassword('com.multichat.app', 'master-key', 'my-secret-key');
+ * const key = await getPassword('com.multichat.app', 'master-key');
  * ```
  */
 
@@ -51,6 +68,14 @@ export { locale } from './os';
 // HTTP 插件兼容层
 export { fetch, getFetchFunc } from './http';
 export type { RequestInfo, FetchFunc } from './http';
+
+// Store 插件兼容层
+export { createLazyStore } from './store';
+export type { StoreCompat } from './store';
+
+// Keyring 插件兼容层
+export { setPassword, getPassword, deletePassword, isKeyringSupported } from './keyring';
+export type { KeyringCompat } from './keyring';
 
 // 重新导出 Tauri 类型供外部使用
 export type { ChildProcess } from '@tauri-apps/plugin-shell';

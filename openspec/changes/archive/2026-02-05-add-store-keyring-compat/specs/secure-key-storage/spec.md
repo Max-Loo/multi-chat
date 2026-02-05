@@ -1,6 +1,11 @@
-## ADDED Requirements
+# 安全密钥存储规范 - Delta
+
+本规范修改安全密钥存储的实现方式，支持 Web 端使用 IndexedDB 加密存储，同时保持 Tauri 端使用系统钥匙串。
+
+## MODIFIED Requirements
 
 ### Requirement: 使用 tauri-plugin-keyring 存储主密钥
+
 系统 SHALL 根据运行环境选择主密钥存储方式：Tauri 端使用 `tauri-plugin-keyring` 插件将主密钥存储到系统级安全存储，Web 端使用 Keyring 兼容层存储到 IndexedDB（加密存储）。keyring 仅负责存储，不负责生成密钥。
 
 #### Scenario: Tauri 环境存储新生成的主密钥
@@ -9,7 +14,7 @@
 - **THEN** 系统 SHALL 调用 `@tauri-plugin-keyring-api` 的 `setPassword(service, user, password)` API
 - **AND** 参数 SHALL 为：
   - service: "com.multichat.app"
-  - user: "master-key"
+  - user: "master-key"  
   - password: 生成的 256-bit 密钥（hex 编码）
 - **AND** 插件 SHALL 根据当前操作系统自动存储到：
   - macOS: Keychain
@@ -17,7 +22,7 @@
   - Linux: Secret Service
 - **AND** 访问权限 SHALL 限制为当前应用
 
-#### Scenario: Web 环境存储新生成的主密钥
+#### Scenario: Web 环境存储新生成的主密钥（**修改**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** 应用生成新的 256-bit 主密钥
 - **THEN** 系统 SHALL 调用 Keyring 兼容层的 `setPassword(service, user, password)` API
@@ -37,7 +42,7 @@
 - **AND** 参数 SHALL 为 service="com.multichat.app", user="master-key"
 - **AND** 系统 SHALL 返回存储的密钥值
 
-#### Scenario: Web 环境从 keyring 读取主密钥
+#### Scenario: Web 环境从 keyring 读取主密钥（**修改**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** 应用需要读取主密钥用于加密/解密
 - **THEN** 系统 SHALL 调用 Keyring 兼容层的 `getPassword(service, user)` API
@@ -47,6 +52,7 @@
 - **AND** 系统 SHALL 返回解密后的明文密钥值
 
 ### Requirement: keyring 访问错误处理
+
 当存储访问失败时，系统 SHALL 显示用户友好的错误信息，并提供适当的恢复建议。
 
 #### Scenario: Tauri 环境 keyring 访问被拒绝
@@ -57,7 +63,7 @@
 - **AND** 系统 SHALL 提供按钮打开系统钥匙串设置（如适用）
 - **AND** 系统 SHALL 允许用户选择退出应用并手动修复权限
 
-#### Scenario: Web 环境 IndexedDB 访问失败
+#### Scenario: Web 环境 IndexedDB 访问失败（**新增**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** 应用尝试通过 IndexedDB 访问密钥存储
 - **AND** 访问失败（如不支持 IndexedDB 或存储空间不足）
@@ -65,14 +71,17 @@
 - **AND** 系统 SHALL 阻断应用启动，不允许进入主界面
 - **AND** 系统 SHALL 提供文档说明如何清理浏览器数据
 
-#### Scenario: Web 环境加密/解密失败
+#### Scenario: Web 环境加密/解密失败（**新增**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** 主密钥加密或解密操作失败
 - **THEN** 系统 SHALL 记录详细错误日志（不包含敏感信息）
 - **THEN** 系统 SHALL 显示错误提示"密钥操作失败，数据可能已损坏"
 - **AND** 系统 SHALL 提供选项让用户重新生成主密钥（警告旧数据将无法解密）
 
+## ADDED Requirements
+
 ### Requirement: Web 环境密钥存储加密
+
 在 Web 环境中，系统 SHALL 使用强加密算法保护存储在 IndexedDB 中的密钥。
 
 #### Scenario: 加密算法选择
@@ -107,6 +116,7 @@
 - **AND** 复合主键为 `service` + `user`
 
 ### Requirement: Web 环境密钥存储性能
+
 系统 SHALL 确保 Web 环境的密钥存储操作满足性能要求。
 
 #### Scenario: 加密性能
@@ -125,6 +135,7 @@
 - **AND** 不阻塞 UI 线程
 
 ### Requirement: Web 环境密钥存储安全性
+
 系统 SHALL 确保 Web 端的密钥存储满足适当的安全要求，并提供用户明确的安全警告。
 
 #### Scenario: 安全性警告
@@ -151,6 +162,7 @@
 - **AND** 主密钥使用固定的 service="com.multichat.app" 和 user="master-key"
 
 ### Requirement: Web 环境密钥存储浏览器兼容性
+
 系统 SHALL 确保密钥存储在支持 Web Crypto API 的主流浏览器中正常工作。
 
 #### Scenario: Chrome/Edge 支持
@@ -178,6 +190,7 @@
 - **AND** `isSupported()` 返回 `false`
 
 ### Requirement: 跨环境密钥存储兼容性
+
 系统 SHALL 提供统一的 API 接口，确保代码在 Tauri 和 Web 环境中无需修改即可工作。
 
 #### Scenario: 统一的 API 接口
@@ -195,6 +208,7 @@
 - **AND** 调用者无需关心底层实现差异
 
 ### Requirement: 密钥存储数据迁移
+
 系统 SHALL 支持密钥在不同环境或存储位置之间的迁移。
 
 #### Scenario: 从 Tauri 导出到 Web
@@ -210,6 +224,7 @@
 - **AND** 系统 SHALL 将新密钥存储到对应环境的存储位置（Tauri: keyring, Web: IndexedDB）
 
 ### Requirement: Web 环境密钥存储测试和验证
+
 系统 SHALL 在 Web 环境中验证密钥存储的正确性和安全性。
 
 #### Scenario: 单元测试覆盖

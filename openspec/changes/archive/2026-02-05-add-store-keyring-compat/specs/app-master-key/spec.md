@@ -1,6 +1,11 @@
-## ADDED Requirements
+# 主密钥管理规范 - Delta
+
+本规范修改主密钥的存储逻辑，支持 Web 端使用 IndexedDB 加密存储，同时保持 Tauri 端使用系统钥匙串。
+
+## MODIFIED Requirements
 
 ### Requirement: 应用首次启动时生成并存储主密钥
+
 应用在首次启动时 SHALL 使用 Web Crypto API 生成 256-bit 随机密钥，并根据运行环境选择存储方式：Tauri 端使用 `tauri-plugin-keyring` 存储到系统级安全存储，Web 端使用兼容层存储到 IndexedDB（加密存储）。
 
 #### Scenario: Tauri 环境首次启动应用
@@ -12,7 +17,7 @@
   - user: "master-key"
 - **AND** 应用 SHALL 正常进入主界面
 
-#### Scenario: Web 环境首次启动应用
+#### Scenario: Web 环境首次启动应用（**修改**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** 应用首次启动且 IndexedDB 中不存在主密钥
 - **THEN** 系统 SHALL 使用 Web Crypto API 的 `crypto.getRandomValues()` 生成 256-bit 随机密钥
@@ -22,6 +27,7 @@
 - **AND** 应用 SHALL 正常进入主界面
 
 ### Requirement: 应用启动时读取主密钥
+
 应用在每次启动时 SHALL 根据运行环境从相应的存储位置读取主密钥。如果主密钥存在，则正常加载；如果不存在，则生成新的主密钥。
 
 #### Scenario: Tauri 环境应用正常启动（主密钥已存在）
@@ -31,7 +37,7 @@
 - **THEN** 系统 SHALL 调用 `@tauri-plugin-keyring-api` 的 `getPassword(service, user)` 从系统存储读取主密钥
 - **AND** 应用 SHALL 正常进入主界面
 
-#### Scenario: Web 环境应用正常启动（主密钥已存在）
+#### Scenario: Web 环境应用正常启动（主密钥已存在）（**修改**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** 应用启动
 - **AND** IndexedDB 中已存在主密钥
@@ -49,7 +55,7 @@
 - **AND** 应用 SHALL 显示警告提示用户旧加密数据将无法解密
 - **AND** 应用 SHALL 正常进入主界面
 
-#### Scenario: Web 环境应用启动时密钥丢失
+#### Scenario: Web 环境应用启动时密钥丢失（**修改**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** 应用启动
 - **AND** IndexedDB 中不存在主密钥（可能因浏览器数据清除或首次使用）
@@ -59,6 +65,7 @@
 - **AND** 应用 SHALL 正常进入主界面
 
 ### Requirement: 主密钥不可直接暴露
+
 主密钥 SHALL 仅通过兼容层 API 读取（Tauri 端使用 `@tauri-plugin-keyring-api`，Web 端使用 Keyring 兼容层），不应以明文形式暴露在日志、调试工具或用户界面中。
 
 #### Scenario: 调试应用状态
@@ -67,7 +74,10 @@
 - **AND** 系统 SHALL 确保主密钥不会暴露在 Redux DevTools 等调试工具中
 - **AND** 系统 SHALL 按需从存储读取密钥，不长期保留在内存中
 
+## ADDED Requirements
+
 ### Requirement: 跨环境主密钥存储策略
+
 系统 SHALL 根据运行环境自动选择主密钥存储策略，对开发者透明。
 
 #### Scenario: 自动选择存储策略
@@ -84,6 +94,7 @@
 - **AND** 在两种环境中使用相同的 API 调用方式
 
 ### Requirement: Web 环境主密钥安全性
+
 系统 SHALL 确保 Web 端的主密钥存储满足适当的安全要求，尽管无法达到系统钥匙串的安全级别。
 
 #### Scenario: 加密强度
@@ -105,6 +116,7 @@
 - **AND** 应用关闭时，内存中的主密钥 SHALL 被清除
 
 ### Requirement: 主密钥存储错误处理
+
 系统 SHALL 提供健壮的错误处理机制，确保主密钥存储失败时的优雅降级。
 
 #### Scenario: Tauri 环境 keyring 访问失败
@@ -114,14 +126,14 @@
 - **AND** 系统 SHALL 提供按钮打开系统钥匙串设置（如适用）
 - **AND** 应用 SHALL 阻断启动，不允许用户进入主界面
 
-#### Scenario: Web 环境 IndexedDB 访问失败
+#### Scenario: Web 环境 IndexedDB 访问失败（**新增**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** IndexedDB 访问失败（如不支持或存储空间不足）
 - **THEN** 系统 SHALL 显示错误提示"浏览器不支持安全存储或存储空间不足"
 - **AND** 系统 SHALL 建议用户使用桌面版或清理浏览器数据
 - **AND** 应用 SHALL 阻断启动，不允许用户进入主界面
 
-#### Scenario: Web 环境加密/解密失败
+#### Scenario: Web 环境加密/解密失败（**新增**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** 主密钥加密或解密操作失败
 - **THEN** 系统 SHALL 记录详细错误日志
@@ -129,6 +141,7 @@
 - **AND** 应用 SHALL 允许用户重新生成主密钥（将导致旧数据无法解密）
 
 ### Requirement: 主密钥存储性能
+
 系统 SHALL 确保主密钥的存储和读取操作满足性能要求，不阻塞应用启动。
 
 #### Scenario: Tauri 环境性能
@@ -137,7 +150,7 @@
 - **THEN** 操作 SHALL 在 100ms 内完成
 - **AND** 不阻塞应用启动流程
 
-#### Scenario: Web 环境性能
+#### Scenario: Web 环境性能（**新增**）
 - **GIVEN** 应用运行在 Web 浏览器环境
 - **WHEN** 读取主密钥（包括 IndexedDB 查询和解密）
 - **THEN** 操作 SHALL 在 200ms 内完成
@@ -145,6 +158,7 @@
 - **AND** 密钥派生（首次） SHALL 在 500ms 内完成
 
 ### Requirement: 主密钥迁移支持
+
 系统 SHALL 支持主密钥在不同环境或存储位置之间的迁移。
 
 #### Scenario: 从 Tauri 迁移到 Web

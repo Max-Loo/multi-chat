@@ -8,7 +8,7 @@ import FullscreenLoading from "./components/FullscreenLoading";
 import { RouterProvider } from 'react-router-dom';
 import router from './router';
 import { initI18n } from '@/lib/i18n';
-import { initializeMasterKey } from "@/store/keyring/masterKey";
+import { initializeMasterKey, handleSecurityWarning } from "@/store/keyring/masterKey";
 import { initializeModels } from "@/store/slices/modelSlice";
 import { initializeChatList } from "@/store/slices/chatSlices";
 import { initializeAppLanguage } from "@/store/slices/appConfigSlices";
@@ -48,3 +48,6 @@ rootDom.render(
     </Provider>
   </React.StrictMode>,
 )
+
+// 应用渲染后，处理安全性警告（现在可以使用 Toast）
+await handleSecurityWarning();

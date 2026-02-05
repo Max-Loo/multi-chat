@@ -1,30 +1,70 @@
 /**
  * Store 插件存储模块 - 通用工具函数
  * 提供通用的 Store 创建、保存和加载函数
+ * 使用 Store 兼容层，自动适配 Tauri 和 Web 环境
  */
-import { LazyStore } from '@tauri-apps/plugin-store';
+import { createLazyStore as createCompatStore, type StoreCompat } from '@/utils/tauriCompat';
 
 /**
- * 各种全局储存实例，都使用懒加载
+ * 设置存储类，扩展基本 Store 功能
  */
-class LazySettingStore extends LazyStore {
+class SettingStore {
+  private store: StoreCompat;
+
   constructor() {
-    super('.setting.dat', {
-      autoSave: false,
-      defaults: {},
-    });
+    this.store = createCompatStore('.setting.dat');
   }
 
   /**
-   * @description 设置并保存值
+   * 初始化存储
+   */
+  async init(): Promise<void> {
+    await this.store.init();
+  }
+
+  /**
+   * 获取值
+   * @param key 键
+   * @returns 值或 null
+   */
+  async get<T>(key: string): Promise<T | null> {
+    return this.store.get<T>(key);
+  }
+
+  /**
+   * 设置值
+   * @param key 键
+   * @param value 值
+   */
+  async set(key: string, value: unknown): Promise<void> {
+    await this.store.set(key, value);
+  }
+
+  /**
+   * 删除值
+   * @param key 键
+   */
+  async delete(key: string): Promise<void> {
+    await this.store.delete(key);
+  }
+
+  /**
+   * 保存更改
+   */
+  async save(): Promise<void> {
+    await this.store.save();
+  }
+
+  /**
+   * 设置并保存值
    * @param key 键
    * @param value 值
    * @param message 错误信息
    */
   async setAndSave(key: string, value: unknown, message?: string): Promise<void> {
     try {
-      await super.set(key, value);
-      await settingStore.save();
+      await this.store.set(key, value);
+      await this.store.save();
     } catch (error) {
       console.error(message, error);
       throw new Error(message, { cause: error });
@@ -35,26 +75,21 @@ class LazySettingStore extends LazyStore {
 /**
  * 创建 LazyStore 实例的工厂函数
  * @param filename - 存储文件名
- * @returns LazyStore 实例
+ * @returns StoreCompat 实例
  */
-export const createLazyStore = (filename: string): LazyStore => {
-  class CustomLazyStore extends LazyStore {
-    constructor() {
-      super(filename, { autoSave: false, defaults: {} });
-    }
-  }
-  return new CustomLazyStore();
+export const createLazyStore = (filename: string): StoreCompat => {
+  return createCompatStore(filename);
 };
 
 /**
  * 通用的保存数据到 Store 函数
- * @param store - LazyStore 实例
+ * @param store - StoreCompat 实例
  * @param key - 存储键
  * @param data - 要保存的数据
  * @param successMessage - 成功日志消息
  */
 export const saveToStore = async <T>(
-  store: LazyStore,
+  store: StoreCompat,
   key: string,
   data: T,
   successMessage?: string
@@ -73,13 +108,13 @@ export const saveToStore = async <T>(
 
 /**
  * 通用的从 Store 加载数据函数
- * @param store - LazyStore 实例
+ * @param store - StoreCompat 实例
  * @param key - 存储键
  * @param defaultValue - 默认值
  * @returns 加载的数据
  */
 export const loadFromStore = async <T>(
-  store: LazyStore,
+  store: StoreCompat,
   key: string,
   defaultValue: T
 ): Promise<T> => {
@@ -100,4 +135,4 @@ export const loadFromStore = async <T>(
 /**
  * 创建并导出设置存储实例
  */
-export const settingStore = new LazySettingStore();
+export const settingStore = new SettingStore();

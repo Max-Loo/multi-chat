@@ -68,16 +68,28 @@ pnpm tsc
 1. **阻断式初始化**（必须完成后才能渲染）：
    - 国际化初始化（`initI18n()`）
    - **主密钥初始化（`initializeMasterKey()`）**
-     - 检查系统钥匙串中是否存在主密钥
+     - 检查系统钥匙串（Tauri）或 IndexedDB（Web）中是否存在主密钥
      - 不存在则使用 Web Crypto API 生成新的 256-bit 随机密钥
-     - 将密钥存储到系统钥匙串（macOS Keychain / Windows Credential Manager）
+     - Tauri 环境：将密钥存储到系统钥匙串（macOS Keychain / Windows Credential Manager）
+     - Web 环境：将密钥加密后存储到 IndexedDB
 
-2. **异步初始化**（并行执行）：
+2. **渲染应用**：应用界面开始显示，Toaster 组件已挂载
+
+3. **异步初始化**（并行执行，不阻塞渲染）：
    - 模型数据加载（依赖主密钥进行解密）
    - 聊天列表加载
    - 应用语言配置加载
 
-**重要**: 主密钥初始化必须在模型数据加载之前完成，否则无法解密 API 密钥。
+4. **安全性警告 Toast**（Web 环境首次使用，应用渲染后执行）：
+   - 检查是否需要显示安全性警告（`handleSecurityWarning()`）
+   - Web 环境首次使用时显示 shadcn/ui Toast，提示用户 Web 版本安全级别低于桌面版
+   - Toast 设置为永久显示（`duration: Infinity`），用户必须点击"I Understand"确认
+   - 用户确认后，将"不再提示"保存到 localStorage
+
+**重要**:
+- 主密钥初始化必须在模型数据加载之前完成，否则无法解密 API 密钥
+- 安全性警告 Toast 在应用渲染后显示，使用友好的 Toast UI 而非阻断式弹窗
+- Toast 永久显示直到用户确认，兼顾用户体验和安全提示效果
 
 ### 跨平台兼容性
 
@@ -330,7 +342,189 @@ const api = axios.create({
 - **生产环境 Web**：使用原生 Web fetch，确保在浏览器中正常运行
 
 **重要**：开发环境无法测试 Tauri fetch 的特定行为（如系统代理），需要在生产环境中验证。
- 
+
+**Store 和 Keyring 插件兼容层**:
+
+项目已实现 `store` 和 `keyring` 插件的 Web 兼容层，使用 IndexedDB 作为降级方案。
+
+**兼容层目录结构**:
+
+```
+src/utils/tauriCompat/
+├── store.ts          # Store 插件兼容层
+├── keyring.ts        # Keyring 插件兼容层
+└── index.ts          # 统一导出所有兼容层 API
+```
+
+**Store 插件兼容层** (`src/utils/tauriCompat/store.ts`):
+
+提供键值存储功能，用于存储模型配置、聊天数据等。
+
+- **Tauri 环境**: 使用 `@tauri-apps/plugin-store` 的原生实现，存储到文件系统
+- **Web 环境**: 使用 IndexedDB 实现，数据库名称：`multi-chat-store`，对象存储：`store`
+- **API 行为**:
+  - `createLazyStore(filename)`: 创建 Store 实例
+  - `Store.init()`: 初始化 Store
+  - `Store.get<T>(key)`: 获取键值（支持泛型）
+  - `Store.set(key, value)`: 设置键值
+  - `Store.delete(key)`: 删除键值
+  - `Store.keys()`: 获取所有键
+  - `Store.save()`: 保存更改（Web 环境为空操作，IndexedDB 自动持久化）
+  - `Store.isSupported()`: 检查功能是否可用
+
+**使用示例**:
+
+```typescript
+// 导入 Store 兼容层
+import { createLazyStore } from '@/utils/tauriCompat';
+import type { StoreCompat } from '@/utils/tauriCompat';
+
+// 创建 Store 实例
+const store = createLazyStore('models.json');
+
+// 初始化 Store
+await store.init();
+
+// 存储数据
+await store.set('models', modelList);
+
+// 保存更改
+await store.save();
+
+// 读取数据
+const models = await store.get<Model[]>('models');
+
+// 删除数据
+await store.delete('models');
+
+// 获取所有键
+const keys = await store.keys();
+
+// 检查功能是否可用
+if (store.isSupported()) {
+  // 使用 Store 功能
+}
+```
+
+**Keyring 插件兼容层** (`src/utils/tauriCompat/keyring.ts`):
+
+提供安全密钥存储功能，用于存储主密钥等敏感数据。
+
+- **Tauri 环境**: 使用 `tauri-plugin-keyring-api` 的原生实现，存储到系统钥匙串
+- **Web 环境**: 使用 IndexedDB + AES-256-GCM 加密实现，数据库名称：`multi-chat-keyring`，对象存储：`keys`
+- **加密实现细节**:
+  - **种子生成**: 首次启动时生成 256-bit 随机种子，存储到 `localStorage`（键：`multi-chat-keyring-seed`）
+  - **密钥派生**: 使用 PBKDF2 算法从种子派生加密密钥（100,000 次迭代，SHA-256）
+  - **加密算法**: AES-256-GCM，每次加密使用唯一的 IV（12 字节）
+  - **存储格式**: `{ service, user, encryptedPassword, iv, createdAt }`
+  - **复合主键**: 使用 `service` + `user` 作为复合主键
+- **API 行为**:
+  - `setPassword(service, user, password)`: 设置密码
+  - `getPassword(service, user)`: 获取密码
+  - `deletePassword(service, user)`: 删除密码
+  - `isKeyringSupported()`: 检查功能是否可用
+
+**使用示例**:
+
+```typescript
+// 导入 Keyring 兼容层
+import { setPassword, getPassword, deletePassword, isKeyringSupported } from '@/utils/tauriCompat';
+
+// 检查功能是否可用
+if (isKeyringSupported()) {
+  // 设置密码
+  await setPassword('com.multichat.app', 'master-key', 'my-secret-key');
+
+  // 获取密码
+  const key = await getPassword('com.multichat.app', 'master-key');
+
+  // 删除密码
+  await deletePassword('com.multichat.app', 'master-key');
+}
+```
+
+**IndexedDB 数据库结构**:
+
+- **Store 插件数据库**:
+  - 数据库名称: `multi-chat-store`
+  - 对象存储: `store`
+  - 主键: `key`（字符串）
+  - 值结构: `{ key: string, value: unknown }`
+
+- **Keyring 插件数据库**:
+  - 数据库名称: `multi-chat-keyring`
+  - 对象存储: `keys`
+  - 复合主键: `[service, user]`（字符串数组）
+  - 值结构:
+    ```typescript
+    {
+      service: string,              // 服务名
+      user: string,                 // 用户名
+      encryptedPassword: string,    // base64 编码的密文
+      iv: string,                   // base64 编码的初始化向量
+      createdAt: number             // 时间戳
+    }
+    ```
+
+**Web 端功能差异**:
+
+以下功能在 Web 环境中的行为与 Tauri 环境不同：
+
+- **Store.save()**:
+  - Tauri 环境: 将更改保存到文件
+  - Web 环境: 空操作（IndexedDB 自动提交事务）
+  - 无 `isSupported()` 方法: 功能在两种环境始终可用
+
+- **Keyring 功能**:
+  - Tauri 环境: 使用系统钥匙串（macOS Keychain、Windows DPAPI、Linux Secret Service）
+  - Web 环境: 使用 IndexedDB + AES-256-GCM 加密
+  - **安全级别**: Web 环境低于 Tauri 环境（种子以明文存储在 `localStorage`）
+  - **安全性缓解措施**:
+    - PBKDF2 100,000 次迭代增加暴力破解难度
+    - AES-256-GCM 强加密算法
+    - 首次使用时显示安全性警告
+  - **密钥丢失处理**: 如果 `localStorage` 中的种子被清除，将生成新种子，旧加密数据无法解密
+  - `isKeyringSupported()`: 检测 IndexedDB 和 Web Crypto API 可用性
+
+**安全性警告**:
+
+Web 环境的密钥存储安全性低于 Tauri 环境，因为：
+1. 种子以明文形式存储在 `localStorage` 中，可被浏览器插件或 XSS 攻击读取
+2. IndexedDB 的加密数据可被同一浏览器中的其他网站访问（通过浏览器漏洞）
+3. PBKDF2 密钥派生虽增加暴力破解难度，但仍无法与系统钥匙串相比
+
+**建议**:
+- 在 Web 环境中首次使用时显示安全性警告
+- 建议用户在桌面版处理敏感数据（如 API 密钥）
+- 实施 CSP（内容安全策略）防止 XSS 攻击
+- 在生产环境中使用 HTTPS
+
+**浏览器兼容性**:
+
+- **Chrome/Edge**: 完全支持 IndexedDB 和 Web Crypto API
+- **Firefox**: 完全支持 IndexedDB 和 Web Crypto API
+- **Safari**: 支持，但需注意 IndexedDB 存储配额限制
+- **旧版浏览器**: 不支持，`isSupported()` 返回 `false`
+
+**降级策略选择规则**:
+
+为 Tauri 插件添加兼容层时，根据插件特性选择降级策略：
+
+1. **数据持久化插件**（store、keyring）:
+   - **策略**: IndexedDB 替代方案
+   - **原因**: 核心功能，必须提供可用实现
+   - **示例**: Store 和 Keyring 兼容层
+
+2. **系统操作插件**（shell 命令）:
+   - **策略**: Null Object 模式
+   - **原因**: Web 环境无法执行 Shell 命令，安全风险高
+   - **示例**: Shell 兼容层的 Command 类
+
+3. **环境信息插件**（OS、HTTP）:
+   - **策略**: 浏览器原生 API 替代
+   - **原因**: 浏览器提供类似功能
+   - **示例**: OS 兼容层的 `locale()`、HTTP 兼容层的 `fetch()`
+
 **为其他插件添加兼容层**:
 
 如果需要为其他 Tauri 插件（如 `keyring`、`store`）添加 Web 兼容层，遵循以下步骤：
