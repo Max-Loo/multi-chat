@@ -11,7 +11,6 @@
 **前端**: React 19 + TypeScript + Vite
 
 - 入口文件: `src/main.tsx`
-- 主组件: `src/App.tsx`
 - 使用 React Compiler 进行优化
 - 国际化: i18next + react-i18next
 - 端口: 1420 (Tauri 固定端口)
@@ -112,7 +111,9 @@ src/utils/tauriCompat/
 ├── env.ts            # 环境检测工具
 ├── shell.ts          # Shell 插件兼容层
 ├── os.ts             # OS 插件兼容层
-└── http.ts           # HTTP 插件兼容层
+├── http.ts           # HTTP 插件兼容层
+├── store.ts          # Store 插件兼容层
+└── keyring.ts        # Keyring 插件兼容层
 ```
 
 **使用示例**:
@@ -182,47 +183,36 @@ const response2 = await fetchFunc('https://api.example.com/data');
     - `FetchFunc`: fetch 函数类型
     - 其他类型（RequestInit、Response、Headers、Request）：直接使用原生类型定义
 
-  **使用场景示例**：
+   **使用场景示例**：
 
-  ```typescript
-  // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
-  import { fetch } from '@/utils/tauriCompat';
+   ```typescript
+   // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
+   import { fetch } from '@/utils/tauriCompat';
 
-  const response = await fetch('https://api.example.com/data');
-  const data = await response.json();
+   const response = await fetch('https://api.example.com/data');
+   const data = await response.json();
 
-  // 场景 2：使用 getFetchFunc 封装自定义请求方法
-  import { getFetchFunc, type RequestInfo } from '@/utils/tauriCompat';
+   // 场景 2：使用 getFetchFunc 封装自定义请求方法或注入第三方库
+   import { getFetchFunc } from '@/utils/tauriCompat';
+   import axios from 'axios';
 
-  class ApiClient {
-    private fetch: ReturnType<typeof getFetchFunc>;
+   // 自定义封装
+   class ApiClient {
+     private fetch = getFetchFunc();
 
-    constructor() {
-      this.fetch = getFetchFunc();
-    }
+     async request(url: string, options?: RequestInit) {
+       const response = await this.fetch(url, options);
+       if (!response.ok) {
+         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+       }
+       return response.json();
+     }
+   }
 
-    async request(url: string, options?: RequestInit) {
-      const response = await this.fetch(url, options);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    }
-  }
-
-  const client = new ApiClient();
-  const data = await client.request('https://api.example.com/data');
-
-  // 场景 3：注入第三方库（如 Axios）
-  import { getFetchFunc } from '@/utils/tauriCompat';
-  import axios from 'axios';
-
-  const api = axios.create({
-    adapter: getFetchFunc(),
-  });
-
-  const response = await api.get('https://api.example.com/data');
-  ```
+   // 注入第三方库（如 Axios）
+   const api = axios.create({ adapter: getFetchFunc() });
+   const response = await api.get('https://api.example.com/data');
+   ```
 
   **环境判断逻辑**：
 
@@ -237,35 +227,57 @@ const response2 = await fetchFunc('https://api.example.com/data');
 
   **类型说明**：
 
-  - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
-  - 其他类型（RequestInit、Response、Headers、Request）：直接使用全局原生类型定义，避免重复
-  - TypeScript 类型系统会自动推导，确保类型安全
+   - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
+   - `FetchFunc`: fetch 函数类型
+   - 其他类型（RequestInit、Response、Headers、Request）：直接使用原生类型定义
 
-**Web 端功能差异**:
+   **使用场景示例**：
 
-以下功能在 Web 环境中的行为与 Tauri 环境不同：
+   ```typescript
+   // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
+   import { fetch } from '@/utils/tauriCompat';
 
-- `shell.open()`:
-  - Tauri 环境: 支持打开 URL 和本地文件路径
-  - Web 环境: 仅支持打开 URL（使用 `window.open()`），不支持本地文件路径
-  - `isSupported()`: 在两种环境中均返回 `true`
+   const response = await fetch('https://api.example.com/data');
+   const data = await response.json();
 
-- `Command.execute()`:
-  - Tauri 环境: 执行真实的 Shell 命令
-  - Web 环境: 返回模拟的成功结果（Null Object 模式），不实际执行命令
-  - `isSupported()`: Tauri 环境返回 `true`，Web 环境返回 `false`
+   // 场景 2：使用 getFetchFunc 封装自定义请求方法或注入第三方库
+   import { getFetchFunc } from '@/utils/tauriCompat';
+   import axios from 'axios';
 
-- `locale()`:
-  - Tauri 环境: 返回操作系统语言设置
-  - Web 环境: 返回浏览器首选语言设置
-  - 无 `isSupported()` 方法: 功能在两种环境始终可用
+   // 自定义封装
+   class ApiClient {
+     private fetch = getFetchFunc();
 
-- `fetch()`:
-  - 开发环境：在 Tauri 和 Web 环境中均使用原生 Web `fetch`
-  - 生产环境 Tauri：使用 `@tauri-apps/plugin-http` 的 `fetch`（支持系统代理、证书管理）
-  - 生产环境 Web：使用原生 Web `fetch`
-  - 无 `isSupported()` 方法: 功能在两种环境始终可用
-  - API 行为一致：与标准 Fetch API 完全兼容
+     async request(url: string, options?: RequestInit) {
+       const response = await this.fetch(url, options);
+       if (!response.ok) {
+         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+       }
+       return response.json();
+     }
+   }
+
+   // 注入第三方库（如 Axios）
+   const api = axios.create({ adapter: getFetchFunc() });
+   const response = await api.get('https://api.example.com/data');
+   ```
+
+   **环境判断逻辑**：
+
+   ```
+   IF (开发模式: import.meta.env.DEV === true) THEN
+     使用原生 Web fetch
+   ELSE IF (生产 Tauri 平台: window.__TAURI__ 存在) THEN
+     使用 @tauri-apps/plugin-http 的 fetch
+   ELSE (生产 Web 平台)
+     使用原生 Web fetch
+   ```
+
+   **类型说明**：
+
+   - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
+   - 其他类型（RequestInit、Response、Headers、Request）：直接使用全局原生类型定义，避免重复
+   - TypeScript 类型系统会自动推导，确保类型安全
 
 **HTTP 插件兼容层迁移指南**:
 
@@ -295,44 +307,21 @@ const data = await response.json();
 // 迁移前
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 
-class ApiClient {
-  private fetch = tauriFetch;
-
-  async request(url: string, options?: RequestInit) {
-    return this.fetch(url, options);
-  }
-}
-
 // 迁移后
-import { getFetchFunc } from '@/utils/tauriCompat';
+import { fetch, getFetchFunc } from '@/utils/tauriCompat';
 
+// 直接使用 fetch
+const response = await fetch('https://api.example.com/data');
+
+// 或使用 getFetchFunc 进行封装
 class ApiClient {
   private fetch = getFetchFunc();
-
-  async request(url: string, options?: RequestInit) {
-    return this.fetch(url, options);
-  }
+  // ...
 }
-```
 
-**第三方库注入场景（如 Axios）**：
-
-```typescript
-// 迁移前
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+// 或注入第三方库
 import axios from 'axios';
-
-const api = axios.create({
-  adapter: tauriFetch,
-});
-
-// 迁移后
-import { getFetchFunc } from '@/utils/tauriCompat';
-import axios from 'axios';
-
-const api = axios.create({
-  adapter: getFetchFunc(),
-});
+const api = axios.create({ adapter: getFetchFunc() });
 ```
 
 **环境差异说明**：
@@ -343,18 +332,9 @@ const api = axios.create({
 
 **重要**：开发环境无法测试 Tauri fetch 的特定行为（如系统代理），需要在生产环境中验证。
 
-**Store 和 Keyring 插件兼容层**:
+**Store 和 Keyring 插件兼容层** (`src/utils/tauriCompat/store.ts`, `src/utils/tauriCompat/keyring.ts`):
 
 项目已实现 `store` 和 `keyring` 插件的 Web 兼容层，使用 IndexedDB 作为降级方案。
-
-**兼容层目录结构**:
-
-```
-src/utils/tauriCompat/
-├── store.ts          # Store 插件兼容层
-├── keyring.ts        # Keyring 插件兼容层
-└── index.ts          # 统一导出所有兼容层 API
-```
 
 **Store 插件兼容层** (`src/utils/tauriCompat/store.ts`):
 
@@ -403,81 +383,44 @@ const keys = await store.keys();
 // 检查功能是否可用
 if (store.isSupported()) {
   // 使用 Store 功能
-}
-```
-
-**Keyring 插件兼容层** (`src/utils/tauriCompat/keyring.ts`):
-
-提供安全密钥存储功能，用于存储主密钥等敏感数据。
-
-- **Tauri 环境**: 使用 `tauri-plugin-keyring-api` 的原生实现，存储到系统钥匙串
-- **Web 环境**: 使用 IndexedDB + AES-256-GCM 加密实现，数据库名称：`multi-chat-keyring`，对象存储：`keys`
-- **加密实现细节**:
-  - **种子生成**: 首次启动时生成 256-bit 随机种子，存储到 `localStorage`（键：`multi-chat-keyring-seed`）
-  - **密钥派生**: 使用 PBKDF2 算法从种子派生加密密钥（100,000 次迭代，SHA-256）
-  - **加密算法**: AES-256-GCM，每次加密使用唯一的 IV（12 字节）
-  - **存储格式**: `{ service, user, encryptedPassword, iv, createdAt }`
-  - **复合主键**: 使用 `service` + `user` 作为复合主键
-- **API 行为**:
-  - `setPassword(service, user, password)`: 设置密码
-  - `getPassword(service, user)`: 获取密码
-  - `deletePassword(service, user)`: 删除密码
-  - `isKeyringSupported()`: 检查功能是否可用
-
-**使用示例**:
-
-```typescript
-// 导入 Keyring 兼容层
-import { setPassword, getPassword, deletePassword, isKeyringSupported } from '@/utils/tauriCompat';
-
-// 检查功能是否可用
-if (isKeyringSupported()) {
-  // 设置密码
-  await setPassword('com.multichat.app', 'master-key', 'my-secret-key');
-
-  // 获取密码
-  const key = await getPassword('com.multichat.app', 'master-key');
-
-  // 删除密码
-  await deletePassword('com.multichat.app', 'master-key');
-}
-```
-
-**IndexedDB 数据库结构**:
-
-- **Store 插件数据库**:
-  - 数据库名称: `multi-chat-store`
-  - 对象存储: `store`
-  - 主键: `key`（字符串）
-  - 值结构: `{ key: string, value: unknown }`
-
-- **Keyring 插件数据库**:
-  - 数据库名称: `multi-chat-keyring`
-  - 对象存储: `keys`
-  - 复合主键: `[service, user]`（字符串数组）
-  - 值结构:
-    ```typescript
-    {
-      service: string,              // 服务名
-      user: string,                 // 用户名
-      encryptedPassword: string,    // base64 编码的密文
-      iv: string,                   // base64 编码的初始化向量
-      createdAt: number             // 时间戳
-    }
-    ```
+   }
+   ```
 
 **Web 端功能差异**:
 
 以下功能在 Web 环境中的行为与 Tauri 环境不同：
 
-- **Store.save()**:
-  - Tauri 环境: 将更改保存到文件
-  - Web 环境: 空操作（IndexedDB 自动提交事务）
-  - 无 `isSupported()` 方法: 功能在两种环境始终可用
+- **Shell 插件**:
+  - `shell.open()`:
+    - Tauri 环境: 支持打开 URL 和本地文件路径
+    - Web 环境: 仅支持打开 URL（使用 `window.open()`），不支持本地文件路径
+    - `isSupported()`: 在两种环境中均返回 `true`
+  - `Command.execute()`:
+    - Tauri 环境: 执行真实的 Shell 命令
+    - Web 环境: 返回模拟的成功结果（Null Object 模式），不实际执行命令
+    - `isSupported()`: Tauri 环境返回 `true`，Web 环境返回 `false`
 
-- **Keyring 功能**:
-  - Tauri 环境: 使用系统钥匙串（macOS Keychain、Windows DPAPI、Linux Secret Service）
-  - Web 环境: 使用 IndexedDB + AES-256-GCM 加密
+- **OS 插件**:
+  - `locale()`:
+    - Tauri 环境: 返回操作系统语言设置
+    - Web 环境: 返回浏览器首选语言设置
+    - 无 `isSupported()` 方法: 功能在两种环境始终可用
+
+- **HTTP 插件**:
+  - `fetch()`:
+    - 开发环境：在 Tauri 和 Web 环境中均使用原生 Web `fetch`
+    - 生产环境 Tauri：使用 `@tauri-apps/plugin-http` 的 `fetch`（支持系统代理、证书管理）
+    - 生产环境 Web：使用原生 Web `fetch`
+    - 无 `isSupported()` 方法: 功能在两种环境始终可用
+    - API 行为一致：与标准 Fetch API 完全兼容
+
+- **Store 插件**:
+  - `Store.save()`:
+    - Tauri 环境: 将更改保存到文件
+    - Web 环境: 空操作（IndexedDB 自动提交事务）
+    - 无 `isSupported()` 方法: 功能在两种环境始终可用
+
+- **Keyring 插件**:
   - **安全级别**: Web 环境低于 Tauri 环境（种子以明文存储在 `localStorage`）
   - **安全性缓解措施**:
     - PBKDF2 100,000 次迭代增加暴力破解难度
@@ -485,26 +428,6 @@ if (isKeyringSupported()) {
     - 首次使用时显示安全性警告
   - **密钥丢失处理**: 如果 `localStorage` 中的种子被清除，将生成新种子，旧加密数据无法解密
   - `isKeyringSupported()`: 检测 IndexedDB 和 Web Crypto API 可用性
-
-**安全性警告**:
-
-Web 环境的密钥存储安全性低于 Tauri 环境，因为：
-1. 种子以明文形式存储在 `localStorage` 中，可被浏览器插件或 XSS 攻击读取
-2. IndexedDB 的加密数据可被同一浏览器中的其他网站访问（通过浏览器漏洞）
-3. PBKDF2 密钥派生虽增加暴力破解难度，但仍无法与系统钥匙串相比
-
-**建议**:
-- 在 Web 环境中首次使用时显示安全性警告
-- 建议用户在桌面版处理敏感数据（如 API 密钥）
-- 实施 CSP（内容安全策略）防止 XSS 攻击
-- 在生产环境中使用 HTTPS
-
-**浏览器兼容性**:
-
-- **Chrome/Edge**: 完全支持 IndexedDB 和 Web Crypto API
-- **Firefox**: 完全支持 IndexedDB 和 Web Crypto API
-- **Safari**: 支持，但需注意 IndexedDB 存储配额限制
-- **旧版浏览器**: 不支持，`isSupported()` 返回 `false`
 
 **降级策略选择规则**:
 
