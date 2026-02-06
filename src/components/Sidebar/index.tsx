@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Button } from 'antd';
-import { MessageOutlined, RobotOutlined, SettingOutlined } from '@ant-design/icons';
+import { Button } from '@/components/ui/button';
+import { MessageSquare, Bot, Settings } from 'lucide-react';
 import { ReactNode } from "react";
 import { useCurrentSelectedChat } from '@/hooks/useCurrentSelectedChat';
 import { isNotNil } from 'es-toolkit';
@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       {
         id: 'chat',
         name: t($ => $.navigation.chat),
-        icon: <MessageOutlined />,
+        icon: <MessageSquare size={24} />,
         path: '/chat',
         // 预构建类，因为 tailwindcss 不支持动态类名
         baseClassName: `text-blue-400!`,
@@ -48,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       {
         id: 'model',
         name: t($ => $.navigation.model),
-        icon: <RobotOutlined />,
+        icon: <Bot size={24} />,
         path: '/model',
         baseClassName: `text-emerald-400!`,
         activeClassName: `bg-emerald-100! text-emerald-500!`,
@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       {
         id: 'setting',
         name: t($ => $.navigation.setting),
-        icon: <SettingOutlined />,
+        icon: <Settings size={24} />,
         path: '/setting',
         baseClassName: `text-violet-400!`,
         activeClassName: `bg-violet-100! text-violet-500!`,
@@ -100,16 +100,18 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           return (
             <Button
               key={id}
-              type="text"
+              variant="ghost"
               title={item.name}
-              icon={icon}
               onClick={() => handleNavigation(item)}
               className={`
                 flex items-center justify-center
-                ml-1 mr-1 w-10! h-10! text-xl! rounded-xl!
+                ml-1 mr-1 w-10 h-10 text-xl rounded-xl
+                [&_svg]:size-5
                 ${baseClassName} ${isActive ? activeClassName : inactiveClassName}
               `}
-            />
+            >
+              {icon}
+            </Button>
           );
         })}
       </div>

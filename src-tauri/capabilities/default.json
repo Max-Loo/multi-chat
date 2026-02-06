@@ -10,7 +10,7 @@
     "opener:default",
     "store:default",
     "shell:allow-open",
-    "stronghold:default",
+    "keyring:default",
     "os:default",
     {
       "identifier": "http:default",

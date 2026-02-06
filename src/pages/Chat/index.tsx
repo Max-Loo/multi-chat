@@ -21,12 +21,13 @@ const ChatPage: React.FC = () => {
   }, [dispatch, searchParams])
 
   return (
-    <div className="flex items-start justify-start w-full h-full">
+    <div className="flex items-start justify-start w-full h-full overflow-hidden">
       {/* 可隐藏的侧边栏 */}
       <div
         className={`
-          h-full overflow-hidden transition-all duration-300 ease-in-out shrink-0
-          ${isSidebarCollapsed ? 'w-0' : 'w-56 border-r border-gray-200'}
+          h-full overflow-hidden w-56 border-r border-gray-200 shrink-0
+          transition-all duration-300 ease-in-out
+          ${isSidebarCollapsed ? '-ml-56 -translate-x-full opacity-0' : 'ml-0 translate-x-0 opacity-100'}
         `}
       >
         <ChatSidebar />
@@ -34,8 +35,9 @@ const ChatPage: React.FC = () => {
       {/* 主内容 */}
       <div
         className={`
-          h-full grow overflow-x-auto
-        `}>
+          h-full grow overflow-x-auto transition-all duration-300 ease-in-out
+        `}
+      >
         <ChatContent />
       </div>
     </div>

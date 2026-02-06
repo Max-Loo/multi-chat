@@ -12,6 +12,8 @@
   "modelRequired": "Please select the specific model you want to use",
   "addModelSuccess": "Model added successfully",
   "addModelFailed": "Failed to add model",
+  "editModel": "Edit Model",
+  "editModelDescription": "Edit model configuration information, including nickname, API key, and address",
   "editModelSuccess": "Model edited successfully",
   "editModelFailed": "Failed to edit model",
   "deleteModelSuccess": "Model deleted successfully",

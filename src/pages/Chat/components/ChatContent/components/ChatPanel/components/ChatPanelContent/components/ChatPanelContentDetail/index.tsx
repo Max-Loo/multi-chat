@@ -1,13 +1,14 @@
 import { useAppSelector } from "@/hooks/redux"
 import { ChatModel, StandardMessage } from "@/types/chat"
 import { useTypedSelectedChat } from "../../../../hooks/useTypedSelectedChat"
-import { useMemo, useRef, useState, useEffect } from "react"
-import { Alert, Button } from "antd";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { ArrowDown } from "lucide-react"
 import DetailTitle from "./components/DetailTitle";
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import ChatBubble from "./components/ChatBubble"
 import RunningChatBubble from "./components/RunningChatBubble";
-import { ArrowDownOutlined } from "@ant-design/icons";
 import { useIsChatSending } from "../../../../hooks/useIsChatSending";
 import { isNil } from "es-toolkit"
 import { useTranslation } from "react-i18next" 
@@ -66,7 +67,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
   }
 
   // 检测是否需要滚动条以及是否在底部
-  const checkScrollStatus = () => {
+  const checkScrollStatus = useCallback(() => {
     const container = scrollContainerRef.current
     if (!container) return
 
@@ -78,7 +79,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     const threshold = 24
     const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= threshold
     setIsAtBottom(atBottom)
-  }
+  }, [])
 
   // 监听内容变化和滚动事件
   useEffect(() => {
@@ -97,13 +98,25 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     return () => {
       resizeObserver.disconnect()
     }
-  }, [historyList, runningChat]) // 依赖聊天历史和运行状态变化
+  }, [historyList, runningChat, checkScrollStatus]) // 依赖聊天历史、运行状态变化和滚动状态检测函数
 
   // 处理滚动事件
-  const handleScroll = () => {
-    onScrollEvent()
+  const handleScroll = useCallback(() => {
     checkScrollStatus()
-  }
+    onScrollEvent()
+  }, [checkScrollStatus, onScrollEvent])
+
+  // 添加 passive 监听器
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+    }
+  }, [handleScroll])
 
   return <div
     className={`
@@ -112,7 +125,6 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
       ${isScrolling ? 'pr-0.5' : 'pr-3'}
       ${scrollbarClassname}
     `}
-    onScroll={handleScroll}
     ref={scrollContainerRef}
   >
     <DetailTitle chatModel={chatModel} />
@@ -129,35 +141,34 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     {
       runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage
       && <Alert
-        title={runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage}
-        type="error"
+        variant="destructive"
         className="self-start"
-      />
+      >
+        <AlertDescription>
+          {runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage}
+        </AlertDescription>
+      </Alert>
     }
     {/* 滚动到底部按钮 - 只有当需要滚动条且不在底部时才显示 */}
     {needsScrollbar && !isAtBottom && (
       <Button
         onClick={scrollToBottom}
-        className="absolute! bottom-24 border-0!"
+        className="absolute bottom-[110px] rounded-full h-10 w-10 bg-gray-900 text-white shadow-md hover:shadow-lg hover:bg-gray-800 transition-all"
         title={t($ => $.chat.scrollToBottom)}
-        shape="circle"
-        size="large"
-        type="primary"
+        size="icon"
       >
         {isSending ? <>
           <div
             className={`
             absolute inset-0 border-4 rounded-full
-            border-blue-300 border-t-blue-500
+            border-gray-300 border-t-gray-600
             animate-spin w-full h-full bg-white
-            group-hover:border-t-blue-400
-            group-hover:border-blue-200
           `}
           ></div>
-          <div className="absolute inset-0 flex items-center justify-center w-full h-full rounded-xl">
-            <ArrowDownOutlined className="text-blue-500! group-hover:text-blue-400!" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ArrowDown className="text-gray-700" />
           </div>
-        </> : <ArrowDownOutlined />}
+        </> : <ArrowDown />}
       </Button>
     )}
   </div>

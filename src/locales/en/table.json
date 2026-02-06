@@ -4,5 +4,7 @@
   "modelName": "Model Name",
   "lastUpdateTime": "Last Update Time",
   "createTime": "Create Time",
-  "operation": "Operation"
+  "operation": "Operation",
+  "emptyData": "No data available",
+  "loading": "Loading..."
 }

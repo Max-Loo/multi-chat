@@ -5,14 +5,16 @@ import { store } from "@/store";
 import './main.css'
 import { interceptClickAToJump } from "./lib/global";
 import FullscreenLoading from "./components/FullscreenLoading";
-import { App as AntdApp } from 'antd';
 import { RouterProvider } from 'react-router-dom';
 import router from './router';
 import { initI18n } from '@/lib/i18n';
+import { initializeMasterKey, handleSecurityWarning } from "@/store/keyring/masterKey";
 import { initializeModels } from "@/store/slices/modelSlice";
 import { initializeChatList } from "@/store/slices/chatSlices";
 import { initializeAppLanguage } from "@/store/slices/appConfigSlices";
 import { registerAllProviders } from "./lib/factory/modelProviderFactory/ProviderRegistry";
+import { ConfirmProvider } from "@/hooks/useConfirm";
+import { Toaster } from "./components/ui/sonner";
 
 const rootDom = ReactDOM.createRoot(document.getElementById("root") as HTMLElement)
 
@@ -22,8 +24,11 @@ rootDom.render(<FullscreenLoading />)
 registerAllProviders()
 interceptClickAToJump()
 
-// 阻断式的初始化逻辑（渲染前需要保证初始化完成
-const InterruptiveInitPromise = initI18n()
+// 阻断式的初始化逻辑（渲染前需要保证初始化完成）
+const InterruptiveInitPromise = Promise.all([
+  initI18n(),
+  initializeMasterKey(),
+]);
 
 // 可以异步完成的初始化逻辑
 store.dispatch(initializeModels())
@@ -36,9 +41,13 @@ await InterruptiveInitPromise
 rootDom.render(
   <React.StrictMode>
     <Provider store={store}>
-      <AntdApp>
+      <ConfirmProvider>
         <RouterProvider router={router} />
-      </AntdApp>
+        <Toaster />
+      </ConfirmProvider>
     </Provider>
   </React.StrictMode>,
 )
+
+// 应用渲染后，处理安全性警告（现在可以使用 Toast）
+await handleSecurityWarning();

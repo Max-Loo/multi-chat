@@ -2,13 +2,14 @@ import ModelProviderDisplay from "@/pages/Model/ModelTable/components/ModelProvi
 import { Model } from "@/types/model"
 import { useMemo, useState } from "react";
 import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedFilter";
-import { TableColumnsType } from "antd";
+import { ColumnDef } from "@tanstack/react-table";
 import { ModelProviderKeyEnum } from "@/utils/enums";
 import { useExistingModels } from "./useExistingModels";
 import { useTranslation } from "react-i18next";
 
 /**
  * @description 基础的模型列表相关逻辑
+ * 提供表格列定义、数据过滤等功能
  */
 export const useBasicModelTable = () => {
   const models = useExistingModels()
@@ -39,44 +40,47 @@ export const useBasicModelTable = () => {
     },
   )
 
-  const tableColumns: TableColumnsType<Model> = useMemo(() => [
+  /**
+   * 表格列定义
+   * 使用 @tanstack/react-table 的 ColumnDef 类型
+   */
+  const tableColumns: ColumnDef<Model>[] = useMemo(() => [
     {
-      title: t($ => $.table.nickname),
-      dataIndex: 'nickname',
-      key: 'nickname',
-      sorter: (a, b) => a.nickname?.localeCompare(b.nickname),
+      accessorKey: 'nickname',
+      header: t($ => $.table.nickname),
+      cell: ({ row }) => row.getValue('nickname'),
     },
     {
-      title: t($ => $.table.modelProvider),
-      dataIndex: 'providerKey',
-      key: 'providerKey',
-      render: (providerKey: ModelProviderKeyEnum) => <ModelProviderDisplay providerKey={providerKey} />,
+      accessorKey: 'providerKey',
+      header: t($ => $.table.modelProvider),
+      cell: ({ row }) => {
+        const providerKey = row.getValue('providerKey') as ModelProviderKeyEnum;
+        return <ModelProviderDisplay providerKey={providerKey} />;
+      },
     },
     {
-      title: t($ => $.table.modelName),
-      dataIndex: 'modelName',
-      key: 'modelName',
-      sorter: (a, b) => a.modelName?.localeCompare(b.modelName),
+      accessorKey: 'modelName',
+      header: t($ => $.table.modelName),
+      cell: ({ row }) => row.getValue('modelName'),
     },
     {
-      title: t($ => $.table.lastUpdateTime),
-      dataIndex: 'updateAt',
-      key: 'updateAt',
-      sorter: (a, b) => a.updateAt?.localeCompare(b.updateAt),
+      accessorKey: 'updateAt',
+      header: t($ => $.table.lastUpdateTime),
+      cell: ({ row }) => row.getValue('updateAt'),
     },
     {
-      title: t($ => $.table.createTime),
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      sorter: (a, b) => a.createdAt?.localeCompare(b.createdAt),
+      accessorKey: 'createdAt',
+      header: t($ => $.table.createTime),
+      cell: ({ row }) => row.getValue('createdAt'),
     },
     {
-      title: t($ => $.common.remark),
-      dataIndex: 'remark',
-      key: 'remark',
-      render: (remark?: string) => remark || '-',
+      accessorKey: 'remark',
+      header: t($ => $.common.remark),
+      cell: ({ row }) => {
+        const remark = row.getValue('remark') as string | undefined;
+        return remark || '-';
+      },
     },
-
   ], [t])
 
   return {

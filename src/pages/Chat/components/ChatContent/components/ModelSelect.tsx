@@ -5,11 +5,16 @@ import { useCurrentSelectedChat } from "@/hooks/useCurrentSelectedChat"
 import { editChat } from "@/store/slices/chatSlices"
 import { Chat } from "@/types/chat"
 import { Model } from "@/types/model"
-import { DeleteOutlined } from "@ant-design/icons"
-import { App, Button, Checkbox, Table, TableColumnsType, Tag } from "antd"
+import { Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+import { DataTable } from "@/components/ui/data-table"
+import { toast } from 'sonner'
 import { isUndefined } from "es-toolkit"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { ColumnDef } from "@tanstack/react-table"
 
 /**
  * @description 新建聊天的时候提供选择模型
@@ -20,10 +25,6 @@ const ModelSelect: React.FC = () => {
   const selectedChat = useCurrentSelectedChat()
 
   const typedSelectedChat = selectedChat as Chat
-
-  const {
-    message,
-  } = App.useApp()
 
   const {
     filterText,
@@ -68,22 +69,22 @@ const ModelSelect: React.FC = () => {
     return list
   }, [models, checkedModelIdList])
 
-  // 表格相关配置
-  const columns: TableColumnsType<Model> = [
+  // 表格相关配置（添加选择列）
+  const columns: ColumnDef<Model>[] = [
     {
-      title: '',
-      dataIndex: 'selected',
-      key: 'selected',
-      render: (_, record) => (
+      id: 'selected',
+      header: '',
+      cell: ({ row }) => (
         <Checkbox
-          checked={checkedModelIdList.includes(record.id)}
-          onChange={(e) => {
-            if (e.target.checked) {
-              addCheckModelId(record)
+          checked={checkedModelIdList.includes(row.original.id)}
+          onCheckedChange={(checked) => {
+            if (checked) {
+              addCheckModelId(row.original)
             } else {
-              deleteCheckModelId(record)
+              deleteCheckModelId(row.original)
             }
-          }} />
+          }}
+        />
       ),
     },
     ...tableColumns,
@@ -91,17 +92,18 @@ const ModelSelect: React.FC = () => {
 
   // 确认按钮的 loading 状态
   const [confirmLoading, setConfirmLoading] = useState(false)
+
   // 点击确定创建聊天
-  const onConfirm = () => {
+  const onConfirm =  async () => {
     if (checkedModelIdList.length <= 0) {
-      message.info(t($ => $.chat.selectModelHint))
+      toast.info(t($ => $.chat.selectModelHint))
       return
     }
 
     setConfirmLoading(true)
 
     try {
-      dispatch(editChat({
+      await dispatch(editChat({
         chat: {
           ...typedSelectedChat,
           chatModelList: checkedModelIdList.map(id => ({
@@ -111,9 +113,13 @@ const ModelSelect: React.FC = () => {
         },
       }))
 
-      message.success(t($ => $.chat.editChatSuccess))
+      toast.success(t($ => $.chat.configureChatSuccess), {
+        position: 'top-right'
+      })
     } catch {
-      message.error(t($ => $.chat.editChatFailed))
+      toast.error(t($ => $.chat.configureChatFailed), {
+        position: 'top-right'
+      })
     }
 
     setConfirmLoading(false)
@@ -124,33 +130,41 @@ const ModelSelect: React.FC = () => {
       {/* 快速预览选中模型 */}
       <div className="flex flex-wrap items-center justify-start h-full">
         {checkedModelList.length > 0 && <Button
-          color="red"
-          variant="outlined"
-          icon={<DeleteOutlined />}
-          loading={confirmLoading}
-          size="small"
+          variant="outline"
+          size="sm"
           className="mr-2"
           onClick={() => {
           // 清空所有选中
             setCheckedModelIdList([])
           }}
-        />}
-        {checkedModelList.map(model => {
-          return <Tag
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>}
+        {checkedModelList.map((model: Model) => {
+          return <Badge
             key={model.id}
-            closeIcon
-            color="green"
-            onClose={() => deleteCheckModelId(model)}
+            variant="secondary"
+            className="mr-1 cursor-pointer"
+            onClick={() => deleteCheckModelId(model)}
           >
             {model.nickname}
-          </Tag>
+            <button
+              className="ml-1 hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation()
+                deleteCheckModelId(model)
+              }}
+            >
+              ×
+            </button>
+          </Badge>
         })}
       </div>
       {/* 操作区域 */}
       <div className="flex items-center justify-end h-full">
         <Button
-          type="primary"
           onClick={onConfirm}
+          disabled={confirmLoading}
         >
           {t($ => $.common.confirm)}
         </Button>
@@ -163,13 +177,12 @@ const ModelSelect: React.FC = () => {
       </div>
     </div>
     {/* 模型列表 */}
-    <Table
+    <DataTable
       columns={columns}
-      dataSource={filteredModels}
+      data={filteredModels}
       rowKey="id"
       loading={loading}
-      pagination={false}
-      className=""
+      className="ml-1 mr-1"
     />
   </>)
 }

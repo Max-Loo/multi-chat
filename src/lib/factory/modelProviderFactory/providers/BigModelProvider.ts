@@ -7,6 +7,7 @@ import { StandardMessage } from "@/types/chat"
 import OpenAI from "openai"
 import { ChatRoleEnum } from "@/types/chat"
 import { getStandardRole } from "@/utils/utils"
+import { getFetchFunc } from '@/utils/tauriCompat/http'
 
 /**
  * @description BigModel (智谱AI) API 地址处理器
@@ -71,7 +72,7 @@ class BigModelFetchApi extends BaseFetchApi<BigModelStreamResponse> {
       apiKey: model.apiKey,
       baseURL: (new BigModelApiAddress).getOpenaiFetchAddress(apiAddress),
       dangerouslyAllowBrowser: true,
-      fetch: this.getFetchFunc(),
+      fetch: getFetchFunc(),
     })
   }
 
@@ -128,6 +129,8 @@ export class BigModelProvider extends ConfigurableModelProvider {
   readonly modelList: ModelDetail[] = [
     { modelKey: 'glm-4.5', modelName: 'GLM-4.5' },
     { modelKey: 'glm-4.6', modelName: 'GLM-4.6' },
+    { modelKey: 'glm-4.7', modelName: 'GLM-4.7' },
+    { modelKey: 'glm-4.7-flash', modelName: 'GLM-4.7-flash' },
   ]
 
   protected createApiAddress = () => new BigModelApiAddress()

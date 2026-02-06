@@ -1,6 +1,6 @@
 import { Chat, ChatRoleEnum, StandardMessage } from "@/types/chat";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { loadChatList } from "../vaults/chatVault";
+import { loadChatsFromJson } from "../storage";
 import { RootState } from "..";
 import { Model } from "@/types/model";
 import { getProviderFactory } from "@/lib/factory/modelProviderFactory";
@@ -45,7 +45,7 @@ export const initializeChatList = createAsyncThunk(
   'chat/initialize',
   async () => {
     try {
-      const list: Chat[] = await loadChatList()
+      const list: Chat[] = await loadChatsFromJson()
       return list
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to initialize chat data', { cause: error });

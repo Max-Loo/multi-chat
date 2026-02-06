@@ -3,8 +3,8 @@ import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useNavigateToChat } from "@/hooks/useNavigateToPage";
 import { setIsCollapsed } from "@/store/slices/chatPageSlices";
 import { createChat } from "@/store/slices/chatSlices";
-import { LeftOutlined, MenuFoldOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
-import { Button } from "antd"
+import { ArrowLeft, PanelLeftClose, Plus, Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { isString } from "es-toolkit";
 import { useState } from "react"
 import { v4 as uuidv4 } from 'uuid'
@@ -57,16 +57,18 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
     // 当开启搜索的时候，变更渲染内容
     return <div className="flex items-center justify-between w-full">
       <Button
-        className="rounded-lg! p-1!"
-        icon={<LeftOutlined />}
+        variant="ghost"
+        className="rounded-lg p-1 h-8 w-8"
         onClick={quitSearch}
-      />
+      >
+        <ArrowLeft size={16} />
+      </Button>
       <FilterInput
         value={filterText || ''}
         onChange={(value) => {
           onFilterChange(value)
         }}
-        className="w-fit! ml-2"
+        className="w-fit ml-2"
         autoFocus
       />
     </div>
@@ -80,25 +82,31 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
   return (
     <div className="flex items-center justify-between w-full">
       {isShowChatPage ? <Button
-        className="rounded-lg! pr-5! pl-5!"
+        variant="ghost"
+        className="rounded h-8 w-8 p-0"
         title={t($ => $.chat.hideSidebar)}
-        icon={<MenuFoldOutlined />}
         onClick={collapseSidebar}
-      /> : <div></div>}
+      >
+        <PanelLeftClose size={16} />
+      </Button> : <div></div>}
       <div className="flex">
         {/* 传入一个正常的字符串才表示启用搜索按钮 */}
         {isString(filterText) && <Button
-          className="rounded-lg!"
-          icon={<SearchOutlined />}
+          variant="ghost"
+          className="rounded-lg h-8 w-8 p-0"
           title={t($ => $.common.search)}
           onClick={() => setIsSearching(true)}
-        />}
+        >
+          <Search size={16} />
+        </Button>}
         <Button
-          className="rounded-lg! ml-1"
-          icon={<PlusOutlined />}
+          variant="ghost"
+          className="rounded-lg ml-1 h-8 w-8 p-0"
           onClick={handleCreateChat}
           title={t($ => $.chat.createChat)}
-        />
+        >
+          <Plus size={16} />
+        </Button>
       </div>
     </div>
   )

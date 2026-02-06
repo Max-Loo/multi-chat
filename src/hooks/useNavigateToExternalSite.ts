@@ -1,11 +1,11 @@
-import { open } from "@tauri-apps/plugin-shell"
+import { shell } from "@/utils/tauriCompat"
 
 /**
  * @description 利用打开外部浏览器网页
  */
 export const useNavigateToExternalSite = () => {
   const navToExternalSite = (siteUrl: string) => {
-    open(siteUrl)
+    shell.open(siteUrl)
   }
 
   return {

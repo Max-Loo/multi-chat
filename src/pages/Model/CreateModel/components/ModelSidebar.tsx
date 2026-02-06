@@ -2,8 +2,9 @@ import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedF
 import FilterInput from "@/components/FilterInput"
 import { useNavigate } from "react-router-dom"
 import { ModelProviderKeyEnum } from "@/utils/enums"
-import { LeftOutlined } from "@ant-design/icons"
-import { Avatar, Button } from "antd"
+import { ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Avatar } from "@/components/ui/avatar"
 import { useState } from "react"
 import { getProviderFactoryMap } from "@/lib/factory/modelProviderFactory"
 import { useTranslation } from "react-i18next"
@@ -37,10 +38,11 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
       <div className="p-2 border-b border-gray-300">
         <div className="flex items-center justify-between w-full pb-2">
           <Button
-            className="rounded-lg!"
+            variant="ghost"
+            className="rounded-lg h-8 w-8 p-0"
             onClick={() => navigate('/model/table')}
           >
-            <LeftOutlined />
+            <ArrowLeft size={16} />
           </Button>
           <span className="text-lg">{t($ => $.model.modelProvider)}</span>
         </div>
@@ -48,28 +50,26 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
           value={filterText}
           onChange={setFilterText}
           placeholder={t($ => $.model.searchModel)}
-          className={`w-full! rounded-lg!`}
+          className={`w-full rounded-lg`}
         />
       </div>
       {/* 可供选择的 */}
-      <div className="pb-2">
+      <div className="pb-2 w-full">
         {filteredProviders.map(provider => {
           return (
             <Button
               key={provider.key}
-              type="text"
-              className={`w-full py-5! flex justify-start! rounded-none! ${
-                provider.key === selectedModelKey && 'bg-gray-200!'
+              variant="ghost"
+              className={`w-full py-5 flex justify-start rounded-none ${
+                provider.key === selectedModelKey && 'bg-gray-200'
               }`}
               title={provider.name}
               onClick={() => onChange(provider.key)}
             >
               {provider.logoUrl && (
-                <Avatar
-                  size={30}
-                  src={provider.logoUrl}
-                  alt={provider.name}
-                />
+                <Avatar className="h-8 w-8">
+                  <img src={provider.logoUrl} alt={provider.name} />
+                </Avatar>
               )}
               <span className="pl-2 text-base">{provider.name}</span>
             </Button>

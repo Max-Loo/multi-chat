@@ -12,6 +12,8 @@
   "modelRequired": "请选择你想要使用的具体模型",
   "addModelSuccess": "模型添加成功",
   "addModelFailed": "模型添加失败",
+  "editModel": "编辑模型",
+  "editModelDescription": "编辑模型的配置信息，包括昵称、API 密钥和地址等",
   "editModelSuccess": "模型编辑成功",
   "editModelFailed": "模型编辑失败",
   "deleteModelSuccess": "模型删除成功",

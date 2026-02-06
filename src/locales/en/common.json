@@ -6,5 +6,9 @@
   "cancel": "Cancel",
   "confirm": "Confirm",
   "pageNotFound": "Page not found",
-  "goBack": "Go back"
+  "pageNotFoundDescription": "Sorry, the page you visited does not exist",
+  "warning": "Warning",
+  "goBack": "Go back",
+  "show": "Show",
+  "hide": "Hide"
 }

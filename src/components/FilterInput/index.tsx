@@ -1,6 +1,6 @@
 import React from 'react';
-import { Input } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface FilterInputProps {
@@ -25,15 +25,16 @@ const FilterInput: React.FC<FilterInputProps> = ({
   const finalPlaceholder = placeholder || t($ => $.common.search);
 
   return (
-    <Input
-      placeholder={finalPlaceholder}
-      prefix={<SearchOutlined />}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      allowClear
-      className={className}
-      autoFocus={autoFocus}
-    />
+    <div className={`relative flex items-center ${className}`}>
+      <Search className="absolute left-3 h-4 w-4 text-gray-400" />
+      <Input
+        placeholder={finalPlaceholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="pl-9"
+        autoFocus={autoFocus}
+      />
+    </div>
   );
 };
 

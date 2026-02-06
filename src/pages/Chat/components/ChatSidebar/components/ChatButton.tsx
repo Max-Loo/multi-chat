@@ -2,11 +2,20 @@ import { useAppDispatch, useAppSelector } from "@/hooks/redux"
 import { useNavigateToChat } from "@/hooks/useNavigateToPage"
 import { deleteChat, editChatName } from "@/store/slices/chatSlices"
 import { Chat } from "@/types/chat"
-import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, EllipsisOutlined } from "@ant-design/icons"
-import type { MenuProps } from 'antd'
-import { App, Button, Dropdown, Input } from "antd"
-import { memo, useMemo, useState } from "react"
+import { Check, X, Trash2, Edit, MoreHorizontal } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { memo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { toast } from 'sonner'
+import { useConfirm } from "@/hooks/useConfirm"
 
 interface ChatButtonProps {
   // 当前选中要进行操作的聊天
@@ -28,10 +37,8 @@ const ChatButton = memo<ChatButtonProps>(({
     navigateToChat,
   } = useNavigateToChat()
 
-  const {
-    modal,
-    message,
-  } = App.useApp()
+  // 使用自定义 hooks 替代 antd 的 App.useApp()
+  const { modal } = useConfirm()
 
   // 点击聊天列表按钮
   const onClickChat = (chat: Chat) => {
@@ -44,59 +51,34 @@ const ChatButton = memo<ChatButtonProps>(({
   // 是否打开重命名的输入框
   const [isRenaming, setIsRenaming] = useState(false)
 
-  const menuProps: MenuProps['items'] = useMemo(() => {
-    return [
-      {
-        label: t($ => $.chat.rename),
-        key: 'rename',
-        icon: <EditOutlined />,
-        onClick: (menuInfo) => {
-          // 避免选中该聊天
-          menuInfo.domEvent.stopPropagation()
-
-          setIsRenaming(true)
-          // 填充原本的命名
-          setNewName(chat.name || '')
-        },
-      },
-      {
-        type: 'divider',
-      },
-      {
-        label: t($ => $.chat.delete),
-        key: 'delete',
-        icon: <DeleteOutlined/>,
-        className: 'text-red-500!',
-        onClick: (menuInfo) => {
-          // 避免选中该聊天
-          menuInfo.domEvent.stopPropagation()
-
-          const onOk = () => {
-            try {
-              dispatch(deleteChat({
-                chat,
-              }))
-              message.success(t($ => $.chat.deleteChatSuccess))
-            } catch {
-              message.error(t($ => $.chat.deleteChatFailed))
-            }
-          }
-
-          modal.warning({
-            maskClosable: true,
-            closable: true,
-            title: `${t($ => $.chat.confirmDelete)}「${chat.name || t($ => $.chat.unnamed)}」`,
-            content: t($ => $.chat.deleteChatConfirm),
-            onOk,
-          })
-        },
-      },
-    ]
-  }, [chat, dispatch, modal, message, t])
-
-
   // 临时的重命名
   const [newName, setNewName] = useState('')
+
+  // 处理重命名操作
+  const handleRename = () => {
+    setIsRenaming(true)
+    setNewName(chat.name || '')
+  }
+
+  // 处理删除操作
+  const handleDelete = () => {
+    const onOk = () => {
+      try {
+        dispatch(deleteChat({
+          chat,
+        }))
+        toast.success(t($ => $.chat.deleteChatSuccess))
+      } catch {
+        toast.error(t($ => $.chat.deleteChatFailed))
+      }
+    }
+
+    modal.warning({
+      title: `${t($ => $.chat.confirmDelete)}「${chat.name || t($ => $.chat.unnamed)}」`,
+      description: t($ => $.chat.deleteChatConfirm),
+      onOk,
+    })
+  }
 
   // 取消重命名
   const onCancelRename = () => {
@@ -118,10 +100,10 @@ const ChatButton = memo<ChatButtonProps>(({
         name: newName,
       }))
 
-      message.success(t($ => $.chat.editChatSuccess))
+      toast.success(t($ => $.chat.editChatSuccess))
       onCancelRename()
     } catch {
-      message.error(t($ => $.chat.editChatFailed))
+      toast.error(t($ => $.chat.editChatFailed))
     }
   }
 
@@ -130,56 +112,81 @@ const ChatButton = memo<ChatButtonProps>(({
   if (isRenaming) {
     return (
       <div
-        className={`flex items-center justify-center w-full h-11
-        ${chat.id === selectedChatId && 'bg-gray-200!'} 
+        className={`flex items-center gap-2 w-full px-2 py-2
+        ${chat.id === selectedChatId && 'bg-primary/20'}
         `}
       >
         <Input
-          className="w-38.5! h-8.5"
+          className="flex-1 h-8.5 text-sm"
           value={newName}
           autoFocus
           onChange={(e) => setNewName(e.target.value)}
         />
         <Button
-          color="green"
-          variant="filled"
-          icon={<CheckOutlined />}
+          variant="default"
+          size="sm"
           onClick={onConfirmRename}
-          className="ml-1 mr-0.5"
-        />
+          className="h-8 w-8 p-0 shrink-0"
+        >
+          <Check className="h-4 w-4" />
+        </Button>
         <Button
-          color="danger"
-          variant="filled"
-          icon={<CloseOutlined />}
+          variant="destructive"
+          size="sm"
           onClick={onCancelRename}
-          className="ml-0.5"
-        />
+          className="h-8 w-8 p-0 shrink-0 text-white"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
     )
   }
 
 
   return (
-    <Button
-      type="text"
-      className={`w-full py-5! flex justify-between! rounded-none! 
-        ${chat.id === selectedChatId && 'bg-gray-200!'} 
-        ${isRenaming && 'pl-1! pr-1!'}
+    <div
+      className={`w-full py-2 px-1 flex justify-between rounded-none cursor-pointer
+        ${chat.id === selectedChatId ? 'bg-primary/20' : 'hover:bg-accent'}
+        ${isRenaming && 'pl-1 pr-1'}
       `}
       onClick={() => onClickChat(chat)}
     >
-      <span className="pl-2 text-sm">{chat.name || t($ => $.chat.unnamed)}</span>
-      <Dropdown menu={{ items: menuProps }} trigger={['click']} arrow>
-        <EllipsisOutlined
-          name="More options"
-          className="text-xl!"
-          onClick={(e) => {
-          // 防止点击更多，导致选中这个聊天
+      <span className="pl-2 text-sm flex items-center">{chat.name || t($ => $.chat.unnamed)}</span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 p-0"
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={(e) => {
             e.stopPropagation()
-          }}
-        />
-      </Dropdown>
-    </Button>
+            handleRename()
+          }}>
+            <Edit className="mr-2 h-4 w-4" />
+            {t($ => $.chat.rename)}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleDelete()
+            }}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            {t($ => $.chat.delete)}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }, (prevProps, nextProps) => {
   // 因为按钮只展示模型的昵称，所以当其没有发生变化的时候，就不需要重新渲染

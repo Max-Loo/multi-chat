@@ -26,10 +26,7 @@ export const useAdaptiveScrollbar = ({
 
   // 在滚动的时候展示滚动条
   const showScrollbar = useCallback(() => {
-    // 避免重复设置
-    if (!isScrolling) {
-      setIsScrolling(true)
-    }
+    setIsScrolling(true)
 
     // 如果上一个计时器还没有执行的话
     if (!isNull(timeoutRef.current)) {
@@ -41,7 +38,7 @@ export const useAdaptiveScrollbar = ({
     timeoutRef.current = setTimeout(() => {
       setIsScrolling(false)
     }, hideDebounceMs);
-  }, [hideDebounceMs, isScrolling])
+  }, [hideDebounceMs])
 
   // 由类名来控制是否展示滚动条
   const scrollbarClassname = useMemo(() => {
@@ -51,8 +48,8 @@ export const useAdaptiveScrollbar = ({
   return {
     scrollbarClassname,
     isScrolling,
-    onScrollEvent: () => {
+    onScrollEvent: useCallback(() => {
       showScrollbar()
-    },
+    }, [showScrollbar]),
   }
 }

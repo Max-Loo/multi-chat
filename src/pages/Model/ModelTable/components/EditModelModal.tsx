@@ -1,4 +1,4 @@
-import { App, Modal } from "antd"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import ModelConfigForm from "../../components/ModelConfigForm"
 import { ModelProviderKeyEnum } from "@/utils/enums"
 import { useMemo } from "react"
@@ -6,12 +6,13 @@ import { EditableModel, Model } from "@/types/model"
 import { useAppDispatch } from "@/hooks/redux"
 import { editModel } from "@/store/slices/modelSlice"
 import { useTranslation } from "react-i18next"
+import { toast } from 'sonner'
 
 interface EditModelModalProps {
   // 是否打开弹窗
   isModalOpen?: boolean
   // 点击关闭弹窗或者点击蒙层关闭的回调
-  onModalCancel?: (e?: React.MouseEvent<HTMLButtonElement>) => void
+  onModalCancel?: () => void
   modelProviderKey?: ModelProviderKeyEnum;
   modelParams?: EditableModel;
 }
@@ -28,48 +29,40 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
 
-  const {
-    message,
-  } = App.useApp()
-
   const isOpen = useMemo(() => {
     return Boolean(isModalOpen ?? modelProviderKey)
   }, [isModalOpen, modelProviderKey])
 
   // 完成编辑校验成功后的回调
+  // @param model 完整的模型数据
   const onEditFinish = (model: Model): void => {
     try {
       dispatch(editModel({
         model,
       }))
-      message.success(t($ => $.model.editModelSuccess))
+      toast.success(t($ => $.model.editModelSuccess))
     } catch {
-      message.error(t($ => $.model.editModelFailed))
+      toast.error(t($ => $.model.editModelFailed))
     }
 
     // 让父组件关闭弹窗
     onModalCancel()
   }
 
-
   return (
-    <Modal
-      open={isOpen}
-      destroyOnHidden
-      onCancel={onModalCancel}
-      footer={null}
-      maskClosable={false}
-      style={{ top: 'calc(var(--spacing) * 6)' }}
-      width={'80%'}
-    >
-      <div className="pt-6">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onModalCancel()}>
+      <DialogContent className="max-w-[80%] top-[6%] translate-y-[calc(-6%+0px)]">
+        <DialogHeader>
+          <DialogTitle>{t($ => $.model.editModel)}</DialogTitle>
+          <DialogDescription>{t($ => $.model.editModelDescription)}</DialogDescription>
+        </DialogHeader>
         {modelProviderKey && <ModelConfigForm
           modelProviderKey={modelProviderKey}
           modelParams={modelParams}
           onFinish={onEditFinish}
         />}
-      </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   )
 }
 

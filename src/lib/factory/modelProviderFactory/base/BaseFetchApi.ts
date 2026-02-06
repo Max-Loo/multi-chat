@@ -4,8 +4,6 @@ import { StandardMessage } from "@/types/chat"
 import { FetchApi, FetchApiParams } from "../index"
 import { Model } from "@/types/model"
 import { ModelProviderKeyEnum } from "@/utils/enums"
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
-const originFetch = fetch
 
 /**
  * @description 流式 API 请求处理的抽象基类
@@ -25,17 +23,7 @@ export abstract class BaseFetchApi<T> implements FetchApi {
     return null
   }
 
-  /**
-   * 在正式环境，使用 tauri 的 fetch 方法；在开发环境，使用原生的 fetch 方法
-   * @returns fetch 方法
-   */
-  protected readonly getFetchFunc = (): typeof originFetch => {
-    if (import.meta.env.DEV) {
-      return originFetch
-    }
 
-    return tauriFetch
-  }
 
   /**
    * 创建 OpenAI 客户端，子类必须实现

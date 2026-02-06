@@ -1,9 +1,17 @@
+/* eslint-disable react/no-children-prop */
+// TanStack Form 使用 render props 模式，需要使用 children prop
+
 import OpenExternalBrowserButton from "@/components/OpenExternalBrowserButton"
 import { EditableModel, ManualConfigModel, Model } from "@/types/model"
 import { DateFormatEnum, ModelProviderKeyEnum } from "@/utils/enums"
-import type { FormItemProps } from "antd"
-import { Button, Form, Input, Switch } from "antd"
-import type { ReactNode } from "react"
+import { Button } from "@/components/ui/button"
+import { Form, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { z } from "zod"
+import { useForm } from "@tanstack/react-form"
 import { useEffect, useMemo, useState } from "react"
 import ModelSelect from "./ModelSelect"
 import { v4 as uuidv4 } from 'uuid'
@@ -12,14 +20,24 @@ import { getProviderFactory } from "@/lib/factory/modelProviderFactory"
 import { isBoolean } from "es-toolkit"
 import { useTranslation } from "react-i18next"
 
-
 interface ModelConfigFormProps {
   // 当前需要配置的模型供应商的Key
   modelProviderKey: ModelProviderKeyEnum;
-  // 表单校验成功后的回调，返回完整的模型数据
+  // 表单校验成功后的回调,返回完整的模型数据
   onFinish?: (model: Model) => void;
-  // 当是编辑模式的时候，会传入此参数
+  // 当是编辑模式的时候,会传入此参数
   modelParams?: EditableModel;
+}
+
+/**
+ * 表单数据类型推断
+ */
+type FormValues = {
+  nickname: string
+  apiKey: string
+  apiAddress: string
+  remark?: string
+  modelKey: string
 }
 
 /**
@@ -32,8 +50,6 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
 }) => {
   const { t } = useTranslation()
 
-  const [form] = Form.useForm()
-
   // 当前配置的提供商的相关信息
   const currentProvider = useMemo(() => {
     return getProviderFactory(modelProviderKey).getModelProvider()
@@ -45,91 +61,40 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   } = currentProvider
 
   // 表单的初始化值
-  const initialFormValues = useMemo<EditableModel>(() => {
+  const defaultValues = useMemo<FormValues>(() => {
     return {
-      apiAddress: apiAddressInstance.defaultApiAddress,
-      ...modelParams,
-    } satisfies EditableModel
+      nickname: modelParams.nickname || '',
+      apiKey: modelParams.apiKey || '',
+      apiAddress: modelParams.apiAddress || apiAddressInstance.defaultApiAddress,
+      remark: modelParams.remark || '',
+      modelKey: modelParams.modelKey || '',
+    }
   }, [apiAddressInstance, modelParams])
 
-  // 新增操作下，切换模型供应商的时候，对表单进行还原填充
-  useEffect(() => {
-    form.resetFields()
-  }, [form, currentProvider])
+  // 表单验证 schema
+  const formSchema = useMemo(() => z.object({
+    nickname: z.string().trim().min(1, {
+      message: t($ => $.model.modelNicknameRequired),
+    }),
+    apiKey: z.string().trim().min(1, {
+      message: t($ => $.model.apiKeyRequired),
+    }),
+    apiAddress: z.string().trim().min(1, {
+      message: t($ => $.model.apiAddressRequired),
+    }),
+    remark: z.string().optional(),
+    modelKey: z.string().trim().min(1, {
+      message: t($ => $.model.modelRequired),
+    }),
+  }), [t])
 
-  // 是否开启当前配置的模型，默认新建的时候是 true
+  // 是否开启当前配置的模型,默认新建的时候是 true
   const [isModelEnable, setIsModelEnable] = useState(isBoolean(modelParams?.isEnable) ? modelParams.isEnable : true)
-
-  const apiAddressValue = Form.useWatch<string>('apiAddress', form)
-
-
-  // 对应每个表单项的配置，采用数组渲染
-  const formItemConfigs = useMemo<Array<FormItemProps & { component?: ReactNode }>>(() => {
-
-    // 当输入 apiAddress 的输入框失焦的时候
-    const onApiAddressBlur = () => {
-      // 如果没有输入，则重置为默认地址
-      if (!apiAddressValue) {
-        form.setFieldValue('apiAddress', apiAddressInstance)
-      }
-    }
-
-    return [
-      {
-        label: t($ => $.model.modelNickname),
-        name: 'nickname',
-        rules: [
-          { required: true, message: t($ => $.model.modelNicknameRequired) },
-        ],
-        component: <Input />,
-      },
-      {
-        label: t($ => $.model.apiKey),
-        name: 'apiKey',
-        rules: [
-          { required: true, message: t($ => $.model.apiKeyRequired) },
-        ],
-        component: <Input.Password />,
-      },
-      {
-        label: t($ => $.model.apiAddress),
-        name: 'apiAddress',
-        rules: [
-          { required: true, message: t($ => $.model.apiAddressRequired) },
-        ],
-        // 动态填充 apiAddress 的 extra 信息
-        extra: <>
-          <div className="flex flex-wrap justify-between w-full gap4">
-            <span className="max-w-full text-wrap wrap-anywhere">
-              {apiAddressInstance.getOpenaiDisplayAddress(apiAddressValue)}
-            </span>
-            <span className="ml-auto">
-              {apiAddressInstance.getAddressFormDescription?.() || t($ => $.provider.apiAddressCustom)}
-            </span>
-          </div>
-        </>,
-        component: <Input onBlur={onApiAddressBlur}/>,
-      },
-      {
-        label: t($ => $.common.remark),
-        name: 'remark',
-        component: <Input.TextArea />,
-      },
-      {
-        label: t($ => $.model.model),
-        name: 'modelKey',
-        component: <ModelSelect options={defaultModelList} />,
-        rules: [
-          { required: true, message: t($ => $.model.modelRequired) },
-        ],
-      },
-    ]
-  }, [form, defaultModelList, apiAddressValue, apiAddressInstance, t])
 
   // 获取拼装完整后的model参数
   const getFullModelParams = (manualConfig: ManualConfigModel): Model => {
     if (modelParams?.id) {
-      // 当有id的情况下，表明是编辑模型，特殊处理参数
+      // 当有id的情况下,表明是编辑模型,特殊处理参数
       return {
         ...(modelParams as Model),
         id: modelParams.id,
@@ -147,7 +112,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
       updateAt: dayjs().format(DateFormatEnum.DAY_AND_TIME),
       providerName: currentProvider.name,
       providerKey: currentProvider.key,
-      // 表单里面选择的是 modelKey，需要自己回填 modelName
+      // 表单里面选择的是 modelKey,需要自己回填 modelName
       modelName: defaultModelList.find(item => {
         return item.modelKey === manualConfig.modelKey
       })?.modelName || '',
@@ -155,14 +120,39 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   }
 
   // 表单校验成功后的回调
-  const onFormFinish = (values: ManualConfigModel) => {
+  const onSubmit = async ({ value }: { value: FormValues }) => {
+    // 根据 modelKey 查找对应的 modelName
+    const modelName = defaultModelList.find(item => {
+      return item.modelKey === value.modelKey
+    })?.modelName || ''
+
     const fullModel: Model = getFullModelParams({
-      ...values,
+      ...value,
+      // 添加 modelName 字段
+      modelName,
       // 特殊处理「是否启用」的开关
       isEnable: isModelEnable,
     })
+    console.log(fullModel);
+    
     onFinish(fullModel)
   }
+
+  const form = useForm({
+    defaultValues,
+    // TanStack Form 原生支持 Zod，无需 resolver
+    validators: {
+      onSubmit: formSchema,
+    },
+    onSubmit,
+  })
+
+  // 新增操作下,切换模型供应商的时候,对表单进行还原填充
+  useEffect(() => {
+    if (!modelParams?.id) {
+      form.reset()
+    }
+  }, [currentProvider, modelParams?.id, form])
 
   return (<>
     <div className="flex items-center justify-between">
@@ -174,31 +164,149 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
           className="text-lg! ml-1"
         />
       </div>
-      <Switch checked={isModelEnable} onChange={setIsModelEnable} />
+      <Switch checked={isModelEnable} onCheckedChange={setIsModelEnable} />
     </div>
-    <Form
-      form={form}
-      layout="inline"
-      onFinish={onFormFinish}
-      className="flex flex-wrap gap-4"
-      initialValues={initialFormValues}
-    >
-      { formItemConfigs.map(item => (
-        <Form.Item
-          key={item.name}
-          label={<span className="text-base">{item.label}</span>}
-          name={item.name}
-          layout="vertical"
-          rules={item.rules}
-          extra={item.extra}
-          className="w-full grow xl:w-[calc(50%-16px)] mb-1!"
-        >
-          { item.component }
-        </Form.Item>
-      ))}
-      <Form.Item label={null} className="flex items-center justify-end w-full grow">
-        <Button type="primary" htmlType="submit">{t($ => $.common.submit)}</Button>
-      </Form.Item>
+    <Form form={form}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          form.handleSubmit()
+        }}
+        className="flex flex-wrap gap-4"
+      >
+        <form.Field
+          name="nickname"
+          validators={{
+            onChange: ({ value }) => {
+              const result = z.string().trim().min(1, { message: t($ => $.model.modelNicknameRequired) }).safeParse(value)
+              return result.success ? undefined : result.error.issues[0]?.message
+            },
+          }}
+          children={(field) => (
+            <FormItem field={field} className="w-full grow xl:w-[calc(50%-16px)]">
+              <FormLabel className="text-base">{t($ => $.model.modelNickname)}</FormLabel>
+              <FormControl>
+                <Input
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <form.Field
+          name="apiKey"
+          validators={{
+            onChange: ({ value }) => {
+              const result = z.string().trim().min(1, { message: t($ => $.model.apiKeyRequired) }).safeParse(value)
+              return result.success ? undefined : result.error.issues[0]?.message
+            },
+          }}
+          children={(field) => (
+            <FormItem field={field} className="w-full grow xl:w-[calc(50%-16px)]">
+              <FormLabel className="text-base">{t($ => $.model.apiKey)}</FormLabel>
+              <FormControl>
+                <PasswordInput
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <form.Field
+          name="apiAddress"
+          validators={{
+            onChange: ({ value }) => {
+              const result = z.string().trim().min(1, { message: t($ => $.model.apiAddressRequired) }).safeParse(value)
+              return result.success ? undefined : result.error.issues[0]?.message
+            },
+          }}
+          children={(field) => (
+            <FormItem field={field} className="w-full grow xl:w-[calc(50%-16px)]">
+              <FormLabel className="text-base">{t($ => $.model.apiAddress)}</FormLabel>
+              <FormControl>
+                <Input
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={() => {
+                    field.handleBlur()
+                    // 失焦时的特殊逻辑：如果没有输入，重置为默认地址
+                    if (!field.state.value) {
+                      field.handleChange(apiAddressInstance.defaultApiAddress)
+                    }
+                  }}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </FormControl>
+              <FormDescription>
+                <span className="flex flex-wrap justify-between w-full gap-4">
+                  <span className="max-w-full text-wrap break-all">
+                    {apiAddressInstance.getOpenaiDisplayAddress(field.state.value)}
+                  </span>
+                  <span className="ml-auto">
+                    {apiAddressInstance.getAddressFormDescription?.() || t($ => $.provider.apiAddressCustom)}
+                  </span>
+                </span>
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <form.Field
+          name="remark"
+          children={(field) => (
+            <FormItem field={field} className="w-full grow xl:w-[calc(50%-16px)]">
+              <FormLabel className="text-base">{t($ => $.common.remark)}</FormLabel>
+              <FormControl>
+                <Textarea
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <form.Field
+          name="modelKey"
+          validators={{
+            onChange: ({ value }) => {
+              const result = z.string().trim().min(1, { message: t($ => $.model.modelRequired) }).safeParse(value)
+              return result.success ? undefined : result.error.issues[0]?.message
+            },
+          }}
+          children={(field) => (
+            <FormItem field={field} className="w-full grow xl:w-[calc(50%-16px)]">
+              <FormLabel className="text-base">{t($ => $.model.model)}</FormLabel>
+              <FormControl>
+                <ModelSelect
+                  options={defaultModelList}
+                  value={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormItem className="flex items-center justify-end w-full grow">
+          <Button type="submit">{t($ => $.common.submit)}</Button>
+        </FormItem>
+      </form>
     </Form>
   </>)
 }

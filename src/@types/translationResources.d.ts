@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2025/12/17 22:05:24
+// 生成时间: 2026/2/5 22:38:26
 
 interface Resources {
   translation: {
@@ -15,6 +15,8 @@ interface Resources {
       deleteChatConfirm: string;
       editChatSuccess: string;
       editChatFailed: string;
+      configureChatSuccess: string;
+      configureChatFailed: string;
       stopSending: string;
       hideSidebar: string;
       showSidebar: string;
@@ -29,6 +31,10 @@ interface Resources {
       deleted: string;
       disabled: string;
       selectChatToStart: string;
+      enableSplitter: string;
+      maxPerRow: string;
+      itemsUnit: string;
+      typeMessage: string;
     };
     common: {
       submit: string;
@@ -38,7 +44,11 @@ interface Resources {
       cancel: string;
       confirm: string;
       pageNotFound: string;
+      pageNotFoundDescription: string;
+      warning: string;
       goBack: string;
+      show: string;
+      hide: string;
     };
     model: {
       addModel: string;
@@ -54,6 +64,8 @@ interface Resources {
       modelRequired: string;
       addModelSuccess: string;
       addModelFailed: string;
+      editModel: string;
+      editModelDescription: string;
       editModelSuccess: string;
       editModelFailed: string;
       deleteModelSuccess: string;
@@ -88,6 +100,8 @@ interface Resources {
       lastUpdateTime: string;
       createTime: string;
       operation: string;
+      emptyData: string;
+      loading: string;
     };
   };
 }

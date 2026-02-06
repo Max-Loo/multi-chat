@@ -1,7 +1,9 @@
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { setIsCollapsed, setIsShowChatPage } from "@/store/slices/chatPageSlices";
-import { MenuUnfoldOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, InputNumber, Switch } from "antd";
+import { PanelLeftOpen, Minus, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -46,16 +48,16 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
   }, [dispatch])
 
   return (
-    <div className="flex items-center justify-between w-full h-12 pl-3 pr-3 border-b border-gray-200">
+    <div className="relative z-10 flex items-center justify-between w-full h-12 pl-3 pr-3 border-b border-gray-200">
       <div className="flex items-center justify-start">
         {isSidebarCollapsed && <Button
-          className={`
-          rounded-lg! pr-5! pl-5! mr-2
-        `}
+          variant="ghost"
+          className="rounded mr-2 h-8 w-8 p-0"
           title={t($ => $.chat.showSidebar)}
-          icon={<MenuUnfoldOutlined />}
           onClick={expandSidebar}
-        />}
+        >
+          <PanelLeftOpen size={16} />
+        </Button>}
         <span
           className="text-base"
         >
@@ -63,30 +65,34 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
         </span>
       </div>
       {chatModelList.length > 1 && <div className="flex items-center justify-start text-sm">
-        <span>开启 Splitter：</span>
-        <Switch value={isSplitter} onChange={setIsSplitter} className="mr-2!" />
-        <span>每行至多展示：</span>
-        <InputNumber
-          controls={false}
-          className="w-10!"
+        <span>{t($ => $.chat.enableSplitter)}</span>
+        <Switch checked={isSplitter} onCheckedChange={setIsSplitter} className="mr-2" />
+        <span>{t($ => $.chat.maxPerRow)}</span>
+        <Input
+          type="number"
+          className="w-16 h-8"
           min={1}
           max={chatModelList.length || 1}
           value={columnCount}
-          onChange={(value) => setColumnCount(value || chatModelList.length)}
+          onChange={(e) => setColumnCount(Number(e.target.value) || chatModelList.length)}
         />
-        <span className="ml-1">个</span>
+        <span className="ml-1">{t($ => $.chat.itemsUnit)}</span>
         <Button
-          icon={<PlusOutlined />}
-          className="ml-1"
+          variant="ghost"
+          className="ml-1 h-8 w-8 p-0"
           disabled={columnCount >= chatModelList.length}
           onClick={() => setColumnCount(columnCount + 1)}
-        />
+        >
+          <Plus size={16} />
+        </Button>
         <Button
-          icon={<MinusOutlined />}
-          className="ml-1"
+          variant="ghost"
+          className="ml-1 h-8 w-8 p-0"
           disabled={columnCount <= 1}
           onClick={() => setColumnCount(columnCount - 1)}
-        />
+        >
+          <Minus size={16} />
+        </Button>
       </div>}
     </div>
   )

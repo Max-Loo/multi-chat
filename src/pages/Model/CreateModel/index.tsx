@@ -6,8 +6,8 @@ import { Model } from '@/types/model';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '@/hooks/redux';
 import { createModel } from '@/store/slices/modelSlice';
-import { App } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 // 添加模型页面
 const CreateModel: React.FC = () => {
@@ -17,10 +17,6 @@ const CreateModel: React.FC = () => {
     selectedModelProviderKey,
     setSelectedModelProviderKey,
   ] = useState(ModelProviderKeyEnum.DEEPSEEK)
-
-  const {
-    message,
-  } = App.useApp()
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -32,11 +28,11 @@ const CreateModel: React.FC = () => {
         model,
       }))
 
-      message.success(t($ => $.model.addModelSuccess))
+      toast.success(t($ => $.model.addModelSuccess))
       // 返回到列表页面
       navigate('/model/table')
     } catch {
-      message.error(t($ => $.model.addModelFailed))
+      toast.error(t($ => $.model.addModelFailed))
     }
   }
 

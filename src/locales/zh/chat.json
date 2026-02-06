@@ -9,6 +9,8 @@
   "deleteChatConfirm": "聊天被删除后，所有相关聊天记录将无法找回",
   "editChatSuccess": "编辑聊天成功",
   "editChatFailed": "编辑聊天失败",
+  "configureChatSuccess": "配置聊天成功",
+  "configureChatFailed": "配置聊天失败",
   "stopSending": "停止发送",
   "hideSidebar": "隐藏侧边栏",
   "showSidebar": "显示侧边栏",
@@ -22,5 +24,9 @@
   "modelDeleted": "模型已删除",
   "deleted": "已删除",
   "disabled": "被禁用",
-  "selectChatToStart": "选择聊天开聊！"
+  "selectChatToStart": "选择聊天开聊！",
+  "enableSplitter": "开启 Splitter：",
+  "maxPerRow": "每行至多展示：",
+  "itemsUnit": "个",
+  "typeMessage": "请输入消息..."
 }

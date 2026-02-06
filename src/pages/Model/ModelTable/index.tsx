@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Table, Button, Space, Alert, Popconfirm, TableColumnsType, App } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
 import { deleteModel } from '@/store/slices/modelSlice';
 import type { Model } from '@/types/model';
@@ -9,6 +8,15 @@ import FilterInput from '@/components/FilterInput';
 import EditModelModal from './components/EditModelModal';
 import { useBasicModelTable } from '@/hooks/useBasicModelTable';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover';
+import { DataTable } from '@/components/ui/data-table';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // 模型表格主组件
 const ModelTable: React.FC = () => {
@@ -18,21 +26,18 @@ const ModelTable: React.FC = () => {
   const initializationError = useAppSelector((state) => state.models.initializationError);
   const { t } = useTranslation()
 
-  const {
-    message,
-  } = App.useApp()
-
   const navigate = useNavigate()
 
   // 处理删除模型
   const handleDeleteModel = useCallback((model: Model): void => {
     try {
       dispatch(deleteModel({ model }));
-      message.success(t($ => $.model.deleteModelSuccess));
+      toast.success(t($ => $.model.deleteModelSuccess));
+      setDeleteConfirmOpen(false);
     } catch {
-      message.error(t($ => $.model.deleteModelFailed));
+      toast.error(t($ => $.model.deleteModelFailed));
     }
-  }, [dispatch, message, t]);
+  }, [dispatch, t]);
 
   // 处理添加模型按钮点击
   const handleAddModel = () => {
@@ -44,6 +49,10 @@ const ModelTable: React.FC = () => {
   const [currentEditingModel, setCurrentEditingModel] = useState<Model>()
   // 控制编辑模型弹窗的开关
   const [isModalOpen, setIsModalOpen] = useState(false)
+  // 控制删除确认弹窗的开关
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  // 当前需要删除的模型
+  const [modelToDelete, setModelToDelete] = useState<Model>()
   // 处理点击编辑模型按钮
   const handleEditModel = useCallback((value: Model) => {
     setCurrentEditingModel(value)
@@ -63,77 +72,79 @@ const ModelTable: React.FC = () => {
     setFilterText,
   } = useBasicModelTable()
 
-  // 表格列定义
-  const columns = React.useMemo<TableColumnsType<Model>>(() => [
+  // 表格列定义（包含操作列）
+  const columns = React.useMemo(() => [
     ...tableColumns,
     {
-      title: t($ => $.table.operation),
-      key: 'actions',
-      width: 120,
-      render: (_, record) => (
-        <Space>
+      id: 'actions',
+      header: t($ => $.table.operation),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
           <Button
-            type="text"
-            icon={<EditOutlined />}
-            size="small"
-            onClick={() => handleEditModel(record)}
-          />
-          <Popconfirm
-            title={t($ => $.model.confirmDelete)}
-            description={t($ => $.model.confirmDeleteDescription, { nickname: record.nickname })}
-            onConfirm={() => handleDeleteModel(record)}
-            okText={t($ => $.common.confirm)}
-            cancelText={t($ => $.common.cancel)}
+            variant="ghost"
+            size="icon"
+            onClick={() => handleEditModel(row.original)}
           >
-            <Button
-              type="text"
-              icon={<DeleteOutlined />}
-              size="small"
-              danger
-            />
-          </Popconfirm>
-        </Space>
+            <Pencil />
+          </Button>
+          <Popover open={deleteConfirmOpen && modelToDelete?.id === row.original.id} onOpenChange={setDeleteConfirmOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setModelToDelete(row.original)}
+              >
+                <Trash2 />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="start">
+              <div className="space-y-3">
+                <p className="font-medium">{t($ => $.model.confirmDelete)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t($ => $.model.confirmDeleteDescription, { nickname: row.original.nickname })}
+                </p>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setDeleteConfirmOpen(false)}>
+                    {t($ => $.common.cancel)}
+                  </Button>
+                  <Button variant="destructive" size="sm" className="text-white" onClick={() => handleDeleteModel(row.original)}>
+                    {t($ => $.common.confirm)}
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       ),
     },
-  ], [handleEditModel, handleDeleteModel, tableColumns, t])
+  ], [handleEditModel, handleDeleteModel, tableColumns, t, deleteConfirmOpen, modelToDelete])
 
   return (
     <div className="p-6">
       {/* 显示初始化错误 */}
       {initializationError && (
-        <Alert
-          title={t($ => $.model.dataLoadFailed)}
-          description={initializationError}
-          type="error"
-          showIcon
-          closable
-          className="mb-4"
-        />
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>{t($ => $.model.dataLoadFailed)}</AlertTitle>
+          <AlertDescription>{initializationError}</AlertDescription>
+        </Alert>
       )}
 
       {/* 显示操作错误 */}
       {error && (
-        <Alert
-          title={t($ => $.model.operationFailed)}
-          description={error}
-          type="error"
-          showIcon
-          closable
-          className="mb-4"
-        />
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>{t($ => $.model.operationFailed)}</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* 表格头部：添加按钮和过滤器 */}
       <div className="flex items-center justify-between mt-2 mb-4">
-        <Space>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAddModel}
-          >
-            {t($ => $.model.addModel)}
-          </Button>
-        </Space>
+        <Button
+          onClick={handleAddModel}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          {t($ => $.model.addModel)}
+        </Button>
         <FilterInput
           value={filterText}
           onChange={setFilterText}
@@ -143,17 +154,14 @@ const ModelTable: React.FC = () => {
       </div>
 
       {/* 模型数据表格 */}
-      <Table
+      <DataTable
         columns={columns}
-        dataSource={filteredModels}
+        data={filteredModels}
         rowKey="id"
         loading={loading}
-        pagination={false}
-        locale={{
-          emptyText: initializationError
-            ? t($ => $.model.fixErrorReload)
-            : t($ => $.model.noModelData),
-        }}
+        emptyText={initializationError
+          ? t($ => $.model.fixErrorReload)
+          : t($ => $.model.noModelData)}
       />
       <EditModelModal
         modelProviderKey={currentEditingModel?.providerKey}
