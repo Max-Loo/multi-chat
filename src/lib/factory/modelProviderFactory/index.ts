@@ -46,8 +46,6 @@ export interface ModelProvider {
   readonly key: ModelProviderKeyEnum;
   // 大模型服务商显示名称
   readonly name: string;
-  // 大模型服务商logo URL（可选）
-  readonly logoUrl?: string;
   // 官网地址
   readonly officialSite?: string;
   // 请求地址

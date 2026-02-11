@@ -124,7 +124,6 @@ class KimiFetchApi extends BaseFetchApi<KimiStreamResponse> {
 export class KimiProvider extends ConfigurableModelProvider {
   readonly key = ModelProviderKeyEnum.KIMI
   readonly name = '月之暗面'
-  readonly logoUrl = 'https://models.dev/logos/kimi.svg'
   readonly officialSite = 'https://www.moonshot.cn/'
   readonly modelList: ModelDetail[] = [
     { modelKey: 'moonshot-v1-8k', modelName: 'Moonshot v1 8K' },

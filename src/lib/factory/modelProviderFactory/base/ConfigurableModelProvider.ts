@@ -14,7 +14,6 @@ export abstract class ConfigurableModelProvider implements ModelProvider {
   abstract readonly modelList: ModelDetail[]
 
   // 子类可选择性实现的属性
-  abstract readonly logoUrl?: string
   abstract readonly officialSite?: string
 
   // 懒加载的实例缓存

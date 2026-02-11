@@ -94,20 +94,18 @@ export class DynamicModelProvider extends ConfigurableModelProvider {
   readonly key: ModelProviderKeyEnum;
   readonly name: string;
   readonly modelList: Array<{ modelKey: string; modelName: string }>;
-  readonly logoUrl?: string;
   readonly officialSite?: string;
-  
+
   private readonly _apiAddressValue: string;
 
   constructor(remoteProvider: RemoteProviderData) {
     super();
-    
+
     this.key = remoteProvider.providerKey as ModelProviderKeyEnum;
     this.name = remoteProvider.providerName;
     this.modelList = remoteProvider.models;
     this._apiAddressValue = remoteProvider.apiAddress;
-    
-    this.logoUrl = `https://models.dev/logos/${this.key}.svg`;
+
     this.officialSite = undefined;
   }
 

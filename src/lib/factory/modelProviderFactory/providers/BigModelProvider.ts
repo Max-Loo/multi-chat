@@ -124,7 +124,6 @@ class BigModelFetchApi extends BaseFetchApi<BigModelStreamResponse> {
 export class BigModelProvider extends ConfigurableModelProvider {
   readonly key = ModelProviderKeyEnum.BIG_MODEL
   readonly name = '智谱AI'
-  readonly logoUrl = 'https://models.dev/logos/bigmodel.svg'
   readonly officialSite = 'https://bigmodel.cn/'
   readonly modelList: ModelDetail[] = [
     { modelKey: 'glm-4.5', modelName: 'GLM-4.5' },

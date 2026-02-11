@@ -66,11 +66,9 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
               title={provider.name}
               onClick={() => onChange(provider.key)}
             >
-              {provider.logoUrl && (
-                <Avatar className="h-8 w-8">
-                  <img src={provider.logoUrl} alt={provider.name} />
-                </Avatar>
-              )}
+              <Avatar className="h-8 w-8">
+                <img src={`https://models.dev/logos/${provider.key}.svg`} alt={provider.name} />
+              </Avatar>
               <span className="pl-2 text-base">{provider.name}</span>
             </Button>
           )
