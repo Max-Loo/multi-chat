@@ -72,14 +72,15 @@ pnpm tsc
      - Tauri 环境：将密钥存储到系统钥匙串（macOS Keychain / Windows Credential Manager）
      - Web 环境：将密钥加密后存储到 IndexedDB
 
-2. **渲染应用**：应用界面开始显示，Toaster 组件已挂载
+ 2. **渲染应用**：应用界面开始显示，Toaster 组件已挂载
 
-3. **异步初始化**（并行执行，不阻塞渲染）：
-   - 模型数据加载（依赖主密钥进行解密）
-   - 聊天列表加载
-   - 应用语言配置加载
+ 3. **异步初始化**（并行执行，不阻塞渲染）：
+    - 模型供应商初始化（`initializeModelProvider()`）← **新增**：从远程 API 动态获取 Provider 定义
+    - 模型数据加载（依赖主密钥进行解密）
+    - 聊天列表加载
+    - 应用语言配置加载
 
-4. **安全性警告 Toast**（Web 环境首次使用，应用渲染后执行）：
+ 4. **安全性警告 Toast**（Web 环境首次使用，应用渲染后执行）：
    - 检查是否需要显示安全性警告（`handleSecurityWarning()`）
    - Web 环境首次使用时显示 shadcn/ui Toast，提示用户 Web 版本安全级别低于桌面版
    - Toast 设置为永久显示（`duration: Infinity`），用户必须点击"I Understand"确认
@@ -87,8 +88,85 @@ pnpm tsc
 
 **重要**:
 - 主密钥初始化必须在模型数据加载之前完成，否则无法解密 API 密钥
+- 模型供应商初始化不依赖主密钥（获取的是公开的 Provider 定义，不包含敏感信息）
 - 安全性警告 Toast 在应用渲染后显示，使用友好的 Toast UI 而非阻断式弹窗
 - Toast 永久显示直到用户确认，兼顾用户体验和安全提示效果
+
+### 远程模型数据获取
+
+应用支持从 `https://models.dev/api.json` API 动态获取模型供应商数据，替代原有的硬编码方式。
+
+**架构设计**：
+
+```
+models.dev API (远程源)
+    ↓ fetch()
+远程数据获取层 (src/services/modelRemoteService.ts)
+    ↓ filter(ALLOWED_MODEL_PROVIDERS)
+供应商过滤层 (src/utils/constants.ts)
+    ↓ registerDynamicProviders()
+动态注册层 (src/lib/factory/modelProviderFactory/registerDynamicProviders.ts)
+    ↓ initializeModels()
+模型初始化层 (src/store/slices/modelSlice.ts)
+    ↓ Redux store
+应用数据层
+```
+
+**关键模块**：
+
+1. **远程数据获取服务**（`src/services/modelRemoteService.ts`）：
+   - 从 models.dev API 获取最新的模型供应商定义
+   - 实现超时控制（默认 5 秒）
+   - 实现重试机制（默认最多 2 次，使用指数退避算法）
+   - 错误分类和处理（超时、服务器错误、网络错误等）
+   - 缓存管理（保存完整 API 响应到 `remote-cache.json`）
+
+2. **动态 Provider 注册**（`src/lib/factory/modelProviderFactory/registerDynamicProviders.ts`）：
+   - 根据远程数据动态创建 `DynamicModelProvider` 实例
+   - 将 Provider 注册到工厂中
+   - 替代原有的硬编码注册逻辑（`ProviderRegistry.ts`）
+
+3. **Redux 状态管理**（`src/store/slices/modelProviderSlice.ts`）：
+   - `initializeModelProvider` Thunk：应用启动时调用
+   - `refreshModelProvider` Thunk：设置页面手动刷新时调用
+   - 管理加载状态、错误信息和最后更新时间
+
+4. **网络请求配置**（`src/utils/constants.ts`）：
+   - `NETWORK_CONFIG`：网络请求配置常量（超时时间、重试次数、API 端点等）
+   - `CACHE_CONFIG`：缓存配置常量（过期时间、版本、最大大小等）
+   - `ALLOWED_MODEL_PROVIDERS`：允许的供应商白名单（moonshotai、deepseek、bigmodel）
+
+**供应商过滤**：
+
+- 使用白名单模式过滤 models.dev API 响应
+- 只保留白名单中定义的供应商
+- 白名单在 `src/utils/constants.ts` 的 `ALLOWED_MODEL_PROVIDERS` 中维护
+
+**缓存策略**：
+
+- 使用独立的 Store 文件（`remote-cache.json`）存储缓存
+- 缓存包含完整的 models.dev API 响应（未过滤）
+- 每次成功从远程获取数据后更新缓存
+- 网络请求失败时降级到缓存
+- 缓存加载时根据白名单动态过滤数据
+
+**降级策略**：
+
+1. 首选：从远程 API 获取最新数据
+2. 备选：使用本地缓存数据
+3. 终极：显示"无可用的模型供应商"全屏错误提示
+
+**UI 集成**：
+
+- 设置页面提供"刷新模型供应商"按钮
+- 显示加载状态、错误提示和最后更新时间
+- 支持取消请求（组件卸载时）
+
+**跨平台兼容**：
+
+- 使用 `@/utils/tauriCompat/http.ts` 的 `fetch` 函数发起网络请求
+- 使用 `@/utils/tauriCompat/store.ts` 的 `createLazyStore` 创建缓存 Store
+- 自动适配 Tauri 和 Web 环境
 
 ### 跨平台兼容性
 

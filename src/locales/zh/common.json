@@ -10,5 +10,9 @@
   "warning": "警告",
   "goBack": "返回",
   "show": "显示",
-  "hide": "隐藏"
+  "hide": "隐藏",
+  "noProvidersAvailable": "无可用的模型供应商",
+  "noProvidersDescription": "应用无法连接到模型数据服务器，且本地无可用缓存。",
+  "noProvidersHint": "请检查网络连接后点击下方按钮重试。",
+  "reload": "重新加载"
 }

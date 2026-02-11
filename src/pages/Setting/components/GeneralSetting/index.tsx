@@ -1,5 +1,6 @@
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import LanguageSetting from "./components/LanguageSetting"
+import ModelProviderSetting from "./components/ModelProviderSetting"
 import { useRef, useEffect } from "react"
 
 const GeneralSetting: React.FC = () => {
@@ -37,6 +38,13 @@ const GeneralSetting: React.FC = () => {
       flex flex-col justify-start items-center
     `}>
       <LanguageSetting />
+    </div>
+
+    <div className={`
+      w-full p-3 my-4 bg-white rounded-xl
+      flex flex-col justify-start items-center
+    `}>
+      <ModelProviderSetting />
     </div>
   </div>
 }

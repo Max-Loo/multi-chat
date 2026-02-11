@@ -10,5 +10,9 @@
   "warning": "Warning",
   "goBack": "Go back",
   "show": "Show",
-  "hide": "Hide"
+  "hide": "Hide",
+  "noProvidersAvailable": "No Model Providers Available",
+  "noProvidersDescription": "Unable to connect to model data server and no local cache available.",
+  "noProvidersHint": "Please check your network connection and try again.",
+  "reload": "Reload"
 }

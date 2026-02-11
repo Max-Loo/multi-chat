@@ -66,11 +66,17 @@ export default defineConfig(async () => ({
         secure: true,
         rewrite: (path) => path.replace(/^\/kimi/, ''),
       },
-      '/bigmodel': {
+      '/zhipuai-coding-plan': {
+        target: 'https://open.bigmodel.cn/api/coding/paas/v4',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/zhipuai-coding-plan/, ''),
+      },
+      '/zhipuai': {
         target: 'https://open.bigmodel.cn/api/paas/v4',
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path.replace(/^\/bigmodel/, ''),
+        rewrite: (path) => path.replace(/^\/zhipuai/, ''),
       },
     },
   },

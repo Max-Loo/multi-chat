@@ -6,8 +6,10 @@ import { BigModelProvider } from "./providers/BigModelProvider"
 
 /**
  * @description 批量注册所有模型提供商
- * 这是主要的注册入口点
- * @param providers 要注册的提供商列表，默认为所有内置提供商
+ * ⚠️ 已废弃：此函数不再被使用
+ * 应用启动时现在使用 `initializeModelProvider` Redux Thunk 从远程 API 动态注册 Provider
+ * 保留此函数仅用于向后兼容或紧急回滚
+ * @deprecated 使用 `initializeModelProvider` 代替
  */
 export function registerAllProviders(): void {
   const allProviders = [
@@ -20,5 +22,5 @@ export function registerAllProviders(): void {
     registerProviderFactory(provider.key, new GenericFactory(provider))
   })
 
-  console.log(`Successfully registered ${allProviders.length} model providers`)
+  console.log(`Successfully registered ${allProviders.length} model providers (fallback mode)`)
 }

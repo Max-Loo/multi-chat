@@ -3,6 +3,7 @@ import modelReducer, { ModelSliceState } from '@/store/slices/modelSlice';
 import chatReducer, { ChatSliceState } from '@/store/slices/chatSlices'
 import chatPageReducer, { ChatPageSliceState } from '@/store/slices/chatPageSlices'
 import appConfigReducer, { AppConfigSliceState } from '@/store/slices/appConfigSlices'
+import modelProviderReducer, { ModelProviderSliceState } from '@/store/slices/modelProviderSlice';
 import { saveChatListMiddleware } from './middleware/chatMiddleware';
 import { saveModelsMiddleware } from './middleware/modelMiddleware';
 import { saveDefaultAppLanguage } from './middleware/appConfigMiddleware';
@@ -15,6 +16,8 @@ export const store = configureStore({
     chat: chatReducer,
     chatPage: chatPageReducer,
     appConfig: appConfigReducer,
+    // 模型供应商状态
+    modelProvider: modelProviderReducer,
   },
   middleware: (getDefaultMiddleware) => {
     return getDefaultMiddleware()
@@ -31,6 +34,7 @@ export type RootState = {
   chat: ChatSliceState;
   chatPage: ChatPageSliceState;
   appConfig: AppConfigSliceState;
+  modelProvider: ModelProviderSliceState;
 };
 
 // 导出 AppDispatch 类型

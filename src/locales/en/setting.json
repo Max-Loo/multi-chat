@@ -1,3 +1,20 @@
 {
-  "generalSetting": "General Setting"
+  "generalSetting": "General Setting",
+  "modelProvider": {
+    "title": "Model Provider",
+    "description": "Fetch the latest model provider information from remote server",
+    "refreshButton": "Refresh Model Provider",
+    "refreshing": "Refreshing...",
+    "lastUpdate": "Last Update",
+    "refreshSuccess": "Model provider data updated",
+    "refreshFailed": "Refresh Failed",
+    "errors": {
+      "network_timeout": "Network request timeout, please check your connection",
+      "server_error": "Server error, please try again later",
+      "parse_error": "Failed to parse data",
+      "no_cache": "No available cache data",
+      "network_error": "Network connection failed",
+      "aborted": "Request aborted"
+    }
+  }
 }
