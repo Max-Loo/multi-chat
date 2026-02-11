@@ -40,6 +40,18 @@ pnpm lint
 
 # 类型检查
 pnpm tsc
+
+# 运行测试（监听模式）
+pnpm test
+
+# 运行单次测试
+pnpm test:run
+
+# 启动测试 UI 界面
+pnpm test:ui
+
+# 生成测试覆盖率报告
+pnpm test:coverage
 ```
 
 ## 关键技术细节

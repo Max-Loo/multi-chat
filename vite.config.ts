@@ -31,6 +31,24 @@ export default defineConfig(async () => ({
     },
   },
 
+  // Vitest 测试配置
+  test: {
+    environment: 'happy-dom',
+    setupFiles: ['./src/__test__/setup.ts'],
+    include: ['src/__test__/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['node_modules', 'dist'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/__test__/**',
+        'src/__mock__/**',
+        'src/main.tsx',
+      ],
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

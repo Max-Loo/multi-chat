@@ -94,7 +94,6 @@ export const encryptField = async (
     // 添加 "enc:" 前缀
     return `enc:${base64}`;
   } catch (error) {
-    console.error("加密失败:", error);
     throw new Error("加密敏感数据失败，请检查主密钥是否有效", { cause: error });
   }
 };
@@ -160,9 +159,14 @@ export const decryptField = async (
     const decoder = new TextDecoder();
     return decoder.decode(plaintextData);
   } catch (error) {
-    console.error("解密失败:", error);
+    // 保留原始验证错误的详细信息
+    if (error instanceof Error && error.message.startsWith("无效的加密数据格式")) {
+      throw error;
+    }
+
+    // 系统错误包装为用户友好消息
     throw new Error(
-      "解密敏感数据失败，可能是主密钥已更改或数据已损坏，需要重新配置 API 密钥",
+      "解密敏感数据失败，可能是主密钥已更改或数据已损坏",
       { cause: error }
     );
   }
