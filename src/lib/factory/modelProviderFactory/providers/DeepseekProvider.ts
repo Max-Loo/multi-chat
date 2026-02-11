@@ -143,7 +143,7 @@ class DeepseekFetchApi extends BaseFetchApi<DeepseekStreamResponse> {
 export class DeepseekProvider extends ConfigurableModelProvider {
   readonly key = ModelProviderKeyEnum.DEEPSEEK
   readonly name = '深度求索'
-  readonly logoUrl = 'https://deepseek.com/favicon.ico'
+  readonly logoUrl = 'https://models.dev/logos/deepseek.svg'
   readonly officialSite = 'https://www.deepseek.com/'
   readonly modelList: ModelDetail[] = [
     { modelKey: 'deepseek-chat', modelName: 'DeepSeek Chat' },

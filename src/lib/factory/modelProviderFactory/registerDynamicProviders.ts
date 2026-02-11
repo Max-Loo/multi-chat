@@ -107,7 +107,7 @@ export class DynamicModelProvider extends ConfigurableModelProvider {
     this.modelList = remoteProvider.models;
     this._apiAddressValue = remoteProvider.apiAddress;
     
-    this.logoUrl = undefined;
+    this.logoUrl = `https://models.dev/logos/${this.key}.svg`;
     this.officialSite = undefined;
   }
 
