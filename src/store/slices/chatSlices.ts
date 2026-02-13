@@ -3,9 +3,9 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { loadChatsFromJson } from "../storage";
 import { RootState } from "..";
 import { Model } from "@/types/model";
-import { getProviderFactory } from "@/lib/factory/modelProviderFactory";
+import { streamChatCompletion } from "@/services/chatService";
 import { isNil, isNotNil } from "es-toolkit";
-import { v4 as uuidV4 } from 'uuid'
+import { v4 as uuidv4 } from 'uuid'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
 
 export interface ChatSliceState {
@@ -79,7 +79,7 @@ const sendMessage = createAsyncThunk<
       chat,
       model,
       message: {
-        id: USER_MESSAGE_ID_PREFIX + uuidV4(),
+        id: USER_MESSAGE_ID_PREFIX + uuidv4(),
         role: ChatRoleEnum.USER,
         content: message,
         timestamp: Date.now() / 1000,
@@ -88,12 +88,8 @@ const sendMessage = createAsyncThunk<
       },
     }))
 
-    // 获取请求方法
-    const {
-      fetchApi,
-    } = getProviderFactory(model.providerKey).getModelProvider()
-
-    const fetchResponse = fetchApi.fetch(
+    // 使用 ChatService 发起流式聊天请求
+    const fetchResponse = streamChatCompletion(
       {
         model,
         historyList,

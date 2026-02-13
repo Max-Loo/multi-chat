@@ -43,14 +43,19 @@ interface ModelsDevApiModelDetail {
 
 /**
  * 内部数据格式：远程供应商数据
+ * @remarks
+ * 参数命名已与 models.dev API 对齐：
+ * - `api`：API 基础地址（原 `apiAddress`）
+ * - `providerKey`：供应商唯一标识符
+ * - `providerName`：供应商名称
  */
 export interface RemoteProviderData {
   /** 供应商唯一标识符 */
   providerKey: string;
   /** 供应商名称 */
   providerName: string;
-  /** API 基础地址 */
-  apiAddress: string;
+  /** API 基础地址（对应 models.dev 的 `api`）*/
+  api: string;
   /** 支持的模型列表 */
   models: ModelDetail[];
 }
@@ -243,7 +248,7 @@ const adaptApiResponseToInternalFormat = (
       return {
         providerKey,
         providerName: providerData.name,
-        apiAddress: providerData.api,
+        api: providerData.api,
         models: modelList,
       };
     });

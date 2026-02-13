@@ -124,7 +124,7 @@ models.dev API (远程源)
 2. **动态 Provider 注册**（`src/lib/factory/modelProviderFactory/registerDynamicProviders.ts`）：
    - 根据远程数据动态创建 `DynamicModelProvider` 实例
    - 将 Provider 注册到工厂中
-   - 替代原有的硬编码注册逻辑（`ProviderRegistry.ts`）
+   - 简化架构，移除硬编码依赖
 
 3. **Redux 状态管理**（`src/store/slices/modelProviderSlice.ts`）：
    - `initializeModelProvider` Thunk：应用启动时调用
@@ -166,7 +166,87 @@ models.dev API (远程源)
 
 - 使用 `@/utils/tauriCompat/http.ts` 的 `fetch` 函数发起网络请求
 - 使用 `@/utils/tauriCompat/store.ts` 的 `createLazyStore` 创建缓存 Store
-- 自动适配 Tauri 和 Web 环境
+ - 自动适配 Tauri 和 Web 环境
+
+### URL 标准化模块
+
+应用使用独立的 URL 标准化模块（`src/services/urlNormalizer.ts`）处理不同供应商的 API URL 规范化规则。
+
+**设计模式**：策略模式
+
+**核心功能**：
+
+1. **URL 标准化**（`normalize()`）
+   - 根据供应商的特定规则标准化 URL
+   - 自动添加或移除必要的路径前缀
+   - 处理自定义 URL 标记（`#` 结尾）
+
+2. **策略实现**
+   - `DefaultNormalizationStrategy`：大多数 OpenAI 兼容供应商
+   - `KimiNormalizationStrategy`：Kimi 需要特殊的 `/v1` 路径处理
+
+**使用示例**：
+
+```typescript
+import { UrlNormalizer } from '@/services/urlNormalizer';
+
+// 标准化 Kimi 的 URL
+const normalizedUrl = UrlNormalizer.normalize(
+  'https://api.moonshot.cn',
+  ModelProviderKeyEnum.KIMI
+);
+// 结果: 'https://api.moonshot.cn/v1'
+
+// 获取表单提示文案
+const description = UrlNormalizer.getDescription(ModelProviderKeyEnum.KIMI);
+// 结果: '/ 结尾会忽略 v1，# 结尾表示自定义'
+```
+
+### 聊天服务层
+
+应用使用独立的聊天服务层（`src/services/chatService.ts`）统一处理所有供应商的聊天请求。
+
+**架构设计**：
+
+```
+Redux Thunk → ChatService → OpenAI SDK → 供应商 API
+```
+
+**核心功能**：
+
+1. **客户端创建**（`createClient()`）
+   - 统一使用 OpenAI SDK
+   - 支持自定义 baseURL 和 API Key
+   - 支持跨平台（Tauri + Web）
+   - 开发环境自动使用 Vite 代理
+   - 自动应用 URL 标准化规则
+
+2. **流式请求**（`streamChatCompletion()`）
+   - 使用 OpenAI SDK 的 `chat.completions.create()`
+   - 支持 AbortSignal 中断
+   - 自动处理重试和错误
+   - 自动合并流式响应块
+
+3. **响应解析**（`parseStreamResponse()`）
+   - 标准化为 `StandardMessage` 格式
+   - 支持多种供应商的响应差异
+   - 提取 token 使用情况（支持不同的 cached_tokens 结构）
+
+**使用示例**：
+
+```typescript
+import { ChatService } from '@/services/chatService';
+
+// 发起流式聊天请求
+const response = ChatService.streamChatCompletion(
+  { model, historyList, message },
+  { signal },
+);
+
+for await (const message of response) {
+  console.log(message.content);
+}
+```
 
 ### 跨平台兼容性
 

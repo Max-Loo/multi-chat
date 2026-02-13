@@ -118,19 +118,18 @@
 
 系统 MUST 将 models.dev API 的响应格式（键值对对象）转换为系统内部的数组格式。
 
-系统 MUST 提取 API 响应中的关键字段：`providerKey`、`providerName`、`apiAddress`、`models`。
+系统 MUST 提取 API 响应中的关键字段：`providerKey`、`providerName`、`api`、`models`。
 
 系统 MUST 将 models 对象（键值对）转换为数组，提取 `modelKey` 和 `modelName` 字段。
 
 系统 MUST 使用适配器函数 `adaptApiResponseToInternalFormat` 封装转换逻辑，确保可测试性和可维护性。
 
 #### Scenario: 成功转换 API 响应为内部格式
-
 - **WHEN** 从 models.dev API 获取到供应商数据
 - **AND** API 响应格式为 `{ [providerKey: string]: ModelsDevApiProvider }`
 - **THEN** 系统调用 `adaptApiResponseToInternalFormat` 进行转换
 - **AND** 转换后的格式为 `RemoteProviderData[]` 数组
-- **AND** 每个元素包含 `providerKey`、`providerName`、`apiAddress`、`models` 字段
+- **AND** 每个元素包含 `providerKey`、`providerName`、`api`、`models` 字段
 - **AND** `models` 字段为 `{ modelKey, modelName }[]` 数组格式
 
 #### Scenario: API 响应缺失字段时使用默认值
@@ -154,20 +153,39 @@
 
 系统 MUST 替代原有的硬编码注册逻辑（`ProviderRegistry.ts` 中的 `registerAllProviders`）。
 
-#### Scenario: 成功动态注册多个供应商
+系统 MUST 在 `DynamicModelProvider` 构造函数中设置：
+- `key`：从 `remoteProvider.providerKey` 转换为 `ModelProviderKeyEnum`
+- `name`：从 `remoteProvider.providerName` 获取
+- `modelList`：从 `remoteProvider.models` 获取
+- `_apiValue`：从 `remoteProvider.api` 获取（使用对齐后的参数名）
 
+系统 MUST NOT 在 `DynamicModelProvider` 中创建 `DynamicFetchApi` 实例。
+
+系统 MUST NOT 在 `DynamicModelProvider` 中实现 `getFetchApi()` 方法。
+
+#### Scenario: 成功动态注册多个供应商（简化版）
 - **WHEN** 从远程获取到 4 个供应商的数据（moonshotai、deepseek、zhipuai、zhipuai-coding-plan）
 - **THEN** 系统调用 `registerDynamicProviders` 遍历数据
 - **AND** 为每个供应商创建 `DynamicModelProvider` 实例
+  - 实例的 `key` 设置为 `ModelProviderKeyEnum.MOONSHOTAI`（示例）
+  - 实例的 `name` 设置为供应商名称
+  - 实例的 `modelList` 设置为模型列表
+  - 实例的 `_apiValue` 设置为 API 地址
 - **AND** 将实例注册到工厂中，键为 `providerKey`
 - **AND** 注册完成后，系统可以通过工厂创建这些供应商的实例
 
-#### Scenario: 动态注册后用户配置的模型可以正常加载
+#### Scenario: DynamicModelProvider 不包含聊天请求逻辑
+- **WHEN** `DynamicModelProvider` 实例被创建
+- **THEN** 实例不包含 `DynamicFetchApi` 实例
+- **AND** 实例不包含 `getFetchApi()` 方法
+- **AND** 实例不包含 `fetch()` 方法
+- **AND** 实例只负责元数据管理（供应商名称、模型列表、API 地址）
 
+#### Scenario: 动态注册后用户配置的模型可以正常加载
 - **WHEN** 远程数据获取并动态注册 Provider 完成
 - **AND** 用户的 `models.json` 中配置了 `moonshotai` 供应商的模型
 - **THEN** 执行 `initializeModels` 时可以正常加载该模型
-- **AND** 使用动态注册的 Provider 实例进行 API 调用
+- **AND** 使用 `ChatService` 进行 API 调用（聊天请求）
 
 ---
 

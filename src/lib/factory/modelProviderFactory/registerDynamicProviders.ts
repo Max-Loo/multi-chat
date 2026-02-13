@@ -96,7 +96,7 @@ export class DynamicModelProvider extends ConfigurableModelProvider {
   readonly modelList: Array<{ modelKey: string; modelName: string }>;
   readonly officialSite?: string;
 
-  private readonly _apiAddressValue: string;
+  private readonly _apiValue: string;
 
   constructor(remoteProvider: RemoteProviderData) {
     super();
@@ -104,7 +104,7 @@ export class DynamicModelProvider extends ConfigurableModelProvider {
     this.key = remoteProvider.providerKey as ModelProviderKeyEnum;
     this.name = remoteProvider.providerName;
     this.modelList = remoteProvider.models;
-    this._apiAddressValue = remoteProvider.apiAddress;
+    this._apiValue = remoteProvider.api;
 
     this.officialSite = undefined;
   }
@@ -113,7 +113,7 @@ export class DynamicModelProvider extends ConfigurableModelProvider {
    * 创建 API 地址处理器
    */
   protected createApiAddress() {
-    return new DynamicApiAddress(this._apiAddressValue);
+    return new DynamicApiAddress(this._apiValue);
   }
 
   /**
