@@ -40,6 +40,9 @@ pnpm lint
 
 # 类型检查
 pnpm tsc
+
+# 分析未使用代码
+pnpm analyze:unused
 ```
 
 ## 关键技术细节
@@ -59,6 +62,10 @@ pnpm tsc
 - **加密存储**:
   - 主密钥：Web Crypto API 生成 + tauri-plugin-keyring 存储
   - 数据加密：AES-256-GCM 字段级加密
+- **代码分析**: 
+  - 使用 `knip` 检测未使用代码（文件、依赖、导出、类型）
+  - 配置: `knip.json`
+  - 命令: `pnpm analyze:unused`
 
 ### 应用启动初始化流程
 

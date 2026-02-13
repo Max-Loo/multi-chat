@@ -218,6 +218,26 @@ multi-chat/
 
 ## 开发说明
 
+### 代码质量
+
+项目使用以下工具保证代码质量：
+
+- **oxlint**: 代码静态分析工具
+  ```bash
+  pnpm lint
+  ```
+
+- **knip**: 检测未使用的代码、依赖和导出
+  ```bash
+  pnpm analyze:unused
+  ```
+  此命令会扫描项目并报告：
+  - 未使用的文件
+  - 未使用的依赖（dependencies 和 devDependencies）
+  - 未使用的导出（函数、变量、类型等）
+  
+  配置位于 `knip.json`，可以根据需要调整入口点、忽略规则等。
+
 ### 添加新的模型服务商
 
 1. 在 `src/utils/enums.ts` 中添加新的服务商枚举
@@ -279,16 +299,6 @@ multi-chat/
 1. 检查主密钥是否正确初始化
 2. 尝试重新启动应用
 3. 如果问题持续，可能是 Web Crypto API 不支持，请使用现代浏览器（Chrome 90+、Firefox 88+、Safari 14.1+）
-
-## 贡献指南
-
-欢迎贡献代码、报告问题或提出建议！
-
-1. Fork 本仓库
-2. 创建特性分支：`git checkout -b feature/amazing-feature`
-3. 提交更改：`git commit -m 'Add some amazing feature'`
-4. 推送到分支：`git push origin feature/amazing-feature`
-5. 提交 Pull Request
 
 ## 许可证
 

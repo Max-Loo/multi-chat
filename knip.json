@@ -1,0 +1,44 @@
+{
+  // Knip 配置文件 - 用于检测项目中未使用的代码
+  // 文档: https://knip.dev/
+  // 运行命令: pnpm analyze:unused
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  
+  // 入口文件 - 应用程序的入口点
+  // knip 将从这些文件开始分析依赖关系
+  "entry": [
+    "src/main.tsx"
+  ],
+  
+  // 项目文件匹配模式 - 定义哪些文件应该被分析
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts"
+  ],
+  
+  // 忽略的文件和目录 - 这些文件不会被分析
+  "ignore": [
+    "src/**/*.test.{ts,tsx}",     // 测试文件
+    "src/**/*.spec.{ts,tsx}",     // 规范文件
+    "src/**/__tests__/**",        // 测试目录
+    "src/**/__mocks__/**",        // Mock 目录
+    "src/types/**",               // 类型定义目录
+    "src/lib/**",                 // 库文件目录
+    "dist/**",                    // 构建输出
+    "node_modules/**",            // 依赖目录
+    "src-tauri/**"                // Tauri Rust 后端代码
+  ],
+  
+  // 忽略的依赖 - 这些依赖不会被标记为未使用
+  // 通常包括：类型定义、工具依赖、运行时必需的依赖
+  "ignoreDependencies": [
+    "@types/*",                   // TypeScript 类型定义
+    "babel-plugin-react-compiler", // React 编译器插件
+    "tw-animate-css",             // Tailwind CSS 动画（通过 CSS 导入使用）
+    "autoprefixer",               // CSS 后处理工具
+    "globals",                    // JavaScript 全局变量类型
+    "lint-staged",                // Git 钩子工具（husky 使用）
+    "tailwindcss-animate",        // Tailwind CSS 动画插件
+    "i18next-cli"                 // i18n 类型生成工具
+  ]
+}
