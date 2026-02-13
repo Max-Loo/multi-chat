@@ -9,4 +9,4 @@ vi.mock('@/utils/tauriCompat/shell');
 vi.mock('@/utils/tauriCompat/os');
 vi.mock('@/utils/tauriCompat/http');
 vi.mock('@/utils/tauriCompat/store');
-vi.mock('@/utils/tauriCompat/keyring');
+// 注意：keyring 模块在 keyring.test.ts 中需要真实实现，不在这里 mock
