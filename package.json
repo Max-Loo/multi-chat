@@ -83,6 +83,7 @@
     "@vitest/ui": "^4.0.18",
     "autoprefixer": "^10.4.21",
     "babel-plugin-react-compiler": "1.0.0",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^16.4.0",
     "happy-dom": "^20.6.1",
     "husky": "^9.1.7",
