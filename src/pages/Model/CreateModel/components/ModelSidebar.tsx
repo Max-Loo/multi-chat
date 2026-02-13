@@ -6,8 +6,9 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar } from "@/components/ui/avatar"
 import { useState } from "react"
-import { getProviderFactoryMap } from "@/lib/factory/modelProviderFactory"
+import { useSelector } from "react-redux"
 import { useTranslation } from "react-i18next"
+import { RootState } from "@/store"
 
 interface ModelSidebarProps {
   // 当前选中的大模型
@@ -22,14 +23,17 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
   const { t } = useTranslation()
   const navigate = useNavigate()
 
+  // 从 Redux store 获取所有供应商
+  const providers = useSelector((state: RootState) => state.modelProvider.providers)
+
   // 本地状态：过滤文本
   const [filterText, setFilterText] = useState<string>('')
   const {
     filteredList: filteredProviders,
   } = useDebouncedFilter(
     filterText,
-    [...getProviderFactoryMap().values()].map((modelProviderFactory) => modelProviderFactory.getModelProvider()),
-    (provider) => provider.name.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
+    providers,
+    (provider) => provider.providerName.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
   )
 
   return (
@@ -58,18 +62,18 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
         {filteredProviders.map(provider => {
           return (
             <Button
-              key={provider.key}
+              key={provider.providerKey}
               variant="ghost"
               className={`w-full py-5 flex justify-start rounded-none ${
-                provider.key === selectedModelKey && 'bg-gray-200'
+                provider.providerKey === selectedModelKey && 'bg-gray-200'
               }`}
-              title={provider.name}
-              onClick={() => onChange(provider.key)}
+              title={provider.providerName}
+              onClick={() => onChange(provider.providerKey as ModelProviderKeyEnum)}
             >
               <Avatar className="h-8 w-8">
-                <img src={`https://models.dev/logos/${provider.key}.svg`} alt={provider.name} />
+                <img src={`https://models.dev/logos/${provider.providerKey}.svg`} alt={provider.providerName} />
               </Avatar>
-              <span className="pl-2 text-base">{provider.name}</span>
+              <span className="pl-2 text-base">{provider.providerName}</span>
             </Button>
           )
         })}

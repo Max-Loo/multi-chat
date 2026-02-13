@@ -4,14 +4,16 @@ import {
   saveCachedProviderData,
   loadCachedProviderData,
   RemoteDataError,
+  type RemoteProviderData,
 } from '@/services/modelRemoteService';
-import { registerDynamicProviders } from '@/lib/factory/modelProviderFactory/registerDynamicProviders';
 import { ALLOWED_MODEL_PROVIDERS } from '@/utils/constants';
 
 /**
  * Model Provider Slice 状态接口
  */
 export interface ModelProviderSliceState {
+  /** 过滤后的供应商数据数组 */
+  providers: RemoteProviderData[];
   /** 加载状态 */
   loading: boolean;
   /** 错误信息 */
@@ -24,6 +26,7 @@ export interface ModelProviderSliceState {
  * 初始状态
  */
 const initialState: ModelProviderSliceState = {
+  providers: [],
   loading: false,
   error: null,
   lastUpdate: null,
@@ -43,18 +46,19 @@ export const initializeModelProvider = createAsyncThunk(
       // 2. 保存完整响应到缓存
       await saveCachedProviderData(fullApiResponse);
 
-      // 3. 使用过滤后的数据动态注册 Provider
-      registerDynamicProviders(filteredData);
-
-      return { lastUpdate: new Date().toISOString() };
+      // 3. 返回过滤后的数据用于存储到 Redux store
+      return {
+        providers: filteredData,
+        lastUpdate: new Date().toISOString(),
+      };
     } catch (error) {
-      // 4. 降级到缓存（加载时过滤）
+      // 5. 降级到缓存（加载时过滤）
       try {
         const cachedData = await loadCachedProviderData(ALLOWED_MODEL_PROVIDERS);
-        registerDynamicProviders(cachedData);
 
-        // 返回错误信息以便在 UI 中显示（但应用仍可用）
+        // 返回错误信息和缓存数据以便在 UI 中显示（但应用仍可用）
         return rejectWithValue({
+          providers: cachedData,
           lastUpdate: null,
           error: error instanceof RemoteDataError ? error.message : '远程数据获取失败，已使用缓存',
         });
@@ -63,6 +67,7 @@ export const initializeModelProvider = createAsyncThunk(
         // 忽略 cacheError 未使用的警告
         void cacheError;
         return rejectWithValue({
+          providers: [],
           lastUpdate: null,
           error: '无法获取模型供应商数据，请检查网络连接',
         });
@@ -88,10 +93,11 @@ export const refreshModelProvider = createAsyncThunk(
       // 2. 更新缓存（保存完整响应）
       await saveCachedProviderData(fullApiResponse);
 
-      // 3. 使用过滤后的数据动态注册 Provider
-      registerDynamicProviders(filteredData);
-
-      return { lastUpdate: new Date().toISOString() };
+      // 3. 返回过滤后的数据用于存储到 Redux store
+      return {
+        providers: filteredData,
+        lastUpdate: new Date().toISOString(),
+      };
     } catch (error) {
       if (error instanceof RemoteDataError) {
         return rejectWithValue({
@@ -128,6 +134,7 @@ const modelProviderSlice = createSlice({
       })
       .addCase(initializeModelProvider.fulfilled, (state, action) => {
         state.loading = false;
+        state.providers = action.payload.providers;
         state.lastUpdate = action.payload.lastUpdate;
         state.error = null;
       })
@@ -136,6 +143,10 @@ const modelProviderSlice = createSlice({
         // 如果有 rejectWithValue 的错误，使用它；否则使用默认错误
         if (action.payload && typeof action.payload === 'object' && 'error' in action.payload) {
           state.error = (action.payload as { error: string }).error;
+          // 如果有缓存数据，也保存到 state
+          if ('providers' in action.payload) {
+            state.providers = (action.payload as { providers: RemoteProviderData[] }).providers;
+          }
         } else {
           state.error = action.error.message || 'Failed to initialize model providers';
         }
@@ -149,6 +160,7 @@ const modelProviderSlice = createSlice({
       })
       .addCase(refreshModelProvider.fulfilled, (state, action) => {
         state.loading = false;
+        state.providers = action.payload.providers;
         state.lastUpdate = action.payload.lastUpdate;
         state.error = null;
       })

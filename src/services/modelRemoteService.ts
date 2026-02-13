@@ -42,10 +42,11 @@ interface ModelsDevApiModelDetail {
 }
 
 /**
- * 内部数据格式：远程供应商数据
+ * 模型供应商数据（公共类型）
  * @remarks
+ * 从 models.dev API 获取并过滤后的供应商数据，存储在 Redux store 中
  * 参数命名已与 models.dev API 对齐：
- * - `api`：API 基础地址（原 `apiAddress`）
+ * - `api`：API 基础地址
  * - `providerKey`：供应商唯一标识符
  * - `providerName`：供应商名称
  */
@@ -61,7 +62,9 @@ export interface RemoteProviderData {
 }
 
 /**
- * 模型详细信息（内部格式）
+ * 模型详细信息（公共类型）
+ * @remarks
+ * 从 models.dev API 获取的模型数据，存储在 RemoteProviderData.models 中
  */
 export interface ModelDetail {
   /** 模型唯一标识符 */

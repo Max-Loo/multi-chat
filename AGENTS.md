@@ -111,10 +111,6 @@ models.dev API (远程源)
 远程数据获取层 (src/services/modelRemoteService.ts)
     ↓ filter(ALLOWED_MODEL_PROVIDERS)
 供应商过滤层 (src/utils/constants.ts)
-    ↓ registerDynamicProviders()
-动态注册层 (src/lib/factory/modelProviderFactory/registerDynamicProviders.ts)
-    ↓ initializeModels()
-模型初始化层 (src/store/slices/modelSlice.ts)
     ↓ Redux store
 应用数据层
 ```
@@ -128,20 +124,18 @@ models.dev API (远程源)
    - 错误分类和处理（超时、服务器错误、网络错误等）
    - 缓存管理（保存完整 API 响应到 `remote-cache.json`）
 
-2. **动态 Provider 注册**（`src/lib/factory/modelProviderFactory/registerDynamicProviders.ts`）：
-   - 根据远程数据动态创建 `DynamicModelProvider` 实例
-   - 将 Provider 注册到工厂中
-   - 简化架构，移除硬编码依赖
-
-3. **Redux 状态管理**（`src/store/slices/modelProviderSlice.ts`）：
+2. **Redux 状态管理**（`src/store/slices/modelProviderSlice.ts`）：
+   - `providers`: `RemoteProviderData[]` - 过滤后的供应商数据数组
+   - `loading`: `boolean` - 加载状态
+   - `error`: `string | null` - 错误信息
+   - `lastUpdate`: `string | null` - 最后更新时间（ISO 8601 格式）
    - `initializeModelProvider` Thunk：应用启动时调用
    - `refreshModelProvider` Thunk：设置页面手动刷新时调用
-   - 管理加载状态、错误信息和最后更新时间
 
-4. **网络请求配置**（`src/utils/constants.ts`）：
+3. **网络请求配置**（`src/utils/constants.ts`）：
    - `NETWORK_CONFIG`：网络请求配置常量（超时时间、重试次数、API 端点等）
    - `CACHE_CONFIG`：缓存配置常量（过期时间、版本、最大大小等）
-   - `ALLOWED_MODEL_PROVIDERS`：允许的供应商白名单（moonshotai、deepseek、bigmodel）
+   - `ALLOWED_MODEL_PROVIDERS`：允许的供应商白名单
 
 **供应商过滤**：
 
@@ -155,7 +149,6 @@ models.dev API (远程源)
 - 缓存包含完整的 models.dev API 响应（未过滤）
 - 每次成功从远程获取数据后更新缓存
 - 网络请求失败时降级到缓存
-- 缓存加载时根据白名单动态过滤数据
 
 **降级策略**：
 
@@ -171,8 +164,8 @@ models.dev API (远程源)
 
 **跨平台兼容**：
 
-- 使用 `@/utils/tauriCompat/http.ts` 的 `fetch` 函数发起网络请求
-- 使用 `@/utils/tauriCompat/store.ts` 的 `createLazyStore` 创建缓存 Store
+- 使用 `@/utils/tauriCompat` 的 fetch 函数发起网络请求
+- 使用 `@/utils/tauriCompat` 的 `createLazyStore` 创建缓存存储
  - 自动适配 Tauri 和 Web 环境
 
 ### URL 标准化模块
