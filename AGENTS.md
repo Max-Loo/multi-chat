@@ -60,6 +60,7 @@ pnpm test:coverage
 - **TypeScript**: 严格模式已启用，ES2020 目标
 - **ESLint**: 配置了 TypeScript、React Hooks 和 React Refresh 规则
 - **React Compiler**: 通过 babel-plugin-react-compiler 启用以进行优化
+- **测试框架**: Vitest（配置位于 `vite.config.ts` 中）
 - **Tauri 插件**:
   - `tauri-plugin-opener`: 文件打开功能
   - `tauri-plugin-keyring`: 主密钥安全存储（系统钥匙串）
