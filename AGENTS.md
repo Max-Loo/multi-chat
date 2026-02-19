@@ -54,6 +54,90 @@ pnpm test:ui
 pnpm test:coverage
 ```
 
+## 测试辅助工具
+
+项目提供统一的测试辅助工具系统，位于 `src/__test__/helpers/` 目录。
+
+### Mock 工厂
+
+提供标准化的 Mock 创建函数，支持 Tauri API、加密、存储等常见模块：
+
+```typescript
+// 导入 Mock 工厂
+import { createTauriMocks, createCryptoMocks, createStorageMocks } from '@/test-helpers';
+
+// 创建 Tauri API Mock
+const mocks = createTauriMocks({ isTauri: false });
+mocks.keyring.getPassword.mockResolvedValue('test-key');
+
+// 重置所有 Mock
+mocks.resetAll();
+```
+
+### 测试数据工厂
+
+提供创建测试数据的工厂函数：
+
+```typescript
+import { createMockModel, createMockModels, createCryptoTestData } from '@/test-helpers';
+
+// 创建单个 Model
+const model = createMockModel({ apiKey: 'custom-key' });
+
+// 批量创建 Model
+const models = createMockModels(5);
+
+// 创建加密测试数据
+const testData = createCryptoTestData({ includeUnicode: true });
+```
+
+### 自定义断言
+
+提供加密、Mock 相关的自定义断言：
+
+```typescript
+// 断言值是加密格式
+expect(value).toBeEncrypted();
+
+// 断言值是有效的主密钥
+expect(key).toBeValidMasterKey();
+```
+
+### 环境隔离
+
+提供测试状态重置和环境隔离功能：
+
+```typescript
+import { resetTestState, useIsolatedTest } from '@/test-helpers';
+
+// 手动重置测试状态
+resetTestState();
+
+// 自动配置隔离钩子
+useIsolatedTest({
+  onBeforeEach: () => { /* 自定义初始化 */ },
+  onAfterEach: () => { /* 自定义清理 */ },
+});
+```
+
+### 性能测试工具
+
+提供执行时间测量和性能断言：
+
+```typescript
+import { measurePerformance, expectDuration } from '@/test-helpers';
+
+// 测量执行时间
+const { result, duration } = await measurePerformance(async () => {
+  return await someAsyncOperation();
+});
+
+// 期望执行时间在阈值内
+await expectDuration(async () => {
+  await someOperation();
+}, 1000); // 1 秒内完成
+```
+
 ## 关键技术细节
 
 - **包管理器**: pnpm
