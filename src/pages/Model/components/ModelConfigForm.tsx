@@ -19,7 +19,6 @@ import { v4 as uuidv4 } from 'uuid'
 import dayjs from "dayjs"
 import { isBoolean } from "es-toolkit"
 import { useTranslation } from "react-i18next"
-import { normalize as normalizeUrl, getDescription as getUrlDescription } from "@/services/urlNormalizer"
 import { RootState } from "@/store"
 
 interface ModelConfigFormProps {
@@ -71,11 +70,11 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
     return {
       nickname: modelParams.nickname || '',
       apiKey: modelParams.apiKey || '',
-      apiAddress: modelParams.apiAddress || normalizeUrl(apiUrl, modelProviderKey),
+      apiAddress: modelParams.apiAddress || apiUrl,
       remark: modelParams.remark || '',
       modelKey: modelParams.modelKey || '',
     }
-  }, [apiUrl, modelProviderKey, modelParams])
+  }, [apiUrl, modelParams])
 
   // 表单验证 schema
   const formSchema = useMemo(() => z.object({
@@ -247,20 +246,15 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
                       field.handleBlur()
                       // 失焦时的特殊逻辑：如果没有输入，重置为默认地址
                       if (!field.state.value) {
-                        field.handleChange(normalizeUrl(apiUrl, modelProviderKey))
+                        field.handleChange(apiUrl)
                       }
                     }}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
                 </FormControl>
                 <FormDescription>
-                  <span className="flex flex-wrap justify-between w-full gap-4">
-                    <span className="max-w-full text-wrap break-all">
-                      {normalizeUrl(field.state.value || apiUrl, modelProviderKey)}
-                    </span>
-                    <span className="ml-auto">
-                      {getUrlDescription(modelProviderKey)}
-                    </span>
+                  <span className="max-w-full text-wrap break-all">
+                    {field.state.value || apiUrl}
                   </span>
                 </FormDescription>
               <FormMessage />
