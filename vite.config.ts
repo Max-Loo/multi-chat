@@ -28,6 +28,25 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@/test-helpers": path.resolve(__dirname, "./src/__test__/helpers"),
+    },
+  },
+
+  // Vitest 测试配置
+  test: {
+    environment: 'happy-dom',
+    setupFiles: ['./src/__test__/setup.ts'],
+    include: ['src/__test__/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['node_modules', 'dist'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/__test__/**',
+        'src/__mock__/**',
+        'src/main.tsx',
+      ],
     },
   },
 

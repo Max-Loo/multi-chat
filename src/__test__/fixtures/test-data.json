@@ -1,0 +1,32 @@
+{
+  "models": [
+    {
+      "id": "test-model-openai",
+      "createdAt": "2024-01-01 00:00:00",
+      "updateAt": "2024-01-01 00:00:00",
+      "providerName": "OpenAI",
+      "providerKey": "openai",
+      "nickname": "GPT-4",
+      "modelName": "gpt-4",
+      "modelKey": "gpt-4",
+      "apiKey": "sk-test-openai-key",
+      "apiAddress": "https://api.openai.com/v1",
+      "isEnable": true
+    },
+    {
+      "id": "test-model-deepseek",
+      "createdAt": "2024-01-01 00:00:00",
+      "updateAt": "2024-01-01 00:00:00",
+      "providerName": "DeepSeek",
+      "providerKey": "deepseek",
+      "nickname": "DeepSeek V3",
+      "modelName": "deepseek-chat",
+      "modelKey": "deepseek-chat",
+      "apiKey": "sk-test-deepseek-key",
+      "apiAddress": "https://api.deepseek.com/v1",
+      "isEnable": true
+    }
+  ],
+  "masterKey": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "encryptedApiKey": "enc:dGVzdC1lbmNyeXB0ZWQta2V5"
+}

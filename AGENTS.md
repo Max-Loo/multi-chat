@@ -43,6 +43,113 @@ pnpm tsc
 
 # 分析未使用代码
 pnpm analyze:unused
+# 运行测试（监听模式）
+pnpm test
+
+# 运行单次测试
+pnpm test:run
+
+# 启动测试 UI 界面
+pnpm test:ui
+
+# 生成测试覆盖率报告
+pnpm test:coverage
+```
+
+## 测试辅助工具
+
+项目提供统一的测试辅助工具系统，位于 `src/__test__/helpers/` 目录。
+
+### Mock 工厂
+
+提供标准化的 Mock 创建函数，支持 Tauri API、加密、存储等常见模块：
+
+```typescript
+// 导入 Mock 工厂
+import {
+  createTauriMocks,
+  createCryptoMocks,
+  createStorageMocks,
+} from "@/test-helpers";
+
+// 创建 Tauri API Mock
+const mocks = createTauriMocks({ isTauri: false });
+mocks.keyring.getPassword.mockResolvedValue("test-key");
+
+// 重置所有 Mock
+mocks.resetAll();
+```
+
+### 测试数据工厂
+
+提供创建测试数据的工厂函数：
+
+```typescript
+import {
+  createMockModel,
+  createMockModels,
+  createCryptoTestData,
+} from "@/test-helpers";
+
+// 创建单个 Model
+const model = createMockModel({ apiKey: "custom-key" });
+
+// 批量创建 Model
+const models = createMockModels(5);
+
+// 创建加密测试数据
+const testData = createCryptoTestData({ includeUnicode: true });
+```
+
+### 自定义断言
+
+提供加密、Mock 相关的自定义断言：
+
+```typescript
+// 断言值是加密格式
+expect(value).toBeEncrypted();
+
+// 断言值是有效的主密钥
+expect(key).toBeValidMasterKey();
+```
+
+### 环境隔离
+
+提供测试状态重置和环境隔离功能：
+
+```typescript
+import { resetTestState, useIsolatedTest } from "@/test-helpers";
+
+// 手动重置测试状态
+resetTestState();
+
+// 自动配置隔离钩子
+useIsolatedTest({
+  onBeforeEach: () => {
+    /* 自定义初始化 */
+  },
+  onAfterEach: () => {
+    /* 自定义清理 */
+  },
+});
+```
+
+### 性能测试工具
+
+提供执行时间测量和性能断言：
+
+```typescript
+import { measurePerformance, expectDuration } from "@/test-helpers";
+
+// 测量执行时间
+const { result, duration } = await measurePerformance(async () => {
+  return await someAsyncOperation();
+});
+
+// 期望执行时间在阈值内
+await expectDuration(async () => {
+  await someOperation();
+}, 1000); // 1 秒内完成
 ```
 
 ## 关键技术细节
@@ -51,6 +158,7 @@ pnpm analyze:unused
 - **TypeScript**: 严格模式已启用，ES2020 目标
 - **ESLint**: 配置了 TypeScript、React Hooks 和 React Refresh 规则
 - **React Compiler**: 通过 babel-plugin-react-compiler 启用以进行优化
+- **测试框架**: Vitest（配置位于 `vite.config.ts` 中）
 - **Tauri 插件**:
   - `tauri-plugin-opener`: 文件打开功能
   - `tauri-plugin-keyring`: 主密钥安全存储（系统钥匙串）
@@ -62,7 +170,7 @@ pnpm analyze:unused
 - **加密存储**:
   - 主密钥：Web Crypto API 生成 + tauri-plugin-keyring 存储
   - 数据加密：AES-256-GCM 字段级加密
-- **代码分析**: 
+- **代码分析**:
   - 使用 `knip` 检测未使用代码（文件、依赖、导出、类型）
   - 配置: `knip.json`
   - 命令: `pnpm analyze:unused`
@@ -79,21 +187,23 @@ pnpm analyze:unused
      - Tauri 环境：将密钥存储到系统钥匙串（macOS Keychain / Windows Credential Manager）
      - Web 环境：将密钥加密后存储到 IndexedDB
 
- 2. **渲染应用**：应用界面开始显示，Toaster 组件已挂载
+2. **渲染应用**：应用界面开始显示，Toaster 组件已挂载
 
- 3. **异步初始化**（并行执行，不阻塞渲染）：
-    - 模型供应商初始化（`initializeModelProvider()`）← **新增**：从远程 API 动态获取 Provider 定义
-    - 模型数据加载（依赖主密钥进行解密）
-    - 聊天列表加载
-    - 应用语言配置加载
+3. **异步初始化**（并行执行，不阻塞渲染）：
+   - 模型供应商初始化（`initializeModelProvider()`）← **新增**：从远程 API 动态获取 Provider 定义
+   - 模型数据加载（依赖主密钥进行解密）
+   - 聊天列表加载
+   - 应用语言配置加载
 
- 4. **安全性警告 Toast**（Web 环境首次使用，应用渲染后执行）：
-   - 检查是否需要显示安全性警告（`handleSecurityWarning()`）
-   - Web 环境首次使用时显示 shadcn/ui Toast，提示用户 Web 版本安全级别低于桌面版
-   - Toast 设置为永久显示（`duration: Infinity`），用户必须点击"I Understand"确认
-   - 用户确认后，将"不再提示"保存到 localStorage
+4. **安全性警告 Toast**（Web 环境首次使用，应用渲染后执行）：
+
+- 检查是否需要显示安全性警告（`handleSecurityWarning()`）
+- Web 环境首次使用时显示 shadcn/ui Toast，提示用户 Web 版本安全级别低于桌面版
+- Toast 设置为永久显示（`duration: Infinity`），用户必须点击"I Understand"确认
+- 用户确认后，将"不再提示"保存到 localStorage
 
 **重要**:
+
 - 主密钥初始化必须在模型数据加载之前完成，否则无法解密 API 密钥
 - 模型供应商初始化不依赖主密钥（获取的是公开的 Provider 定义，不包含敏感信息）
 - 安全性警告 Toast 在应用渲染后显示，使用友好的 Toast UI 而非阻断式弹窗
@@ -166,7 +276,7 @@ models.dev API (远程源)
 
 - 使用 `@/utils/tauriCompat` 的 fetch 函数发起网络请求
 - 使用 `@/utils/tauriCompat` 的 `createLazyStore` 创建缓存存储
- - 自动适配 Tauri 和 Web 环境
+- 自动适配 Tauri 和 Web 环境
 
 ### 聊天服务层
 
@@ -202,7 +312,7 @@ Redux Thunk → ChatService → Vercel AI SDK (ai) → 供应商特定 Provider 
 **使用示例**：
 
 ```typescript
-import { streamChatCompletion } from '@/services/chatService';
+import { streamChatCompletion } from "@/services/chatService";
 
 // 发起流式聊天请求
 const response = streamChatCompletion(
@@ -245,13 +355,21 @@ src/utils/tauriCompat/
 
 ```typescript
 // 导入兼容层 API（使用 @/ 别名）
-import { isTauri, Command, shell, locale, fetch, getFetchFunc, type RequestInfo } from '@/utils/tauriCompat';
+import {
+  isTauri,
+  Command,
+  shell,
+  locale,
+  fetch,
+  getFetchFunc,
+  type RequestInfo,
+} from "@/utils/tauriCompat";
 
 // 环境检测
 if (isTauri()) {
-  console.log('运行在 Tauri 桌面环境');
+  console.log("运行在 Tauri 桌面环境");
 } else {
-  console.log('运行在 Web 浏览器环境');
+  console.log("运行在 Web 浏览器环境");
 }
 
 // 使用 OS API
@@ -259,24 +377,24 @@ const language = await locale();
 console.log(language); // "zh-CN" 或 "en-US" 等
 
 // 使用 Shell API
-const cmd = Command.create('ls', ['-la']);
+const cmd = Command.create("ls", ["-la"]);
 if (cmd.isSupported()) {
   const output = await cmd.execute();
   console.log(output.stdout);
 } else {
-  console.log('Shell 功能在 Web 环境中不可用');
+  console.log("Shell 功能在 Web 环境中不可用");
 }
 
 // 使用 shell.open
-shell.open('https://example.com');
+shell.open("https://example.com");
 
 // 使用 HTTP API（直接调用 fetch）
-const response = await fetch('https://api.example.com/data');
+const response = await fetch("https://api.example.com/data");
 const data = await response.json();
 
 // 使用 HTTP API（获取 fetch 函数实例）
 const fetchFunc = getFetchFunc();
-const response2 = await fetchFunc('https://api.example.com/data');
+const response2 = await fetchFunc("https://api.example.com/data");
 ```
 
 **已实现兼容层**:
@@ -308,36 +426,36 @@ const response2 = await fetchFunc('https://api.example.com/data');
     - `FetchFunc`: fetch 函数类型
     - 其他类型（RequestInit、Response、Headers、Request）：直接使用原生类型定义
 
-   **使用场景示例**：
+    **使用场景示例**：
 
-   ```typescript
-   // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
-   import { fetch } from '@/utils/tauriCompat';
+  ```typescript
+  // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
+  import { fetch } from "@/utils/tauriCompat";
 
-   const response = await fetch('https://api.example.com/data');
-   const data = await response.json();
+  const response = await fetch("https://api.example.com/data");
+  const data = await response.json();
 
-   // 场景 2：使用 getFetchFunc 封装自定义请求方法或注入第三方库
-   import { getFetchFunc } from '@/utils/tauriCompat';
-   import axios from 'axios';
+  // 场景 2：使用 getFetchFunc 封装自定义请求方法或注入第三方库
+  import { getFetchFunc } from "@/utils/tauriCompat";
+  import axios from "axios";
 
-   // 自定义封装
-   class ApiClient {
-     private fetch = getFetchFunc();
+  // 自定义封装
+  class ApiClient {
+    private fetch = getFetchFunc();
 
-     async request(url: string, options?: RequestInit) {
-       const response = await this.fetch(url, options);
-       if (!response.ok) {
-         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-       }
-       return response.json();
-     }
-   }
+    async request(url: string, options?: RequestInit) {
+      const response = await this.fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    }
+  }
 
-   // 注入第三方库（如 Axios）
-   const api = axios.create({ adapter: getFetchFunc() });
-   const response = await api.get('https://api.example.com/data');
-   ```
+  // 注入第三方库（如 Axios）
+  const api = axios.create({ adapter: getFetchFunc() });
+  const response = await api.get("https://api.example.com/data");
+  ```
 
   **环境判断逻辑**：
 
@@ -351,58 +469,56 @@ const response2 = await fetchFunc('https://api.example.com/data');
   ```
 
   **类型说明**：
+  - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
+  - `FetchFunc`: fetch 函数类型
+  - 其他类型（RequestInit、Response、Headers、Request）：直接使用原生类型定义
 
-   - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
-   - `FetchFunc`: fetch 函数类型
-   - 其他类型（RequestInit、Response、Headers、Request）：直接使用原生类型定义
+  **使用场景示例**：
 
-   **使用场景示例**：
+  ```typescript
+  // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
+  import { fetch } from "@/utils/tauriCompat";
 
-   ```typescript
-   // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
-   import { fetch } from '@/utils/tauriCompat';
+  const response = await fetch("https://api.example.com/data");
+  const data = await response.json();
 
-   const response = await fetch('https://api.example.com/data');
-   const data = await response.json();
+  // 场景 2：使用 getFetchFunc 封装自定义请求方法或注入第三方库
+  import { getFetchFunc } from "@/utils/tauriCompat";
+  import axios from "axios";
 
-   // 场景 2：使用 getFetchFunc 封装自定义请求方法或注入第三方库
-   import { getFetchFunc } from '@/utils/tauriCompat';
-   import axios from 'axios';
+  // 自定义封装
+  class ApiClient {
+    private fetch = getFetchFunc();
 
-   // 自定义封装
-   class ApiClient {
-     private fetch = getFetchFunc();
+    async request(url: string, options?: RequestInit) {
+      const response = await this.fetch(url, options);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    }
+  }
 
-     async request(url: string, options?: RequestInit) {
-       const response = await this.fetch(url, options);
-       if (!response.ok) {
-         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-       }
-       return response.json();
-     }
-   }
+  // 注入第三方库（如 Axios）
+  const api = axios.create({ adapter: getFetchFunc() });
+  const response = await api.get("https://api.example.com/data");
+  ```
 
-   // 注入第三方库（如 Axios）
-   const api = axios.create({ adapter: getFetchFunc() });
-   const response = await api.get('https://api.example.com/data');
-   ```
+  **环境判断逻辑**：
 
-   **环境判断逻辑**：
+  ```
+  IF (开发模式: import.meta.env.DEV === true) THEN
+    使用原生 Web fetch
+  ELSE IF (生产 Tauri 平台: window.__TAURI__ 存在) THEN
+    使用 @tauri-apps/plugin-http 的 fetch
+  ELSE (生产 Web 平台)
+    使用原生 Web fetch
+  ```
 
-   ```
-   IF (开发模式: import.meta.env.DEV === true) THEN
-     使用原生 Web fetch
-   ELSE IF (生产 Tauri 平台: window.__TAURI__ 存在) THEN
-     使用 @tauri-apps/plugin-http 的 fetch
-   ELSE (生产 Web 平台)
-     使用原生 Web fetch
-   ```
-
-   **类型说明**：
-
-   - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
-   - 其他类型（RequestInit、Response、Headers、Request）：直接使用全局原生类型定义，避免重复
-   - TypeScript 类型系统会自动推导，确保类型安全
+  **类型说明**：
+  - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
+  - 其他类型（RequestInit、Response、Headers、Request）：直接使用全局原生类型定义，避免重复
+  - TypeScript 类型系统会自动推导，确保类型安全
 
 **HTTP 插件兼容层迁移指南**:
 
@@ -411,18 +527,18 @@ const response2 = await fetchFunc('https://api.example.com/data');
 **迁移前**：
 
 ```typescript
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
-const response = await tauriFetch('https://api.example.com/data');
+const response = await tauriFetch("https://api.example.com/data");
 const data = await response.json();
 ```
 
 **迁移后**：
 
 ```typescript
-import { fetch } from '@/utils/tauriCompat';
+import { fetch } from "@/utils/tauriCompat";
 
-const response = await fetch('https://api.example.com/data');
+const response = await fetch("https://api.example.com/data");
 const data = await response.json();
 ```
 
@@ -430,13 +546,13 @@ const data = await response.json();
 
 ```typescript
 // 迁移前
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
 // 迁移后
-import { fetch, getFetchFunc } from '@/utils/tauriCompat';
+import { fetch, getFetchFunc } from "@/utils/tauriCompat";
 
 // 直接使用 fetch
-const response = await fetch('https://api.example.com/data');
+const response = await fetch("https://api.example.com/data");
 
 // 或使用 getFetchFunc 进行封装
 class ApiClient {
@@ -445,7 +561,7 @@ class ApiClient {
 }
 
 // 或注入第三方库
-import axios from 'axios';
+import axios from "axios";
 const api = axios.create({ adapter: getFetchFunc() });
 ```
 
@@ -481,26 +597,26 @@ const api = axios.create({ adapter: getFetchFunc() });
 
 ```typescript
 // 导入 Store 兼容层
-import { createLazyStore } from '@/utils/tauriCompat';
-import type { StoreCompat } from '@/utils/tauriCompat';
+import { createLazyStore } from "@/utils/tauriCompat";
+import type { StoreCompat } from "@/utils/tauriCompat";
 
 // 创建 Store 实例
-const store = createLazyStore('models.json');
+const store = createLazyStore("models.json");
 
 // 初始化 Store
 await store.init();
 
 // 存储数据
-await store.set('models', modelList);
+await store.set("models", modelList);
 
 // 保存更改
 await store.save();
 
 // 读取数据
-const models = await store.get<Model[]>('models');
+const models = await store.get<Model[]>("models");
 
 // 删除数据
-await store.delete('models');
+await store.delete("models");
 
 // 获取所有键
 const keys = await store.keys();
@@ -508,8 +624,8 @@ const keys = await store.keys();
 // 检查功能是否可用
 if (store.isSupported()) {
   // 使用 Store 功能
-   }
-   ```
+}
+```
 
 **Web 端功能差异**:
 
@@ -588,6 +704,7 @@ if (store.isSupported()) {
 7. 在 AGENTS.md 中添加相应的文档说明
 
 **参考示例**:
+
 - OS 插件兼容层 (`src/utils/tauriCompat/os.ts`) - 实现了基于函数的兼容层，Web 环境使用浏览器 API 降级
 - Shell 插件兼容层 (`src/utils/tauriCompat/shell.ts`) - 实现了基于类的兼容层，包含 `isSupported()` 方法
 
@@ -602,7 +719,11 @@ if (store.isSupported()) {
   // 检测是否为 macOS 平台的 Safari 浏览器
   const isMacSafari = (): boolean => {
     const ua = navigator.userAgent;
-    return /Mac|macOS/.test(ua) && /Safari/.test(ua) && !/Chrome|Edge|Firefox/.test(ua);
+    return (
+      /Mac|macOS/.test(ua) &&
+      /Safari/.test(ua) &&
+      !/Chrome|Edge|Firefox/.test(ua)
+    );
   };
   ```
 - **优势**: 减少对 Tauri API 的依赖，提升 Web 环境的独立性
