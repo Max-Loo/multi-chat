@@ -2008,11 +2008,11 @@ Add a new action. This action should be asynchronous and take in one parameter -
 export const generateQuery = async (input: string) => {};
 ```
 
-In this action, you'll use the `generateObject` function from the AI SDK which allows you to constrain the model's output to a pre-defined schema. This process, sometimes called structured output, ensures the model returns only the SQL query without any additional prefixes, explanations, or formatting that would require manual parsing.
+In this action, you'll use the `generateText` function with `Output` from the AI SDK which allows you to constrain the model's output to a pre-defined schema. This process, sometimes called structured output, ensures the model returns only the SQL query without any additional prefixes, explanations, or formatting that would require manual parsing.
 
 ```ts filename="app/actions.ts"
 /* ...other imports... */
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 
 /* ...rest of the file... */
@@ -2020,15 +2020,17 @@ import { z } from "zod";
 export const generateQuery = async (input: string) => {
   "use server";
   try {
-    const result = await generateObject({
+    const result = await generateText({
       model: "openai/gpt-4o",
       system: `You are a SQL (postgres) ...`, // SYSTEM PROMPT AS ABOVE - OMITTED FOR BREVITY
       prompt: `Generate the query necessary to retrieve the data the user wants: ${input}`,
-      schema: z.object({
-        query: z.string(),
+      output: Output.object({
+        schema: z.object({
+          query: z.string(),
+        }),
       }),
     });
-    return result.object.query;
+    return result.output.query;
   } catch (e) {
     console.error(e);
     throw new Error("Failed to generate query");
@@ -2036,7 +2038,7 @@ export const generateQuery = async (input: string) => {
 };
 ```
 
-Note, you are constraining the output to a single string field called `query` using `zod`, a TypeScript schema validation library. This will ensure the model only returns the SQL query itself. The resulting generated query will then be returned.
+Note, you are constraining the output to a single string field called `query` using `zod`, a TypeScript schema validation library. This will ensure the model only returns the SQL query itself. The resulting output will then be returned.
 
 ### Update the frontend
 
@@ -2135,7 +2137,7 @@ This action takes two parameters - the original natural language input and the g
 export const explainQuery = async (input: string, sqlQuery: string) => {
   "use server";
   try {
-    const result = await generateObject({
+    const result = await generateText({
       model: "openai/gpt-4o",
       system: `You are a SQL (postgres) expert. ...`, // SYSTEM PROMPT AS ABOVE - OMITTED FOR BREVITY
       prompt: `Explain the SQL query you generated to retrieve the data the user wanted. Assume the user is not an expert in SQL. Break down the query into steps. Be concise.
@@ -2146,7 +2148,7 @@ export const explainQuery = async (input: string, sqlQuery: string) => {
       Generated SQL Query:
       ${sqlQuery}`,
     });
-    return result.object;
+    return result.text;
   } catch (e) {
     console.error(e);
     throw new Error("Failed to generate query");
@@ -2154,7 +2156,7 @@ export const explainQuery = async (input: string, sqlQuery: string) => {
 };
 ```
 
-This action uses the `generateObject` function again. However, you haven't defined the schema yet. Let's define it in another file so it can also be used as a type in your components.
+This action uses the `generateText` function. However, you haven't defined the output schema yet. Let's define it in another file so it can also be used as a type in your components.
 
 Update your `lib/types.ts` file to include the schema for the explanations:
 
@@ -2182,7 +2184,7 @@ import { explanationSchema } from "@/lib/types";
 export const explainQuery = async (input: string, sqlQuery: string) => {
   "use server";
   try {
-    const result = await generateObject({
+    const result = await generateText({
       model: "openai/gpt-4o",
       system: `You are a SQL (postgres) expert. ...`, // SYSTEM PROMPT AS ABOVE - OMITTED FOR BREVITY
       prompt: `Explain the SQL query you generated to retrieve the data the user wanted. Assume the user is not an expert in SQL. Break down the query into steps. Be concise.
@@ -2192,10 +2194,9 @@ export const explainQuery = async (input: string, sqlQuery: string) => {
 
       Generated SQL Query:
       ${sqlQuery}`,
-      schema: explanationSchema,
-      output: "array",
+      output: Output.array({ element: explanationSchema }),
     });
-    return result.object;
+    return result.output;
   } catch (e) {
     console.error(e);
     throw new Error("Failed to generate query");
@@ -2204,8 +2205,8 @@ export const explainQuery = async (input: string, sqlQuery: string) => {
 ```
 
 <Note>
-  You can use `output: "array"` to indicate to the model that you expect an
-  array of objects matching the schema to be returned.
+  You can use `Output.array()` to indicate to the model that you expect an array
+  of objects matching the schema to be returned.
 </Note>
 
 ### Update query viewer
@@ -2336,7 +2337,7 @@ export const generateChartConfig = async (
   "use server";
 
   try {
-    const { object: config } = await generateObject({
+    const { output: config } = await generateText({
       model: "openai/gpt-4o",
       system: "You are a data visualization expert.",
       prompt: `Given the following data from a SQL query result, generate the chart config that best visualises the data and answers the users query.
@@ -2360,7 +2361,7 @@ export const generateChartConfig = async (
 
       Data:
       ${JSON.stringify(results, null, 2)}`,
-      schema: configSchema,
+      output: Output.object({ schema: configSchema }),
     });
 
     // Override with shadcn theme colors
@@ -3024,6 +3025,566 @@ The agent sees the skill directory path in the tool result and prepends it when 
 
 ---
 
+title: Build a Custom Memory Tool
+description: Build an agent that persists memories using a filesystem-backed memory tool.
+
+---
+
+# Build a Custom Memory Tool
+
+Memory means saving the right information at the right time, in the right place, and injecting it back into the conversation when it matters. Without memory, your agent treats every conversation as its first. With memory, your agent builds context over time, recalls previous interactions, and adapts to the user.
+
+## The Storage Primitive: The Filesystem
+
+Where should you store memories? Files organized in a filesystem-like structure are a natural fit:
+
+- **Persistence**: you can persist files across process restarts and conversations
+- **Speed**: reading and writing files is fast, even at scale
+- **Familiarity**: language models understand files and paths from their training data
+- **Hierarchy**: you can use a directory structure to create deep and organized memory banks, grouping memories by topic, time, or type
+
+The key insight is that "filesystem" here is an abstraction. The backing store does not matter. You could use a real sandboxed filesystem, an in-memory virtual filesystem, or a shim over Postgres. What matters is the concept: files organized in a hierarchical structure, and an interface that can manipulate, search, read, and edit those files. That is the primitive.
+
+## The Interface: A Memory Tool
+
+You have files. Now the model needs to interact with them. You give the model a tool, along with instructions for when and how to use it. There are two approaches:
+
+### Structured Actions Tool
+
+Define explicit actions the model can take (`view`, `create`, `update`, `search`) and have the model generate structured input that you handle yourself:
+
+```json
+{
+  "name": "memory",
+  "input": {
+    "command": "view",
+    "path": "/memories/customer_service_guidelines.xml"
+  }
+}
+```
+
+This is safe by design since you control every operation that runs. However, it requires more upfront implementation and limits the model to only the actions you have built.
+
+### Bash-Backed Tool
+
+The alternative is to back the memory tool with bash. Models are proficient at composing shell commands, which lets them craft flexible queries to access what they need: `cat` a file, `grep` for patterns, pipe commands together, or perform in-place edits with `sed`. This is the more powerful approach, but it requires careful work to build an approval system that prevents prompt injection and blocks dangerous commands.
+
+## Types of Memory
+
+Not all memories are equal. They differ in how you store them, how often the model accesses them, and when they surface:
+
+- **Core Memory**: information included in every turn. This can range from the user's name to instructions for where to find other memories. You inject core memory directly into the system prompt, so the model always has it without needing a tool call.
+- **Archival Memory**: a notes folder or file where the model stores detailed knowledge. Think of it as the model's notebook, where it writes down facts, summaries, and observations for later. The model reads and writes archival memory on demand through the memory tool.
+- **Recall Memory**: the conversations themselves. By persisting full turn-by-turn history, the model can search previous interactions to surface relevant context from past discussions.
+
+These memory terms are based on [Letta's definitions](https://www.letta.com/blog/agent-memory).
+
+## What We Will Build
+
+This recipe is a simplified demonstration of these concepts. You build one memory tool over a shared `.memory` store, then wire it into an agent with `prepareCall` so core memory is injected before each model call. You can implement the tool with structured actions or with a bash-backed interface.
+
+The memory layout is a `.memory` directory with three files, each mapping to one of the memory types above:
+
+```
+.memory/
+├── core.md               # Core memory, injected every turn
+├── notes.md              # Archival memory, timestamped notes
+└── conversations.jsonl   # Recall memory, full turn history (JSONL)
+```
+
+## Prerequisites
+
+To follow this guide, you need the following:
+
+1. **AI SDK** with `ToolLoopAgent` and `tool`
+2. **Zod** for tool input schemas
+3. **Optional for Route B (bash-backed)**: **[just-bash](https://github.com/vercel-labs/just-bash)** for command execution and AST parsing
+
+Install dependencies for both routes:
+
+```bash
+pnpm add ai just-bash zod
+```
+
+If you only use Route A (structured actions), you can skip `just-bash`.
+
+## Implementation Requirements
+
+Before building the agent, you need shared infrastructure plus one route-specific piece:
+
+1. **Bootstrap the filesystem.** On startup, ensure the memory directory and its files exist with reasonable defaults. This is a one-time setup step: create the directory if missing, seed each file with starter content if it does not already exist, and add the memory directory to `.gitignore` to keep it local and private.
+
+2. **Helper functions for core memory and conversation logging.** You need a way to read core memory (so you can inject it into the system prompt) and a way to append conversation entries. Conversations are stored as JSONL (one JSON object per line), which makes them straightforward to `grep` for keywords and pipe through `jq` for formatting.
+
+3. **Route-specific execution safety.**
+   - **Route A (structured actions):** keep the action set small and explicit (`view`, `create`, `update`, `search`) and only operate on known `.memory` paths.
+   - **Route B (bash-backed):** validate commands before execution. Users can craft prompts that try to run harmful commands, so use AST-based validation and an allowlist. See the [Appendix](#appendix-command-guard) for a full implementation with `just-bash`.
+
+## Step 1: Define the Memory Tool
+
+Choose your tool interface first. Both routes use the same `.memory` files, the same `prepareCall` injection pattern, and the same conversation logging. The only difference is how the model issues memory operations.
+
+### Route A: Structured Actions Tool
+
+Use this when you want predictable, explicit operations (`view`, `create`, `update`, `search`) and minimal command-safety surface.
+
+Define a schema and route every request through your own `runMemoryCommand` handler:
+
+```ts
+import { tool } from "ai";
+import { z } from "zod";
+
+const memoryInputSchema = z.object({
+  command: z
+    .enum(["view", "create", "update", "search"])
+    .describe(
+      "Memory action: view to read, create to write new content, update to change existing content, search to find relevant lines.",
+    ),
+  path: z
+    .string()
+    .optional()
+    .describe(
+      "Memory path under /memories, such as /memories/core.md or /memories/notes.md. Required for view, create, and update.",
+    ),
+  content: z
+    .string()
+    .optional()
+    .describe("Text to write for create or update commands."),
+  mode: z
+    .enum(["append", "overwrite"])
+    .optional()
+    .describe(
+      "Write mode for update: append adds to existing content, overwrite replaces it. Defaults to overwrite.",
+    ),
+  query: z
+    .string()
+    .optional()
+    .describe(
+      "Search keywords for the search command. Prefer short focused terms.",
+    ),
+});
+
+const memoryTool = tool({
+  description: `Use this tool to read and maintain long-term memory under /memories.
+
+Rules:
+- If the user prompt might depend on preferences, history, constraints, or goals, search first, then reply.
+- If the prompt is fully self-contained or general knowledge, reply directly.
+- Keep searches short and focused (1-4 words).
+- Store durable user facts in /memories/core.md and detailed notes in /memories/notes.md.
+- Keep memory operations invisible in user-facing replies.`,
+  inputSchema: memoryInputSchema,
+  execute: async (input) => {
+    try {
+      const output = await runMemoryCommand(input);
+      return { output };
+    } catch (error) {
+      return { output: `Memory action failed: ${(error as Error).message}` };
+    }
+  },
+});
+```
+
+This keeps memory operations predictable because the model can only call predefined actions.
+
+### Route B: Bash-Backed Tool
+
+Use this when you want maximum flexibility in reads, writes, and ad-hoc search.
+
+```ts
+import { tool } from "ai";
+import { Bash, ReadWriteFs } from "just-bash";
+import { z } from "zod";
+
+const fs = new ReadWriteFs({ root: process.cwd() });
+const bash = new Bash({ fs, cwd: "/" });
+
+const memoryTool = tool({
+  description: `Run bash commands only for memory-related tasks.
+
+This tool is restricted to memory workflows. Do not use it for
+general project work, code changes, dependency management, or
+system administration.
+
+Inside the tool, use paths under /.memory:
+- /.memory/core.md for key facts that should be reused later
+- /.memory/notes.md for detailed notes
+- /.memory/conversations.jsonl for full turn history
+
+Rules:
+- Only perform memory-related reads/writes and conversation recall
+- Keep /.memory/core.md short and focused
+- Prefer append-friendly notes in /.memory/notes.md for details
+- If the user asks about prior conversations, search
+  /.memory/conversations.jsonl for relevant keywords first
+- Use >> to append, > to overwrite, and perl -pi -e for in-place edits
+
+Examples:
+- cat /.memory/core.md
+- echo "- User prefers concise answers" >> /.memory/core.md
+- perl -pi -e 's/concise answers/detailed answers/g' /.memory/core.md
+- grep -n "project" /.memory/notes.md
+- echo "2026-02-16: started a Rust CLI" >> /.memory/notes.md
+- grep -niE "pricing|budget" /.memory/conversations.jsonl
+- tail -n 40 /.memory/conversations.jsonl | jq -c '.role + ": " + .content'`,
+  inputSchema: z.object({
+    command: z.string().describe("The bash command to execute."),
+  }),
+  execute: async ({ command }) => {
+    const unapprovedCommand = findUnapprovedCommand(command);
+    if (unapprovedCommand) {
+      return {
+        stdout: "",
+        stderr: `Blocked unapproved command: ${unapprovedCommand}\n`,
+        exitCode: 1,
+      };
+    }
+
+    const result = await bash.exec(command);
+    return {
+      stdout: result.stdout,
+      stderr: result.stderr,
+      exitCode: result.exitCode,
+    };
+  },
+});
+```
+
+`ReadWriteFs` reads and writes directly to the real filesystem, rooted at `process.cwd()`. Paths inside the bash interpreter map directly to disk: `/.memory/core.md` resolves to `<project-root>/.memory/core.md`.
+
+The safety pipeline has two layers: the AST-based command guard rejects unapproved commands before they reach the interpreter, and `just-bash` itself is a JavaScript-based bash implementation (it does not spawn a real shell process). While the bash interpreter runs in JavaScript, the filesystem is real and commands read and write actual files on disk. This is why the command guard is critical.
+
+The rest of this recipe (agent wiring, `prepareCall`, and run loop) works for either route.
+
+## Step 2: Create the Agent
+
+Wire everything together with `ToolLoopAgent`. The `prepareCall` hook reads core memory fresh before every LLM call and injects it into the system prompt:
+
+```ts
+import { ToolLoopAgent } from "ai";
+
+const today = new Date().toISOString().slice(0, 10);
+
+const memoryAgent = new ToolLoopAgent({
+  model: "anthropic/claude-haiku-4.5",
+  tools: { memory: memoryTool },
+  prepareCall: async (settings) => {
+    // user-defined function fetches the contents of /.memory/core.md on every turn
+    const coreMemory = await readCoreMemory();
+    return {
+      ...settings,
+      instructions: `Today's date is ${today}.
+
+Core memory:
+${coreMemory}
+
+You can save and recall important information using the memory tool.`,
+    };
+  },
+});
+```
+
+Because `prepareCall` runs before each generate call in the tool loop, the system prompt always reflects the latest state of `core.md`. If the model updates core memory during a conversation, the next loop iteration sees the change immediately.
+
+## Step 3: Run the Agent
+
+Bootstrap the filesystem, record conversations, and run the agent:
+
+```ts
+const prompt = "Remember that my favorite editor is Neovim";
+
+// Record the user message
+await appendConversation({
+  role: "user",
+  content: prompt,
+  timestamp: new Date().toISOString(),
+});
+
+// Run the agent (loops automatically on tool calls)
+const result = await memoryAgent.generate({ prompt });
+
+// Record the assistant response
+await appendConversation({
+  role: "assistant",
+  content: result.text,
+  timestamp: new Date().toISOString(),
+});
+
+console.log(result.text);
+```
+
+When the model decides it needs to store or recall information, it calls the `memory` tool. The `ToolLoopAgent` executes the tool and feeds the result back, continuing until the model produces a final text response.
+
+A typical interaction looks like this:
+
+1. User says "Remember that my favorite editor is Neovim"
+2. The model calls `memory` with `echo "- Favorite editor: Neovim" >> /.memory/core.md`
+3. The tool executes the command and returns the result
+4. The model responds: "Got it, I've saved that your favorite editor is Neovim."
+5. On the next run, `prepareCall` reads `core.md` and the fact appears in the system prompt
+
+## Learn More
+
+- [AI SDK documentation](https://ai-sdk.dev/docs) for `ToolLoopAgent`, `tool`, and `generateText`
+- [just-bash](https://github.com/vercel-labs/just-bash) for the JavaScript-based bash interpreter and AST parser
+- [AI SDK examples](https://github.com/vercel/ai/tree/main/examples) for more agent patterns
+
+---
+
+## Appendix: Implementation Details
+
+The code below is the reference implementation for the infrastructure described in [Implementation Requirements](#implementation-requirements). It uses Node.js filesystem APIs and a Bun entrypoint, but you can port the patterns to any runtime.
+
+### Appendix: Filesystem Bootstrap
+
+Define the memory directory structure and bootstrap it on startup. Each file gets reasonable defaults if it does not already exist:
+
+```ts
+import {
+  access,
+  appendFile,
+  mkdir,
+  readFile,
+  writeFile,
+} from "node:fs/promises";
+import { join, resolve } from "node:path";
+
+const MEMORY_DIR = ".memory";
+const MEMORY_ROOT = resolve(process.cwd(), MEMORY_DIR);
+const CORE_MEMORY_PATH = join(MEMORY_ROOT, "core.md");
+const NOTES_PATH = join(MEMORY_ROOT, "notes.md");
+const CONVERSATIONS_PATH = join(MEMORY_ROOT, "conversations.jsonl");
+
+const DEFAULT_CORE_MEMORY = `# Core Memory
+- Keep this short.
+- Put stable user facts here.
+`;
+
+const DEFAULT_NOTES = `# Notes
+Use this file for detailed memories and timestamped notes.
+`;
+
+async function ensureFile(path: string, content: string): Promise<void> {
+  try {
+    await access(path);
+  } catch {
+    await writeFile(path, content, "utf8");
+  }
+}
+
+async function ensureMemoryFilesystem(): Promise<void> {
+  await mkdir(MEMORY_ROOT, { recursive: true });
+  await ensureFile(CORE_MEMORY_PATH, DEFAULT_CORE_MEMORY);
+  await ensureFile(NOTES_PATH, DEFAULT_NOTES);
+  await ensureFile(CONVERSATIONS_PATH, "");
+}
+```
+
+Add `.memory` to your `.gitignore` to keep memory local and private.
+
+### Appendix: Helper Functions
+
+One helper reads core memory for system prompt injection, the other appends conversation entries as JSONL:
+
+```ts
+async function readCoreMemory(): Promise<string> {
+  try {
+    return await readFile(CORE_MEMORY_PATH, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+async function appendConversation(entry: {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+}): Promise<void> {
+  await appendFile(CONVERSATIONS_PATH, `${JSON.stringify(entry)}\n`, "utf8");
+}
+```
+
+### Appendix: Structured Actions Handler
+
+The `runMemoryCommand` function used in Route A maps each action to a filesystem operation. Paths are resolved relative to the memory root, and only known memory files are allowed:
+
+```ts
+import { readFile, writeFile, appendFile } from "node:fs/promises";
+import { join, relative } from "node:path";
+
+const MEMORY_FILES = ["core.md", "notes.md", "conversations.jsonl"];
+
+function resolveMemoryPath(path: string): string {
+  const relativePath = path
+    .trim()
+    .replace(/^\/?memories\/?/, "")
+    .replace(/^\/?\.memory\/?/, "")
+    .replace(/^\/+/, "");
+
+  if (!MEMORY_FILES.includes(relativePath)) {
+    throw new Error(`Unsupported memory path: ${path}`);
+  }
+
+  return join(MEMORY_ROOT, relativePath);
+}
+
+async function runMemoryCommand(input: {
+  command: "view" | "create" | "update" | "search";
+  path?: string;
+  content?: string;
+  mode?: "append" | "overwrite";
+  query?: string;
+}): Promise<string> {
+  const { command, path, content, mode, query } = input;
+
+  switch (command) {
+    case "view": {
+      if (!path) throw new Error("path is required for view");
+      return await readFile(resolveMemoryPath(path), "utf8");
+    }
+    case "create":
+    case "update": {
+      if (!path) throw new Error("path is required");
+      if (!content) throw new Error("content is required");
+      const target = resolveMemoryPath(path);
+      if (mode === "append") {
+        await appendFile(target, content, "utf8");
+      } else {
+        await writeFile(target, content, "utf8");
+      }
+      return `${command === "create" ? "Created" : "Updated"} ${path}`;
+    }
+    case "search": {
+      if (!query) throw new Error("query is required for search");
+      const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+      const files = path
+        ? [resolveMemoryPath(path)]
+        : MEMORY_FILES.map((f) => join(MEMORY_ROOT, f));
+      const matches: string[] = [];
+
+      for (const filePath of files) {
+        const lines = (await readFile(filePath, "utf8")).split("\n");
+        for (const [i, line] of lines.entries()) {
+          const lower = line.toLowerCase();
+          if (terms.some((t) => lower.includes(t))) {
+            matches.push(`${relative(MEMORY_ROOT, filePath)}:${i + 1}:${line}`);
+          }
+        }
+      }
+
+      return matches.length > 0 ? matches.join("\n") : "No matches found.";
+    }
+  }
+}
+```
+
+### Appendix: Command Guard
+
+The AST-based command guard walks every node in the parsed command (including pipelines, subshells, loops, and conditionals) and rejects anything not in the allowlist. This is more robust than string matching or regex. If a command name is dynamically constructed (e.g., via variable expansion), `extractLiteralWord` returns `null` and the guard skips the allowlist check for that command. Since `just-bash` is a JavaScript-based interpreter (not a real shell), dynamically constructed commands that bypass the allowlist check fail to resolve to real binaries. This is an acceptable tradeoff.
+
+```ts
+import {
+  type CommandNode,
+  parse,
+  type ScriptNode,
+  type WordNode,
+} from "just-bash";
+
+const approvedCommands = new Set([
+  "cat",
+  "echo",
+  "grep",
+  "jq",
+  "ls",
+  "mkdir",
+  "perl",
+  "sed",
+  "tail",
+]);
+
+function extractLiteralWord(word: WordNode | null): string | null {
+  if (!word || word.parts.length !== 1) return null;
+  const [part] = word.parts;
+  if (!part || part.type !== "Literal") return null;
+  return part.value;
+}
+
+function collectCommandNames(script: ScriptNode): string[] {
+  const names = new Set<string>();
+
+  const visitCommand = (command: CommandNode): void => {
+    switch (command.type) {
+      case "SimpleCommand": {
+        const name = extractLiteralWord(command.name);
+        if (name) names.add(name);
+        break;
+      }
+      case "If": {
+        for (const clause of command.clauses) {
+          for (const s of clause.condition) visitStatement(s);
+          for (const s of clause.body) visitStatement(s);
+        }
+        if (command.elseBody) {
+          for (const s of command.elseBody) visitStatement(s);
+        }
+        break;
+      }
+      case "For":
+      case "CStyleFor":
+      case "While":
+      case "Until":
+      case "Subshell":
+      case "Group": {
+        for (const s of command.body) visitStatement(s);
+        break;
+      }
+      case "Case": {
+        for (const item of command.items) {
+          for (const s of item.body) visitStatement(s);
+        }
+        break;
+      }
+      case "FunctionDef": {
+        visitCommand(command.body);
+        break;
+      }
+      case "ArithmeticCommand":
+      case "ConditionalCommand":
+        break;
+    }
+  };
+
+  const visitStatement = (
+    statement: ScriptNode["statements"][number],
+  ): void => {
+    for (const pipeline of statement.pipelines) {
+      for (const command of pipeline.commands) {
+        visitCommand(command);
+      }
+    }
+  };
+
+  for (const statement of script.statements) {
+    visitStatement(statement);
+  }
+
+  return [...names].sort();
+}
+
+export function findUnapprovedCommand(commandLine: string): string | null {
+  let script: ScriptNode;
+  try {
+    script = parse(commandLine);
+  } catch {
+    return null;
+  }
+  const commandNames = collectCommandNames(script);
+  return commandNames.find((name) => !approvedCommands.has(name)) ?? null;
+}
+```
+
+---
+
 title: Get started with Gemini 3
 description: Get started with Gemini 3 using the AI SDK.
 tags: ['getting-started']
@@ -3072,7 +3633,7 @@ console.log(text);
 Gemini 3 models can use enhanced reasoning through thinking mode, which improves their ability to solve complex problems. You can control the thinking level using the `thinkingLevel` provider option:
 
 ```ts
-import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import { google, GoogleLanguageModelOptions } from "@ai-sdk/google";
 import { generateText } from "ai";
 
 const { text } = await generateText({
@@ -3084,7 +3645,7 @@ const { text } = await generateText({
         includeThoughts: true,
         thinkingLevel: "low",
       },
-    } satisfies GoogleGenerativeAIProviderOptions,
+    } satisfies GoogleLanguageModelOptions,
   },
 });
 
@@ -3298,7 +3859,7 @@ console.log(text);
 Claude 4 enhances the extended thinking capabilities first introduced in Claude 3.7 Sonnet—the ability to solve complex problems with careful, step-by-step reasoning. Additionally, both Opus 4 and Sonnet 4 can now use tools during extended thinking, allowing Claude to alternate between reasoning and tool use to improve responses. You can enable extended thinking using the `thinking` provider option and specifying a thinking budget in tokens. For interleaved thinking (where Claude can think in between tool calls) you'll need to enable a beta feature using the `anthropic-beta` header:
 
 ```ts
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
 const { text, reasoningText, reasoning } = await generateText({
@@ -3307,7 +3868,7 @@ const { text, reasoningText, reasoning } = await generateText({
   providerOptions: {
     anthropic: {
       thinking: { type: "enabled", budgetTokens: 15000 },
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
   headers: {
     "anthropic-beta": "interleaved-thinking-2025-05-14",
@@ -3336,7 +3897,7 @@ In a new Next.js application, first install the AI SDK and the Anthropic provide
 Then, create a route handler for the chat endpoint:
 
 ```tsx filename="app/api/chat/route.ts"
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
 
 export async function POST(req: Request) {
@@ -3351,7 +3912,7 @@ export async function POST(req: Request) {
     providerOptions: {
       anthropic: {
         thinking: { type: "enabled", budgetTokens: 15000 },
-      } satisfies AnthropicProviderOptions,
+      } satisfies AnthropicLanguageModelOptions,
     },
   });
 
@@ -3511,20 +4072,24 @@ const { text } = await generateText({
 
 ### Generating Structured Data
 
-While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides two functions ([`generateObject`](/docs/reference/ai-sdk-core/generate-object) and [`streamObject`](/docs/reference/ai-sdk-core/stream-object)) to generate structured data, allowing you to constrain model outputs to a specific schema.
+While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides [`generateText`](/docs/reference/ai-sdk-core/generate-text) and [`streamText`](/docs/reference/ai-sdk-core/stream-text) with `Output` to generate structured data, allowing you to constrain model outputs to a specific schema.
 
 ```ts
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-const { object } = await generateObject({
+const { output } = await generateText({
   model: openai.responses("gpt-4o"),
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.object({ name: z.string(), amount: z.string() })),
-      steps: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
     }),
   }),
   prompt: "Generate a lasagna recipe.",
@@ -3903,7 +4468,7 @@ const { reasoning, text } = await generateText({
 Claude 3.7 Sonnet introduces a new extended thinking—the ability to solve complex problems with careful, step-by-step reasoning. You can enable it using the `thinking` provider option and specifying a thinking budget in tokens:
 
 ```ts
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
 const { text, reasoningText, reasoning } = await generateText({
@@ -3912,7 +4477,7 @@ const { text, reasoningText, reasoning } = await generateText({
   providerOptions: {
     anthropic: {
       thinking: { type: "enabled", budgetTokens: 12000 },
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 
@@ -3938,7 +4503,7 @@ In a new Next.js application, first install the AI SDK and the Anthropic provide
 Then, create a route handler for the chat endpoint:
 
 ```tsx filename="app/api/chat/route.ts"
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
 
 export async function POST(req: Request) {
@@ -3950,7 +4515,7 @@ export async function POST(req: Request) {
     providerOptions: {
       anthropic: {
         thinking: { type: "enabled", budgetTokens: 12000 },
-      } satisfies AnthropicProviderOptions,
+      } satisfies AnthropicLanguageModelOptions,
     },
   });
 
@@ -4129,20 +4694,24 @@ const { textStream } = streamText({
 
 ### Generating Structured Data
 
-While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides two functions ([`generateObject`](/docs/reference/ai-sdk-core/generate-object) and [`streamObject`](/docs/reference/ai-sdk-core/stream-object)) to generate structured data, allowing you to constrain model outputs to a specific schema.
+While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides [`generateText`](/docs/reference/ai-sdk-core/generate-text) and [`streamText`](/docs/reference/ai-sdk-core/stream-text) with `Output` to generate structured data, allowing you to constrain model outputs to a specific schema.
 
 ```ts
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { deepinfra } from "@ai-sdk/deepinfra";
 import { z } from "zod";
 
-const { object } = await generateObject({
+const { output } = await generateText({
   model: deepinfra("meta-llama/Meta-Llama-3.1-70B-Instruct"),
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.object({ name: z.string(), amount: z.string() })),
-      steps: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
     }),
   }),
   prompt: "Generate a lasagna recipe.",
@@ -4554,20 +5123,24 @@ const { text } = await generateText({
 
 ### Generating Structured Data
 
-While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides two functions ([`generateObject`](/docs/reference/ai-sdk-core/generate-object) and [`streamObject`](/docs/reference/ai-sdk-core/stream-object)) to generate structured data, allowing you to constrain model outputs to a specific schema.
+While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides [`generateText`](/docs/reference/ai-sdk-core/generate-text) and [`streamText`](/docs/reference/ai-sdk-core/stream-text) with `Output` to generate structured data, allowing you to constrain model outputs to a specific schema.
 
 ```ts
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-const { object } = await generateObject({
+const { output } = await generateText({
   model: openai("gpt-5"),
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.object({ name: z.string(), amount: z.string() })),
-      steps: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
     }),
   }),
   prompt: "Generate a lasagna recipe.",
@@ -4887,20 +5460,24 @@ const { text } = await generateText({
 
 ### Generating Structured Data
 
-While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides two functions ([`generateObject`](/docs/reference/ai-sdk-core/generate-object) and [`streamObject`](/docs/reference/ai-sdk-core/stream-object)) to generate structured data, allowing you to constrain model outputs to a specific schema.
+While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides [`generateText`](/docs/reference/ai-sdk-core/generate-text) and [`streamText`](/docs/reference/ai-sdk-core/stream-text) with `Output` to generate structured data, allowing you to constrain model outputs to a specific schema.
 
 ```ts
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-const { object } = await generateObject({
+const { output } = await generateText({
   model: openai("o1"),
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.object({ name: z.string(), amount: z.string() })),
-      steps: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
     }),
   }),
   prompt: "Generate a lasagna recipe.",
@@ -5110,20 +5687,24 @@ const { text } = await generateText({
 
 ### Generating Structured Data
 
-While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides two functions ([`generateObject`](/docs/reference/ai-sdk-core/generate-object) and [`streamObject`](/docs/reference/ai-sdk-core/stream-object)) to generate structured data, allowing you to constrain model outputs to a specific schema.
+While text generation can be useful, you might want to generate structured JSON data. For example, you might want to extract information from text, classify data, or generate synthetic data. AI SDK Core provides [`generateText`](/docs/reference/ai-sdk-core/generate-text) and [`streamText`](/docs/reference/ai-sdk-core/stream-text) with `Output` to generate structured data, allowing you to constrain model outputs to a specific schema.
 
 ```ts
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-const { object } = await generateObject({
+const { output } = await generateText({
   model: openai("o3-mini"),
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.object({ name: z.string(), amount: z.string() })),
-      steps: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({ name: z.string(), amount: z.string() }),
+        ),
+        steps: z.array(z.string()),
+      }),
     }),
   }),
   prompt: "Generate a lasagna recipe.",
@@ -6901,41 +7482,84 @@ export async function POST(request: Request) {
 }
 ```
 
-### Track Step Progress
+### Lifecycle Callbacks
 
-Use `onStepFinish` to track each step's progress, including token usage:
+<Note type="warning">
+  Experimental callbacks are subject to breaking changes in incremental package
+  releases.
+</Note>
+
+Agents provide lifecycle callbacks that let you hook into different phases of the agent execution.
+These are useful for logging, observability, debugging, and custom telemetry.
 
 ```ts
 const result = await myAgent.generate({
   prompt: "Research and summarize the latest AI trends",
-  onStepFinish: async ({ usage, finishReason, toolCalls }) => {
-    console.log("Step completed:", {
+
+  experimental_onStart({ model, functionId }) {
+    console.log("Agent started", { model: model.modelId, functionId });
+  },
+
+  experimental_onStepStart({ stepNumber, model }) {
+    console.log(`Step ${stepNumber} starting`, { model: model.modelId });
+  },
+
+  experimental_onToolCallStart({ toolCall }) {
+    console.log(`Tool call starting: ${toolCall.toolName}`);
+  },
+
+  experimental_onToolCallFinish({ toolCall, durationMs, success }) {
+    console.log(`Tool call finished: ${toolCall.toolName} (${durationMs}ms)`, {
+      success,
+    });
+  },
+
+  onStepFinish({ stepNumber, usage, finishReason, toolCalls }) {
+    console.log(`Step ${stepNumber} completed:`, {
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
       finishReason,
       toolsUsed: toolCalls?.map((tc) => tc.toolName),
     });
   },
+
+  onFinish({ totalUsage, steps }) {
+    console.log("Agent finished:", {
+      totalSteps: steps.length,
+      totalTokens: totalUsage.totalTokens,
+    });
+  },
 });
 ```
 
-You can also define `onStepFinish` in the constructor for agent-wide tracking. When both constructor and method callbacks are provided, both are called (constructor first, then the method callback):
+The available lifecycle callbacks are:
+
+- **`experimental_onStart`**: Called once when the agent operation begins, before any LLM calls. Receives model info, prompt, settings, and telemetry metadata.
+- **`experimental_onStepStart`**: Called before each step (LLM call). Receives the step number, model, messages being sent, tools, and prior steps.
+- **`experimental_onToolCallStart`**: Called right before a tool's `execute` function runs. Receives the tool call object with tool name, call ID, and input.
+- **`experimental_onToolCallFinish`**: Called right after a tool's `execute` function completes or errors. Receives the tool call, `durationMs`, and a `success` discriminator (`output` when successful, `error` when failed).
+- **`onStepFinish`**: Called after each step finishes. Receives step results including usage, finish reason, and tool calls.
+- **`onFinish`**: Called when all steps are finished and the response is complete. Receives all step results, total usage, and telemetry metadata.
+
+#### Constructor vs. Method Callbacks
+
+All lifecycle callbacks can be defined in the constructor for agent-wide tracking, in the `generate()`/`stream()` call for per-call tracking, or both. When both are provided, both are called (constructor first, then the method callback):
 
 ```ts
 const agent = new ToolLoopAgent({
   model: __MODEL__,
-  onStepFinish: async ({ usage }) => {
+  onStepFinish: async ({ stepNumber, usage }) => {
     // Agent-wide logging
-    console.log("Agent step:", usage.totalTokens);
+    console.log(`Agent step ${stepNumber}:`, usage.totalTokens);
   },
 });
 
 // Method-level callback runs after constructor callback
 const result = await agent.generate({
   prompt: "Hello",
-  onStepFinish: async ({ usage }) => {
+  onStepFinish: async ({ stepNumber, usage }) => {
     // Per-call tracking (e.g., for billing)
-    await trackUsage(usage);
+    await trackUsage(stepNumber, usage);
   },
 });
 ```
@@ -7021,7 +7645,7 @@ These patterns, adapted from [Anthropic's guide on building effective agents](ht
 The simplest workflow pattern executes steps in a predefined order. Each step's output becomes input for the next step, creating a clear chain of operations. Use this pattern for tasks with well-defined sequences, like content generation pipelines or data transformation processes.
 
 ```ts
-import { generateText, generateObject } from "ai";
+import { generateText, Output } from "ai";
 __PROVIDER_IMPORT__;
 import { z } from "zod";
 
@@ -7035,12 +7659,14 @@ async function generateMarketingCopy(input: string) {
   });
 
   // Perform quality check on copy
-  const { object: qualityMetrics } = await generateObject({
+  const { output: qualityMetrics } = await generateText({
     model,
-    schema: z.object({
-      hasCallToAction: z.boolean(),
-      emotionalAppeal: z.number().min(1).max(10),
-      clarity: z.number().min(1).max(10),
+    output: Output.object({
+      schema: z.object({
+        hasCallToAction: z.boolean(),
+        emotionalAppeal: z.number().min(1).max(10),
+        clarity: z.number().min(1).max(10),
+      }),
     }),
     prompt: `Evaluate this marketing copy for:
     1. Presence of call to action (true/false)
@@ -7077,7 +7703,7 @@ async function generateMarketingCopy(input: string) {
 This pattern lets the model decide which path to take through a workflow based on context and intermediate results. The model acts as an intelligent router, directing the flow of execution between different branches of your workflow. Use this when handling varied inputs that require different processing approaches. In the example below, the first LLM call's results determine the second call's model size and system prompt.
 
 ```ts
-import { generateObject, generateText } from "ai";
+import { generateText, Output } from "ai";
 __PROVIDER_IMPORT__;
 import { z } from "zod";
 
@@ -7085,12 +7711,14 @@ async function handleCustomerQuery(query: string) {
   const model = __MODEL__;
 
   // First step: Classify the query type
-  const { object: classification } = await generateObject({
+  const { output: classification } = await generateText({
     model,
-    schema: z.object({
-      reasoning: z.string(),
-      type: z.enum(["general", "refund", "technical"]),
-      complexity: z.enum(["simple", "complex"]),
+    output: Output.object({
+      schema: z.object({
+        reasoning: z.string(),
+        type: z.enum(["general", "refund", "technical"]),
+        complexity: z.enum(["simple", "complex"]),
+      }),
     }),
     prompt: `Classify this customer query:
     ${query}
@@ -7128,7 +7756,7 @@ async function handleCustomerQuery(query: string) {
 Break down tasks into independent subtasks that execute simultaneously. This pattern uses parallel execution to improve efficiency while maintaining the benefits of structured workflows. For example, analyze multiple documents or process different aspects of a single input concurrently (like code review).
 
 ```ts
-import { generateText, generateObject } from "ai";
+import { generateText, Output } from "ai";
 __PROVIDER_IMPORT__;
 import { z } from "zod";
 
@@ -7139,40 +7767,46 @@ async function parallelCodeReview(code: string) {
   // Run parallel reviews
   const [securityReview, performanceReview, maintainabilityReview] =
     await Promise.all([
-      generateObject({
+      generateText({
         model,
         system:
           "You are an expert in code security. Focus on identifying security vulnerabilities, injection risks, and authentication issues.",
-        schema: z.object({
-          vulnerabilities: z.array(z.string()),
-          riskLevel: z.enum(["low", "medium", "high"]),
-          suggestions: z.array(z.string()),
+        output: Output.object({
+          schema: z.object({
+            vulnerabilities: z.array(z.string()),
+            riskLevel: z.enum(["low", "medium", "high"]),
+            suggestions: z.array(z.string()),
+          }),
         }),
         prompt: `Review this code:
       ${code}`,
       }),
 
-      generateObject({
+      generateText({
         model,
         system:
           "You are an expert in code performance. Focus on identifying performance bottlenecks, memory leaks, and optimization opportunities.",
-        schema: z.object({
-          issues: z.array(z.string()),
-          impact: z.enum(["low", "medium", "high"]),
-          optimizations: z.array(z.string()),
+        output: Output.object({
+          schema: z.object({
+            issues: z.array(z.string()),
+            impact: z.enum(["low", "medium", "high"]),
+            optimizations: z.array(z.string()),
+          }),
         }),
         prompt: `Review this code:
       ${code}`,
       }),
 
-      generateObject({
+      generateText({
         model,
         system:
           "You are an expert in code quality. Focus on code structure, readability, and adherence to best practices.",
-        schema: z.object({
-          concerns: z.array(z.string()),
-          qualityScore: z.number().min(1).max(10),
-          recommendations: z.array(z.string()),
+        output: Output.object({
+          schema: z.object({
+            concerns: z.array(z.string()),
+            qualityScore: z.number().min(1).max(10),
+            recommendations: z.array(z.string()),
+          }),
         }),
         prompt: `Review this code:
       ${code}`,
@@ -7180,9 +7814,9 @@ async function parallelCodeReview(code: string) {
     ]);
 
   const reviews = [
-    { ...securityReview.object, type: "security" },
-    { ...performanceReview.object, type: "performance" },
-    { ...maintainabilityReview.object, type: "maintainability" },
+    { ...securityReview.output, type: "security" },
+    { ...performanceReview.output, type: "performance" },
+    { ...maintainabilityReview.output, type: "maintainability" },
   ];
 
   // Aggregate results using another model instance
@@ -7202,23 +7836,25 @@ async function parallelCodeReview(code: string) {
 A primary model (orchestrator) coordinates the execution of specialized workers. Each worker optimizes for a specific subtask, while the orchestrator maintains overall context and ensures coherent results. This pattern excels at complex tasks requiring different types of expertise or processing.
 
 ```ts
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 __PROVIDER_IMPORT__;
 import { z } from "zod";
 
 async function implementFeature(featureRequest: string) {
   // Orchestrator: Plan the implementation
-  const { object: implementationPlan } = await generateObject({
+  const { output: implementationPlan } = await generateText({
     model: __MODEL__,
-    schema: z.object({
-      files: z.array(
-        z.object({
-          purpose: z.string(),
-          filePath: z.string(),
-          changeType: z.enum(["create", "modify", "delete"]),
-        }),
-      ),
-      estimatedComplexity: z.enum(["low", "medium", "high"]),
+    output: Output.object({
+      schema: z.object({
+        files: z.array(
+          z.object({
+            purpose: z.string(),
+            filePath: z.string(),
+            changeType: z.enum(["create", "modify", "delete"]),
+          }),
+        ),
+        estimatedComplexity: z.enum(["low", "medium", "high"]),
+      }),
     }),
     system:
       "You are a senior software architect planning feature implementations.",
@@ -7239,11 +7875,13 @@ async function implementFeature(featureRequest: string) {
           "You are an expert at safely removing code while ensuring no breaking changes.",
       }[file.changeType];
 
-      const { object: change } = await generateObject({
+      const { output: change } = await generateText({
         model: __MODEL__,
-        schema: z.object({
-          explanation: z.string(),
-          code: z.string(),
+        output: Output.object({
+          schema: z.object({
+            explanation: z.string(),
+            code: z.string(),
+          }),
         }),
         system: workerSystemPrompt,
         prompt: `Implement the changes for ${file.filePath} to support:
@@ -7272,7 +7910,7 @@ async function implementFeature(featureRequest: string) {
 Add quality control to workflows with dedicated evaluation steps that assess intermediate results. Based on the evaluation, the workflow proceeds, retries with adjusted parameters, or takes corrective action. This creates robust workflows capable of self-improvement and error recovery.
 
 ```ts
-import { generateText, generateObject } from "ai";
+import { generateText, Output } from "ai";
 __PROVIDER_IMPORT__;
 import { z } from "zod";
 
@@ -7294,15 +7932,17 @@ async function translateWithFeedback(text: string, targetLanguage: string) {
   // Evaluation-optimization loop
   while (iterations < MAX_ITERATIONS) {
     // Evaluate current translation
-    const { object: evaluation } = await generateObject({
+    const { output: evaluation } = await generateText({
       model: __MODEL__,
-      schema: z.object({
-        qualityScore: z.number().min(1).max(10),
-        preservesTone: z.boolean(),
-        preservesNuance: z.boolean(),
-        culturallyAccurate: z.boolean(),
-        specificIssues: z.array(z.string()),
-        improvementSuggestions: z.array(z.string()),
+      output: Output.object({
+        schema: z.object({
+          qualityScore: z.number().min(1).max(10),
+          preservesTone: z.boolean(),
+          preservesNuance: z.boolean(),
+          culturallyAccurate: z.boolean(),
+          specificIssues: z.array(z.string()),
+          improvementSuggestions: z.array(z.string()),
+        }),
       }),
       system: "You are an expert in evaluating literary translations.",
       prompt: `Evaluate this translation:
@@ -7904,7 +8544,7 @@ await newsAgent.generate({
 Configure provider settings dynamically:
 
 ```ts
-import { openai, OpenAIProviderOptions } from "@ai-sdk/openai";
+import { openai, OpenAILanguageModelResponsesOptions } from "@ai-sdk/openai";
 import { ToolLoopAgent } from "ai";
 import { z } from "zod";
 
@@ -7918,7 +8558,7 @@ const agent = new ToolLoopAgent({
     providerOptions: {
       openai: {
         reasoningEffort: options.taskDifficulty,
-      } satisfies OpenAIProviderOptions,
+      } satisfies OpenAILanguageModelResponsesOptions,
     },
   }),
 });
@@ -8035,6 +8675,231 @@ export async function POST(request: Request) {
 
 - Learn about [loop control](/docs/agents/loop-control) for execution management
 - Explore [workflow patterns](/docs/agents/workflows) for complex multi-step processes
+
+---
+
+title: Memory
+description: Add persistent memory to your agent using provider-defined tools, memory providers, or a custom tool.
+
+---
+
+# Memory
+
+Memory lets your agent save information and recall it later. Without memory, every conversation starts fresh. With memory, your agent builds context over time, recalls previous interactions, and adapts to the user.
+
+## Three Approaches
+
+You can add memory to your agent with the AI SDK in three ways, each with different tradeoffs:
+
+| Approach                                          | Effort | Flexibility | Provider Lock-in           |
+| ------------------------------------------------- | ------ | ----------- | -------------------------- |
+| [Provider-Defined Tools](#provider-defined-tools) | Low    | Medium      | Yes                        |
+| [Memory Providers](#memory-providers)             | Low    | Low         | Depends on memory provider |
+| [Custom Tool](#custom-tool)                       | High   | High        | No                         |
+
+## Provider-Defined Tools
+
+[Provider-defined tools](/docs/foundations/tools#types-of-tools) are tools where the provider specifies the tool's `inputSchema` and `description`, but you provide the `execute` function. The model has been trained to use these tools, which can result in better performance compared to custom tools.
+
+### Anthropic Memory Tool
+
+The [Anthropic Memory Tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool) gives Claude a structured interface for managing a `/memories` directory. Claude reads its memory before starting tasks, creates and updates files as it works, and references them in future conversations.
+
+```ts
+import { anthropic } from "@ai-sdk/anthropic";
+import { ToolLoopAgent } from "ai";
+
+const memory = anthropic.tools.memory_20250818({
+  execute: async (action) => {
+    // `action` contains `command`, `path`, and other fields
+    // depending on the command (view, create, str_replace,
+    // insert, delete, rename).
+    // Implement your storage backend here.
+    // Return the result as a string.
+  },
+});
+
+const agent = new ToolLoopAgent({
+  model: "anthropic/claude-haiku-4.5",
+  tools: { memory },
+});
+
+const result = await agent.generate({
+  prompt: "Remember that my favorite editor is Neovim",
+});
+```
+
+The tool receives structured commands (`view`, `create`, `str_replace`, `insert`, `delete`, `rename`), each with a `path` scoped to `/memories`. Your `execute` function maps these to your storage backend (the filesystem, a database, or any other persistence layer).
+
+**When to use this**: you want memory with minimal implementation effort and are already using Anthropic models. The tradeoff is provider lock-in, since this tool only works with Claude.
+
+## Memory Providers
+
+Another approach is to use a provider that has memory built in. These providers wrap an external memory service and expose it through the AI SDK's standard interface. Memory storage, retrieval, and injection happen transparently, and you do not define any tools yourself.
+
+### Letta
+
+[Letta](https://letta.com) provides agents with persistent long-term memory. You create an agent on Letta's platform (cloud or self-hosted), configure its memory there, and use the AI SDK provider to interact with it. Letta's agent runtime handles memory management (core memory, archival memory, recall).
+
+```bash
+pnpm add @letta-ai/vercel-ai-sdk-provider
+```
+
+```ts
+import { lettaCloud } from "@letta-ai/vercel-ai-sdk-provider";
+import { ToolLoopAgent } from "ai";
+
+const agent = new ToolLoopAgent({
+  model: lettaCloud(),
+  providerOptions: {
+    letta: {
+      agent: { id: "your-agent-id" },
+    },
+  },
+});
+
+const result = await agent.generate({
+  prompt: "Remember that my favorite editor is Neovim",
+});
+```
+
+You can also use Letta's built-in memory tools alongside custom tools:
+
+```ts
+import { lettaCloud } from "@letta-ai/vercel-ai-sdk-provider";
+import { ToolLoopAgent } from "ai";
+
+const agent = new ToolLoopAgent({
+  model: lettaCloud(),
+  tools: {
+    core_memory_append: lettaCloud.tool("core_memory_append"),
+    memory_insert: lettaCloud.tool("memory_insert"),
+    memory_replace: lettaCloud.tool("memory_replace"),
+  },
+  providerOptions: {
+    letta: {
+      agent: { id: "your-agent-id" },
+    },
+  },
+});
+
+const stream = agent.stream({
+  prompt: "What do you remember about me?",
+});
+```
+
+See the [Letta provider documentation](/providers/community-providers/letta) for full setup and configuration.
+
+### Mem0
+
+[Mem0](https://mem0.ai) adds a memory layer on top of any supported LLM provider. It automatically extracts memories from conversations, stores them, and retrieves relevant ones for future prompts.
+
+```bash
+pnpm add @mem0/vercel-ai-provider
+```
+
+```ts
+import { createMem0 } from "@mem0/vercel-ai-provider";
+import { ToolLoopAgent } from "ai";
+
+const mem0 = createMem0({
+  provider: "openai",
+  mem0ApiKey: process.env.MEM0_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const agent = new ToolLoopAgent({
+  model: mem0("gpt-4.1", { user_id: "user-123" }),
+});
+
+const { text } = await agent.generate({
+  prompt: "Remember that my favorite editor is Neovim",
+});
+```
+
+Mem0 works across multiple LLM providers (OpenAI, Anthropic, Google, Groq, Cohere). You can also manage memories explicitly:
+
+```ts
+import { addMemories, retrieveMemories } from "@mem0/vercel-ai-provider";
+
+await addMemories(messages, { user_id: "user-123" });
+const context = await retrieveMemories(prompt, { user_id: "user-123" });
+```
+
+See the [Mem0 provider documentation](/providers/community-providers/mem0) for full setup and configuration.
+
+### Supermemory
+
+[Supermemory](https://supermemory.ai) is a long-term memory platform that adds persistent, self-growing memory to your AI applications. It provides tools that handle saving and retrieving memories automatically through semantic search.
+
+```bash
+pnpm add @supermemory/tools
+```
+
+```ts
+__PROVIDER_IMPORT__;
+import { supermemoryTools } from "@supermemory/tools/ai-sdk";
+import { ToolLoopAgent } from "ai";
+
+const agent = new ToolLoopAgent({
+  model: __MODEL__,
+  tools: supermemoryTools(process.env.SUPERMEMORY_API_KEY!),
+});
+
+const result = await agent.generate({
+  prompt: "Remember that my favorite editor is Neovim",
+});
+```
+
+Supermemory works with any AI SDK provider. The tools give the model `addMemory` and `searchMemories` operations that handle storage and retrieval.
+
+See the [Supermemory provider documentation](/providers/community-providers/supermemory) for full setup and configuration.
+
+### Hindsight
+
+[Hindsight](/providers/community-providers/hindsight) provides agents with persistent memory through five tools: `retain`, `recall`, `reflect`, `getMentalModel`, and `getDocument`. It can be self-hosted with Docker or used as a cloud service.
+
+```bash
+pnpm add @vectorize-io/hindsight-ai-sdk @vectorize-io/hindsight-client
+```
+
+```ts
+__PROVIDER_IMPORT__;
+import { HindsightClient } from "@vectorize-io/hindsight-client";
+import { createHindsightTools } from "@vectorize-io/hindsight-ai-sdk";
+import { ToolLoopAgent, stepCountIs } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+const client = new HindsightClient({ baseUrl: process.env.HINDSIGHT_API_URL });
+
+const agent = new ToolLoopAgent({
+  model: __MODEL__,
+  tools: createHindsightTools({ client, bankId: "user-123" }),
+  stopWhen: stepCountIs(10),
+  instructions: "You are a helpful assistant with long-term memory.",
+});
+
+const result = await agent.generate({
+  prompt: "Remember that my favorite editor is Neovim",
+});
+```
+
+The `bankId` identifies the memory store and is typically a user ID. In multi-user apps, call `createHindsightTools` inside your request handler so each request gets the right bank. Hindsight works with any AI SDK provider.
+
+See the [Hindsight provider documentation](/providers/community-providers/hindsight) for full setup and configuration.
+
+**When to use memory providers**: these providers are a good fit when you want memory without building any storage infrastructure. The tradeoff is that the provider controls memory behavior, so you have less visibility into what gets stored and how it is retrieved. You also take on a dependency on an external service.
+
+## Custom Tool
+
+Building your own memory tool from scratch is the most flexible approach. You control the storage format, the interface, and the retrieval logic. This requires the most upfront work but gives you full ownership of how memory works, with no provider lock-in and no external dependencies.
+
+There are two common patterns:
+
+- **Structured actions**: you define explicit operations (`view`, `create`, `update`, `search`) and handle structured input yourself. Safe by design since you control every operation.
+- **Bash-backed**: you give the model a sandboxed bash environment to compose shell commands (`cat`, `grep`, `sed`, `echo`) for flexible memory access. More powerful but requires command validation for safety.
+
+For a full walkthrough of implementing a custom memory tool with a bash-backed interface, AST-based command validation, and filesystem persistence, see the **[Build a Custom Memory Tool](/cookbook/guides/custom-memory-tool)** recipe.
 
 ---
 
@@ -8477,10 +9342,8 @@ These functions take a standardized approach to setting up [prompts](./prompts) 
   This function is ideal for non-interactive use cases such as automation tasks where you need to write text (e.g. drafting email or summarizing web pages) and for agents that use tools.
 - [`streamText`](/docs/ai-sdk-core/generating-text): Stream text and tool calls.
   You can use the `streamText` function for interactive use cases such as [chat bots](/docs/ai-sdk-ui/chatbot) and [content streaming](/docs/ai-sdk-ui/completion).
-- [`generateObject`](/docs/ai-sdk-core/generating-structured-data): Generates a typed, structured object that matches a [Zod](https://zod.dev/) schema.
-  You can use this function to force the language model to return structured data, e.g. for information extraction, synthetic data generation, or classification tasks.
-- [`streamObject`](/docs/ai-sdk-core/generating-structured-data): Stream a structured object that matches a Zod schema.
-  You can use this function to [stream generated UIs](/docs/ai-sdk-ui/object-generation).
+
+Both `generateText` and `streamText` support [structured output](/docs/ai-sdk-core/generating-structured-data) via the `output` property (e.g. `Output.object()`, `Output.array()`), allowing you to generate typed, schema-validated data for information extraction, synthetic data generation, classification tasks, and [streaming generated UIs](/docs/ai-sdk-ui/object-generation).
 
 ## API Reference
 
@@ -8594,6 +9457,60 @@ const result = await generateText({
   },
 });
 ```
+
+### Lifecycle callbacks (experimental)
+
+<Note type="warning">
+  Experimental callbacks are subject to breaking changes in incremental package
+  releases.
+</Note>
+
+`generateText` provides several experimental lifecycle callbacks that let you hook into different phases of the generation process.
+These are useful for logging, observability, debugging, and custom telemetry.
+Errors thrown inside these callbacks are silently caught and do not break the generation flow.
+
+```tsx
+import { generateText } from "ai";
+__PROVIDER_IMPORT__;
+
+const result = await generateText({
+  model: __MODEL__,
+  prompt: "What is the weather in San Francisco?",
+  tools: {
+    // ... your tools
+  },
+
+  experimental_onStart({ model, settings, functionId }) {
+    console.log("Generation started", { model, functionId });
+  },
+
+  experimental_onStepStart({ stepNumber, model, promptMessages }) {
+    console.log(`Step ${stepNumber} starting`, { model: model.modelId });
+  },
+
+  experimental_onToolCallStart({ toolName, toolCallId, input }) {
+    console.log(`Tool call starting: ${toolName}`, { toolCallId });
+  },
+
+  experimental_onToolCallFinish({ toolName, durationMs, error }) {
+    console.log(`Tool call finished: ${toolName} (${durationMs}ms)`, {
+      success: !error,
+    });
+  },
+
+  onStepFinish({ stepNumber, finishReason, usage }) {
+    console.log(`Step ${stepNumber} finished`, { finishReason, usage });
+  },
+});
+```
+
+The available lifecycle callbacks are:
+
+- **`experimental_onStart`**: Called once when the `generateText` operation begins, before any LLM calls. Receives model info, prompt, settings, and telemetry metadata.
+- **`experimental_onStepStart`**: Called before each step (LLM call). Receives the step number, model, prompt messages being sent, tools, and prior steps.
+- **`experimental_onToolCallStart`**: Called right before a tool's `execute` function runs. Receives the tool name, call ID, and input.
+- **`experimental_onToolCallFinish`**: Called right after a tool's `execute` function completes or errors. Receives the tool name, call ID, input, output (or undefined on error), error (or undefined on success), and `durationMs`.
+- **`onStepFinish`**: Called after each step finishes. Now also includes `stepNumber` (zero-based index of the completed step).
 
 ## `streamText`
 
@@ -8732,6 +9649,62 @@ const result = streamText({
   },
 });
 ```
+
+### Lifecycle callbacks (experimental)
+
+<Note type="warning">
+  Experimental callbacks are subject to breaking changes in incremental package
+  releases.
+</Note>
+
+`streamText` provides several experimental lifecycle callbacks that let you hook into different phases of the streaming process.
+These are useful for logging, observability, debugging, and custom telemetry.
+Errors thrown inside these callbacks are silently caught and do not break the streaming flow.
+
+```tsx
+import { streamText } from "ai";
+__PROVIDER_IMPORT__;
+
+const result = streamText({
+  model: __MODEL__,
+  prompt: "What is the weather in San Francisco?",
+  tools: {
+    // ... your tools
+  },
+
+  experimental_onStart({ model, system, prompt, messages }) {
+    console.log("Streaming started", { model, prompt });
+  },
+
+  experimental_onStepStart({ stepNumber, model, messages }) {
+    console.log(`Step ${stepNumber} starting`, { model: model.modelId });
+  },
+
+  experimental_onToolCallStart({ toolCall }) {
+    console.log(`Tool call starting: ${toolCall.toolName}`, {
+      toolCallId: toolCall.toolCallId,
+    });
+  },
+
+  experimental_onToolCallFinish({ toolCall, durationMs, success, error }) {
+    console.log(`Tool call finished: ${toolCall.toolName} (${durationMs}ms)`, {
+      success,
+    });
+  },
+
+  onStepFinish({ finishReason, usage }) {
+    console.log("Step finished", { finishReason, usage });
+  },
+});
+```
+
+The available lifecycle callbacks are:
+
+- **`experimental_onStart`**: Called once when the `streamText` operation begins, before any LLM calls. Receives model info, prompt, settings, and telemetry metadata.
+- **`experimental_onStepStart`**: Called before each step (LLM call). Receives the step number, model, messages being sent, tools, and prior steps.
+- **`experimental_onToolCallStart`**: Called right before a tool's `execute` function runs. Receives the tool call object, messages, and context.
+- **`experimental_onToolCallFinish`**: Called right after a tool's `execute` function completes or errors. Receives the tool call object, `durationMs`, and a discriminated union with `success`/`output` or `success`/`error`.
+- **`onStepFinish`**: Called after each step finishes. Receives the finish reason, usage, and other step details.
 
 ### `fullStream` property
 
@@ -9541,190 +10514,26 @@ try {
 }
 ```
 
-## generateObject and streamObject (Legacy)
-
-<Note type="warning">
-  `generateObject` and `streamObject` are deprecated. Use `generateText` and
-  `streamText` with the `output` property instead. The legacy functions will be
-  removed in a future major version.
-</Note>
-
-The `generateObject` and `streamObject` functions are the legacy way to generate structured data. They work similarly to `generateText` and `streamText` with `Output.object()`, but as standalone functions.
-
-### generateObject
-
-```ts
-import { generateObject } from "ai";
-__PROVIDER_IMPORT__;
-import { z } from "zod";
-
-const { object } = await generateObject({
-  model: __MODEL__,
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.object({ name: z.string(), amount: z.string() })),
-      steps: z.array(z.string()),
-    }),
-  }),
-  prompt: "Generate a lasagna recipe.",
-});
-```
-
-### streamObject
-
-```ts
-import { streamObject } from "ai";
-__PROVIDER_IMPORT__;
-import { z } from "zod";
-
-const { partialObjectStream } = streamObject({
-  model: __MODEL__,
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.object({ name: z.string(), amount: z.string() })),
-      steps: z.array(z.string()),
-    }),
-  }),
-  prompt: "Generate a lasagna recipe.",
-});
-
-for await (const partialObject of partialObjectStream) {
-  console.log(partialObject);
-}
-```
-
-### Schema Name and Description (Legacy)
-
-You can optionally specify a name and description for the schema. These are used by some providers for additional LLM guidance, e.g. via tool or schema name.
-
-```ts highlight="4-5"
-import { generateObject } from "ai";
-__PROVIDER_IMPORT__;
-import { z } from "zod";
-
-const { object } = await generateObject({
-  model: __MODEL__,
-  schemaName: "Recipe",
-  schemaDescription: "A recipe for a dish.",
-  schema: z.object({
-    name: z.string(),
-    ingredients: z.array(z.object({ name: z.string(), amount: z.string() })),
-    steps: z.array(z.string()),
-  }),
-  prompt: "Generate a lasagna recipe.",
-});
-```
-
-### Output Strategy (Legacy)
-
-The legacy functions support different output strategies via the `output` parameter:
-
-#### Array
-
-Generate an array of objects. The schema specifies the shape of an array element.
-
-```ts highlight="7"
-import { streamObject } from "ai";
-__PROVIDER_IMPORT__;
-import { z } from "zod";
-
-const { elementStream } = streamObject({
-  model: __MODEL__,
-  output: "array",
-  schema: z.object({
-    name: z.string(),
-    class: z
-      .string()
-      .describe("Character class, e.g. warrior, mage, or thief."),
-    description: z.string(),
-  }),
-  prompt: "Generate 3 hero descriptions for a fantasy role playing game.",
-});
-
-for await (const hero of elementStream) {
-  console.log(hero);
-}
-```
-
-#### Enum
-
-Generate a specific enum value for classification tasks.
-
-```ts highlight="5-6"
-import { generateObject } from "ai";
-__PROVIDER_IMPORT__;
-
-const { object } = await generateObject({
-  model: __MODEL__,
-  output: "enum",
-  enum: ["action", "comedy", "drama", "horror", "sci-fi"],
-  prompt:
-    "Classify the genre of this movie plot: " +
-    '"A group of astronauts travel through a wormhole in search of a ' +
-    'new habitable planet for humanity."',
-});
-```
-
-#### No Schema
-
-Generate unstructured JSON without a schema.
-
-```ts highlight="6"
-import { generateObject } from "ai";
-__PROVIDER_IMPORT__;
-
-const { object } = await generateObject({
-  model: __MODEL__,
-  output: "no-schema",
-  prompt: "Generate a lasagna recipe.",
-});
-```
-
-### Repairing Invalid JSON (Legacy)
-
-<Note type="warning">
-  The `repairText` function is experimental and may change in the future.
-</Note>
-
-Sometimes the model will generate invalid or malformed JSON.
-You can use the `repairText` function to attempt to repair the JSON.
-
-```ts highlight="7-10"
-import { generateObject } from "ai";
-
-const { object } = await generateObject({
-  model,
-  schema,
-  prompt,
-  experimental_repairText: async ({ text, error }) => {
-    // example: add a closing brace to the text
-    return text + "}";
-  },
-});
-```
-
 ## More Examples
 
-You can see `generateObject` and `streamObject` in action using various frameworks in the following examples:
+You can see structured output generation in action using various frameworks in the following examples:
 
-### `generateObject`
+### `generateText` with Output
 
 <ExampleLinks
 examples={[
 {
-title: 'Learn to generate objects in Node.js',
+title: 'Learn to generate structured data in Node.js',
 link: '/examples/node/generating-structured-data/generate-object',
 },
 {
 title:
-'Learn to generate objects in Next.js with Route Handlers (AI SDK UI)',
+'Learn to generate structured data in Next.js with Route Handlers (AI SDK UI)',
 link: '/examples/next-pages/basics/generating-object',
 },
 {
 title:
-'Learn to generate objects in Next.js with Server Actions (AI SDK RSC)',
+'Learn to generate structured data in Next.js with Server Actions (AI SDK RSC)',
 link: '/examples/next-app/basics/generating-object',
 },
 ]}
@@ -9735,17 +10544,17 @@ link: '/examples/next-app/basics/generating-object',
 <ExampleLinks
 examples={[
 {
-title: 'Learn to stream objects in Node.js',
+title: 'Learn to stream structured data in Node.js',
 link: '/examples/node/streaming-structured-data/stream-object',
 },
 {
 title:
-'Learn to stream objects in Next.js with Route Handlers (AI SDK UI)',
+'Learn to stream structured data in Next.js with Route Handlers (AI SDK UI)',
 link: '/examples/next-pages/basics/streaming-object-generation',
 },
 {
 title:
-'Learn to stream objects in Next.js with Server Actions (AI SDK RSC)',
+'Learn to stream structured data in Next.js with Server Actions (AI SDK RSC)',
 link: '/examples/next-app/basics/streaming-object-generation',
 },
 ]}
@@ -10059,16 +10868,58 @@ is triggered when a step is finished,
 i.e. all text deltas, tool calls, and tool results for the step are available.
 When you have multiple steps, the callback is triggered for each step.
 
-```tsx highlight="5-7"
+The callback receives a `stepNumber` (zero-based) to identify which step just completed:
+
+```tsx highlight="5-8"
 import { generateText } from "ai";
 
 const result = await generateText({
   // ...
-  onStepFinish({ text, toolCalls, toolResults, finishReason, usage }) {
+  onStepFinish({
+    stepNumber,
+    text,
+    toolCalls,
+    toolResults,
+    finishReason,
+    usage,
+  }) {
+    console.log(`Step ${stepNumber} finished (${finishReason})`);
     // your own logic, e.g. for saving the chat history or recording usage
   },
 });
 ```
+
+### Tool execution lifecycle callbacks
+
+You can use `experimental_onToolCallStart` and `experimental_onToolCallFinish` to observe tool execution.
+These callbacks are called right before and after each tool's `execute` function, giving you
+visibility into tool execution timing, inputs, outputs, and errors:
+
+```tsx highlight="5-14"
+import { generateText } from "ai";
+
+const result = await generateText({
+  // ... model, tools, prompt
+  experimental_onToolCallStart({ toolName, toolCallId, input }) {
+    console.log(`Calling tool: ${toolName}`, { toolCallId, input });
+  },
+  experimental_onToolCallFinish({
+    toolName,
+    toolCallId,
+    output,
+    error,
+    durationMs,
+  }) {
+    if (error) {
+      console.error(`Tool ${toolName} failed after ${durationMs}ms:`, error);
+    } else {
+      console.log(`Tool ${toolName} completed in ${durationMs}ms`, { output });
+    }
+  },
+});
+```
+
+Errors thrown inside these callbacks are silently caught and do not break the generation flow.
 
 ### `prepareStep` callback
 
@@ -10614,7 +11465,7 @@ You can use different strategies to repair the tool call:
 
 ```ts
 import { openai } from "@ai-sdk/openai";
-import { generateObject, generateText, NoSuchToolError, tool } from "ai";
+import { generateText, NoSuchToolError, Output, tool } from "ai";
 
 const result = await generateText({
   model,
@@ -10633,9 +11484,9 @@ const result = await generateText({
 
     const tool = tools[toolCall.toolName as keyof typeof tools];
 
-    const { object: repairedArgs } = await generateObject({
+    const { output: repairedArgs } = await generateText({
       model: __MODEL__,
-      schema: tool.inputSchema,
+      output: Output.object({ schema: tool.inputSchema }),
       prompt: [
         `The model tried to call the tool "${toolCall.toolName}"` +
           ` with the following inputs:`,
@@ -10655,7 +11506,7 @@ const result = await generateText({
 
 ```ts
 import { openai } from "@ai-sdk/openai";
-import { generateObject, generateText, NoSuchToolError, tool } from "ai";
+import { generateText, NoSuchToolError, tool } from "ai";
 
 const result = await generateText({
   model,
@@ -11273,19 +12124,21 @@ Zod expects JavaScript Date objects, but models return dates as strings.
 You can specify and validate the date format using `z.string().datetime()` or `z.string().date()`,
 and then use a Zod transformer to convert the string to a Date object.
 
-```ts highlight="7-10"
-const result = await generateObject({
+```ts highlight="8-11"
+const result = await generateText({
   model: __MODEL__,
-  schema: z.object({
-    events: z.array(
-      z.object({
-        event: z.string(),
-        date: z
-          .string()
-          .date()
-          .transform((value) => new Date(value)),
-      }),
-    ),
+  output: Output.object({
+    schema: z.object({
+      events: z.array(
+        z.object({
+          event: z.string(),
+          date: z
+            .string()
+            .date()
+            .transform((value) => new Date(value)),
+        }),
+      ),
+    }),
   }),
   prompt: "List 5 important events from the year 2000.",
 });
@@ -12342,7 +13195,8 @@ for (const file of result.files) {
 
 | Provider                                                                        | Model                                                        | Support sizes (`width x height`) or aspect ratios (`width : height`)                                                                                                |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [xAI Grok](/providers/ai-sdk-providers/xai#image-models)                        | `grok-2-image`                                               | 1024x768 (default)                                                                                                                                                  |
+| [xAI Grok](/providers/ai-sdk-providers/xai#image-models)                        | `grok-2-image`                                               | `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3`, `2:1`, `1:2`, `19.5:9`, `9:19.5`, `20:9`, `9:20`, `auto`                                                         |
+| [xAI Grok](/providers/ai-sdk-providers/xai#image-models)                        | `grok-imagine-image`                                         | `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3`, `2:1`, `1:2`, `19.5:9`, `9:19.5`, `20:9`, `9:20`, `auto`                                                         |
 | [OpenAI](/providers/ai-sdk-providers/openai#image-models)                       | `gpt-image-1`                                                | 1024x1024, 1536x1024, 1024x1536                                                                                                                                     |
 | [OpenAI](/providers/ai-sdk-providers/openai#image-models)                       | `dall-e-3`                                                   | 1024x1024, 1792x1024, 1024x1792                                                                                                                                     |
 | [OpenAI](/providers/ai-sdk-providers/openai#image-models)                       | `dall-e-2`                                                   | 256x256, 512x512, 1024x1024                                                                                                                                         |
@@ -12456,21 +13310,75 @@ const transcript = await transcribe({
 });
 ```
 
+### Download Size Limits
+
+When `audio` is a URL, the SDK downloads the file with a default **2 GiB** size limit.
+You can customize this using `createDownload`:
+
+```ts highlight="1,8"
+import { experimental_transcribe as transcribe, createDownload } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+const transcript = await transcribe({
+  model: openai.transcription("whisper-1"),
+  audio: new URL("https://example.com/audio.mp3"),
+  download: createDownload({ maxBytes: 50 * 1024 * 1024 }), // 50 MB limit
+});
+```
+
+You can also provide a fully custom download function:
+
+```ts highlight="6-12"
+import { experimental_transcribe as transcribe } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+const transcript = await transcribe({
+  model: openai.transcription("whisper-1"),
+  audio: new URL("https://example.com/audio.mp3"),
+  download: async ({ url }) => {
+    const res = await myAuthenticatedFetch(url);
+    return {
+      data: new Uint8Array(await res.arrayBuffer()),
+      mediaType: res.headers.get("content-type") ?? undefined,
+    };
+  },
+});
+```
+
+If a download exceeds the size limit, a `DownloadError` is thrown:
+
+```ts
+import { experimental_transcribe as transcribe, DownloadError } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+try {
+  await transcribe({
+    model: openai.transcription("whisper-1"),
+    audio: new URL("https://example.com/audio.mp3"),
+  });
+} catch (error) {
+  if (DownloadError.isInstance(error)) {
+    console.log("Download failed:", error.message);
+  }
+}
+```
+
 ### Abort Signals and Timeouts
 
 `transcribe` accepts an optional `abortSignal` parameter of
 type [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
 that you can use to abort the transcription process or set a timeout.
 
+This is particularly useful when combined with URL downloads to prevent long-running requests:
+
 ```ts highlight="8"
 import { openai } from "@ai-sdk/openai";
 import { experimental_transcribe as transcribe } from "ai";
-import { readFile } from "fs/promises";
 
 const transcript = await transcribe({
   model: openai.transcription("whisper-1"),
-  audio: await readFile("audio.mp3"),
-  abortSignal: AbortSignal.timeout(1000), // Abort after 1 second
+  audio: new URL("https://example.com/audio.mp3"),
+  abortSignal: AbortSignal.timeout(5000), // Abort after 5 seconds
 });
 ```
 
@@ -12973,7 +13881,7 @@ You can configure the polling timeout using provider-specific options. Each prov
 
 ```tsx highlight={"10-12"}
 import { experimental_generateVideo as generateVideo } from "ai";
-import { fal, type FalVideoProviderOptions } from "@ai-sdk/fal";
+import { fal, type FalVideoModelOptions } from "@ai-sdk/fal";
 
 const { video } = await generateVideo({
   model: fal.video("luma-dream-machine/ray-2"),
@@ -12982,7 +13890,7 @@ const { video } = await generateVideo({
   providerOptions: {
     fal: {
       pollTimeoutMs: 600000, // 10 minutes
-    } satisfies FalVideoProviderOptions,
+    } satisfies FalVideoModelOptions,
   },
 });
 ```
@@ -13097,14 +14005,21 @@ try {
 
 ## Video Models
 
-| Provider                                                                | Model                      | Features                               |
-| ----------------------------------------------------------------------- | -------------------------- | -------------------------------------- |
-| [FAL](/providers/ai-sdk-providers/fal#video-models)                     | `luma-dream-machine/ray-2` | Text-to-video, image-to-video          |
-| [FAL](/providers/ai-sdk-providers/fal#video-models)                     | `minimax-video`            | Text-to-video                          |
-| [Google](/providers/ai-sdk-providers/google#video-models)               | `veo-2.0-generate-001`     | Text-to-video, up to 4 videos per call |
-| [Google Vertex](/providers/ai-sdk-providers/google-vertex#video-models) | `veo-3.1-generate-001`     | Text-to-video, audio generation        |
-| [Google Vertex](/providers/ai-sdk-providers/google-vertex#video-models) | `veo-2.0-generate-001`     | Text-to-video, up to 4 videos per call |
-| [Replicate](/providers/ai-sdk-providers/replicate#video-models)         | `minimax/video-01`         | Text-to-video                          |
+| Provider                                                                | Model                       | Features                               |
+| ----------------------------------------------------------------------- | --------------------------- | -------------------------------------- |
+| [FAL](/providers/ai-sdk-providers/fal#video-models)                     | `luma-dream-machine/ray-2`  | Text-to-video, image-to-video          |
+| [FAL](/providers/ai-sdk-providers/fal#video-models)                     | `minimax-video`             | Text-to-video                          |
+| [Google](/providers/ai-sdk-providers/google#video-models)               | `veo-2.0-generate-001`      | Text-to-video, up to 4 videos per call |
+| [Google Vertex](/providers/ai-sdk-providers/google-vertex#video-models) | `veo-3.1-generate-001`      | Text-to-video, audio generation        |
+| [Google Vertex](/providers/ai-sdk-providers/google-vertex#video-models) | `veo-3.1-fast-generate-001` | Text-to-video, audio generation        |
+| [Google Vertex](/providers/ai-sdk-providers/google-vertex#video-models) | `veo-3.0-generate-001`      | Text-to-video, audio generation        |
+| [Google Vertex](/providers/ai-sdk-providers/google-vertex#video-models) | `veo-3.0-fast-generate-001` | Text-to-video, audio generation        |
+| [Google Vertex](/providers/ai-sdk-providers/google-vertex#video-models) | `veo-2.0-generate-001`      | Text-to-video, up to 4 videos per call |
+| [Kling AI](/providers/ai-sdk-providers/klingai#video-models)            | `kling-v2.6-t2v`            | Text-to-video                          |
+| [Kling AI](/providers/ai-sdk-providers/klingai#video-models)            | `kling-v2.6-i2v`            | Image-to-video                         |
+| [Kling AI](/providers/ai-sdk-providers/klingai#video-models)            | `kling-v2.6-motion-control` | Motion control                         |
+| [Replicate](/providers/ai-sdk-providers/replicate#video-models)         | `minimax/video-01`          | Text-to-video                          |
+| [xAI](/providers/ai-sdk-providers/xai#video-models)                     | `grok-imagine-video`        | Text-to-video, image-to-video, editing |
 
 Above are a small subset of the video models supported by the AI SDK providers. For more, see the respective provider documentation.
 
@@ -13833,13 +14748,13 @@ Here is an example that implements the following concepts:
 - setup an OpenAI-compatible provider with custom api key and base URL (here: `custom > *`)
 - setup model name aliases (here: `anthropic > fast`, `anthropic > writing`, `anthropic > reasoning`)
 - pre-configure model settings (here: `anthropic > reasoning`)
-- validate the provider-specific options (here: `AnthropicProviderOptions`)
+- validate the provider-specific options (here: `AnthropicLanguageModelOptions`)
 - use a fallback provider (here: `anthropic > *`)
 - limit a provider to certain models without a fallback (here: `groq > gemma2-9b-it`, `groq > qwen-qwq-32b`)
 - define a custom separator for the provider registry (here: `>`)
 
 ```ts
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { xai } from "@ai-sdk/xai";
 import { groq } from "@ai-sdk/groq";
@@ -13886,7 +14801,7 @@ export const registry = createProviderRegistry(
                     type: "enabled",
                     budgetTokens: 32000,
                   },
-                } satisfies AnthropicProviderOptions,
+                } satisfies AnthropicLanguageModelOptions,
               },
             },
           }),
@@ -14203,14 +15118,14 @@ const result = streamText({
 });
 ```
 
-### generateObject
+### generateText with Output
 
 ```ts
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { z } from "zod";
 
-const result = await generateObject({
+const result = await generateText({
   model: new MockLanguageModelV3({
     doGenerate: async () => ({
       content: [{ type: "text", text: `{"content":"Hello, world!"}` }],
@@ -14231,19 +15146,19 @@ const result = await generateObject({
       warnings: [],
     }),
   }),
-  schema: z.object({ content: z.string() }),
+  output: Output.object({ schema: z.object({ content: z.string() }) }),
   prompt: "Hello, test!",
 });
 ```
 
-### streamObject
+### streamText with Output
 
 ```ts
-import { streamObject, simulateReadableStream } from "ai";
+import { streamText, Output, simulateReadableStream } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { z } from "zod";
 
-const result = streamObject({
+const result = streamText({
   model: new MockLanguageModelV3({
     doStream: async () => ({
       stream: simulateReadableStream({
@@ -14278,7 +15193,7 @@ const result = streamObject({
       }),
     }),
   }),
-  schema: z.object({ content: z.string() }),
+  output: Output.object({ schema: z.object({ content: z.string() }) }),
   prompt: "Hello, test!",
 });
 ```
@@ -14472,56 +15387,21 @@ const result = await generateText({
 
 It also records a `ai.stream.firstChunk` event when the first chunk of the stream is received.
 
-### generateObject function
+### Deprecated object APIs
 
-`generateObject` records 2 types of spans:
+<Note type="warning">
+  `generateObject` and `streamObject` are deprecated. Use `generateText` and
+  `streamText` with the `output` property instead.
+</Note>
 
-- `ai.generateObject` (span): the full length of the generateObject call. It contains 1 or more `ai.generateObject.doGenerate` spans.
-  It contains the [basic LLM span information](#basic-llm-span-information) and the following attributes:
-  - `operation.name`: `ai.generateObject` and the functionId that was set through `telemetry.functionId`
-  - `ai.operationId`: `"ai.generateObject"`
-  - `ai.prompt`: the prompt that was used when calling `generateObject`
-  - `ai.schema`: Stringified JSON schema version of the schema that was passed into the `generateObject` function
-  - `ai.schema.name`: the name of the schema that was passed into the `generateObject` function
-  - `ai.schema.description`: the description of the schema that was passed into the `generateObject` function
-  - `ai.response.object`: the object that was generated (stringified JSON)
-  - `ai.settings.output`: the output type that was used, e.g. `object` or `no-schema`
+If you still run deprecated object APIs, you will see legacy span names:
 
-- `ai.generateObject.doGenerate` (span): a provider doGenerate call.
-  It contains the [call LLM span information](#call-llm-span-information) and the following attributes:
-  - `operation.name`: `ai.generateObject.doGenerate` and the functionId that was set through `telemetry.functionId`
-  - `ai.operationId`: `"ai.generateObject.doGenerate"`
-  - `ai.prompt.messages`: the messages that were passed into the provider
-  - `ai.response.object`: the object that was generated (stringified JSON)
-  - `ai.response.finishReason`: the reason why the generation finished
+- `generateObject`: `ai.generateObject`, `ai.generateObject.doGenerate`
+- `streamObject`: `ai.streamObject`, `ai.streamObject.doStream`, `ai.stream.firstChunk`
 
-### streamObject function
-
-`streamObject` records 2 types of spans and 1 type of event:
-
-- `ai.streamObject` (span): the full length of the streamObject call. It contains 1 or more `ai.streamObject.doStream` spans.
-  It contains the [basic LLM span information](#basic-llm-span-information) and the following attributes:
-  - `operation.name`: `ai.streamObject` and the functionId that was set through `telemetry.functionId`
-  - `ai.operationId`: `"ai.streamObject"`
-  - `ai.prompt`: the prompt that was used when calling `streamObject`
-  - `ai.schema`: Stringified JSON schema version of the schema that was passed into the `streamObject` function
-  - `ai.schema.name`: the name of the schema that was passed into the `streamObject` function
-  - `ai.schema.description`: the description of the schema that was passed into the `streamObject` function
-  - `ai.response.object`: the object that was generated (stringified JSON)
-  - `ai.settings.output`: the output type that was used, e.g. `object` or `no-schema`
-
-- `ai.streamObject.doStream` (span): a provider doStream call.
-  This span contains an `ai.stream.firstChunk` event.
-  It contains the [call LLM span information](#call-llm-span-information) and the following attributes:
-  - `operation.name`: `ai.streamObject.doStream` and the functionId that was set through `telemetry.functionId`
-  - `ai.operationId`: `"ai.streamObject.doStream"`
-  - `ai.prompt.messages`: the messages that were passed into the provider
-  - `ai.response.object`: the object that was generated (stringified JSON)
-  - `ai.response.msToFirstChunk`: the time it took to receive the first chunk
-  - `ai.response.finishReason`: the reason why the generation finished
-
-- `ai.stream.firstChunk` (event): an event that is emitted when the first chunk of the stream is received.
-  - `ai.response.msToFirstChunk`: the time it took to receive the first chunk
+Legacy object spans include the same core metadata as other LLM spans, plus
+object-specific attributes such as `ai.schema.*`, `ai.response.object`, and
+`ai.settings.output`.
 
 ### embed function
 
@@ -14563,8 +15443,7 @@ It also records a `ai.stream.firstChunk` event when the first chunk of the strea
 
 ### Basic LLM span information
 
-Many spans that use LLMs (`ai.generateText`, `ai.generateText.doGenerate`, `ai.streamText`, `ai.streamText.doStream`,
-`ai.generateObject`, `ai.generateObject.doGenerate`, `ai.streamObject`, `ai.streamObject.doStream`) contain the following attributes:
+Many spans that use LLMs (`ai.generateText`, `ai.generateText.doGenerate`, `ai.streamText`, `ai.streamText.doStream`) contain the following attributes:
 
 - `resource.name`: the functionId that was set through `telemetry.functionId`
 - `ai.model.id`: the id of the model
@@ -14579,7 +15458,7 @@ Many spans that use LLMs (`ai.generateText`, `ai.generateText.doGenerate`, `ai.s
 
 ### Call LLM span information
 
-Spans that correspond to individual LLM calls (`ai.generateText.doGenerate`, `ai.streamText.doStream`, `ai.generateObject.doGenerate`, `ai.streamObject.doStream`) contain
+Spans that correspond to individual LLM calls (`ai.generateText.doGenerate`, `ai.streamText.doStream`) contain
 [basic LLM span information](#basic-llm-span-information) and the following attributes:
 
 - `ai.response.model`: the model that was used to generate the response. This can be different from the model that was requested if the provider supports aliases.
@@ -20061,10 +20940,10 @@ It can arise due to the following reasons:
 You can check if an error is an instance of `AI_NoObjectGeneratedError` using:
 
 ```typescript
-import { generateObject, NoObjectGeneratedError } from "ai";
+import { generateText, NoObjectGeneratedError, Output } from "ai";
 
 try {
-  await generateObject({ model, schema, prompt });
+  await generateText({ model, output: Output.object({ schema }), prompt });
 } catch (error) {
   if (NoObjectGeneratedError.isInstance(error)) {
     console.log("NoObjectGeneratedError");
@@ -20712,7 +21591,7 @@ const { text } = await generateText({
 });
 ```
 
-AI Gateway language models can also be used in the `streamText`, `generateObject`, and `streamObject` functions (see [AI SDK Core](/docs/ai-sdk-core)).
+AI Gateway language models can also be used in the `streamText` function and support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output) (see [AI SDK Core](/docs/ai-sdk-core)).
 
 ## Available Models
 
@@ -21072,7 +21951,7 @@ for await (const part of result.fullStream) {
 Track usage per end-user and categorize requests with tags:
 
 ```ts
-import type { GatewayProviderOptions } from "@ai-sdk/gateway";
+import type { GatewayLanguageModelOptions } from "@ai-sdk/gateway";
 import { generateText } from "ai";
 
 const { text } = await generateText({
@@ -21082,7 +21961,7 @@ const { text } = await generateText({
     gateway: {
       user: "user-abc-123", // Track usage for this specific end-user
       tags: ["document-summary", "premium-feature"], // Categorize for reporting
-    } satisfies GatewayProviderOptions,
+    } satisfies GatewayLanguageModelOptions,
   },
 });
 ```
@@ -21102,7 +21981,7 @@ The AI Gateway provider accepts provider options that control routing behavior a
 You can use the `gateway` key in `providerOptions` to control how AI Gateway routes requests:
 
 ```ts
-import type { GatewayProviderOptions } from "@ai-sdk/gateway";
+import type { GatewayLanguageModelOptions } from "@ai-sdk/gateway";
 import { generateText } from "ai";
 
 const { text } = await generateText({
@@ -21112,7 +21991,7 @@ const { text } = await generateText({
     gateway: {
       order: ["vertex", "anthropic"], // Try Vertex AI first, then Anthropic
       only: ["vertex", "anthropic"], // Only use these providers
-    } satisfies GatewayProviderOptions,
+    } satisfies GatewayLanguageModelOptions,
   },
 });
 ```
@@ -21167,7 +22046,7 @@ The following gateway provider options are available:
 You can combine these options to have fine-grained control over routing and tracking:
 
 ```ts
-import type { GatewayProviderOptions } from "@ai-sdk/gateway";
+import type { GatewayLanguageModelOptions } from "@ai-sdk/gateway";
 import { generateText } from "ai";
 
 const { text } = await generateText({
@@ -21177,7 +22056,7 @@ const { text } = await generateText({
     gateway: {
       order: ["vertex"], // Prefer Vertex AI
       only: ["anthropic", "vertex"], // Only allow these providers
-    } satisfies GatewayProviderOptions,
+    } satisfies GatewayLanguageModelOptions,
   },
 });
 ```
@@ -21187,7 +22066,7 @@ const { text } = await generateText({
 The `models` option enables automatic fallback to alternative models when the primary model fails:
 
 ```ts
-import type { GatewayProviderOptions } from "@ai-sdk/gateway";
+import type { GatewayLanguageModelOptions } from "@ai-sdk/gateway";
 import { generateText } from "ai";
 
 const { text } = await generateText({
@@ -21196,7 +22075,7 @@ const { text } = await generateText({
   providerOptions: {
     gateway: {
       models: ["openai/gpt-5-nano", "gemini-2.0-flash"], // Fallback models
-    } satisfies GatewayProviderOptions,
+    } satisfies GatewayLanguageModelOptions,
   },
 });
 
@@ -21214,7 +22093,7 @@ that have zero data retention policies. When `zeroDataRetention` is `false` or n
 specified, there is no enforcement of restricting routing.
 
 ```ts
-import type { GatewayProviderOptions } from "@ai-sdk/gateway";
+import type { GatewayLanguageModelOptions } from "@ai-sdk/gateway";
 import { generateText } from "ai";
 
 const { text } = await generateText({
@@ -21223,7 +22102,7 @@ const { text } = await generateText({
   providerOptions: {
     gateway: {
       zeroDataRetention: true,
-    } satisfies GatewayProviderOptions,
+    } satisfies GatewayLanguageModelOptions,
   },
 });
 ```
@@ -21233,8 +22112,8 @@ const { text } = await generateText({
 When using provider-specific options through AI Gateway, use the actual provider name (e.g. `anthropic`, `openai`, not `gateway`) as the key:
 
 ```ts
-import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
-import type { GatewayProviderOptions } from "@ai-sdk/gateway";
+import type { AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
+import type { GatewayLanguageModelOptions } from "@ai-sdk/gateway";
 import { generateText } from "ai";
 
 const { text } = await generateText({
@@ -21243,10 +22122,10 @@ const { text } = await generateText({
   providerOptions: {
     gateway: {
       order: ["vertex", "anthropic"],
-    } satisfies GatewayProviderOptions,
+    } satisfies GatewayLanguageModelOptions,
     anthropic: {
       thinking: { type: "enabled", budgetTokens: 12000 },
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 ```
@@ -21365,7 +22244,8 @@ const { text } = await generateText({
 });
 ```
 
-xAI language models can also be used in the `streamText`, `generateObject`, and `streamObject` functions
+xAI language models can also be used in the `streamText` function
+and support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output)
 (see [AI SDK Core](/docs/ai-sdk-core)).
 
 ### Provider Options
@@ -21374,6 +22254,8 @@ xAI chat models support additional provider options that are not part of
 the [standard call settings](/docs/ai-sdk-core/settings). You can pass them in the `providerOptions` argument:
 
 ```ts
+import { xai, type XaiLanguageModelChatOptions } from "@ai-sdk/xai";
+
 const model = xai("grok-3-mini");
 
 await generateText({
@@ -21381,7 +22263,7 @@ await generateText({
   providerOptions: {
     xai: {
       reasoningEffort: "high",
-    },
+    } satisfies XaiLanguageModelChatOptions,
   },
 });
 ```
@@ -21612,7 +22494,7 @@ const { text } = await generateText({
 The file search tool enables searching through documents stored in xAI vector stores (collections):
 
 ```ts
-import { xai } from "@ai-sdk/xai";
+import { xai, type XaiLanguageModelResponsesOptions } from "@ai-sdk/xai";
 import { streamText } from "ai";
 
 const result = streamText({
@@ -21627,7 +22509,7 @@ const result = streamText({
   providerOptions: {
     xai: {
       include: ["file_search_call.results"],
-    },
+    } satisfies XaiLanguageModelResponsesOptions,
   },
 });
 ```
@@ -21693,7 +22575,7 @@ for await (const part of fullStream) {
 The Responses API supports the following provider options:
 
 ```ts
-import { xai } from "@ai-sdk/xai";
+import { xai, type XaiLanguageModelResponsesOptions } from "@ai-sdk/xai";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -21701,7 +22583,7 @@ const result = await generateText({
   providerOptions: {
     xai: {
       reasoningEffort: "high",
-    },
+    } satisfies XaiLanguageModelResponsesOptions,
   },
   // ...
 });
@@ -21739,7 +22621,7 @@ xAI models support Live Search functionality, allowing them to query real-time d
 To enable search, specify `searchParameters` with a search mode:
 
 ```ts
-import { xai } from "@ai-sdk/xai";
+import { xai, type XaiLanguageModelChatOptions } from "@ai-sdk/xai";
 import { generateText } from "ai";
 
 const { text, sources } = await generateText({
@@ -21752,7 +22634,7 @@ const { text, sources } = await generateText({
         returnCitations: true,
         maxSearchResults: 5,
       },
-    },
+    } satisfies XaiLanguageModelChatOptions,
   },
 });
 
@@ -21798,6 +22680,8 @@ You can specify different types of data sources for search:
 #### Web Search
 
 ```ts
+import { xai, type XaiLanguageModelChatOptions } from "@ai-sdk/xai";
+
 const result = await generateText({
   model: xai("grok-3-latest"),
   prompt: "Best ski resorts in Switzerland",
@@ -21814,7 +22698,7 @@ const result = await generateText({
           },
         ],
       },
-    },
+    } satisfies XaiLanguageModelChatOptions,
   },
 });
 ```
@@ -21829,6 +22713,8 @@ const result = await generateText({
 #### X (Twitter) Search
 
 ```ts
+import { xai, type XaiLanguageModelChatOptions } from "@ai-sdk/xai";
+
 const result = await generateText({
   model: xai("grok-3-latest"),
   prompt: "Latest updates on Grok AI",
@@ -21846,7 +22732,7 @@ const result = await generateText({
           },
         ],
       },
-    },
+    } satisfies XaiLanguageModelChatOptions,
   },
 });
 ```
@@ -21861,6 +22747,8 @@ const result = await generateText({
 #### News Search
 
 ```ts
+import { xai, type XaiLanguageModelChatOptions } from "@ai-sdk/xai";
+
 const result = await generateText({
   model: xai("grok-3-latest"),
   prompt: "Recent tech industry news",
@@ -21877,7 +22765,7 @@ const result = await generateText({
           },
         ],
       },
-    },
+    } satisfies XaiLanguageModelChatOptions,
   },
 });
 ```
@@ -21891,6 +22779,8 @@ const result = await generateText({
 #### RSS Feed Search
 
 ```ts
+import { xai, type XaiLanguageModelChatOptions } from "@ai-sdk/xai";
+
 const result = await generateText({
   model: xai("grok-3-latest"),
   prompt: "Latest status updates",
@@ -21905,7 +22795,7 @@ const result = await generateText({
           },
         ],
       },
-    },
+    } satisfies XaiLanguageModelChatOptions,
   },
 });
 ```
@@ -21919,6 +22809,8 @@ const result = await generateText({
 You can combine multiple data sources in a single search:
 
 ```ts
+import { xai, type XaiLanguageModelChatOptions } from "@ai-sdk/xai";
+
 const result = await generateText({
   model: xai("grok-3-latest"),
   prompt: "Comprehensive overview of recent AI breakthroughs",
@@ -21943,7 +22835,7 @@ const result = await generateText({
           },
         ],
       },
-    },
+    } satisfies XaiLanguageModelChatOptions,
   },
 });
 ```
@@ -21953,6 +22845,8 @@ const result = await generateText({
 When search is enabled with `returnCitations: true`, the response includes sources that were used to generate the answer:
 
 ```ts
+import { xai, type XaiLanguageModelChatOptions } from "@ai-sdk/xai";
+
 const { text, sources } = await generateText({
   model: xai("grok-3-latest"),
   prompt: "What are the latest developments in AI?",
@@ -21962,7 +22856,7 @@ const { text, sources } = await generateText({
         mode: "auto",
         returnCitations: true,
       },
-    },
+    } satisfies XaiLanguageModelChatOptions,
   },
 });
 
@@ -21979,6 +22873,7 @@ for (const source of sources) {
 Live Search works with streaming responses. Citations are included when the stream completes:
 
 ```ts
+import { xai, type XaiLanguageModelChatOptions } from "@ai-sdk/xai";
 import { streamText } from "ai";
 
 const result = streamText({
@@ -21990,7 +22885,7 @@ const result = streamText({
         mode: "auto",
         returnCitations: true,
       },
-    },
+    } satisfies XaiLanguageModelChatOptions,
   },
 });
 
@@ -22052,8 +22947,60 @@ const { image } = await generateImage({
 ```
 
 <Note>
-  The xAI image model does not currently support the `aspectRatio` or `size`
-  parameters. Image size defaults to 1024x768.
+  The xAI image model does not support the `size` parameter. Use `aspectRatio`
+  instead. Supported aspect ratios: `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`,
+  `2:3`, `2:1`, `1:2`, `19.5:9`, `9:19.5`, `20:9`, `9:20`, and `auto`.
+</Note>
+
+### Image Editing
+
+xAI supports image editing through the `grok-2-image` and `grok-imagine-image` models. Pass input images via `prompt.images` to transform or edit existing images.
+
+<Note>
+  xAI image editing does not support masks. Editing is prompt-driven - describe
+  what you want to change in the text prompt.
+</Note>
+
+#### Basic Image Editing
+
+Transform an existing image using text prompts:
+
+```ts
+import { xai } from "@ai-sdk/xai";
+import { generateImage } from "ai";
+import { readFileSync } from "fs";
+
+const imageBuffer = readFileSync("./input-image.png");
+
+const { images } = await generateImage({
+  model: xai.image("grok-2-image"),
+  prompt: {
+    text: "Turn the cat into a golden retriever dog",
+    images: [imageBuffer],
+  },
+});
+```
+
+#### Style Transfer
+
+Apply artistic styles to an image:
+
+```ts
+const imageBuffer = readFileSync("./input-image.png");
+
+const { images } = await generateImage({
+  model: xai.image("grok-2-image"),
+  prompt: {
+    text: "Transform this into a watercolor painting style",
+    images: [imageBuffer],
+  },
+  aspectRatio: "1:1",
+});
+```
+
+<Note>
+  Input images can be provided as `Buffer`, `ArrayBuffer`, `Uint8Array`, or
+  base64-encoded strings. xAI only supports a single input image per request.
 </Note>
 
 ### Model-specific options
@@ -22067,16 +23014,195 @@ import { generateImage } from "ai";
 const { images } = await generateImage({
   model: xai.image("grok-2-image"),
   prompt: "A futuristic cityscape at sunset",
-  maxImagesPerCall: 5, // Default is 10
-  n: 2, // Generate 2 images
+  aspectRatio: "16:9",
+  n: 2,
 });
 ```
 
 ### Model Capabilities
 
-| Model          | Sizes              | Notes                                                                                                                                                                                                    |
-| -------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `grok-2-image` | 1024x768 (default) | xAI's text-to-image generation model, designed to create high-quality images from text prompts. It's trained on a diverse dataset and can generate images across various styles, subjects, and settings. |
+| Model                | Aspect Ratios                                                                                               | Image Editing       |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------- |
+| `grok-2-image`       | `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3`, `2:1`, `1:2`, `19.5:9`, `9:19.5`, `20:9`, `9:20`, `auto` | <Check size={18} /> |
+| `grok-imagine-image` | `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3`, `2:1`, `1:2`, `19.5:9`, `9:19.5`, `20:9`, `9:20`, `auto` | <Check size={18} /> |
+
+## Video Models
+
+You can create xAI video models using the `.video()` factory method.
+For more on video generation with the AI SDK see [generateVideo()](/docs/reference/ai-sdk-core/generate-video).
+
+This provider supports three video generation modes: text-to-video, image-to-video, and video editing.
+
+### Text-to-Video
+
+Generate videos from text prompts:
+
+```ts
+import { xai, type XaiVideoModelOptions } from "@ai-sdk/xai";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const { videos } = await generateVideo({
+  model: xai.video("grok-imagine-video"),
+  prompt: "A chicken flying into the sunset in the style of 90s anime.",
+  aspectRatio: "16:9",
+  duration: 5,
+  providerOptions: {
+    xai: {
+      pollTimeoutMs: 600000, // 10 minutes
+    } satisfies XaiVideoModelOptions,
+  },
+});
+```
+
+### Image-to-Video
+
+Generate videos using an image as the starting frame with an optional text prompt:
+
+```ts
+import { xai, type XaiVideoModelOptions } from "@ai-sdk/xai";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const { videos } = await generateVideo({
+  model: xai.video("grok-imagine-video"),
+  prompt: {
+    image: "https://example.com/start-frame.png",
+    text: "The cat slowly turns its head and blinks",
+  },
+  duration: 5,
+  providerOptions: {
+    xai: {
+      pollTimeoutMs: 600000, // 10 minutes
+    } satisfies XaiVideoModelOptions,
+  },
+});
+```
+
+### Video Editing
+
+Edit an existing video using a text prompt by providing a source video URL via provider options:
+
+```ts
+import { xai, type XaiVideoModelOptions } from "@ai-sdk/xai";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const { videos } = await generateVideo({
+  model: xai.video("grok-imagine-video"),
+  prompt: "Give the person sunglasses and a hat",
+  providerOptions: {
+    xai: {
+      videoUrl: "https://example.com/source-video.mp4",
+      pollTimeoutMs: 600000, // 10 minutes
+    } satisfies XaiVideoModelOptions,
+  },
+});
+```
+
+<Note>
+  Video editing accepts input videos up to 8.7 seconds long. The `duration`,
+  `aspectRatio`, and `resolution` parameters are not supported for editing - the
+  output matches the input video's properties (capped at 720p).
+</Note>
+
+### Chaining and Concurrent Edits
+
+The xAI-hosted video URL is available in `providerMetadata.xai.videoUrl`.
+You can use it to chain sequential edits or branch into concurrent edits
+using `Promise.all`:
+
+```ts
+import { xai, type XaiVideoModelOptions } from "@ai-sdk/xai";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const providerOptions = {
+  xai: {
+    videoUrl: "https://example.com/source-video.mp4",
+    pollTimeoutMs: 600000,
+  } satisfies XaiVideoModelOptions,
+};
+
+// Step 1: Apply an initial edit
+const step1 = await generateVideo({
+  model: xai.video("grok-imagine-video"),
+  prompt: "Add a party hat to the person",
+  providerOptions,
+});
+
+// Get the xAI-hosted URL from provider metadata
+const step1VideoUrl = step1.providerMetadata?.xai?.videoUrl as string;
+
+// Step 2: Apply two more edits concurrently, building on step 1
+const [withSunglasses, withScarf] = await Promise.all([
+  generateVideo({
+    model: xai.video("grok-imagine-video"),
+    prompt: "Add sunglasses",
+    providerOptions: {
+      xai: { videoUrl: step1VideoUrl, pollTimeoutMs: 600000 },
+    },
+  }),
+  generateVideo({
+    model: xai.video("grok-imagine-video"),
+    prompt: "Add a scarf",
+    providerOptions: {
+      xai: { videoUrl: step1VideoUrl, pollTimeoutMs: 600000 },
+    },
+  }),
+]);
+```
+
+### Video Provider Options
+
+The following provider options are available via `providerOptions.xai`.
+You can validate the provider options using the `XaiVideoModelOptions` type.
+
+- **pollIntervalMs** _number_
+
+  Polling interval in milliseconds for checking task status. Defaults to 5000.
+
+- **pollTimeoutMs** _number_
+
+  Maximum wait time in milliseconds for video generation. Defaults to 600000 (10 minutes).
+
+- **resolution** _'480p' | '720p'_
+
+  Video resolution. When using the SDK's standard `resolution` parameter,
+  `1280x720` maps to `720p` and `854x480` maps to `480p`.
+  Use this provider option to pass the native format directly.
+
+- **videoUrl** _string_
+
+  URL of a source video for video editing. When provided, the prompt is used
+  to describe the desired edits to the video.
+
+<Note>
+  Video generation is an asynchronous process that can take several minutes.
+  Consider setting `pollTimeoutMs` to at least 10 minutes (600000ms) for
+  reliable operation. Generated video URLs are ephemeral and should be
+  downloaded promptly.
+</Note>
+
+### Aspect Ratio and Resolution
+
+For **text-to-video**, you can specify both `aspectRatio` and `resolution`.
+The default aspect ratio is `16:9` and the default resolution is `480p`.
+
+For **image-to-video**, the output defaults to the input image's aspect ratio.
+If you specify `aspectRatio`, it will override this and stretch the image to the
+desired ratio.
+
+For **video editing**, the output matches the input video's aspect ratio and
+resolution. Custom `duration`, `aspectRatio`, and `resolution` are not
+supported - the output resolution is capped at 720p (e.g., a 1080p input
+will be downsized to 720p).
+
+### Video Model Capabilities
+
+| Model                | Duration | Aspect Ratios                                     | Resolution     | Image-to-Video      | Video Editing       |
+| -------------------- | -------- | ------------------------------------------------- | -------------- | ------------------- | ------------------- |
+| `grok-imagine-video` | 1–15s    | `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3` | `480p`, `720p` | <Check size={18} /> | <Check size={18} /> |
+
+<Note>
+  You can also pass any available provider model ID as a string if needed.
+</Note>
 
 ---
 
@@ -22337,7 +23463,8 @@ const { text } = await generateText({
 });
 ```
 
-OpenAI language models can also be used in the `streamText`, `generateObject`, and `streamObject` functions
+OpenAI language models can also be used in the `streamText` function
+and support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output)
 (see [AI SDK Core](/docs/ai-sdk-core)).
 
 ### Responses Models
@@ -22349,10 +23476,10 @@ const model = openai("gpt-5");
 ```
 
 Further configuration can be done using OpenAI provider options.
-You can validate the provider options using the `OpenAIResponsesProviderOptions` type.
+You can validate the provider options using the `OpenAILanguageModelResponsesOptions` type.
 
 ```ts
-import { openai, OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
+import { openai, OpenAILanguageModelResponsesOptions } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -22363,7 +23490,7 @@ const result = await generateText({
       store: false,
       user: "user_123",
       // ...
-    } satisfies OpenAIResponsesProviderOptions,
+    } satisfies OpenAILanguageModelResponsesOptions,
   },
   // ...
 });
@@ -22505,7 +23632,10 @@ The following OpenAI-specific metadata may be returned:
 For reasoning models like `gpt-5`, you can enable reasoning summaries to see the model's thought process. Different models support different summarizers—for example, `o4-mini` supports detailed summaries. Set `reasoningSummary: "auto"` to automatically receive the richest level available.
 
 ```ts highlight="8-9,16"
-import { openai } from "@ai-sdk/openai";
+import {
+  openai,
+  type OpenAILanguageModelResponsesOptions,
+} from "@ai-sdk/openai";
 import { streamText } from "ai";
 
 const result = streamText({
@@ -22514,7 +23644,7 @@ const result = streamText({
   providerOptions: {
     openai: {
       reasoningSummary: "detailed", // 'auto' for condensed or 'detailed' for comprehensive
-    },
+    } satisfies OpenAILanguageModelResponsesOptions,
   },
 });
 
@@ -22530,7 +23660,10 @@ for await (const part of result.fullStream) {
 For non-streaming calls with `generateText`, the reasoning summaries are available in the `reasoning` field of the response:
 
 ```ts highlight="8-9,13"
-import { openai } from "@ai-sdk/openai";
+import {
+  openai,
+  type OpenAILanguageModelResponsesOptions,
+} from "@ai-sdk/openai";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -22539,7 +23672,7 @@ const result = await generateText({
   providerOptions: {
     openai: {
       reasoningSummary: "auto",
-    },
+    } satisfies OpenAILanguageModelResponsesOptions,
   },
 });
 console.log("Reasoning:", result.reasoning);
@@ -22547,12 +23680,76 @@ console.log("Reasoning:", result.reasoning);
 
 Learn more about reasoning summaries in the [OpenAI documentation](https://platform.openai.com/docs/guides/reasoning?api-mode=responses#reasoning-summaries).
 
+#### WebSocket Transport
+
+OpenAI's [WebSocket API](https://developers.openai.com/api/docs/guides/websocket-mode) keeps a persistent connection open, which can significantly
+reduce Time-to-First-Byte (TTFB) in agentic workflows with many tool calls.
+After the initial connection, subsequent requests skip TCP/TLS/HTTP negotiation entirely.
+
+The [`ai-sdk-openai-websocket-fetch`](https://www.npmjs.com/package/ai-sdk-openai-websocket-fetch)
+package provides a drop-in `fetch` replacement that routes streaming requests
+through a persistent WebSocket connection.
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+<Tab>
+<Snippet text="pnpm add ai-sdk-openai-websocket-fetch" dark />
+</Tab>
+<Tab>
+<Snippet text="npm install ai-sdk-openai-websocket-fetch" dark />
+</Tab>
+<Tab>
+<Snippet text="yarn add ai-sdk-openai-websocket-fetch" dark />
+</Tab>
+<Tab>
+<Snippet text="bun add ai-sdk-openai-websocket-fetch" dark />
+</Tab>
+</Tabs>
+
+Pass the WebSocket fetch to `createOpenAI` via the `fetch` option:
+
+```ts highlight="2,6-7,15"
+import { createOpenAI } from "@ai-sdk/openai";
+import { createWebSocketFetch } from "ai-sdk-openai-websocket-fetch";
+import { streamText } from "ai";
+
+// Create a WebSocket-backed fetch instance
+const wsFetch = createWebSocketFetch();
+const openai = createOpenAI({ fetch: wsFetch });
+
+const result = streamText({
+  model: openai("gpt-4.1-mini"),
+  prompt: "Hello!",
+  tools: {
+    // ...
+  },
+  onFinish: () => wsFetch.close(), // close the WebSocket when done
+});
+```
+
+The first request will be slower because it must establish the WebSocket connection
+(DNS + TCP + TLS + WebSocket upgrade). After that, subsequent steps in a
+multi-step tool-calling loop reuse the open connection, resulting in lower TTFB
+per step.
+
+<Note>
+  The WebSocket transport only routes streaming requests to the OpenAI Responses
+  API (`POST /responses` with `stream: true`) through the WebSocket. All other
+  requests (non-streaming, embeddings, etc.) fall through to the standard
+  `fetch` implementation.
+</Note>
+
+You can see a live side-by-side comparison of HTTP vs WebSocket streaming performance
+in the [demo app](https://github.com/vercel-labs/ai-sdk-openai-websocket).
+
 #### Verbosity Control
 
 You can control the length and detail of model responses using the `textVerbosity` parameter:
 
 ```ts
-import { openai } from "@ai-sdk/openai";
+import {
+  openai,
+  type OpenAILanguageModelResponsesOptions,
+} from "@ai-sdk/openai";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -22561,7 +23758,7 @@ const result = await generateText({
   providerOptions: {
     openai: {
       textVerbosity: "low", // 'low' for concise, 'medium' (default), or 'high' for verbose
-    },
+    } satisfies OpenAILanguageModelResponsesOptions,
   },
 });
 ```
@@ -22652,7 +23849,7 @@ const result = await generateText({
     openai: {
       // optional: include results
       include: ["file_search_call.results"],
-    } satisfies OpenAIResponsesProviderOptions,
+    } satisfies OpenAILanguageModelResponsesOptions,
   },
 });
 ```
@@ -22910,8 +24107,8 @@ const result = await generateText({
 
 #### Shell Tool
 
-The OpenAI Responses API supports the shell tool for GPT-5.1 models through the `openai.tools.shell` tool.
-The shell tool allows allows running bash commands and interacting with a command line.
+The OpenAI Responses API supports the shell tool through the `openai.tools.shell` tool.
+The shell tool allows running bash commands and interacting with a command line.
 The model proposes shell commands; your integration executes them and returns the outputs.
 
 <Note type="warning">
@@ -22919,16 +24116,18 @@ The model proposes shell commands; your integration executes them and returns th
   add strict allow-/deny-lists before forwarding a command to the system shell.
 </Note>
 
+The shell tool supports three environment modes that control where commands are executed:
+
+##### Local Execution (default)
+
+When no `environment` is specified (or `type: 'local'` is used), commands are executed locally via your `execute` callback:
+
 ```ts
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
-import { exec } from "child_process";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
 
 const result = await generateText({
-  model: openai("gpt-5.1"),
+  model: openai("gpt-5.2"),
   tools: {
     shell: openai.tools.shell({
       execute: async ({ action }) => {
@@ -22941,11 +24140,130 @@ const result = await generateText({
 });
 ```
 
-Your execute function must return an output array with results for each command:
+##### Hosted Container (auto)
+
+Set `environment.type` to `'containerAuto'` to run commands in an OpenAI-hosted container. No `execute` callback is needed — OpenAI handles execution server-side:
+
+```ts
+const result = await generateText({
+  model: openai("gpt-5.2"),
+  tools: {
+    shell: openai.tools.shell({
+      environment: {
+        type: "containerAuto",
+        // optional configuration:
+        memoryLimit: "4g",
+        fileIds: ["file-abc123"],
+        networkPolicy: {
+          type: "allowlist",
+          allowedDomains: ["example.com"],
+        },
+      },
+    }),
+  },
+  prompt: "Install numpy and compute the eigenvalues of a 3x3 matrix.",
+});
+```
+
+The `containerAuto` environment supports:
+
+- **fileIds** _string[]_ - File IDs to make available in the container
+- **memoryLimit** _'1g' | '4g' | '16g' | '64g'_ - Memory limit for the container
+- **networkPolicy** - Network access policy:
+  - `{ type: 'disabled' }` — no network access
+  - `{ type: 'allowlist', allowedDomains: string[], domainSecrets?: Array<{ domain, name, value }> }` — allow specific domains with optional secrets
+
+##### Existing Container Reference
+
+Set `environment.type` to `'containerReference'` to use an existing container by ID:
+
+```ts
+const result = await generateText({
+  model: openai("gpt-5.2"),
+  tools: {
+    shell: openai.tools.shell({
+      environment: {
+        type: "containerReference",
+        containerId: "cntr_abc123",
+      },
+    }),
+  },
+  prompt: "Check the status of running processes.",
+});
+```
+
+##### Execute Callback
+
+For local execution (default or `type: 'local'`), your execute function must return an output array with results for each command:
 
 - **stdout** _string_ - Standard output from the command
 - **stderr** _string_ - Standard error from the command
 - **outcome** - Either `{ type: 'timeout' }` or `{ type: 'exit', exitCode: number }`
+
+##### Skills
+
+[Skills](https://platform.openai.com/docs/guides/tools-skills) are versioned bundles of files with a `SKILL.md` manifest that extend the shell tool's capabilities. They can be attached to both `containerAuto` and `local` environments.
+
+**Container skills** support two formats — by reference (for skills uploaded to OpenAI) or inline (as a base64-encoded zip):
+
+```ts
+const result = await generateText({
+  model: openai("gpt-5.2"),
+  tools: {
+    shell: openai.tools.shell({
+      environment: {
+        type: "containerAuto",
+        skills: [
+          // By reference:
+          { type: "skillReference", skillId: "skill_abc123" },
+          // Or inline:
+          {
+            type: "inline",
+            name: "my-skill",
+            description: "What this skill does",
+            source: {
+              type: "base64",
+              mediaType: "application/zip",
+              data: readFileSync("./my-skill.zip").toString("base64"),
+            },
+          },
+        ],
+      },
+    }),
+  },
+  prompt: "Use the skill to solve this problem.",
+});
+```
+
+**Local skills** point to a directory on disk containing a `SKILL.md` file:
+
+```ts
+const result = await generateText({
+  model: openai("gpt-5.2"),
+  tools: {
+    shell: openai.tools.shell({
+      execute: async ({ action }) => {
+        // ... your local execution implementation ...
+        return { output: results };
+      },
+      environment: {
+        type: "local",
+        skills: [
+          {
+            name: "my-skill",
+            description: "What this skill does",
+            path: resolve("path/to/skill-directory"),
+          },
+        ],
+      },
+    }),
+  },
+  prompt: "Use the skill to solve this problem.",
+  stopWhen: stepCountIs(5),
+});
+```
+
+For more details on creating skills, see the [OpenAI Skills documentation](https://platform.openai.com/docs/guides/tools-skills).
 
 #### Apply Patch Tool
 
@@ -23080,37 +24398,26 @@ and the `mediaType` should be set to `'application/pdf'`.
 
 #### Structured Outputs
 
-The OpenAI Responses API supports structured outputs. You can enforce structured outputs using `generateObject` or `streamObject`, which expose a `schema` option. Additionally, you can pass a Zod or JSON Schema object to the `output` option when using `generateText` or `streamText`.
+The OpenAI Responses API supports structured outputs. You can use `generateText` or `streamText` with [`Output`](/docs/reference/ai-sdk-core/output) to enforce structured outputs.
 
 ```ts
-// Using generateObject
-const result = await generateObject({
+const result = await generateText({
   model: openai("gpt-4.1"),
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(
-        z.object({
-          name: z.string(),
-          amount: z.string(),
-        }),
-      ),
-      steps: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(
+          z.object({
+            name: z.string(),
+            amount: z.string(),
+          }),
+        ),
+        steps: z.array(z.string()),
+      }),
     }),
   }),
   prompt: "Generate a lasagna recipe.",
-});
-
-// Using generateText
-const result = await generateText({
-  model: openai("gpt-4.1"),
-  prompt: "How do I make a pizza?",
-  output: Output.object({
-    schema: z.object({
-      ingredients: z.array(z.string()),
-      steps: z.array(z.string()),
-    }),
-  }),
 });
 ```
 
@@ -23224,7 +24531,7 @@ This metadata includes the following fields:
 import {
   openai,
   type OpenaiResponsesReasoningProviderMetadata,
-  type OpenAIResponsesProviderOptions,
+  type OpenAILanguageModelResponsesOptions,
 } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
@@ -23235,7 +24542,7 @@ const result = await generateText({
     openai: {
       store: false,
       include: ["reasoning.encrypted_content"],
-    } satisfies OpenAIResponsesProviderOptions,
+    } satisfies OpenAILanguageModelResponsesOptions,
   },
 });
 
@@ -23340,7 +24647,7 @@ OpenAI chat models support also some model specific provider options that are no
 You can pass them in the `providerOptions` argument:
 
 ```ts
-import { openai, type OpenAIChatLanguageModelOptions } from "@ai-sdk/openai";
+import { openai, type OpenAILanguageModelChatOptions } from "@ai-sdk/openai";
 
 const model = openai.chat("gpt-5");
 
@@ -23353,7 +24660,7 @@ await generateText({
         "50256": -100,
       },
       user: "test-user", // optional unique user identifier
-    } satisfies OpenAIChatLanguageModelOptions,
+    } satisfies OpenAILanguageModelChatOptions,
   },
 });
 ```
@@ -23470,7 +24777,7 @@ They support additional settings and response metadata:
 - You can use response `providerMetadata` to access the number of reasoning tokens that the model generated.
 
 ```ts highlight="4,7-11,17"
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAILanguageModelChatOptions } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
 const { text, usage, providerMetadata } = await generateText({
@@ -23479,7 +24786,7 @@ const { text, usage, providerMetadata } = await generateText({
   providerOptions: {
     openai: {
       reasoningEffort: "low",
-    },
+    } satisfies OpenAILanguageModelChatOptions,
   },
 });
 
@@ -23501,7 +24808,7 @@ console.log("Usage:", {
   - `remove`: remove the system message from the messages.
 
 ```ts highlight="12"
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAILanguageModelChatOptions } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -23513,7 +24820,7 @@ const result = await generateText({
   providerOptions: {
     openai: {
       systemMessageMode: "system",
-    },
+    } satisfies OpenAILanguageModelChatOptions,
   },
 });
 ```
@@ -23535,33 +24842,35 @@ Strict structured outputs are enabled by default.
 You can disable them by setting the `strictJsonSchema` option to `false`.
 
 ```ts highlight="7"
-import { openai, OpenAIChatLanguageModelOptions } from "@ai-sdk/openai";
-import { generateObject } from "ai";
+import { openai, OpenAILanguageModelChatOptions } from "@ai-sdk/openai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 
-const result = await generateObject({
+const result = await generateText({
   model: openai.chat("gpt-4o-2024-08-06"),
   providerOptions: {
     openai: {
       strictJsonSchema: false,
-    } satisfies OpenAIChatLanguageModelOptions,
+    } satisfies OpenAILanguageModelChatOptions,
   },
-  schemaName: "recipe",
-  schemaDescription: "A recipe for lasagna.",
-  schema: z.object({
-    name: z.string(),
-    ingredients: z.array(
-      z.object({
-        name: z.string(),
-        amount: z.string(),
-      }),
-    ),
-    steps: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      name: z.string(),
+      ingredients: z.array(
+        z.object({
+          name: z.string(),
+          amount: z.string(),
+        }),
+      ),
+      steps: z.array(z.string()),
+    }),
+    schemaName: "recipe",
+    schemaDescription: "A recipe for lasagna.",
   }),
   prompt: "Generate a lasagna recipe.",
 });
 
-console.log(JSON.stringify(result.object, null, 2));
+console.log(JSON.stringify(result.output, null, 2));
 ```
 
 <Note type="warning">
@@ -23581,7 +24890,7 @@ OpenAI provides logprobs information for completion/chat models.
 You can access it in the `providerMetadata` object.
 
 ```ts highlight="11"
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAILanguageModelChatOptions } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -23592,7 +24901,7 @@ const result = await generateText({
       // this can also be a number,
       // refer to logprobs provider options section for more
       logprobs: true,
-    },
+    } satisfies OpenAILanguageModelChatOptions,
   },
 });
 
@@ -23718,7 +25027,7 @@ const result = streamText({
         type: "content",
         content: existingCode,
       },
-    },
+    } satisfies OpenAILanguageModelChatOptions,
   },
 });
 ```
@@ -23782,7 +25091,7 @@ If you want to store a generation for use in the distillation process, you can a
 This will save the generation to the OpenAI platform for later use in distillation.
 
 ```typescript highlight="9-16"
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAILanguageModelChatOptions } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import "dotenv/config";
 
@@ -23796,7 +25105,7 @@ async function main() {
         metadata: {
           custom: "value",
         },
-      },
+      } satisfies OpenAILanguageModelChatOptions,
     },
   });
 
@@ -23838,7 +25147,7 @@ console.log(`usage:`, {
 To improve cache hit rates, you can manually control caching using the `promptCacheKey` option:
 
 ```ts highlight="7-11"
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAILanguageModelChatOptions } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
 const { text, usage, providerMetadata } = await generateText({
@@ -23847,7 +25156,7 @@ const { text, usage, providerMetadata } = await generateText({
   providerOptions: {
     openai: {
       promptCacheKey: "my-custom-cache-key-123",
-    },
+    } satisfies OpenAILanguageModelChatOptions,
   },
 });
 
@@ -23860,7 +25169,7 @@ console.log(`usage:`, {
 For GPT-5.1 models, you can enable extended prompt caching that keeps cached prefixes active for up to 24 hours:
 
 ```ts highlight="7-12"
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAILanguageModelChatOptions } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
 const { text, usage, providerMetadata } = await generateText({
@@ -23870,7 +25179,7 @@ const { text, usage, providerMetadata } = await generateText({
     openai: {
       promptCacheKey: "my-custom-cache-key-123",
       promptCacheRetention: "24h", // Extended caching for GPT-5.1
-    },
+    } satisfies OpenAILanguageModelChatOptions,
   },
 });
 
@@ -23937,7 +25246,7 @@ await model.doGenerate({
       },
       suffix: "some text", // optional suffix that comes after a completion of inserted text
       user: "test-user", // optional unique user identifier
-    },
+    } satisfies OpenAILanguageModelCompletionOptions,
   },
 });
 ```
@@ -24027,7 +25336,7 @@ OpenAI embedding models support several additional provider options.
 You can pass them as an options argument:
 
 ```ts
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAIEmbeddingModelOptions } from "@ai-sdk/openai";
 import { embed } from "ai";
 
 const { embedding } = await embed({
@@ -24037,7 +25346,7 @@ const { embedding } = await embed({
     openai: {
       dimensions: 512, // optional, number of dimensions for the embedding
       user: "test-user", // optional unique user identifier
-    },
+    } satisfies OpenAIEmbeddingModelOptions,
   },
 });
 ```
@@ -24216,12 +25525,14 @@ You can also pass additional provider-specific options using the `providerOption
 
 ```ts highlight="6"
 import { experimental_transcribe as transcribe } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAITranscriptionModelOptions } from "@ai-sdk/openai";
 
 const result = await transcribe({
   model: openai.transcription("whisper-1"),
   audio: new Uint8Array([1, 2, 3, 4]),
-  providerOptions: { openai: { language: "en" } },
+  providerOptions: {
+    openai: { language: "en" } satisfies OpenAITranscriptionModelOptions,
+  },
 });
 ```
 
@@ -24229,7 +25540,7 @@ To get word-level timestamps, specify the granularity:
 
 ```ts highlight="8-9"
 import { experimental_transcribe as transcribe } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAITranscriptionModelOptions } from "@ai-sdk/openai";
 
 const result = await transcribe({
   model: openai.transcription("whisper-1"),
@@ -24238,7 +25549,7 @@ const result = await transcribe({
     openai: {
       //timestampGranularities: ['word'],
       timestampGranularities: ["segment"],
-    },
+    } satisfies OpenAITranscriptionModelOptions,
   },
 });
 
@@ -24306,7 +25617,7 @@ You can also pass additional provider-specific options using the `providerOption
 
 ```ts highlight="7-9"
 import { experimental_generateSpeech as generateSpeech } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { openai, type OpenAISpeechModelOptions } from "@ai-sdk/openai";
 
 const result = await generateSpeech({
   model: openai.speech("tts-1"),
@@ -24315,7 +25626,7 @@ const result = await generateSpeech({
   providerOptions: {
     openai: {
       speed: 1.2,
-    },
+    } satisfies OpenAISpeechModelOptions,
   },
 });
 ```
@@ -24485,7 +25796,8 @@ const { text } = await generateText({
 });
 ```
 
-OpenAI language models can also be used in the `streamText`, `generateObject`, and `streamObject` functions
+OpenAI language models can also be used in the `streamText` function
+and support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output)
 (see [AI SDK Core](/docs/ai-sdk-core)).
 
 <Note>
@@ -24498,7 +25810,9 @@ OpenAI language models can also be used in the `streamText`, `generateObject`, a
 
 When using OpenAI language models on Azure, you can configure provider-specific options using `providerOptions.openai`. More information on available configuration options are on [the OpenAI provider page](/providers/ai-sdk-providers/openai#language-models).
 
-```ts highlight="12-14,22-24"
+```ts highlight="12-14,24-26"
+import { azure, type OpenAILanguageModelResponsesOptions } from "@ai-sdk/azure";
+
 const messages = [
   {
     role: "user",
@@ -24523,7 +25837,7 @@ const { text } = await generateText({
   providerOptions: {
     openai: {
       reasoningEffort: "low",
-    },
+    } satisfies OpenAILanguageModelResponsesOptions,
   },
 });
 ```
@@ -24545,7 +25859,7 @@ Azure OpenAI chat models support also some model specific settings that are not 
 You can pass them as an options argument:
 
 ```ts
-import { azure } from "@ai-sdk/azure";
+import { azure, type OpenAILanguageModelChatOptions } from "@ai-sdk/azure";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -24558,7 +25872,7 @@ const result = await generateText({
         "50256": -100,
       },
       user: "test-user", // optional unique user identifier
-    },
+    } satisfies OpenAILanguageModelChatOptions,
   },
 });
 ```
@@ -24609,7 +25923,7 @@ const model = azure("your-deployment-name");
 ```
 
 Further configuration can be done using OpenAI provider options.
-You can validate the provider options using the `OpenAIResponsesProviderOptions` type.
+You can validate the provider options using the `OpenAILanguageModelResponsesOptions` type.
 
 <Note>
   In the Responses API, use `azure` as the provider name in `providerOptions`
@@ -24618,7 +25932,7 @@ You can validate the provider options using the `OpenAIResponsesProviderOptions`
 </Note>
 
 ```ts
-import { azure, OpenAIResponsesProviderOptions } from "@ai-sdk/azure";
+import { azure, OpenAILanguageModelResponsesOptions } from "@ai-sdk/azure";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -24629,7 +25943,7 @@ const result = await generateText({
       store: false,
       user: "user_123",
       // ...
-    } satisfies OpenAIResponsesProviderOptions,
+    } satisfies OpenAILanguageModelResponsesOptions,
   },
   // ...
 });
@@ -25022,7 +26336,7 @@ This metadata includes the following fields:
 import {
   azure,
   type AzureResponsesReasoningProviderMetadata,
-  type OpenAIResponsesProviderOptions,
+  type OpenAILanguageModelResponsesOptions,
 } from "@ai-sdk/azure";
 import { generateText } from "ai";
 
@@ -25033,7 +26347,7 @@ const result = await generateText({
     azure: {
       store: false,
       include: ["reasoning.encrypted_content"],
-    } satisfies OpenAIResponsesProviderOptions,
+    } satisfies OpenAILanguageModelResponsesOptions,
   },
 });
 
@@ -25137,7 +26451,10 @@ OpenAI completion models support also some model specific settings that are not 
 You can pass them as an options argument:
 
 ```ts
-import { azure } from "@ai-sdk/azure";
+import {
+  azure,
+  type OpenAILanguageModelCompletionOptions,
+} from "@ai-sdk/azure";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -25152,7 +26469,7 @@ const result = await generateText({
       },
       suffix: "some text", // optional suffix that comes after a completion of inserted text
       user: "test-user", // optional unique user identifier
-    },
+    } satisfies OpenAILanguageModelCompletionOptions,
   },
 });
 ```
@@ -25212,7 +26529,7 @@ Azure OpenAI embedding models support several additional settings.
 You can pass them as an options argument:
 
 ```ts
-import { azure } from "@ai-sdk/azure";
+import { azure, type OpenAIEmbeddingModelOptions } from "@ai-sdk/azure";
 import { embed } from "ai";
 
 const { embedding } = await embed({
@@ -25222,7 +26539,7 @@ const { embedding } = await embed({
     openai: {
       dimensions: 512, // optional, number of dimensions for the embedding
       user: "test-user", // optional unique user identifier
-    },
+    } satisfies OpenAIEmbeddingModelOptions,
   },
 });
 ```
@@ -25330,13 +26647,17 @@ You can also pass additional provider-specific options using the `providerOption
 
 ```ts highlight="6"
 import { experimental_transcribe as transcribe } from "ai";
-import { azure } from "@ai-sdk/azure";
+import { azure, type OpenAITranscriptionModelOptions } from "@ai-sdk/azure";
 import { readFile } from "fs/promises";
 
 const result = await transcribe({
   model: azure.transcription("whisper-1"),
   audio: await readFile("audio.mp3"),
-  providerOptions: { openai: { language: "en" } },
+  providerOptions: {
+    openai: {
+      language: "en",
+    } satisfies OpenAITranscriptionModelOptions,
+  },
 });
 ```
 
@@ -25398,7 +26719,7 @@ const result = await generateSpeech({
 You can also pass additional provider-specific options using the `providerOptions` argument:
 
 ```ts
-import { azure } from "@ai-sdk/azure";
+import { azure, type OpenAISpeechModelOptions } from "@ai-sdk/azure";
 import { experimental_generateSpeech as generateSpeech } from "ai";
 
 const result = await generateSpeech({
@@ -25408,7 +26729,7 @@ const result = await generateSpeech({
   providerOptions: {
     openai: {
       speed: 1.2,
-    },
+    } satisfies OpenAISpeechModelOptions,
   },
 });
 ```
@@ -25543,7 +26864,8 @@ const { text } = await generateText({
 });
 ```
 
-Anthropic language models can also be used in the `streamText`, `generateObject`, and `streamObject` functions
+Anthropic language models can also be used in the `streamText` function
+and support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output)
 (see [AI SDK Core](/docs/ai-sdk-core)).
 
 The following optional provider options are available for Anthropic models:
@@ -25564,6 +26886,10 @@ The following optional provider options are available for Anthropic models:
 - `effort` _"high" | "medium" | "low"_
 
   Optional. See [Effort section](#effort) for more details.
+
+- `speed` _"fast" | "standard"_
+
+  Optional. See [Fast Mode section](#fast-mode) for more details.
 
 - `thinking` _object_
 
@@ -25614,7 +26940,7 @@ const result = streamText({
 Anthropic introduced an `effort` option with `claude-opus-4-5` that affects thinking, text responses, and function calls. Effort defaults to `high` and you can set it to `medium` or `low` to save tokens and to lower time-to-last-token latency (TTLT).
 
 ```ts highlight="8-10"
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
 const { text, usage } = await generateText({
@@ -25623,13 +26949,34 @@ const { text, usage } = await generateText({
   providerOptions: {
     anthropic: {
       effort: "low",
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 
 console.log(text); // resulting text
 console.log(usage); // token usage
 ```
+
+### Fast Mode
+
+Anthropic supports a [`speed` option](https://code.claude.com/docs/en/fast-mode) for `claude-opus-4-6` that enables faster inference with approximately 2.5x faster output token speeds.
+
+```ts highlight="8-10"
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
+import { generateText } from "ai";
+
+const { text } = await generateText({
+  model: anthropic("claude-opus-4-6"),
+  prompt: "Write a short poem about the sea.",
+  providerOptions: {
+    anthropic: {
+      speed: "fast",
+    } satisfies AnthropicLanguageModelOptions,
+  },
+});
+```
+
+The `speed` option accepts `'fast'` or `'standard'` (default behavior).
 
 ### Reasoning
 
@@ -25639,7 +26986,7 @@ You can enable it using the `thinking` provider option
 and specifying a thinking budget in tokens.
 
 ```ts highlight="4,8-10"
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
 const { text, reasoningText, reasoning } = await generateText({
@@ -25648,7 +26995,7 @@ const { text, reasoningText, reasoning } = await generateText({
   providerOptions: {
     anthropic: {
       thinking: { type: "enabled", budgetTokens: 12000 },
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 
@@ -25667,7 +27014,7 @@ Anthropic's Context Management feature allows you to automatically manage conver
 You can configure context management using the `contextManagement` provider option:
 
 ```ts highlight="7-20"
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -25687,7 +27034,7 @@ const result = await generateText({
           },
         ],
       },
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 
@@ -25695,19 +27042,25 @@ const result = await generateText({
 console.log(result.providerMetadata?.anthropic?.contextManagement);
 ```
 
-#### Clear Tool Uses
+#### Context Editing
 
-The `clear_tool_uses_20250919` edit type removes old tool calls from the conversation history:
+Context editing strategies selectively remove specific content types from earlier in the conversation to reduce token usage without losing the overall conversation flow.
 
-- **trigger** - Condition that triggers the clearing (e.g., `{ type: 'input_tokens', value: 10000 }`)
+##### Clear Tool Uses
+
+The `clear_tool_uses_20250919` edit type removes old tool call/result pairs from the conversation history:
+
+- **trigger** - Condition that triggers the clearing (e.g., `{ type: 'input_tokens', value: 10000 }` or `{ type: 'tool_uses', value: 10 }`)
 - **keep** - How many recent tool uses to preserve (e.g., `{ type: 'tool_uses', value: 5 }`)
 - **clearAtLeast** - Minimum amount to clear (e.g., `{ type: 'input_tokens', value: 1000 }`)
 - **clearToolInputs** - Whether to clear tool input parameters (boolean)
 - **excludeTools** - Array of tool names to never clear
 
-#### Clear Thinking
+##### Clear Thinking
 
-The `clear_thinking_20251015` edit type removes thinking/reasoning content:
+The `clear_thinking_20251015` edit type removes thinking/reasoning blocks from earlier turns, keeping only the most recent ones:
+
+- **keep** - How many recent thinking turns to preserve (e.g., `{ type: 'thinking_turns', value: 2 }`) or `'all'` to keep everything
 
 ```ts
 const result = await generateText({
@@ -25724,7 +27077,7 @@ const result = await generateText({
           },
         ],
       },
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 ```
@@ -25734,7 +27087,7 @@ const result = await generateText({
 The `compact_20260112` edit type automatically summarizes earlier conversation context when token limits are reached. This is useful for long-running conversations where you want to preserve the essence of earlier exchanges while staying within token limits.
 
 ```ts highlight="7-19"
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { streamText } from "ai";
 
 const result = streamText({
@@ -25756,7 +27109,7 @@ const result = streamText({
           },
         ],
       },
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 ```
@@ -25838,7 +27191,6 @@ if (metadata?.appliedEdits) {
       console.log(`Freed ${edit.clearedInputTokens} tokens`);
     } else if (edit.type === "compact_20260112") {
       console.log("Compaction was applied");
-      console.log(`Freed ${edit.clearedInputTokens} tokens`);
     }
   });
 }
@@ -25852,8 +27204,8 @@ In the messages and message parts, you can use the `providerOptions` property to
 You need to set the `anthropic` property in the `providerOptions` object to `{ cacheControl: { type: 'ephemeral' } }` to set a cache control breakpoint.
 
 The cache creation input tokens are then returned in the `providerMetadata` object
-for `generateText` and `generateObject`, again under the `anthropic` property.
-When you use `streamText` or `streamObject`, the response contains a promise
+for `generateText`, again under the `anthropic` property.
+When you use `streamText`, the response contains a promise
 that resolves to the metadata. Alternatively you can receive it in the
 `onFinish` callback.
 
@@ -26337,7 +27689,7 @@ Anthropic supports connecting to [MCP servers](https://docs.claude.com/en/docs/a
 You can enable this feature with the `mcpServers` provider option:
 
 ```ts
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -26359,7 +27711,7 @@ const result = await generateText({
           },
         },
       ],
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 ```
@@ -26394,7 +27746,7 @@ The web fetch tool supports several configuration options:
 
 Web search errors are handled differently depending on whether you're using streaming or non-streaming:
 
-**Non-streaming (`generateText`, `generateObject`):**
+**Non-streaming (`generateText`):**
 Web search errors throw exceptions that you can catch:
 
 ```ts
@@ -26414,7 +27766,7 @@ try {
 }
 ```
 
-**Streaming (`streamText`, `streamObject`):**
+**Streaming (`streamText`):**
 Web search errors are delivered as error parts in the stream:
 
 ```ts
@@ -26466,7 +27818,7 @@ const result = await generateText({
 
 Code execution errors are handled differently depending on whether you're using streaming or non-streaming:
 
-**Non-streaming (`generateText`, `generateObject`):**
+**Non-streaming (`generateText`):**
 Code execution errors are delivered as tool result parts in the response:
 
 ```ts
@@ -26491,7 +27843,7 @@ toolErrors?.forEach((error) => {
 });
 ```
 
-**Streaming (`streamText`, `streamObject`):**
+**Streaming (`streamText`):**
 Code execution errors are delivered as error parts in the stream:
 
 ```ts
@@ -26562,8 +27914,9 @@ In this flow:
 3. Claude processes the results in code and generates the final response
 
 <Note>
-  Programmatic tool calling requires `claude-sonnet-4-5` or `claude-opus-4-5`
-  models and uses the `code_execution_20250825` tool.
+  Programmatic tool calling requires `claude-sonnet-4-6`, `claude-sonnet-4-5`,
+  `claude-opus-4-6`, or `claude-opus-4-5` models and uses the
+  `code_execution_20250825` tool.
 </Note>
 
 #### Container Persistence
@@ -26589,7 +27942,7 @@ To use skills, you need to:
 2. Specify the container with skills in `providerOptions`
 
 ```ts highlight="4,9-17,19-23"
-import { anthropic, AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import { anthropic, AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -26609,7 +27962,7 @@ const result = await generateText({
           },
         ],
       },
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 ```
@@ -26636,7 +27989,7 @@ const result = await generateText({
           },
         ],
       },
-    } satisfies AnthropicProviderOptions,
+    } satisfies AnthropicLanguageModelOptions,
   },
 });
 ```
@@ -26711,6 +28064,7 @@ and the `mediaType` should be set to `'application/pdf'`.
 | Model                      | Image Input         | Object Generation   | Tool Usage          | Computer Use        | Web Search          | Tool Search         | Compaction          |
 | -------------------------- | ------------------- | ------------------- | ------------------- | ------------------- | ------------------- | ------------------- | ------------------- |
 | `claude-opus-4-6`          | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
+| `claude-sonnet-4-6`        | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |                     |
 | `claude-opus-4-5`          | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |                     |
 | `claude-haiku-4-5`         | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |                     |                     |
 | `claude-sonnet-4-5`        | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |                     |
@@ -26803,7 +28157,8 @@ The Open Responses provider instance is a function that you can invoke to create
 const model = openResponses("mistralai/ministral-3-14b-reasoning");
 ```
 
-You can use Open Responses models with the `generateText`, `streamText`, `generateObject`, and `streamObject` functions
+You can use Open Responses models with the `generateText` and `streamText` functions,
+and they support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output)
 (see [AI SDK Core](/docs/ai-sdk-core)).
 
 ### Example
@@ -27099,6 +28454,8 @@ const result = await generateText({
 You can use the `bedrock` provider options to utilize [Amazon Bedrock Guardrails](https://aws.amazon.com/bedrock/guardrails/):
 
 ```ts
+import { type AmazonBedrockLanguageModelOptions } from "@ai-sdk/amazon-bedrock";
+
 const result = await generateText({
   model: bedrock("anthropic.claude-3-sonnet-20240229-v1:0"),
   prompt: "Write a story about space exploration.",
@@ -27110,7 +28467,7 @@ const result = await generateText({
         trace: "enabled" as const,
         streamProcessingMode: "async",
       },
-    },
+    } satisfies AmazonBedrockLanguageModelOptions,
   },
 });
 ```
@@ -27134,15 +28491,17 @@ Amazon Bedrock supports citations for document-based inputs across compatible mo
 
 ```ts
 import { bedrock } from "@ai-sdk/amazon-bedrock";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import fs from "fs";
 
-const result = await generateObject({
+const result = await generateText({
   model: bedrock("apac.anthropic.claude-sonnet-4-20250514-v1:0"),
-  schema: z.object({
-    summary: z.string().describe("Summary of the PDF document"),
-    keyPoints: z.array(z.string()).describe("Key points from the PDF"),
+  output: Output.object({
+    schema: z.object({
+      summary: z.string().describe("Summary of the PDF document"),
+      keyPoints: z.array(z.string()).describe("Key points from the PDF"),
+    }),
   }),
   messages: [
     {
@@ -27167,7 +28526,7 @@ const result = await generateObject({
   ],
 });
 
-console.log("Response:", result.object);
+console.log("Response:", result.output);
 ```
 
 ### Cache Points
@@ -27281,6 +28640,21 @@ console.log(
 // }
 ```
 
+### Provider Metadata
+
+The following Bedrock-specific metadata may be returned in `providerMetadata.bedrock`:
+
+- **trace** _(optional)_
+  Guardrail tracing information (when tracing is enabled).
+- **performanceConfig** _(optional)_
+  Performance configuration, e.g. `{ latency: 'optimized' }`.
+- **serviceTier** _(optional)_
+  Service tier information, e.g. `{ type: 'on-demand' }`.
+- **usage** _(optional)_
+  Cache token usage details including `cacheWriteInputTokens` and `cacheDetails`.
+- **stopSequence** _string | null_
+  The stop sequence that triggered the stop, if any.
+
 ## Reasoning
 
 Amazon Bedrock supports model creator-specific reasoning features:
@@ -27289,7 +28663,10 @@ Amazon Bedrock supports model creator-specific reasoning features:
 - Amazon (e.g. `us.amazon.nova-2-lite-v1:0`): enable via the `reasoningConfig` provider option and specifying a maximum reasoning effort level (`'low' | 'medium' | 'high'`).
 
 ```ts
-import { bedrock } from "@ai-sdk/amazon-bedrock";
+import {
+  bedrock,
+  type AmazonBedrockLanguageModelOptions,
+} from "@ai-sdk/amazon-bedrock";
 import { generateText } from "ai";
 
 // Anthropic example
@@ -27299,7 +28676,7 @@ const anthropicResult = await generateText({
   providerOptions: {
     bedrock: {
       reasoningConfig: { type: "enabled", budgetTokens: 1024 },
-    },
+    } satisfies AmazonBedrockLanguageModelOptions,
   },
 });
 
@@ -27313,7 +28690,7 @@ const amazonResult = await generateText({
   providerOptions: {
     bedrock: {
       reasoningConfig: { type: "enabled", maxReasoningEffort: "medium" },
-    },
+    } satisfies AmazonBedrockLanguageModelOptions,
   },
 });
 
@@ -27329,7 +28706,10 @@ on how to integrate reasoning into your chatbot.
 Claude Sonnet 4 models on Amazon Bedrock support an extended context window of up to 1 million tokens when using the `context-1m-2025-08-07` beta feature.
 
 ```ts
-import { bedrock } from "@ai-sdk/amazon-bedrock";
+import {
+  bedrock,
+  type AmazonBedrockLanguageModelOptions,
+} from "@ai-sdk/amazon-bedrock";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -27338,7 +28718,7 @@ const result = await generateText({
   providerOptions: {
     bedrock: {
       anthropicBeta: ["context-1m-2025-08-07"],
-    },
+    } satisfies AmazonBedrockLanguageModelOptions,
   },
 });
 ```
@@ -27593,6 +28973,7 @@ You can pass them as an options argument:
 
 ```ts
 import { bedrock } from "@ai-sdk/amazon-bedrock";
+import { type AmazonBedrockEmbeddingModelOptions } from "@ai-sdk/amazon-bedrock";
 import { embed } from "ai";
 
 const model = bedrock.embedding("amazon.titan-embed-text-v2:0");
@@ -27604,7 +28985,7 @@ const { embedding } = await embed({
     bedrock: {
       dimensions: 512, // optional, number of dimensions for the embedding
       normalize: true, // optional, normalize the output embeddings
-    },
+    } satisfies AmazonBedrockEmbeddingModelOptions,
   },
 });
 ```
@@ -27625,6 +29006,7 @@ Amazon Nova embedding models support additional provider options:
 
 ```ts
 import { bedrock } from "@ai-sdk/amazon-bedrock";
+import { type AmazonBedrockEmbeddingModelOptions } from "@ai-sdk/amazon-bedrock";
 import { embed } from "ai";
 
 const { embedding } = await embed({
@@ -27635,7 +29017,7 @@ const { embedding } = await embed({
       embeddingDimension: 1024, // optional, number of dimensions
       embeddingPurpose: "TEXT_RETRIEVAL", // optional, purpose of embedding
       truncate: "END", // optional, truncation behavior
-    },
+    } satisfies AmazonBedrockEmbeddingModelOptions,
   },
 });
 ```
@@ -27660,6 +29042,7 @@ Cohere embedding models on Bedrock require an `inputType` and support truncation
 
 ```ts
 import { bedrock } from "@ai-sdk/amazon-bedrock";
+import { type AmazonBedrockEmbeddingModelOptions } from "@ai-sdk/amazon-bedrock";
 import { embed } from "ai";
 
 const { embedding } = await embed({
@@ -27669,7 +29052,7 @@ const { embedding } = await embed({
     bedrock: {
       inputType: "search_document", // required for Cohere
       truncate: "END", // optional, truncation behavior
-    },
+    } satisfies AmazonBedrockEmbeddingModelOptions,
   },
 });
 ```
@@ -28480,7 +29863,7 @@ You can configure how the reasoning is exposed in the generated text by using th
 It supports the options `parsed`, `hidden`, and `raw`.
 
 ```ts
-import { groq } from "@ai-sdk/groq";
+import { groq, type GroqLanguageModelOptions } from "@ai-sdk/groq";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -28492,7 +29875,7 @@ const result = await generateText({
       parallelToolCalls: true, // Enable parallel function calling (default: true)
       user: "user-123", // Unique identifier for end-user (optional)
       serviceTier: "flex", // Use flex tier for higher throughput (optional)
-    },
+    } satisfies GroqLanguageModelOptions,
   },
   prompt: 'How many "r"s are in the word "strawberry"?',
 });
@@ -28563,49 +29946,53 @@ You can disable them by setting the `structuredOutputs` option to `false`.
 
 ```ts
 import { groq } from "@ai-sdk/groq";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 
-const result = await generateObject({
+const result = await generateText({
   model: groq("moonshotai/kimi-k2-instruct-0905"),
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.string()),
-      instructions: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(z.string()),
+        instructions: z.array(z.string()),
+      }),
     }),
   }),
   prompt: "Generate a simple pasta recipe.",
 });
 
-console.log(JSON.stringify(result.object, null, 2));
+console.log(JSON.stringify(result.output, null, 2));
 ```
 
 You can disable structured outputs for models that don't support them:
 
 ```ts highlight="9"
-import { groq } from "@ai-sdk/groq";
-import { generateObject } from "ai";
+import { groq, type GroqLanguageModelOptions } from "@ai-sdk/groq";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 
-const result = await generateObject({
+const result = await generateText({
   model: groq("gemma2-9b-it"),
   providerOptions: {
     groq: {
       structuredOutputs: false,
-    },
+    } satisfies GroqLanguageModelOptions,
   },
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.string()),
-      instructions: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(z.string()),
+        instructions: z.array(z.string()),
+      }),
     }),
   }),
   prompt: "Generate a simple pasta recipe in JSON format.",
 });
 
-console.log(JSON.stringify(result.object, null, 2));
+console.log(JSON.stringify(result.output, null, 2));
 ```
 
 <Note type="warning">
@@ -28825,13 +30212,15 @@ You can also pass additional provider-specific options using the `providerOption
 
 ```ts highlight="6"
 import { experimental_transcribe as transcribe } from "ai";
-import { groq } from "@ai-sdk/groq";
+import { groq, type GroqTranscriptionModelOptions } from "@ai-sdk/groq";
 import { readFile } from "fs/promises";
 
 const result = await transcribe({
   model: groq.transcription("whisper-large-v3"),
   audio: await readFile("audio.mp3"),
-  providerOptions: { groq: { language: "en" } },
+  providerOptions: {
+    groq: { language: "en" } satisfies GroqTranscriptionModelOptions,
+  },
 });
 ```
 
@@ -29093,13 +30482,15 @@ You can also pass additional provider-specific options using the `providerOption
 
 ```ts highlight="6"
 import { experimental_transcribe as transcribe } from "ai";
-import { fal } from "@ai-sdk/fal";
+import { fal, type FalTranscriptionModelOptions } from "@ai-sdk/fal";
 import { readFile } from "fs/promises";
 
 const result = await transcribe({
   model: fal.transcription("wizper"),
   audio: await readFile("audio.mp3"),
-  providerOptions: { fal: { batchSize: 10 } },
+  providerOptions: {
+    fal: { batchSize: 10 } satisfies FalTranscriptionModelOptions,
+  },
 });
 ```
 
@@ -29273,15 +30664,20 @@ const model = assemblyai.transcription("best");
 
 You can also pass additional provider-specific options using the `providerOptions` argument. For example, supplying the `contentSafety` option will enable content safety filtering.
 
-```ts highlight="6"
+```ts highlight="7"
 import { experimental_transcribe as transcribe } from "ai";
 import { assemblyai } from "@ai-sdk/assemblyai";
+import { type AssemblyAITranscriptionModelOptions } from "@ai-sdk/assemblyai";
 import { readFile } from "fs/promises";
 
 const result = await transcribe({
   model: assemblyai.transcription("best"),
   audio: await readFile("audio.mp3"),
-  providerOptions: { assemblyai: { contentSafety: true } },
+  providerOptions: {
+    assemblyai: {
+      contentSafety: true,
+    } satisfies AssemblyAITranscriptionModelOptions,
+  },
 });
 ```
 
@@ -29864,7 +31260,7 @@ You can also pass additional provider-specific options using the `providerOption
 
 ```ts highlight="7-11"
 import { experimental_generateSpeech as generateSpeech } from "ai";
-import { deepgram } from "@ai-sdk/deepgram";
+import { deepgram, type DeepgramSpeechModelOptions } from "@ai-sdk/deepgram";
 
 const result = await generateSpeech({
   model: deepgram.speech("aura-2-helena-en"),
@@ -29873,7 +31269,7 @@ const result = await generateSpeech({
     deepgram: {
       encoding: "linear16",
       sampleRate: 24000,
-    },
+    } satisfies DeepgramSpeechModelOptions,
   },
 });
 ```
@@ -29956,13 +31352,20 @@ You can also pass additional provider-specific options using the `providerOption
 
 ```ts highlight="6"
 import { experimental_transcribe as transcribe } from "ai";
-import { deepgram } from "@ai-sdk/deepgram";
+import {
+  deepgram,
+  type DeepgramTranscriptionModelOptions,
+} from "@ai-sdk/deepgram";
 import { readFile } from "fs/promises";
 
 const result = await transcribe({
   model: deepgram.transcription("nova-3"),
   audio: await readFile("audio.mp3"),
-  providerOptions: { deepgram: { summarize: true } },
+  providerOptions: {
+    deepgram: {
+      summarize: true,
+    } satisfies DeepgramTranscriptionModelOptions,
+  },
 });
 ```
 
@@ -30179,7 +31582,7 @@ Transform an existing image using text prompts:
 ```ts
 import {
   blackForestLabs,
-  BlackForestLabsImageProviderOptions,
+  BlackForestLabsImageModelOptions,
 } from "@ai-sdk/black-forest-labs";
 import { generateImage } from "ai";
 
@@ -30195,7 +31598,7 @@ const { images } = await generateImage({
     blackForestLabs: {
       width: 1024,
       height: 768,
-    } satisfies BlackForestLabsImageProviderOptions,
+    } satisfies BlackForestLabsImageModelOptions,
   },
 });
 ```
@@ -30388,15 +31791,20 @@ const model = gladia.transcription();
 
 You can also pass additional provider-specific options using the `providerOptions` argument. For example, supplying the `summarize` option will enable summaries for sections of content.
 
-```ts highlight="6"
+```ts highlight="7"
 import { experimental_transcribe as transcribe } from "ai";
 import { gladia } from "@ai-sdk/gladia";
+import { type GladiaTranscriptionModelOptions } from "@ai-sdk/gladia";
 import { readFile } from "fs/promises";
 
 const result = await transcribe({
   model: gladia.transcription(),
   audio: await readFile("audio.mp3"),
-  providerOptions: { gladia: { summarization: true } },
+  providerOptions: {
+    gladia: {
+      summarization: true,
+    } satisfies GladiaTranscriptionModelOptions,
+  },
 });
 ```
 
@@ -30690,9 +32098,10 @@ const result = await generateSpeech({
 
 You can also pass additional provider-specific options using the `providerOptions` argument:
 
-```ts highlight="9-13"
+```ts highlight="10-14"
 import { experimental_generateSpeech as generateSpeech } from "ai";
 import { lmnt } from "@ai-sdk/lmnt";
+import { type LMNTSpeechModelOptions } from "@ai-sdk/lmnt";
 
 const result = await generateSpeech({
   model: lmnt.speech("aurora"),
@@ -30703,7 +32112,7 @@ const result = await generateSpeech({
     lmnt: {
       conversational: true,
       speed: 1.2,
-    },
+    } satisfies LMNTSpeechModelOptions,
   },
 });
 ```
@@ -30856,13 +32265,16 @@ const { text } = await generateText({
 });
 ```
 
-Google Generative AI language models can also be used in the `streamText`, `generateObject`, and `streamObject` functions
+Google Generative AI language models can also be used in the `streamText` function
+and support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output)
 (see [AI SDK Core](/docs/ai-sdk-core)).
 
 Google Generative AI also supports some model specific settings that are not part of the [standard call settings](/docs/ai-sdk-core/settings).
 You can pass them as an options argument:
 
 ```ts
+import { google, type GoogleLanguageModelOptions } from "@ai-sdk/google";
+
 const model = google("gemini-2.5-flash");
 
 await generateText({
@@ -30875,7 +32287,7 @@ await generateText({
           threshold: "BLOCK_LOW_AND_ABOVE",
         },
       ],
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
 });
 ```
@@ -30929,7 +32341,7 @@ The following optional provider options are available for Google Generative AI m
   Optional. Configuration for the model's thinking process. Only supported by specific [Google Generative AI models](https://ai.google.dev/gemini-api/docs/thinking).
   - **thinkingLevel** _'minimal' | 'low' | 'medium' | 'high'_
 
-    Optional. Controls the thinking depth for Gemini 3 models. Gemini 3 Pro supports 'low' and 'high', while Gemini 3 Flash supports all four levels: 'minimal', 'low', 'medium', and 'high'. Only supported by Gemini 3 models (`gemini-3-pro-preview` and later).
+    Optional. Controls the thinking depth for Gemini 3 models. Gemini 3.1 Pro supports 'low', 'medium', and 'high', Gemini 3 Pro supports 'low' and 'high', while Gemini 3 Flash supports all four levels: 'minimal', 'low', 'medium', and 'high'. Only supported by Gemini 3 models.
 
   - **thinkingBudget** _number_
 
@@ -31003,10 +32415,10 @@ The Gemini 2.5 and Gemini 3 series models use an internal "thinking process" tha
 For Gemini 3 models, use the `thinkingLevel` parameter to control the depth of reasoning:
 
 ```ts
-import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import { google, GoogleLanguageModelOptions } from "@ai-sdk/google";
 import { generateText } from "ai";
 
-const model = google("gemini-3-pro-preview");
+const model = google("gemini-3.1-pro-preview");
 
 const { text, reasoning } = await generateText({
   model: model,
@@ -31017,7 +32429,7 @@ const { text, reasoning } = await generateText({
         thinkingLevel: "high",
         includeThoughts: true,
       },
-    } satisfies GoogleGenerativeAIProviderOptions,
+    } satisfies GoogleLanguageModelOptions,
   },
 });
 
@@ -31031,7 +32443,7 @@ console.log(reasoning); // Reasoning summary
 For Gemini 2.5 models, use the `thinkingBudget` parameter to control the number of thinking tokens:
 
 ```ts
-import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import { google, GoogleLanguageModelOptions } from "@ai-sdk/google";
 import { generateText } from "ai";
 
 const model = google("gemini-2.5-flash");
@@ -31045,7 +32457,7 @@ const { text, reasoning } = await generateText({
         thinkingBudget: 8192,
         includeThoughts: true,
       },
-    } satisfies GoogleGenerativeAIProviderOptions,
+    } satisfies GoogleLanguageModelOptions,
   },
 });
 
@@ -31182,7 +32594,7 @@ console.log("Cached tokens:", providerMetadata.google);
 For guaranteed cost savings, you can still use explicit caching with Gemini 2.5 and 2.0 models. See the [models page](https://ai.google.dev/gemini-api/docs/models) to check if caching is supported for the used model:
 
 ```ts
-import { google } from "@ai-sdk/google";
+import { google, type GoogleLanguageModelOptions } from "@ai-sdk/google";
 import { GoogleGenAI } from "@google/genai";
 import { generateText } from "ai";
 
@@ -31212,7 +32624,7 @@ const { text: veggieLasagnaRecipe } = await generateText({
   providerOptions: {
     google: {
       cachedContent: cache.name,
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
 });
 
@@ -31222,7 +32634,7 @@ const { text: meatLasagnaRecipe } = await generateText({
   providerOptions: {
     google: {
       cachedContent: cache.name,
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
 });
 ```
@@ -31509,7 +32921,7 @@ With [Google Maps grounding](https://ai.google.dev/gemini-api/docs/maps-groundin
 the model has access to Google Maps data for location-aware responses. This enables providing local data and geospatial context, such as finding nearby restaurants.
 
 ```ts highlight="7-16"
-import { google } from "@ai-sdk/google";
+import { google, type GoogleLanguageModelOptions } from "@ai-sdk/google";
 import { GoogleGenerativeAIProviderMetadata } from "@ai-sdk/google";
 import { generateText } from "ai";
 
@@ -31523,7 +32935,7 @@ const { text, sources, providerMetadata } = await generateText({
       retrievalConfig: {
         latLng: { latitude: 34.090199, longitude: -117.881081 },
       },
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
   prompt:
     "What are the best Italian restaurants within a 15-minute walk from here?",
@@ -31666,7 +33078,7 @@ The `vertexRagStore` tool accepts the following configuration options:
 
 ### Image Outputs
 
-Gemini models with image generation capabilities (`gemini-2.5-flash-image`) support image generation. Images are exposed as files in the response.
+Gemini models with image generation capabilities (e.g. `gemini-2.5-flash-image`) support generating images as part of a multimodal response. Images are exposed as files in the response.
 
 ```ts
 import { google } from "@ai-sdk/google";
@@ -31684,6 +33096,12 @@ for (const file of result.files) {
   }
 }
 ```
+
+<Note>
+  If you primarily want to generate images without text output, you can also use
+  Gemini image models with the `generateImage()` function. See [Gemini Image
+  Models](#gemini-image-models) for details.
+</Note>
 
 ### Safety Ratings
 
@@ -31742,26 +33160,28 @@ By default, structured outputs are enabled (and for tool calling they are requir
 You can disable structured outputs for object generation as a workaround:
 
 ```ts highlight="3,8"
-const { object } = await generateObject({
+const { output } = await generateText({
   model: google("gemini-2.5-flash"),
   providerOptions: {
     google: {
       structuredOutputs: false,
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
-  schema: z.object({
-    name: z.string(),
-    age: z.number(),
-    contact: z.union([
-      z.object({
-        type: z.literal("email"),
-        value: z.string(),
-      }),
-      z.object({
-        type: z.literal("phone"),
-        value: z.string(),
-      }),
-    ]),
+  output: Output.object({
+    schema: z.object({
+      name: z.string(),
+      age: z.number(),
+      contact: z.union([
+        z.object({
+          type: z.literal("email"),
+          value: z.string(),
+        }),
+        z.object({
+          type: z.literal("phone"),
+          value: z.string(),
+        }),
+      ]),
+    }),
   }),
   prompt: "Generate an example person for testing.",
 });
@@ -31776,6 +33196,7 @@ The following Zod features are known to not work with Google Generative AI:
 
 | Model                                 | Image Input         | Object Generation   | Tool Usage          | Tool Streaming      | Google Search       | URL Context         |
 | ------------------------------------- | ------------------- | ------------------- | ------------------- | ------------------- | ------------------- | ------------------- |
+| `gemini-3.1-pro-preview`              | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 | `gemini-3-pro-preview`                | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 | `gemini-3-pro-image-preview`          | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
 | `gemini-3-flash-preview`              | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> | <Check size={18} /> |
@@ -31838,7 +33259,7 @@ The Google Generative AI provider sends API calls to the right endpoint based on
 Google Generative AI embedding models support aditional settings. You can pass them as an options argument:
 
 ```ts
-import { google } from "@ai-sdk/google";
+import { google, type GoogleEmbeddingModelOptions } from "@ai-sdk/google";
 import { embed } from "ai";
 
 const model = google.embedding("gemini-embedding-001");
@@ -31850,7 +33271,7 @@ const { embedding } = await embed({
     google: {
       outputDimensionality: 512, // optional, number of dimensions for the embedding
       taskType: "SEMANTIC_SIMILARITY", // optional, specifies the task type for generating embeddings
-    },
+    } satisfies GoogleEmbeddingModelOptions,
   },
 });
 ```
@@ -31882,8 +33303,17 @@ The following optional provider options are available for Google Generative AI e
 
 ## Image Models
 
-You can create [Imagen](https://ai.google.dev/gemini-api/docs/imagen) models that call the Google Generative AI API using the `.image()` factory method.
+You can create image models that call the Google Generative AI API using the `.image()` factory method.
 For more on image generation with the AI SDK see [generateImage()](/docs/reference/ai-sdk-core/generate-image).
+
+The Google provider supports two types of image models:
+
+- **Imagen models**: Dedicated image generation models using the `:predict` API
+- **Gemini image models**: Multimodal language models with image output capabilities using the `:generateContent` API
+
+### Imagen Models
+
+[Imagen](https://ai.google.dev/gemini-api/docs/imagen) models are dedicated image generation models.
 
 ```ts
 import { google } from "@ai-sdk/google";
@@ -31896,11 +33326,11 @@ const { image } = await generateImage({
 });
 ```
 
-Further configuration can be done using Google provider options. You can validate the provider options using the `GoogleGenerativeAIImageProviderOptions` type.
+Further configuration can be done using Google provider options. You can validate the provider options using the `GoogleImageModelOptions` type.
 
 ```ts
 import { google } from "@ai-sdk/google";
-import { GoogleGenerativeAIImageProviderOptions } from "@ai-sdk/google";
+import { GoogleImageModelOptions } from "@ai-sdk/google";
 import { generateImage } from "ai";
 
 const { image } = await generateImage({
@@ -31908,13 +33338,13 @@ const { image } = await generateImage({
   providerOptions: {
     google: {
       personGeneration: "dont_allow",
-    } satisfies GoogleGenerativeAIImageProviderOptions,
+    } satisfies GoogleImageModelOptions,
   },
   // ...
 });
 ```
 
-The following provider options are available:
+The following provider options are available for Imagen models:
 
 - **personGeneration** `allow_adult` | `allow_all` | `dont_allow`
   Whether to allow person generation. Defaults to `allow_adult`.
@@ -31924,13 +33354,87 @@ The following provider options are available:
   parameter instead.
 </Note>
 
-#### Model Capabilities
+#### Imagen Model Capabilities
 
 | Model                           | Aspect Ratios             |
 | ------------------------------- | ------------------------- |
 | `imagen-4.0-generate-001`       | 1:1, 3:4, 4:3, 9:16, 16:9 |
 | `imagen-4.0-ultra-generate-001` | 1:1, 3:4, 4:3, 9:16, 16:9 |
 | `imagen-4.0-fast-generate-001`  | 1:1, 3:4, 4:3, 9:16, 16:9 |
+
+### Gemini Image Models
+
+[Gemini image models](https://ai.google.dev/gemini-api/docs/image-generation) (e.g. `gemini-2.5-flash-image`) are technically multimodal output language models, but they can be used with the `generateImage()` function for a simpler image generation experience. Internally, the provider calls the language model API with `responseModalities: ['IMAGE']`.
+
+```ts
+import { google } from "@ai-sdk/google";
+import { generateImage } from "ai";
+
+const { image } = await generateImage({
+  model: google.image("gemini-2.5-flash-image"),
+  prompt: "A photorealistic image of a cat wearing a wizard hat",
+  aspectRatio: "1:1",
+});
+```
+
+Gemini image models also support image editing by providing input images:
+
+```ts
+import { google } from "@ai-sdk/google";
+import { generateImage } from "ai";
+import fs from "node:fs";
+
+const sourceImage = fs.readFileSync("./cat.png");
+
+const { image } = await generateImage({
+  model: google.image("gemini-2.5-flash-image"),
+  prompt: {
+    text: "Add a small wizard hat to this cat",
+    images: [sourceImage],
+  },
+});
+```
+
+You can also use URLs for input images:
+
+```ts
+import { google } from "@ai-sdk/google";
+import { generateImage } from "ai";
+
+const { image } = await generateImage({
+  model: google.image("gemini-2.5-flash-image"),
+  prompt: {
+    text: "Add a small wizard hat to this cat",
+    images: ["https://example.com/cat.png"],
+  },
+});
+```
+
+<Note>
+  Gemini image models do not support the `size` or `n` parameters. Use
+  `aspectRatio` instead of `size`. Mask-based inpainting is also not supported.
+</Note>
+
+<Note>
+  For more advanced use cases where you need both text and image outputs, or
+  want more control over the generation process, you can use Gemini image models
+  directly with `generateText()`. See [Image Outputs](#image-outputs) for
+  details.
+</Note>
+
+#### Gemini Image Model Capabilities
+
+| Model                        | Image Generation    | Image Editing       | Aspect Ratios                                       |
+| ---------------------------- | ------------------- | ------------------- | --------------------------------------------------- |
+| `gemini-2.5-flash-image`     | <Check size={18} /> | <Check size={18} /> | 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9 |
+| `gemini-3-pro-image-preview` | <Check size={18} /> | <Check size={18} /> | 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9 |
+
+<Note>
+  `gemini-3-pro-image-preview` supports additional features including up to 14
+  reference images for editing (6 objects, 5 humans), resolution options (1K,
+  2K, 4K via `providerOptions.google.imageConfig.imageSize`), and Google Search
+  grounding.
+</Note>
 
 ---
 
@@ -32061,6 +33565,7 @@ You can pass additional provider-specific options using the `providerOptions` ar
 ```ts
 import { experimental_generateSpeech as generateSpeech } from "ai";
 import { hume } from "@ai-sdk/hume";
+import { type HumeSpeechModelOptions } from "@ai-sdk/hume";
 
 const result = await generateSpeech({
   model: hume.speech(),
@@ -32070,7 +33575,7 @@ const result = await generateSpeech({
       context: {
         generationId: "previous-generation-id",
       },
-    },
+    } satisfies HumeSpeechModelOptions,
   },
 });
 ```
@@ -32363,19 +33868,22 @@ of the [standard call settings](/docs/ai-sdk-core/settings). You can pass them a
 an options argument:
 
 ```ts
+import { vertex } from "@ai-sdk/google-vertex";
+import { type GoogleLanguageModelOptions } from "@ai-sdk/google";
+
 const model = vertex("gemini-1.5-pro");
 
 await generateText({
   model,
   providerOptions: {
-    google: {
+    vertex: {
       safetySettings: [
         {
           category: "HARM_CATEGORY_UNSPECIFIED",
           threshold: "BLOCK_LOW_AND_ABOVE",
         },
       ],
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
 });
 ```
@@ -32521,6 +34029,7 @@ Google Maps grounding enables Gemini models to access Google Maps data for locat
 
 ```ts
 import { vertex } from "@ai-sdk/google-vertex";
+import { type GoogleLanguageModelOptions } from "@ai-sdk/google";
 import { generateText } from "ai";
 
 const result = await generateText({
@@ -32529,11 +34038,11 @@ const result = await generateText({
     google_maps: vertex.tools.googleMaps({}),
   },
   providerOptions: {
-    google: {
+    vertex: {
       retrievalConfig: {
         latLng: { latitude: 34.090199, longitude: -117.881081 },
       },
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
   prompt: "What are the best Italian restaurants nearby?",
 });
@@ -32545,24 +34054,23 @@ The optional `retrievalConfig.latLng` provider option provides location context 
 
 Google Vertex AI, through its support for Gemini models, can also emit "thinking" tokens, representing the model's reasoning process. The AI SDK exposes these as reasoning information.
 
-To enable thinking tokens for compatible Gemini models via Vertex, set `includeThoughts: true` in the `thinkingConfig` provider option. Since the Vertex provider uses the Google provider's underlying language model, these options are passed through `providerOptions.google`:
+To enable thinking tokens for compatible Gemini models via Vertex, set `includeThoughts: true` in the `thinkingConfig` provider option. These options are passed through `providerOptions.vertex`:
 
 ```ts
 import { vertex } from "@ai-sdk/google-vertex";
-import { GoogleGenerativeAIProviderOptions } from "@ai-sdk/google"; // Note: importing from @ai-sdk/google
+import { type GoogleLanguageModelOptions } from "@ai-sdk/google";
 import { generateText, streamText } from "ai";
 
 // For generateText:
 const { text, reasoningText, reasoning } = await generateText({
   model: vertex("gemini-2.0-flash-001"), // Or other supported model via Vertex
   providerOptions: {
-    google: {
-      // Options are nested under 'google' for Vertex provider
+    vertex: {
       thinkingConfig: {
         includeThoughts: true,
         // thinkingBudget: 2048, // Optional
       },
-    } satisfies GoogleGenerativeAIProviderOptions,
+    } satisfies GoogleLanguageModelOptions,
   },
   prompt: "Explain quantum computing in simple terms.",
 });
@@ -32575,13 +34083,12 @@ console.log("Final Text:", text);
 const result = streamText({
   model: vertex("gemini-2.0-flash-001"), // Or other supported model via Vertex
   providerOptions: {
-    google: {
-      // Options are nested under 'google' for Vertex provider
+    vertex: {
       thinkingConfig: {
         includeThoughts: true,
         // thinkingBudget: 2048, // Optional
       },
-    } satisfies GoogleGenerativeAIProviderOptions,
+    } satisfies GoogleLanguageModelOptions,
   },
   prompt: "Explain quantum computing in simple terms.",
 });
@@ -32669,7 +34176,7 @@ const { text: meatLasagna, providerMetadata } = await generateText({
 });
 
 // Check cached token count in usage metadata
-console.log("Cached tokens:", providerMetadata.google);
+console.log("Cached tokens:", providerMetadata.vertex);
 // e.g.
 // {
 //   groundingMetadata: null,
@@ -32723,15 +34230,16 @@ Then use the cache with the AI SDK:
 
 ```ts
 import { vertex } from "@ai-sdk/google-vertex";
+import { type GoogleLanguageModelOptions } from "@ai-sdk/google";
 import { generateText } from "ai";
 
 const { text: veggieLasagnaRecipe } = await generateText({
   model: vertex("gemini-2.5-pro"),
   prompt: "Write a vegetarian lasagna recipe for 4 people.",
   providerOptions: {
-    google: {
+    vertex: {
       cachedContent: cache.name,
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
 });
 
@@ -32739,9 +34247,9 @@ const { text: meatLasagnaRecipe } = await generateText({
   model: vertex("gemini-2.5-pro"),
   prompt: "Write a meat lasagna recipe for 12 people.",
   providerOptions: {
-    google: {
+    vertex: {
       cachedContent: cache.name,
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
 });
 ```
@@ -32804,27 +34312,33 @@ The errors that you get in this case look like this:
 By default, structured outputs are enabled (and for tool calling they are required).
 You can disable structured outputs for object generation as a workaround:
 
-```ts highlight="3,8"
-const result = await generateObject({
+```ts highlight="7,12"
+import { vertex } from "@ai-sdk/google-vertex";
+import { type GoogleLanguageModelOptions } from "@ai-sdk/google";
+import { generateText, Output } from "ai";
+
+const result = await generateText({
   model: vertex("gemini-1.5-pro"),
   providerOptions: {
-    google: {
+    vertex: {
       structuredOutputs: false,
-    },
+    } satisfies GoogleLanguageModelOptions,
   },
-  schema: z.object({
-    name: z.string(),
-    age: z.number(),
-    contact: z.union([
-      z.object({
-        type: z.literal("email"),
-        value: z.string(),
-      }),
-      z.object({
-        type: z.literal("phone"),
-        value: z.string(),
-      }),
-    ]),
+  output: Output.object({
+    schema: z.object({
+      name: z.string(),
+      age: z.number(),
+      contact: z.union([
+        z.object({
+          type: z.literal("email"),
+          value: z.string(),
+        }),
+        z.object({
+          type: z.literal("phone"),
+          value: z.string(),
+        }),
+      ]),
+    }),
   }),
   prompt: "Generate an example person for testing.",
 });
@@ -32864,7 +34378,10 @@ const model = vertex.embeddingModel("text-embedding-004");
 Google Vertex AI embedding models support additional settings. You can pass them as an options argument:
 
 ```ts
-import { vertex } from "@ai-sdk/google-vertex";
+import {
+  vertex,
+  type GoogleVertexEmbeddingModelOptions,
+} from "@ai-sdk/google-vertex";
 import { embed } from "ai";
 
 const model = vertex.embeddingModel("text-embedding-004");
@@ -32873,11 +34390,11 @@ const { embedding } = await embed({
   model,
   value: "sunny day at the beach",
   providerOptions: {
-    google: {
+    vertex: {
       outputDimensionality: 512, // optional, number of dimensions for the embedding
       taskType: "SEMANTIC_SIMILARITY", // optional, specifies the task type for generating embeddings
       autoTruncate: false, // optional
-    },
+    } satisfies GoogleVertexEmbeddingModelOptions,
   },
 });
 ```
@@ -32921,8 +34438,11 @@ The following optional provider options are available for Google Vertex AI embed
 
 ### Image Models
 
-You can create [Imagen](https://cloud.google.com/vertex-ai/generative-ai/docs/image/overview) models that call the [Imagen on Vertex AI API](https://cloud.google.com/vertex-ai/generative-ai/docs/image/generate-images)
-using the `.image()` factory method. For more on image generation with the AI SDK see [generateImage()](/docs/reference/ai-sdk-core/generate-image).
+You can create image models using the `.image()` factory method. The Google Vertex provider supports both [Imagen](https://cloud.google.com/vertex-ai/generative-ai/docs/image/overview) and [Gemini image models](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-image). For more on image generation with the AI SDK see [generateImage()](/docs/reference/ai-sdk-core/generate-image).
+
+#### Imagen Models
+
+[Imagen models](https://cloud.google.com/vertex-ai/generative-ai/docs/image/generate-images) generate images using the Imagen on Vertex AI API.
 
 ```ts
 import { vertex } from "@ai-sdk/google-vertex";
@@ -32935,11 +34455,11 @@ const { image } = await generateImage({
 });
 ```
 
-Further configuration can be done using Google Vertex provider options. You can validate the provider options using the `GoogleVertexImageProviderOptions` type.
+Further configuration can be done using Google Vertex provider options. You can validate the provider options using the `GoogleVertexImageModelOptions` type.
 
 ```ts
 import { vertex } from "@ai-sdk/google-vertex";
-import { GoogleVertexImageProviderOptions } from "@ai-sdk/google-vertex";
+import { GoogleVertexImageModelOptions } from "@ai-sdk/google-vertex";
 import { generateImage } from "ai";
 
 const { image } = await generateImage({
@@ -32947,7 +34467,7 @@ const { image } = await generateImage({
   providerOptions: {
     vertex: {
       negativePrompt: "pixelated, blurry, low-quality",
-    } satisfies GoogleVertexImageProviderOptions,
+    } satisfies GoogleVertexImageModelOptions,
   },
   // ...
 });
@@ -32979,7 +34499,7 @@ Additional information about the images can be retrieved using Google Vertex met
 
 ```ts
 import { vertex } from "@ai-sdk/google-vertex";
-import { GoogleVertexImageProviderOptions } from "@ai-sdk/google-vertex";
+import { GoogleVertexImageModelOptions } from "@ai-sdk/google-vertex";
 import { generateImage } from "ai";
 
 const { image, providerMetadata } = await generateImage({
@@ -32993,7 +34513,7 @@ console.log(
 );
 ```
 
-#### Image Editing
+##### Image Editing
 
 Google Vertex Imagen models support image editing through inpainting, outpainting, and other edit modes. Pass input images via `prompt.images` and optionally a mask via `prompt.mask`.
 
@@ -33002,15 +34522,12 @@ Google Vertex Imagen models support image editing through inpainting, outpaintin
   `imagen-4.0-generate-001` model does not currently support editing operations.
 </Note>
 
-##### Inpainting (Insert Objects)
+###### Inpainting (Insert Objects)
 
 Insert or replace objects in specific areas using a mask:
 
 ```ts
-import {
-  vertex,
-  GoogleVertexImageProviderOptions,
-} from "@ai-sdk/google-vertex";
+import { vertex, GoogleVertexImageModelOptions } from "@ai-sdk/google-vertex";
 import { generateImage } from "ai";
 import fs from "fs";
 
@@ -33032,20 +34549,17 @@ const { images } = await generateImage({
         maskMode: "MASK_MODE_USER_PROVIDED",
         maskDilation: 0.01,
       },
-    } satisfies GoogleVertexImageProviderOptions,
+    } satisfies GoogleVertexImageModelOptions,
   },
 });
 ```
 
-##### Outpainting (Extend Image)
+###### Outpainting (Extend Image)
 
 Extend an image beyond its original boundaries:
 
 ```ts
-import {
-  vertex,
-  GoogleVertexImageProviderOptions,
-} from "@ai-sdk/google-vertex";
+import { vertex, GoogleVertexImageModelOptions } from "@ai-sdk/google-vertex";
 import { generateImage } from "ai";
 import fs from "fs";
 
@@ -33066,12 +34580,12 @@ const { images } = await generateImage({
         mode: "EDIT_MODE_OUTPAINT",
         maskMode: "MASK_MODE_USER_PROVIDED",
       },
-    } satisfies GoogleVertexImageProviderOptions,
+    } satisfies GoogleVertexImageModelOptions,
   },
 });
 ```
 
-##### Edit Provider Options
+###### Edit Provider Options
 
 The following options are available under `providerOptions.vertex.edit`:
 
@@ -33100,7 +34614,7 @@ The following options are available under `providerOptions.vertex.edit`:
   image editing.
 </Note>
 
-#### Model Capabilities
+##### Imagen Model Capabilities
 
 | Model                           | Aspect Ratios             |
 | ------------------------------- | ------------------------- |
@@ -33110,6 +34624,80 @@ The following options are available under `providerOptions.vertex.edit`:
 | `imagen-4.0-generate-001`       | 1:1, 3:4, 4:3, 9:16, 16:9 |
 | `imagen-4.0-fast-generate-001`  | 1:1, 3:4, 4:3, 9:16, 16:9 |
 | `imagen-4.0-ultra-generate-001` | 1:1, 3:4, 4:3, 9:16, 16:9 |
+
+#### Gemini Image Models
+
+[Gemini image models](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-image) (e.g. `gemini-2.5-flash-image`) are multimodal output language models that can be used with `generateImage()` for a simpler image generation experience. Internally, the provider calls the language model API with `responseModalities: ['IMAGE']`.
+
+```ts
+import { vertex } from "@ai-sdk/google-vertex";
+import { generateImage } from "ai";
+
+const { image } = await generateImage({
+  model: vertex.image("gemini-2.5-flash-image"),
+  prompt: "A photorealistic image of a cat wearing a wizard hat",
+  aspectRatio: "1:1",
+});
+```
+
+Gemini image models also support image editing by providing input images:
+
+```ts
+import { vertex } from "@ai-sdk/google-vertex";
+import { generateImage } from "ai";
+import fs from "node:fs";
+
+const sourceImage = fs.readFileSync("./cat.png");
+
+const { image } = await generateImage({
+  model: vertex.image("gemini-2.5-flash-image"),
+  prompt: {
+    text: "Add a small wizard hat to this cat",
+    images: [sourceImage],
+  },
+});
+```
+
+You can also use URLs (including `gs://` Cloud Storage URIs) for input images:
+
+```ts
+import { vertex } from "@ai-sdk/google-vertex";
+import { generateImage } from "ai";
+
+const { image } = await generateImage({
+  model: vertex.image("gemini-2.5-flash-image"),
+  prompt: {
+    text: "Add a small wizard hat to this cat",
+    images: ["https://example.com/cat.png"],
+  },
+});
+```
+
+<Note>
+  Gemini image models do not support the `size` or `n` parameters. Use
+  `aspectRatio` instead of `size`. Mask-based inpainting is also not supported.
+</Note>
+
+<Note>
+  Gemini image models are multimodal output models that can generate both text
+  and images. For more advanced use cases where you need both text and image
+  outputs, or want more control over the generation process, you can use them
+  directly with `generateText()`.
+</Note>
+
+##### Gemini Image Model Capabilities
+
+| Model                        | Image Generation    | Image Editing       | Aspect Ratios                                       |
+| ---------------------------- | ------------------- | ------------------- | --------------------------------------------------- |
+| `gemini-3-pro-image-preview` | <Check size={18} /> | <Check size={18} /> | 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9 |
+| `gemini-2.5-flash-image`     | <Check size={18} /> | <Check size={18} /> | 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9 |
+
+<Note>
+  `gemini-3-pro-image-preview` supports additional features including up to 14
+  reference images for editing (6 objects, 5 humans), resolution options (1K,
+  2K, 4K via `providerOptions.vertex.imageConfig.imageSize`), and Google Search
+  grounding.
+</Note>
 
 ### Video Models
 
@@ -33145,11 +34733,11 @@ const { video } = await generateVideo({
 
 #### Provider Options
 
-Further configuration can be done using Google Vertex provider options. You can validate the provider options using the `GoogleVertexVideoProviderOptions` type.
+Further configuration can be done using Google Vertex provider options. You can validate the provider options using the `GoogleVertexVideoModelOptions` type.
 
 ```ts
 import { vertex } from "@ai-sdk/google-vertex";
-import { GoogleVertexVideoProviderOptions } from "@ai-sdk/google-vertex";
+import { GoogleVertexVideoModelOptions } from "@ai-sdk/google-vertex";
 import { experimental_generateVideo as generateVideo } from "ai";
 
 const { video } = await generateVideo({
@@ -33160,7 +34748,7 @@ const { video } = await generateVideo({
     vertex: {
       generateAudio: true,
       personGeneration: "allow_adult",
-    } satisfies GoogleVertexVideoProviderOptions,
+    } satisfies GoogleVertexVideoModelOptions,
   },
 });
 ```
@@ -33409,13 +34997,14 @@ const { text } = await generateText({
 });
 ```
 
-Anthropic language models can also be used in the `streamText`, `generateObject`, and `streamObject` functions
+Anthropic language models can also be used in the `streamText` function
+and support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output)
 (see [AI SDK Core](/docs/ai-sdk-core)).
 
 <Note>
   The Anthropic API returns streaming tool calls all at once after a delay. This
-  causes the `streamObject` function to generate the object fully after a delay
-  instead of streaming it incrementally.
+  causes structured output generation to complete fully after a delay instead of
+  streaming incrementally.
 </Note>
 
 The following optional provider options are available for Anthropic models:
@@ -33472,8 +35061,8 @@ In the messages and message parts, you can use the `providerOptions` property to
 You need to set the `anthropic` property in the `providerOptions` object to `{ cacheControl: { type: 'ephemeral' } }` to set a cache control breakpoint.
 
 The cache creation input tokens are then returned in the `providerMetadata` object
-for `generateText` and `generateObject`, again under the `anthropic` property.
-When you use `streamText` or `streamObject`, the response contains a promise
+for `generateText`, again under the `anthropic` property.
+When you use `streamText`, the response contains a promise
 that resolves to the metadata. Alternatively you can receive it in the
 `onFinish` callback.
 
@@ -33788,15 +35377,18 @@ const model = revai.transcription("machine");
 
 You can also pass additional provider-specific options using the `providerOptions` argument. For example, supplying the input language in ISO-639-1 (e.g. `en`) format can sometimes improve transcription performance if known beforehand.
 
-```ts highlight="6"
+```ts highlight="7"
 import { experimental_transcribe as transcribe } from "ai";
 import { revai } from "@ai-sdk/revai";
+import { type RevaiTranscriptionModelOptions } from "@ai-sdk/revai";
 import { readFile } from "fs/promises";
 
 const result = await transcribe({
   model: revai.transcription("machine"),
   audio: await readFile("audio.mp3"),
-  providerOptions: { revai: { language: "en" } },
+  providerOptions: {
+    revai: { language: "en" } satisfies RevaiTranscriptionModelOptions,
+  },
 });
 ```
 
@@ -34565,6 +36157,9 @@ Mistral chat models support document OCR for PDF files.
 You can optionally set image and page limits using the provider options.
 
 ```ts
+import { mistral, type MistralLanguageModelOptions } from "@ai-sdk/mistral";
+import { generateText } from "ai";
+
 const result = await generateText({
   model: mistral("mistral-small-latest"),
   messages: [
@@ -34590,7 +36185,7 @@ const result = await generateText({
     mistral: {
       documentImageLimit: 8,
       documentPageLimit: 64,
-    },
+    } satisfies MistralLanguageModelOptions,
   },
 });
 ```
@@ -34636,51 +36231,58 @@ const { text } = await generateText({
 });
 ```
 
-Mistral language models can also be used in the `streamText`, `generateObject`, and `streamObject` functions
+Mistral language models can also be used in the `streamText` function
+and support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output)
 (see [AI SDK Core](/docs/ai-sdk-core)).
 
 #### Structured Outputs
 
-Mistral chat models support structured outputs using JSON Schema. You can use `generateObject` or `streamObject`
-with Zod, Valibot, or raw JSON Schema. The SDK sends your schema via Mistral's `response_format: { type: 'json_schema' }`.
+Mistral chat models support structured outputs using JSON Schema. You can use `generateText` or `streamText` with [`Output`](/docs/reference/ai-sdk-core/output)
+and Zod, Valibot, or raw JSON Schema. The SDK sends your schema via Mistral's `response_format: { type: 'json_schema' }`.
 
 ```ts
 import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 
-const result = await generateObject({
+const result = await generateText({
   model: mistral("mistral-large-latest"),
-  schema: z.object({
-    recipe: z.object({
-      name: z.string(),
-      ingredients: z.array(z.string()),
-      instructions: z.array(z.string()),
+  output: Output.object({
+    schema: z.object({
+      recipe: z.object({
+        name: z.string(),
+        ingredients: z.array(z.string()),
+        instructions: z.array(z.string()),
+      }),
     }),
   }),
   prompt: "Generate a simple pasta recipe.",
 });
 
-console.log(JSON.stringify(result.object, null, 2));
+console.log(JSON.stringify(result.output, null, 2));
 ```
 
 You can enable strict JSON Schema validation using a provider option:
 
 ```ts highlight="7-11"
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { mistral, type MistralLanguageModelOptions } from "@ai-sdk/mistral";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 
-const result = await generateObject({
+const result = await generateText({
   model: mistral("mistral-large-latest"),
   providerOptions: {
     mistral: {
-      strictJsonSchema: true, // reject outputs that don't strictly match the schema
-    },
+      strictJsonSchema: true,
+    } satisfies MistralLanguageModelOptions,
   },
-  schema: z.object({
-    title: z.string(),
-    items: z.array(z.object({ id: z.string(), qty: z.number().int().min(1) })),
+  output: Output.object({
+    schema: z.object({
+      title: z.string(),
+      items: z.array(
+        z.object({ id: z.string(), qty: z.number().int().min(1) }),
+      ),
+    }),
   }),
   prompt: "Generate a small shopping list.",
 });
@@ -34904,7 +36506,10 @@ const { images } = await generateImage({
 You can pass optional provider-specific request parameters using the `providerOptions` argument.
 
 ```ts
-import { togetherai } from "@ai-sdk/togetherai";
+import {
+  togetherai,
+  type TogetherAIImageModelOptions,
+} from "@ai-sdk/togetherai";
 import { generateImage } from "ai";
 
 const { images } = await generateImage({
@@ -34915,7 +36520,7 @@ const { images } = await generateImage({
   providerOptions: {
     togetherai: {
       steps: 40,
-    },
+    } satisfies TogetherAIImageModelOptions,
   },
 });
 ```
@@ -34966,7 +36571,7 @@ const { images } = await generateImage({
   providerOptions: {
     togetherai: {
       steps: 28,
-    },
+    } satisfies TogetherAIImageModelOptions,
   },
 });
 ```
@@ -34986,7 +36591,7 @@ const { images } = await generateImage({
   providerOptions: {
     togetherai: {
       steps: 28,
-    },
+    } satisfies TogetherAIImageModelOptions,
   },
 });
 ```
@@ -35096,7 +36701,10 @@ console.log(ranking);
 Together.ai reranking models support additional provider options for object documents. You can specify which fields to use for ranking:
 
 ```ts
-import { togetherai } from "@ai-sdk/togetherai";
+import {
+  togetherai,
+  type TogetherAIRerankingModelOptions,
+} from "@ai-sdk/togetherai";
 import { rerank } from "ai";
 
 const documents = [
@@ -35119,7 +36727,7 @@ const { ranking } = await rerank({
   providerOptions: {
     togetherai: {
       rankFields: ["from", "subject", "text"], // Specify which fields to rank by
-    },
+    } satisfies TogetherAIRerankingModelOptions,
   },
 });
 ```
@@ -35239,8 +36847,9 @@ const { text } = await generateText({
 });
 ```
 
-Cohere language models can also be used in the `streamText`, `generateObject`, and `streamObject` functions
-(see [AI SDK Core](/docs/ai-sdk-core).
+Cohere language models can also be used in the `streamText` function
+and support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output)
+(see [AI SDK Core](/docs/ai-sdk-core)).
 
 ### Model Capabilities
 
@@ -35271,7 +36880,7 @@ Cohere language models can also be used in the `streamText`, `generateObject`, a
 Cohere has introduced reasoning with the `command-a-reasoning-08-2025` model. You can learn more at https://docs.cohere.com/docs/reasoning.
 
 ```ts
-import { cohere } from "@ai-sdk/cohere";
+import { cohere, type CohereLanguageModelOptions } from "@ai-sdk/cohere";
 import { generateText } from "ai";
 
 async function main() {
@@ -35286,7 +36895,7 @@ async function main() {
           type: "enabled",
           tokenBudget: 100,
         },
-      },
+      } satisfies CohereLanguageModelOptions,
     },
   });
 
@@ -35309,7 +36918,7 @@ const model = cohere.embedding("embed-english-v3.0");
 You can use Cohere embedding models to generate embeddings with the `embed` function:
 
 ```ts
-import { cohere } from "@ai-sdk/cohere";
+import { cohere, type CohereEmbeddingModelOptions } from "@ai-sdk/cohere";
 import { embed } from "ai";
 
 const { embedding } = await embed({
@@ -35318,7 +36927,7 @@ const { embedding } = await embed({
   providerOptions: {
     cohere: {
       inputType: "search_document",
-    },
+    } satisfies CohereEmbeddingModelOptions,
   },
 });
 ```
@@ -35326,7 +36935,7 @@ const { embedding } = await embed({
 Cohere embedding models support additional provider options that can be passed via `providerOptions.cohere`:
 
 ```ts
-import { cohere } from "@ai-sdk/cohere";
+import { cohere, type CohereEmbeddingModelOptions } from "@ai-sdk/cohere";
 import { embed } from "ai";
 
 const { embedding } = await embed({
@@ -35336,7 +36945,7 @@ const { embedding } = await embed({
     cohere: {
       inputType: "search_document",
       truncate: "END",
-    },
+    } satisfies CohereEmbeddingModelOptions,
   },
 });
 ```
@@ -35409,7 +37018,7 @@ console.log(ranking);
 Cohere reranking models support additional provider options that can be passed via `providerOptions.cohere`:
 
 ```ts
-import { cohere } from "@ai-sdk/cohere";
+import { cohere, type CohereRerankingModelOptions } from "@ai-sdk/cohere";
 import { rerank } from "ai";
 
 const { ranking } = await rerank({
@@ -35420,7 +37029,7 @@ const { ranking } = await rerank({
     cohere: {
       maxTokensPerDoc: 1000,
       priority: 1,
-    },
+    } satisfies CohereRerankingModelOptions,
   },
 });
 ```
@@ -35562,7 +37171,10 @@ Fireworks chat models support additional provider options that are not part of
 the [standard call settings](/docs/ai-sdk-core/settings). You can pass them in the `providerOptions` argument:
 
 ```ts
-import { fireworks } from "@ai-sdk/fireworks";
+import {
+  fireworks,
+  type FireworksLanguageModelOptions,
+} from "@ai-sdk/fireworks";
 import { generateText } from "ai";
 
 const { text, reasoningText } = await generateText({
@@ -35571,7 +37183,7 @@ const { text, reasoningText } = await generateText({
     fireworks: {
       thinking: { type: "enabled", budgetTokens: 4096 },
       reasoningHistory: "interleaved",
-    },
+    } satisfies FireworksLanguageModelOptions,
   },
   prompt: 'How many "r"s are in the word "strawberry"?',
 });
@@ -35884,7 +37496,7 @@ The following optional provider options are available for DeepSeek models:
   - `type`: `'enabled' | 'disabled'` - Enable or disable thinking mode.
 
 ```ts highlight="7-11"
-import { deepseek } from "@ai-sdk/deepseek";
+import { deepseek, type DeepSeekLanguageModelOptions } from "@ai-sdk/deepseek";
 import { generateText } from "ai";
 
 const { text, reasoning } = await generateText({
@@ -35893,7 +37505,7 @@ const { text, reasoning } = await generateText({
   providerOptions: {
     deepseek: {
       thinking: { type: "enabled" },
-    },
+    } satisfies DeepSeekLanguageModelOptions,
   },
 });
 ```
@@ -36066,7 +37678,10 @@ Moonshot AI language models can be used in the `streamText` function
 Moonshot AI offers thinking models like `kimi-k2-thinking` that generate intermediate reasoning tokens before their final response. The reasoning output is streamed through the standard AI SDK reasoning parts.
 
 ```ts
-import { moonshotai, type MoonshotAIProviderOptions } from "@ai-sdk/moonshotai";
+import {
+  moonshotai,
+  type MoonshotAILanguageModelOptions,
+} from "@ai-sdk/moonshotai";
 import { generateText } from "ai";
 
 const { text, reasoningText } = await generateText({
@@ -36075,7 +37690,7 @@ const { text, reasoningText } = await generateText({
     moonshotai: {
       thinking: { type: "enabled", budgetTokens: 2048 },
       reasoningHistory: "interleaved",
-    } satisfies MoonshotAIProviderOptions,
+    } satisfies MoonshotAILanguageModelOptions,
   },
   prompt: 'How many "r"s are in the word "strawberry"?',
 });
@@ -36254,7 +37869,7 @@ The following optional provider options are available for Alibaba models:
 Alibaba's Qwen models support thinking/reasoning mode for complex problem-solving:
 
 ```ts
-import { alibaba } from "@ai-sdk/alibaba";
+import { alibaba, type AlibabaLanguageModelOptions } from "@ai-sdk/alibaba";
 import { generateText } from "ai";
 
 const { text, reasoning } = await generateText({
@@ -36263,7 +37878,7 @@ const { text, reasoning } = await generateText({
     alibaba: {
       enableThinking: true,
       thinkingBudget: 2048,
-    },
+    } satisfies AlibabaLanguageModelOptions,
   },
   prompt: 'How many "r"s are in the word "strawberry"?',
 });
@@ -36307,6 +37922,8 @@ Alibaba supports both implicit and explicit prompt caching to reduce costs for r
 
 **Implicit caching** works automatically - the provider caches appropriate content without any configuration. For more control, you can use **explicit caching** by marking specific messages with `cacheControl`:
 
+### Single message cache control
+
 ```ts
 import { alibaba } from "@ai-sdk/alibaba";
 import { generateText } from "ai";
@@ -36317,19 +37934,50 @@ const { text, usage } = await generateText({
     {
       role: "system",
       content: "You are a helpful assistant. [... long system prompt ...]",
-      providerMetadata: {
+      providerOptions: {
         alibaba: {
           cacheControl: { type: "ephemeral" },
         },
       },
     },
+  ],
+});
+```
+
+### Multi-part message cache control
+
+```ts
+import { alibaba } from "@ai-sdk/alibaba";
+import { generateText } from "ai";
+
+const longDocument = "... large document content ...";
+
+const { text, usage } = await generateText({
+  model: alibaba("qwen-plus"),
+  messages: [
     {
       role: "user",
-      content: "What is the capital of France?",
+      content: [
+        {
+          type: "text",
+          text: "Context: Please analyze this document.",
+        },
+        {
+          type: "text",
+          text: longDocument,
+          providerOptions: {
+            alibaba: {
+              cacheControl: { type: "ephemeral" },
+            },
+          },
+        },
+      ],
     },
   ],
 });
 ```
+
+**Note:** The minimum content length for a cache block is 1,024 tokens.
 
 ## Video Models
 
@@ -36343,7 +37991,7 @@ Alibaba supports three video generation modes: text-to-video, image-to-video (fi
 Generate videos from text prompts:
 
 ```ts
-import { alibaba, type AlibabaVideoProviderOptions } from "@ai-sdk/alibaba";
+import { alibaba, type AlibabaVideoModelOptions } from "@ai-sdk/alibaba";
 import { experimental_generateVideo as generateVideo } from "ai";
 
 const { video } = await generateVideo({
@@ -36355,7 +38003,7 @@ const { video } = await generateVideo({
     alibaba: {
       promptExtend: true,
       pollTimeoutMs: 600000, // 10 minutes
-    } satisfies AlibabaVideoProviderOptions,
+    } satisfies AlibabaVideoModelOptions,
   },
 });
 ```
@@ -36365,7 +38013,7 @@ const { video } = await generateVideo({
 Generate videos from a first-frame image and optional text prompt:
 
 ```ts
-import { alibaba, type AlibabaVideoProviderOptions } from "@ai-sdk/alibaba";
+import { alibaba, type AlibabaVideoModelOptions } from "@ai-sdk/alibaba";
 import { experimental_generateVideo as generateVideo } from "ai";
 
 const { video } = await generateVideo({
@@ -36378,7 +38026,7 @@ const { video } = await generateVideo({
   providerOptions: {
     alibaba: {
       pollTimeoutMs: 600000, // 10 minutes
-    } satisfies AlibabaVideoProviderOptions,
+    } satisfies AlibabaVideoModelOptions,
   },
 });
 ```
@@ -36389,7 +38037,7 @@ Generate videos using reference images and/or videos for character consistency. 
 (`character1`, `character2`, etc.) in your prompt to reference them:
 
 ```ts
-import { alibaba, type AlibabaVideoProviderOptions } from "@ai-sdk/alibaba";
+import { alibaba, type AlibabaVideoModelOptions } from "@ai-sdk/alibaba";
 import { experimental_generateVideo as generateVideo } from "ai";
 
 const { video } = await generateVideo({
@@ -36401,7 +38049,7 @@ const { video } = await generateVideo({
     alibaba: {
       referenceUrls: ["https://example.com/character-reference.jpg"],
       pollTimeoutMs: 600000, // 10 minutes
-    } satisfies AlibabaVideoProviderOptions,
+    } satisfies AlibabaVideoModelOptions,
   },
 });
 ```
@@ -36813,7 +38461,7 @@ console.log("Image saved as image.webp");
 ### Model-specific options
 
 ```ts highlight="9-11"
-import { replicate } from "@ai-sdk/replicate";
+import { replicate, type ReplicateImageModelOptions } from "@ai-sdk/replicate";
 import { generateImage } from "ai";
 
 const { image } = await generateImage({
@@ -36823,7 +38471,7 @@ const { image } = await generateImage({
   providerOptions: {
     replicate: {
       style: "realistic_image",
-    },
+    } satisfies ReplicateImageModelOptions,
   },
 });
 ```
@@ -36863,7 +38511,7 @@ const { images } = await generateImage({
     replicate: {
       guidance_scale: 7.5,
       num_inference_steps: 30,
-    },
+    } satisfies ReplicateImageModelOptions,
   },
 });
 ```
@@ -36887,7 +38535,7 @@ const { images } = await generateImage({
     replicate: {
       guidance_scale: 7.5,
       num_inference_steps: 30,
-    },
+    } satisfies ReplicateImageModelOptions,
   },
 });
 ```
@@ -37071,7 +38719,7 @@ const { image } = await generateImage({
 Prodia image models support additional options through the `providerOptions.prodia` object:
 
 ```ts
-import { prodia, type ProdiaImageProviderOptions } from "@ai-sdk/prodia";
+import { prodia, type ProdiaImageModelOptions } from "@ai-sdk/prodia";
 import { generateImage } from "ai";
 
 const { image } = await generateImage({
@@ -37083,7 +38731,7 @@ const { image } = await generateImage({
       height: 768,
       steps: 4,
       stylePreset: "cinematic",
-    } satisfies ProdiaImageProviderOptions,
+    } satisfies ProdiaImageModelOptions,
   },
 });
 ```
@@ -37440,7 +39088,7 @@ For more on image generation with the AI SDK see [generateImage()](/docs/referen
 ### Basic Usage
 
 ```ts
-import { luma, type LumaImageProviderOptions } from "@ai-sdk/luma";
+import { luma, type LumaImageModelOptions } from "@ai-sdk/luma";
 import { generateImage } from "ai";
 import fs from "fs";
 
@@ -37470,7 +39118,7 @@ const { image } = await generateImage({
       pollIntervalMillis: 5000, // How often to check for completed images (in ms)
       maxPollAttempts: 10, // Maximum number of polling attempts before timeout
     },
-  } satisfies LumaImageProviderOptions,
+  } satisfies LumaImageModelOptions,
 });
 ```
 
@@ -37540,7 +39188,7 @@ await generateImage({
     luma: {
       referenceType: "modify_image",
       images: [{ weight: 1.0 }],
-    } satisfies LumaImageProviderOptions,
+    } satisfies LumaImageModelOptions,
   },
 });
 ```
@@ -37565,7 +39213,7 @@ await generateImage({
     luma: {
       referenceType: "image",
       images: [{ weight: 0.8 }],
-    } satisfies LumaImageProviderOptions,
+    } satisfies LumaImageModelOptions,
   },
 });
 ```
@@ -37590,7 +39238,7 @@ await generateImage({
     luma: {
       referenceType: "style",
       images: [{ weight: 0.8 }],
-    } satisfies LumaImageProviderOptions,
+    } satisfies LumaImageModelOptions,
   },
 });
 ```
@@ -37619,12 +39267,308 @@ await generateImage({
           id: "identity0",
         },
       ],
-    } satisfies LumaImageProviderOptions,
+    } satisfies LumaImageModelOptions,
   },
 });
 ```
 
 Learn more at https://docs.lumalabs.ai/docs/image-generation#character-reference
+
+---
+
+title: ByteDance
+description: Learn how to use ByteDance Seedance video models with the AI SDK.
+
+---
+
+# ByteDance Provider
+
+The [ByteDance](https://www.bytedance.com/) provider contains support for the Seedance family of video generation models through the [BytePlus ModelArk](https://docs.byteplus.com/en/docs/ModelArk/Video_Generation_API) platform. Seedance provides high-quality text-to-video and image-to-video generation capabilities, including audio-video synchronization, first-and-last frame control, and multi-reference image generation.
+
+## Setup
+
+The ByteDance provider is available via the `@ai-sdk/bytedance` module. You can install it with
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+<Tab>
+<Snippet text="pnpm add @ai-sdk/bytedance" dark />
+</Tab>
+<Tab>
+<Snippet text="npm install @ai-sdk/bytedance" dark />
+</Tab>
+<Tab>
+<Snippet text="yarn add @ai-sdk/bytedance" dark />
+</Tab>
+
+  <Tab>
+    <Snippet text="bun add @ai-sdk/bytedance" dark />
+  </Tab>
+</Tabs>
+
+## Provider Instance
+
+You can import the default provider instance `byteDance` from `@ai-sdk/bytedance`:
+
+```ts
+import { byteDance } from "@ai-sdk/bytedance";
+```
+
+If you need a customized setup, you can import `createByteDance` and create a provider instance with your settings:
+
+```ts
+import { createByteDance } from "@ai-sdk/bytedance";
+
+const byteDance = createByteDance({
+  apiKey: "your-api-key", // optional, defaults to ARK_API_KEY environment variable
+  baseURL: "custom-url", // optional
+  headers: {
+    /* custom headers */
+  }, // optional
+});
+```
+
+You can use the following optional settings to customize the ByteDance provider instance:
+
+- **baseURL** _string_
+
+  Use a different URL prefix for API calls, e.g. to use proxy servers.
+  The default prefix is `https://ark.ap-southeast.bytepluses.com/api/v3`.
+
+- **apiKey** _string_
+
+  API key that is being sent using the `Authorization` header.
+  It defaults to the `ARK_API_KEY` environment variable.
+  You can [obtain an API key](https://console.byteplus.com/ark/apiKey) from the BytePlus console.
+
+- **headers** _Record&lt;string,string&gt;_
+
+  Custom headers to include in the requests.
+
+- **fetch** _(input: RequestInfo, init?: RequestInit) => Promise&lt;Response&gt;_
+
+  Custom [fetch](https://developer.mozilla.org/en-US/docs/Web/API/fetch) implementation.
+  You can use it as a middleware to intercept requests,
+  or to provide a custom fetch implementation for e.g. testing.
+
+## Video Models
+
+You can create ByteDance video models using the `.video()` factory method.
+For more on video generation with the AI SDK see [generateVideo()](/docs/reference/ai-sdk-core/generate-video).
+
+### Text-to-Video
+
+Generate videos from text prompts:
+
+```ts
+import {
+  byteDance,
+  type ByteDanceVideoProviderOptions,
+} from "@ai-sdk/bytedance";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const { video } = await generateVideo({
+  model: byteDance.video("seedance-1-0-pro-250528"),
+  prompt:
+    "Photorealistic style: Under a clear blue sky, a vast expanse of white daisy fields stretches out. The camera gradually zooms in and fixates on a close-up of a single daisy.",
+  aspectRatio: "16:9",
+  duration: 5,
+  providerOptions: {
+    bytedance: {
+      watermark: false,
+    } satisfies ByteDanceVideoProviderOptions,
+  },
+});
+
+console.log(video.url);
+```
+
+### Image-to-Video
+
+Generate videos from a first-frame image with an optional text prompt:
+
+```ts
+import {
+  byteDance,
+  type ByteDanceVideoProviderOptions,
+} from "@ai-sdk/bytedance";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const { video } = await generateVideo({
+  model: byteDance.video("seedance-1-5-pro-251215"),
+  prompt: {
+    image: "https://example.com/first-frame.png",
+    text: "The cat slowly turns its head and blinks",
+  },
+  duration: 5,
+  providerOptions: {
+    bytedance: {
+      watermark: false,
+    } satisfies ByteDanceVideoProviderOptions,
+  },
+});
+```
+
+### Image-to-Video with Audio
+
+Seedance 1.5 Pro supports generating synchronized audio alongside the video:
+
+```ts
+import {
+  byteDance,
+  type ByteDanceVideoProviderOptions,
+} from "@ai-sdk/bytedance";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const { video } = await generateVideo({
+  model: byteDance.video("seedance-1-5-pro-251215"),
+  prompt: {
+    image: "https://example.com/pianist.png",
+    text: "A young man sits at a piano, playing calmly. Gentle piano music plays in sync with his movements.",
+  },
+  duration: 5,
+  providerOptions: {
+    bytedance: {
+      generateAudio: true,
+      watermark: false,
+    } satisfies ByteDanceVideoProviderOptions,
+  },
+});
+```
+
+### First-and-Last Frame Video
+
+Generate smooth transitions between a starting and ending keyframe image:
+
+```ts
+import {
+  byteDance,
+  type ByteDanceVideoProviderOptions,
+} from "@ai-sdk/bytedance";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const { video } = await generateVideo({
+  model: byteDance.video("seedance-1-5-pro-251215"),
+  prompt: {
+    image: "https://example.com/first-frame.jpg",
+    text: "Create a 360-degree orbiting camera shot based on this photo",
+  },
+  duration: 5,
+  providerOptions: {
+    bytedance: {
+      lastFrameImage: "https://example.com/last-frame.jpg",
+      generateAudio: true,
+      watermark: false,
+    } satisfies ByteDanceVideoProviderOptions,
+  },
+});
+```
+
+### Multi-Reference Image-to-Video
+
+Using the Seedance 1.0 Lite I2V model, you can provide multiple reference images (1-4) that the model uses to faithfully reproduce object shapes, colors, and textures:
+
+```ts
+import {
+  byteDance,
+  type ByteDanceVideoProviderOptions,
+} from "@ai-sdk/bytedance";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const { video } = await generateVideo({
+  model: byteDance.video("seedance-1-0-lite-i2v-250428"),
+  prompt:
+    "A boy wearing glasses and a blue T-shirt from [Image 1] and a corgi dog from [Image 2], sitting on the lawn from [Image 3], in 3D cartoon style",
+  aspectRatio: "16:9",
+  duration: 5,
+  providerOptions: {
+    bytedance: {
+      referenceImages: [
+        "https://example.com/boy.png",
+        "https://example.com/corgi.png",
+        "https://example.com/lawn.png",
+      ],
+      watermark: false,
+    } satisfies ByteDanceVideoProviderOptions,
+  },
+});
+```
+
+### Video Provider Options
+
+The following provider options are available via `providerOptions.bytedance`:
+
+#### Generation Options
+
+- **watermark** _boolean_
+
+  Whether to add a watermark to the generated video.
+
+- **generateAudio** _boolean_
+
+  Whether to generate synchronized audio for the video. Only supported by Seedance 1.5 Pro.
+
+- **cameraFixed** _boolean_
+
+  Whether to fix the camera during generation.
+
+- **returnLastFrame** _boolean_
+
+  Whether to return the last frame of the generated video. Useful for chaining consecutive videos.
+
+- **serviceTier** _'default' | 'flex'_
+
+  Inference tier. `'default'` for online inference. `'flex'` for offline inference at 50% of the price, with higher latency (response times on the order of hours).
+
+- **draft** _boolean_
+
+  Enable draft sample mode for low-cost preview generation. Only supported by Seedance 1.5 Pro. Generates a 480p preview video for rapid iteration before committing to a full-quality generation.
+
+#### Image Input Options
+
+- **lastFrameImage** _string_
+
+  URL of the last frame image for first-and-last frame video generation. The model generates smooth transitions between the first frame (provided via the `image` prompt) and this last frame. Supported by Seedance 1.5 Pro, 1.0 Pro, and 1.0 Lite I2V.
+
+- **referenceImages** _string[]_
+
+  Array of reference image URLs (1-4 images) for multi-reference image-to-video generation. The model extracts key features from each image and reproduces them in the video. Use `[Image 1]`, `[Image 2]`, etc. in your prompt to reference specific images. Supported by Seedance 1.0 Lite I2V.
+
+#### Polling Options
+
+- **pollIntervalMs** _number_
+
+  Control how frequently the API is checked for completed videos while they are
+  being processed. Defaults to 3000ms.
+
+- **pollTimeoutMs** _number_
+
+  Maximum time to wait for video generation to complete before timing out.
+  Defaults to 300000ms (5 minutes).
+
+<Note>
+  Video generation is an asynchronous process that can take several minutes.
+  Consider setting `pollTimeoutMs` to at least 10 minutes (600000ms) for
+  reliable operation.
+</Note>
+
+### Video Model Capabilities
+
+| Model                   | Model ID                       | Capabilities                                                                                                                  |
+| ----------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Seedance 1.5 Pro        | `seedance-1-5-pro-251215`      | T2V, I2V (first frame), I2V (first+last frame), audio-video sync, draft mode. Duration: 4-12s. Resolution: 480p, 720p, 1080p. |
+| Seedance 1.0 Pro        | `seedance-1-0-pro-250528`      | T2V, I2V (first frame), I2V (first+last frame). Duration: 2-12s. Resolution: 480p, 720p, 1080p.                               |
+| Seedance 1.0 Pro Fast   | `seedance-1-0-pro-fast-251015` | T2V, I2V (first frame). Optimized for speed and cost. Duration: 2-12s.                                                        |
+| Seedance 1.0 Lite (T2V) | `seedance-1-0-lite-t2v-250428` | Text-to-video only. Duration: 2-12s. Resolution: 480p, 720p, 1080p.                                                           |
+| Seedance 1.0 Lite (I2V) | `seedance-1-0-lite-i2v-250428` | I2V (first frame), I2V (first+last frame), multi-reference images (1-4). Duration: 2-12s. Resolution: 480p, 720p.             |
+
+Supported aspect ratios: `16:9`, `4:3`, `1:1`, `3:4`, `9:16`, `21:9`, `adaptive` (image-to-video only).
+
+All models output MP4 video at 24 fps.
+
+<Note>
+  You can also pass any model ID string if needed, e.g. for future models not
+  yet listed here.
+</Note>
 
 ---
 
@@ -37635,7 +39579,7 @@ description: Learn how to use the Kling AI provider for the AI SDK.
 
 # Kling AI Provider
 
-The [Kling AI](https://klingai.com/) provider contains support for Kling AI's video generation models, including text-to-video, image-to-video, and motion control.
+The [Kling AI](https://klingai.com/) provider contains support for Kling AI's video generation models, including text-to-video, image-to-video, motion control, and multi-shot video generation.
 
 ## Setup
 
@@ -37720,7 +39664,7 @@ This provider currently supports three video generation modes: text-to-video, im
 Generate videos from text prompts:
 
 ```ts
-import { klingai, type KlingAIVideoProviderOptions } from "@ai-sdk/klingai";
+import { klingai, type KlingAIVideoModelOptions } from "@ai-sdk/klingai";
 import { experimental_generateVideo as generateVideo } from "ai";
 
 const { videos } = await generateVideo({
@@ -37731,7 +39675,7 @@ const { videos } = await generateVideo({
   providerOptions: {
     klingai: {
       mode: "std",
-    } satisfies KlingAIVideoProviderOptions,
+    } satisfies KlingAIVideoModelOptions,
   },
 });
 ```
@@ -37741,7 +39685,7 @@ const { videos } = await generateVideo({
 Generate videos from a start frame image with an optional text prompt. The popular start+end frame feature is available via the `imageTail` option:
 
 ```ts
-import { klingai, type KlingAIVideoProviderOptions } from "@ai-sdk/klingai";
+import { klingai, type KlingAIVideoModelOptions } from "@ai-sdk/klingai";
 import { experimental_generateVideo as generateVideo } from "ai";
 
 const { videos } = await generateVideo({
@@ -37757,17 +39701,60 @@ const { videos } = await generateVideo({
       mode: "pro",
       // Optional: end frame image
       imageTail: "https://example.com/end-frame.png",
-    } satisfies KlingAIVideoProviderOptions,
+    } satisfies KlingAIVideoModelOptions,
   },
 });
 ```
+
+### Multi-Shot Video Generation
+
+Generate videos with multiple storyboard shots, each with its own prompt and duration (Kling v3.0+):
+
+```ts
+import { klingai, type KlingAIVideoModelOptions } from "@ai-sdk/klingai";
+import { experimental_generateVideo as generateVideo } from "ai";
+
+const { videos } = await generateVideo({
+  model: klingai.video("kling-v3.0-t2v"),
+  prompt: "",
+  aspectRatio: "16:9",
+  duration: 10,
+  providerOptions: {
+    klingai: {
+      mode: "pro",
+      multiShot: true,
+      shotType: "customize",
+      multiPrompt: [
+        {
+          index: 1,
+          prompt: "A sunrise over a calm ocean, warm golden light.",
+          duration: "4",
+        },
+        {
+          index: 2,
+          prompt: "A flock of seagulls take flight from the beach.",
+          duration: "3",
+        },
+        {
+          index: 3,
+          prompt: "Waves crash against rocky cliffs at sunset.",
+          duration: "3",
+        },
+      ],
+      sound: "on",
+    } satisfies KlingAIVideoModelOptions,
+  },
+});
+```
+
+Multi-shot also works with image-to-video by combining a start frame image with per-shot prompts.
 
 ### Motion Control
 
 Generate video by transferring motion from a reference video to a character image:
 
 ```ts
-import { klingai, type KlingAIVideoProviderOptions } from "@ai-sdk/klingai";
+import { klingai, type KlingAIVideoModelOptions } from "@ai-sdk/klingai";
 import { experimental_generateVideo as generateVideo } from "ai";
 
 const { videos } = await generateVideo({
@@ -37781,7 +39768,7 @@ const { videos } = await generateVideo({
       videoUrl: "https://example.com/reference-motion.mp4",
       characterOrientation: "image",
       mode: "std",
-    } satisfies KlingAIVideoProviderOptions,
+    } satisfies KlingAIVideoModelOptions,
   },
 });
 ```
@@ -37824,6 +39811,22 @@ The following provider options are available via `providerOptions.klingai`. Opti
 
   Camera movement control with a `type` preset (`'simple'`, `'down_back'`, `'forward_up'`, `'right_turn_forward'`, `'left_turn_forward'`) and optional `config` with `horizontal`, `vertical`, `pan`, `tilt`, `roll`, `zoom` values (range: [-10, 10]).
 
+- **multiShot** _boolean_
+
+  Enable multi-shot video generation (Kling v3.0+). When true, the video is split into up to 6 storyboard shots with individual prompts and durations.
+
+- **shotType** _'customize' | 'intelligence'_
+
+  Storyboard method for multi-shot generation. `'customize'` uses `multiPrompt` for user-defined shots. `'intelligence'` lets the model auto-segment based on the main prompt. Required when `multiShot` is true.
+
+- **multiPrompt** _Array&lt;\{index, prompt, duration\}&gt;_
+
+  Per-shot details for multi-shot generation. Each shot has an `index` (number), `prompt` (string, max 512 characters), and `duration` (string, in seconds). Shot durations must sum to the total duration. Required when `multiShot` is true and `shotType` is `'customize'`.
+
+- **voiceList** _Array&lt;\{voice_id: string\}&gt;_
+
+  Voice references for voice control (Kling v3.0+). Up to 2 voices. Reference via `<<<voice_1>>>` template syntax in the prompt. Requires `sound: 'on'`. Cannot coexist with `elementList` on the I2V endpoint.
+
 #### Image-to-Video Only Options
 
 - **imageTail** _string_
@@ -37837,6 +39840,10 @@ The following provider options are available via `providerOptions.klingai`. Opti
 - **dynamicMasks** _Array_
 
   Dynamic brush configurations for motion brush. Up to 6 groups, each with a `mask` (image URL or base64) and `trajectories` (array of `{x, y}` coordinates).
+
+- **elementList** _Array&lt;\{element_id: number\}&gt;_
+
+  Reference elements for element control (Kling v3.0+ I2V). Supports video character elements and multi-image elements. Up to 3 reference elements. Cannot coexist with `voiceList`.
 
 #### Motion Control Only Options
 
@@ -37868,27 +39875,29 @@ The following provider options are available via `providerOptions.klingai`. Opti
 
 #### Text-to-Video
 
-| Model                   | Description                                      |
-| ----------------------- | ------------------------------------------------ |
-| `kling-v2.6-t2v`        | Latest model, sound in pro mode                  |
-| `kling-v2.5-turbo-t2v`  | Optimized for speed, std and pro                 |
-| `kling-v2.1-master-t2v` | High-quality generation, pro only                |
-| `kling-v2-master-t2v`   | Master-quality generation                        |
-| `kling-v1.6-t2v`        | V1.6 generation, std and pro                     |
-| `kling-v1-t2v`          | Original V1 model, supports camera control (std) |
+| Model                   | Description                                           |
+| ----------------------- | ----------------------------------------------------- |
+| `kling-v3.0-t2v`        | Latest v3.0, multi-shot, voice control, sound (3-15s) |
+| `kling-v2.6-t2v`        | V2.6, sound in pro mode                               |
+| `kling-v2.5-turbo-t2v`  | Optimized for speed, std and pro                      |
+| `kling-v2.1-master-t2v` | High-quality generation, pro only                     |
+| `kling-v2-master-t2v`   | Master-quality generation                             |
+| `kling-v1.6-t2v`        | V1.6 generation, std and pro                          |
+| `kling-v1-t2v`          | Original V1 model, supports camera control (std)      |
 
 #### Image-to-Video
 
-| Model                   | Description                                              |
-| ----------------------- | -------------------------------------------------------- |
-| `kling-v2.6-i2v`        | Latest model, sound and end-frame in pro mode            |
-| `kling-v2.5-turbo-i2v`  | Optimized for speed, end-frame in pro                    |
-| `kling-v2.1-master-i2v` | High-quality generation, pro only                        |
-| `kling-v2.1-i2v`        | V2.1 generation, end-frame in pro                        |
-| `kling-v2-master-i2v`   | Master-quality generation                                |
-| `kling-v1.6-i2v`        | V1.6 generation, end-frame in pro                        |
-| `kling-v1.5-i2v`        | V1.5 generation, end-frame and motion brush in pro       |
-| `kling-v1-i2v`          | Original V1 model, end-frame and motion brush in std/pro |
+| Model                   | Description                                                   |
+| ----------------------- | ------------------------------------------------------------- |
+| `kling-v3.0-i2v`        | Latest v3.0, multi-shot, element/voice control, sound (3-15s) |
+| `kling-v2.6-i2v`        | V2.6, sound and end-frame in pro mode                         |
+| `kling-v2.5-turbo-i2v`  | Optimized for speed, end-frame in pro                         |
+| `kling-v2.1-master-i2v` | High-quality generation, pro only                             |
+| `kling-v2.1-i2v`        | V2.1 generation, end-frame in pro                             |
+| `kling-v2-master-i2v`   | Master-quality generation                                     |
+| `kling-v1.6-i2v`        | V1.6 generation, end-frame in pro                             |
+| `kling-v1.5-i2v`        | V1.5 generation, end-frame and motion brush in pro            |
+| `kling-v1-i2v`          | Original V1 model, end-frame and motion brush in std/pro      |
 
 #### Motion Control
 
@@ -37997,7 +40006,10 @@ You can also pass additional provider-specific options using the `providerOption
 
 ```ts highlight="7-9"
 import { experimental_generateSpeech as generateSpeech } from "ai";
-import { elevenlabs } from "@ai-sdk/elevenlabs";
+import {
+  elevenlabs,
+  type ElevenLabsSpeechModelOptions,
+} from "@ai-sdk/elevenlabs";
 
 const result = await generateSpeech({
   model: elevenlabs.speech("eleven_multilingual_v2"),
@@ -38009,7 +40021,7 @@ const result = await generateSpeech({
         stability: 0.5,
         similarityBoost: 0.75,
       },
-    },
+    } satisfies ElevenLabsSpeechModelOptions,
   },
 });
 ```
@@ -38093,12 +40105,19 @@ You can also pass additional provider-specific options using the `providerOption
 
 ```ts highlight="6"
 import { experimental_transcribe as transcribe } from "ai";
-import { elevenlabs } from "@ai-sdk/elevenlabs";
+import {
+  elevenlabs,
+  type ElevenLabsTranscriptionModelOptions,
+} from "@ai-sdk/elevenlabs";
 
 const result = await transcribe({
   model: elevenlabs.transcription("scribe_v1"),
   audio: new Uint8Array([1, 2, 3, 4]),
-  providerOptions: { elevenlabs: { languageCode: "en" } },
+  providerOptions: {
+    elevenlabs: {
+      languageCode: "en",
+    } satisfies ElevenLabsTranscriptionModelOptions,
+  },
 });
 ```
 
@@ -38409,13 +40428,12 @@ console.log("Token usage:", await result.usage);
 console.log("Finish reason:", await result.finishReason);
 ```
 
-NIM language models can also be used with other AI SDK functions like `generateObject` and `streamObject`.
+NIM language models also support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output).
 
 <Note>
-  Model support for tool calls and structured object generation varies. For
-  example, the
+  Model support for tool calls and structured output varies. For example, the
   [`meta/llama-3.3-70b-instruct`](https://build.nvidia.com/meta/llama-3_3-70b-instruct)
-  model supports object generation capabilities. Check each model's
+  model supports structured output capabilities. Check each model's
   documentation on NVIDIA Build for specific supported features.
 </Note>
 
@@ -38655,7 +40673,7 @@ for await (const message of result.textStream) {
 }
 ```
 
-Heroku language models can also be used in the `generateObject`, and `streamObject` functions.
+Heroku language models also support structured data generation with [`Output`](/docs/reference/ai-sdk-core/output).
 
 ---
 
