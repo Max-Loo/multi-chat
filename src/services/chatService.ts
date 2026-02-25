@@ -203,8 +203,8 @@ export async function* streamChatCompletion(
   // 解析 token 使用情况
   if (usage) {
     tokensUsage = {
-      prompt: (usage as any).promptTokens || 0,
-      completion: (usage as any).completionTokens || 0,
+      prompt: usage.inputTokens ?? 0,
+      completion: usage.outputTokens ?? 0,
     };
   }
 

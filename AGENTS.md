@@ -304,10 +304,10 @@ Redux Thunk → ChatService → Vercel AI SDK (ai) → 供应商特定 Provider 
    - 自动处理重试和错误
    - 自动合并流式响应块（ai-sdk 内置）
 
-3. **响应转换**
-   - 将 ai-sdk 的流式响应转换为 `StandardMessage` 格式
-   - 提取 token 使用情况（`promptTokens`、`completionTokens`）
-   - 对上层透明，保持接口稳定
+ 3. **响应转换**
+    - 将 ai-sdk 的流式响应转换为 `StandardMessage` 格式
+    - 提取 token 使用情况（`inputTokens`、`outputTokens`）
+    - 对上层透明，保持接口稳定
 
 **使用示例**：
 
