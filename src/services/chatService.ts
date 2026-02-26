@@ -111,6 +111,11 @@ function buildMessages(
  * 4. 支持 AbortSignal 中断请求
  * 5. 自动生成消息 ID 和时间戳
  *
+ * 消息 ID 生成规则：
+ * - 如果 params 中提供了 conversationId，则使用 conversationId 作为消息 ID
+ * - 如果未提供 conversationId，则使用 generateId() 自动生成消息 ID
+ * - 这确保了流式响应的所有消息共享同一个 ID，用于标识这一轮对话响应
+ *
  * 设计原则：
  * - 供应商特定的优化（使用官方 provider 包）
  * - 统一的接口（对上层透明）
@@ -133,7 +138,7 @@ export async function* streamChatCompletion(
   params: ChatRequestParams,
   { signal }: { signal?: AbortSignal } = {}
 ): AsyncIterable<StandardMessage> {
-  const { model, historyList, message } = params;
+  const { model, historyList, message, conversationId = generateId() } = params;
 
   // 获取供应商特定的 provider
   const provider = getProvider(model.providerKey, model.apiKey, model.apiAddress);
@@ -148,7 +153,6 @@ export async function* streamChatCompletion(
   // 转换为 StandardMessage 格式
   let content = '';
   let reasoningContent = '';
-  const messageId = generateId();
   const timestamp = getCurrentTimestamp();
   const modelKey = model.modelKey;
   let finishReason: string | null = null;
@@ -167,7 +171,7 @@ export async function* streamChatCompletion(
     }
 
     yield {
-      id: messageId,
+      id: conversationId,
       timestamp,
       modelKey,
       finishReason,
@@ -195,7 +199,7 @@ export async function* streamChatCompletion(
 
   // 返回最终消息（包含 finishReason 和 usage）
   yield {
-    id: messageId,
+    id: conversationId,
     timestamp,
     modelKey,
     finishReason,
