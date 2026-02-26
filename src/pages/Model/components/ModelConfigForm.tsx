@@ -15,7 +15,7 @@ import { useForm } from "@tanstack/react-form"
 import { useEffect, useMemo, useState } from "react"
 import { useSelector } from "react-redux"
 import ModelSelect from "./ModelSelect"
-import { v4 as uuidv4 } from 'uuid'
+import { generateId } from 'ai'
 import dayjs from "dayjs"
 import { isBoolean } from "es-toolkit"
 import { useTranslation } from "react-i18next"
@@ -112,7 +112,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
     // 否则返回一个全新的model
     return {
       ...manualConfig,
-      id: uuidv4(),
+      id: generateId(),
       createdAt: dayjs().format(DateFormatEnum.DAY_AND_TIME),
       updateAt: dayjs().format(DateFormatEnum.DAY_AND_TIME),
       providerName: currentProvider.providerName,

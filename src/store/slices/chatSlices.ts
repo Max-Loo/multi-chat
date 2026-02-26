@@ -5,9 +5,12 @@ import { RootState } from "..";
 import { Model } from "@/types/model";
 import { streamChatCompletion } from "@/services/chatService";
 import { isNil, isNotNil } from "es-toolkit";
-import { v4 as uuidv4 } from 'uuid'
+import { createIdGenerator } from 'ai'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
 import { getCurrentTimestamp } from "@/utils/utils";
+
+// 生成用户消息 ID 的工具函数（带前缀）
+const generateUserMessageId = createIdGenerator({ prefix: USER_MESSAGE_ID_PREFIX });
 
 export interface ChatSliceState {
   // 所有聊天的列表
@@ -80,7 +83,7 @@ const sendMessage = createAsyncThunk<
       chat,
       model,
       message: {
-        id: USER_MESSAGE_ID_PREFIX + uuidv4(),
+        id: generateUserMessageId(),
         role: ChatRoleEnum.USER,
         content: message,
         timestamp: getCurrentTimestamp(),

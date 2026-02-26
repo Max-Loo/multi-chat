@@ -64,7 +64,6 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "tauri-plugin-keyring-api": "~0.1.1",
-    "uuid": "^13.0.0",
     "zhipu-ai-provider": "^0.2.2",
     "zod": "^4.3.6"
   },

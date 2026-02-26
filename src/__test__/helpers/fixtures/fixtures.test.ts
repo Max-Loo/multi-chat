@@ -3,11 +3,11 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createMockModel, createMockModels, resetIdCounter, createDeepSeekModel, createKimiModel, createEncryptedModel } from './model';
+import { createMockModel, createMockModels, createDeepSeekModel, createKimiModel, createEncryptedModel } from './model';
 
 describe('createMockModel', () => {
   beforeEach(() => {
-    resetIdCounter();
+    // 不再需要重置计数器，createIdGenerator 会自动生成唯一 ID
   });
 
   it('应该创建包含所有必需字段的 Model', () => {
@@ -49,7 +49,7 @@ describe('createMockModel', () => {
 
 describe('createMockModels', () => {
   beforeEach(() => {
-    resetIdCounter();
+    // 不再需要重置计数器，createIdGenerator 会自动生成唯一 ID
   });
 
   it('应该创建指定数量的 Model', () => {
@@ -86,7 +86,7 @@ describe('createMockModels', () => {
 
 describe('createDeepSeekModel', () => {
   beforeEach(() => {
-    resetIdCounter();
+    // 不再需要重置计数器，createIdGenerator 会自动生成唯一 ID
   });
 
   it('应该创建 DeepSeek 模型', () => {
@@ -99,7 +99,7 @@ describe('createDeepSeekModel', () => {
 
 describe('createKimiModel', () => {
   beforeEach(() => {
-    resetIdCounter();
+    // 不再需要重置计数器，createIdGenerator 会自动生成唯一 ID
   });
 
   it('应该创建 Kimi 模型', () => {
@@ -112,7 +112,7 @@ describe('createKimiModel', () => {
 
 describe('createEncryptedModel', () => {
   beforeEach(() => {
-    resetIdCounter();
+    // 不再需要重置计数器，createIdGenerator 会自动生成唯一 ID
   });
 
   it('应该创建带加密 API Key 的模型', () => {

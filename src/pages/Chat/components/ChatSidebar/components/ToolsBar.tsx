@@ -7,7 +7,7 @@ import { ArrowLeft, PanelLeftClose, Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { isString } from "es-toolkit";
 import { useState } from "react"
-import { v4 as uuidv4 } from 'uuid'
+import { generateId } from 'ai'
 import { useTranslation } from "react-i18next"
 
 interface ToolsBarProps {
@@ -35,7 +35,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
   // 创建新的聊天
   const handleCreateChat = async () => {
     const chat = {
-      id: uuidv4(),
+      id: generateId(),
       name: '',
     }
 

@@ -6,22 +6,10 @@
 
 import type { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
+import { createIdGenerator } from 'ai';
 
-/**
- * 生成唯一 ID
- */
-let idCounter = 0;
-const generateId = (): string => {
-  idCounter += 1;
-  return `test-model-${idCounter}`;
-};
-
-/**
- * 重置 ID 计数器
- */
-export const resetIdCounter = (): void => {
-  idCounter = 0;
-};
+// 生成测试模型 ID 的工具函数（带前缀）
+const generateId = createIdGenerator({ prefix: 'test-model-' });
 
 /**
  * 创建 Mock Model 对象

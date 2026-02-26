@@ -1,4 +1,4 @@
-import { streamText } from 'ai';
+import { streamText, generateId } from 'ai';
 import { createDeepSeek } from '@ai-sdk/deepseek';
 import { createMoonshotAI } from '@ai-sdk/moonshotai';
 import { createZhipu } from 'zhipu-ai-provider';
@@ -9,14 +9,6 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
 import { ChatRoleEnum } from '@/types/chat';
 import { getFetchFunc } from '@/utils/tauriCompat';
 import { getCurrentTimestamp } from '@/utils/utils';
-
-/**
- * 生成唯一标识符
- * @returns 唯一标识符字符串
- */
-function generateId(): string {
-  return crypto.randomUUID();
-}
 
 /**
  * 获取供应商特定的 provider 工厂函数
