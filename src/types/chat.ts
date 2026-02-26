@@ -44,11 +44,15 @@ export interface StandardMessage {
   reasoningContent?: string;
   // 本次对话结束的原因
   finishReason: string | null;
-  // 该次对话的token消耗量
-  tokensUsage?: {
-    completion: number;
-    prompt: number;
-    cached?: number;
+  /**
+   * @description 本次对话的 token 消耗量
+   * BREAKING CHANGE: 字段名从 `tokensUsage` 改为 `usage`
+   * 内部字段从 `prompt/completion` 改为 `inputTokens/outputTokens`
+   * 与 Vercel AI SDK 的 usage 对象保持一致，消除字段映射逻辑
+   */
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
   };
   // 被序列化后的原始响应数据的字符串
   raw?: string | null;

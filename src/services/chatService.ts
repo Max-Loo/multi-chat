@@ -152,7 +152,7 @@ export async function* streamChatCompletion(
   const timestamp = getCurrentTimestamp();
   const modelKey = model.modelKey;
   let finishReason: string | null = null;
-  let tokensUsage: StandardMessage['tokensUsage'] | undefined;
+  let usageInfo: StandardMessage['usage'] | undefined;
   // 迭代完整流（包含文本、推理内容等所有事件）
   for await (const part of result.fullStream) {
     switch (part.type) {
@@ -185,11 +185,11 @@ export async function* streamChatCompletion(
 
   finishReason = finalFinishReason || null;
 
-  // 解析 token 使用情况
+  // 解析 token 使用情况（直接映射 Vercel AI SDK 的 usage 对象）
   if (usage) {
-    tokensUsage = {
-      prompt: usage.inputTokens ?? 0,
-      completion: usage.outputTokens ?? 0,
+    usageInfo = {
+      inputTokens: usage.inputTokens ?? 0,
+      outputTokens: usage.outputTokens ?? 0,
     };
   }
 
@@ -202,7 +202,7 @@ export async function* streamChatCompletion(
     role: ChatRoleEnum.ASSISTANT,
     content: content,
     reasoningContent,
-    tokensUsage,
+    usage: usageInfo,
     raw: '',
   };
 }
