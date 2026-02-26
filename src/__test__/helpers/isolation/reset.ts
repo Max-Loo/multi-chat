@@ -40,12 +40,12 @@ export const clearIndexedDB = async (): Promise<void> => {
         if (db.name) {
           return new Promise<void>((resolve, reject) => {
             const request = indexedDB.deleteDatabase(db.name!);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-            request.onblocked = () => {
+            request.addEventListener('success', () => resolve());
+            request.addEventListener('error', () => reject(request.error));
+            request.addEventListener('blocked', () => {
               // 如果被阻塞，强制关闭连接后重试
               resolve();
-            };
+            });
           });
         }
         return Promise.resolve();
