@@ -7,6 +7,7 @@ import { streamChatCompletion } from "@/services/chatService";
 import { isNil, isNotNil } from "es-toolkit";
 import { v4 as uuidv4 } from 'uuid'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
+import { getCurrentTimestamp } from "@/utils/utils";
 
 export interface ChatSliceState {
   // 所有聊天的列表
@@ -82,7 +83,7 @@ const sendMessage = createAsyncThunk<
         id: USER_MESSAGE_ID_PREFIX + uuidv4(),
         role: ChatRoleEnum.USER,
         content: message,
-        timestamp: Date.now() / 1000,
+        timestamp: getCurrentTimestamp(),
         modelKey: model.modelKey,
         finishReason: null,
       },

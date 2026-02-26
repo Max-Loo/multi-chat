@@ -6,6 +6,7 @@
 
 import { getPassword as tauriGetPassword, setPassword as tauriSetPassword, deletePassword as tauriDeletePassword } from 'tauri-plugin-keyring-api';
 import { isTauri } from './env';
+import { getCurrentTimestampMs } from '@/utils/utils';
 
 /**
  * IndexedDB 数据库名称和对象存储名称
@@ -284,7 +285,7 @@ class WebKeyringCompat implements KeyringCompat {
         user,
         encryptedPassword: ciphertext,
         iv,
-        createdAt: Date.now(),
+        createdAt: getCurrentTimestampMs(),
       };
 
       await new Promise<void>((resolve, reject) => {

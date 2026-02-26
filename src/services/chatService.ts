@@ -8,6 +8,7 @@ import { StandardMessage } from '@/types/chat';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { ChatRoleEnum } from '@/types/chat';
 import { getFetchFunc } from '@/utils/tauriCompat';
+import { getCurrentTimestamp } from '@/utils/utils';
 
 /**
  * 生成唯一标识符
@@ -15,14 +16,6 @@ import { getFetchFunc } from '@/utils/tauriCompat';
  */
 function generateId(): string {
   return crypto.randomUUID();
-}
-
-/**
- * 获取当前时间戳（秒级）
- * @returns Unix 时间戳
- */
-function getCurrentTimestamp(): number {
-  return Math.floor(Date.now() / 1000);
 }
 
 /**

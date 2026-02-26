@@ -742,6 +742,46 @@ if (store.isSupported()) {
 2. 在 `run()` 函数的 `invoke_handler` 中注册该命令
 3. 在前端使用 `invoke("command_name", { args })` 调用
 
+## 工具函数
+
+项目提供统一的工具函数库，位于 `src/utils/utils.ts`。
+
+### 时间戳工具函数
+
+提供统一的时间戳生成函数，确保项目中所有时间戳生成逻辑的一致性和可维护性。
+
+**时间戳单位约定**：
+- **秒级时间戳**：用于聊天消息、数据库记录等业务场景（`StandardMessage.timestamp`）
+- **毫秒级时间戳**：用于性能测试、调试日志等需要高精度时间戳的场景
+
+**函数列表**：
+
+```typescript
+import {
+  getCurrentTimestamp,
+  getCurrentTimestampMs,
+} from "@/utils/utils";
+
+// 获取当前 Unix 时间戳（秒级精度）
+const timestamp = getCurrentTimestamp();
+console.log(timestamp); // 例如: 1737888000
+
+// 获取当前 Unix 时间戳（毫秒级精度）
+const timestampMs = getCurrentTimestampMs();
+console.log(timestampMs); // 例如: 1737888000000
+```
+
+**使用规范**：
+
+- 生产代码中生成时间戳时，**必须**使用工具函数，**禁止**直接使用 `Date.now() / 1000`
+- 聊天消息的 `timestamp` 字段使用 `getCurrentTimestamp()`（秒级）
+- 性能测试和调试场景可使用 `getCurrentTimestampMs()`（毫秒级）
+- 测试代码（如 Mock 数据生成）可保留直接使用 `Date.now()`，以便灵活控制时间戳
+
+**实现位置**：
+- 源代码：`src/utils/utils.ts`
+- 测试代码：`src/__test__/utils/utils.test.ts`
+
 ## 导入路径规范
 
 **重要**: 在项目内导入模块时，始终使用 `@/` 别名而不是相对路径如 `../..`。`@/` 别名指向 `src/` 目录。
@@ -754,6 +794,7 @@ import { Model } from "@/types/model";
 import { loadModelsFromJson } from "@/store/storage/jsonStorage";
 import { initializeMasterKey } from "@/store/keyring/masterKey";
 import { encryptField, decryptField } from "@/utils/crypto";
+import { getCurrentTimestamp } from "@/utils/utils";
 
 // 错误
 import { Model } from "../../types/model";
