@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/2/26 14:10:43
+// 生成时间: 2026/2/26 21:28:29
 
 interface Resources {
   translation: {

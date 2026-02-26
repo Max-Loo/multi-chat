@@ -8,13 +8,52 @@ import modelProviderReducer from '@/store/slices/modelProviderSlice';
 
 /**
  * Mock react-i18next 模块
- * 提供测试用的国际化函数模拟实现
+ * 提供测试用的国际化函数模拟实现，支持类型安全语法
+ *
+ * 注意：由于 Vitest hoisting 机制，mock 必须内联定义，不能引用外部变量
  */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const zhResources = {
+    setting: {
+      modelProvider: {
+        title: '模型供应商',
+        description: '从远程服务器获取最新的模型供应商信息',
+        refreshButton: '刷新模型供应商',
+        refreshing: '刷新中...',
+        lastUpdate: '最后更新',
+        lastUpdateLabel: '最后更新:',
+        refreshSuccess: '模型供应商数据已更新',
+        refreshFailed: '刷新失败',
+        refreshFailedPrefix: '刷新失败:',
+      },
+    },
+    common: {
+      noProvidersAvailable: '无可用的模型供应商',
+    },
+    model: {
+      noModelData: '暂无模型供应商数据',
+    },
+  } as const;
+
+  return {
+    useTranslation: () => ({
+      t: ((keyOrSelector: string | ((resources: typeof zhResources) => string)) => {
+        if (typeof keyOrSelector === 'function') {
+          return keyOrSelector(zhResources);
+        }
+        return keyOrSelector;
+      }) as unknown,
+      i18n: {
+        language: 'zh',
+        changeLanguage: vi.fn(),
+      },
+    }),
+    initReactI18next: {
+      type: '3rdParty',
+      init: vi.fn(),
+    },
+  };
+});
 
 /**
  * Mock sonner toast 模块
