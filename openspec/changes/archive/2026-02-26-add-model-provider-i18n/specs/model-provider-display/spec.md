@@ -1,20 +1,8 @@
-# Model Provider Display
+# Model Provider Display - 国际化增量规范
 
-## Purpose
+本文档是对 `openspec/specs/model-provider-display/spec.md` 的增量修改，添加国际化支持要求。
 
-定义模型供应商设置页面的显示行为，包括供应商列表展示、状态标识、刷新控制、国际化支持和响应式布局。
-
-**TBD**: 此功能的详细业务背景和用户价值待补充。
-
-## Requirements
-
-### Requirement: 显示模型供应商列表
-系统 SHALL 在模型供应商设置页面显示所有已加载的模型供应商列表。
-
-#### Scenario: 成功显示供应商列表
-- **WHEN** 用户访问模型供应商设置页面
-- **THEN** 系统显示卡片式布局的供应商列表
-- **AND** 每个供应商卡片包含供应商名称、图标和状态标识
+## MODIFIED Requirements
 
 ### Requirement: 显示供应商状态
 系统 SHALL 为每个模型供应商显示其当前可用状态。
@@ -60,6 +48,8 @@
 - **THEN** 系统显示最后更新时间
 - **AND** 时间格式根据当前语言动态调整（中文使用 zh-CN locale，英文使用 en-US locale）
 - **AND** "最后更新"标签文本使用当前语言（中文："最后更新"，英文："Last Update"）
+
+## ADDED Requirements
 
 ### Requirement: 模型数量统计国际化
 系统 SHALL 根据当前语言显示模型数量统计文本。
@@ -121,14 +111,3 @@
 - **THEN** 系统在错误提示区域显示错误信息
 - **AND** 错误前缀文本使用当前语言（中文："刷新失败:"，英文："Refresh failed:"）
 - **AND** 具体错误原因根据错误类型使用对应的当前语言翻译
-
-### Requirement: 支持响应式布局
-系统 SHALL 在不同屏幕尺寸下提供良好的显示效果。
-
-#### Scenario: 桌面端显示
-- **WHEN** 屏幕宽度 ≥ 768px
-- **THEN** 供应商卡片以网格布局显示（每行 2-3 个）
-
-#### Scenario: 移动端显示
-- **WHEN** 屏幕宽度 < 768px
-- **THEN** 供应商卡片以单列布局显示

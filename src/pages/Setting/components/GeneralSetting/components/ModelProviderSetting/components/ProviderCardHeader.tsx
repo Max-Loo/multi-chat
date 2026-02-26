@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ProviderCardHeader 组件的属性
@@ -20,6 +21,8 @@ interface ProviderCardHeaderProps {
  */
 export const ProviderCardHeader = React.memo<ProviderCardHeaderProps>(
   ({ providerName, status, isExpanded }) => {
+    const { t } = useTranslation();
+
     return (
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -32,12 +35,12 @@ export const ProviderCardHeader = React.memo<ProviderCardHeaderProps>(
           {status === 'available' ? (
             <Badge variant="outline" className="gap-1 text-green-600 border-green-600">
               <CheckCircle className="w-3 h-3" />
-              可用
+              {t($ => $.setting.modelProvider.status.available)}
             </Badge>
           ) : (
             <Badge variant="outline" className="gap-1 text-red-600 border-red-600">
               <XCircle className="w-3 h-3" />
-              不可用
+              {t($ => $.setting.modelProvider.status.unavailable)}
             </Badge>
           )}
         </div>

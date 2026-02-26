@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ErrorAlert 组件的属性
@@ -15,13 +16,15 @@ interface ErrorAlertProps {
  * 使用 shadcn/ui Alert 组件显示错误信息
  */
 export const ErrorAlert = React.memo<ErrorAlertProps>(({ error }) => {
+  const { t } = useTranslation();
+
   if (!error) return null;
 
   return (
     <Alert variant="destructive">
       <AlertCircle className="h-4 w-4" />
       <AlertDescription>
-        刷新失败: {error}
+        {t($ => $.setting.modelProvider.refreshFailedPrefix)} {error}
       </AlertDescription>
     </Alert>
   );

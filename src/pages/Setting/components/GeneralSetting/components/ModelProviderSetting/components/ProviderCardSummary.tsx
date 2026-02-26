@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ProviderCardSummary 组件的属性
@@ -16,11 +17,13 @@ interface ProviderCardSummaryProps {
  */
 export const ProviderCardSummary = React.memo<ProviderCardSummaryProps>(
   ({ modelCount, isExpanded }) => {
+    const { t } = useTranslation();
+
     return (
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>共 {modelCount} 个模型</span>
+        <span>{t($ => $.setting.modelProvider.modelCount, { count: modelCount })}</span>
         {!isExpanded && (
-          <span className="text-xs">点击查看详情</span>
+          <span className="text-xs">{t($ => $.setting.modelProvider.clickToViewDetails)}</span>
         )}
       </div>
     );

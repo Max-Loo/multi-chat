@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ProviderHeader 组件的属性
@@ -20,10 +21,13 @@ interface ProviderHeaderProps {
  */
 export const ProviderHeader = React.memo<ProviderHeaderProps>(
   ({ loading, onRefresh, lastUpdate }) => {
+    const { t, i18n } = useTranslation();
+
     const formatLastUpdate = () => {
       if (!lastUpdate) return null;
       const date = new Date(lastUpdate);
-      return date.toLocaleString('zh-CN', {
+      const locale = i18n.language === 'zh' ? 'zh-CN' : 'en-US';
+      return date.toLocaleString(locale, {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -37,9 +41,9 @@ export const ProviderHeader = React.memo<ProviderHeaderProps>(
       <div className="space-y-4">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-lg font-semibold">模型供应商</h3>
+            <h3 className="text-lg font-semibold">{t($ => $.setting.modelProvider.title)}</h3>
             <p className="text-sm text-muted-foreground">
-              从远程服务器获取最新的模型供应商信息
+              {t($ => $.setting.modelProvider.description)}
             </p>
           </div>
 
@@ -51,12 +55,12 @@ export const ProviderHeader = React.memo<ProviderHeaderProps>(
               size="sm"
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? '刷新中...' : '刷新模型供应商'}
+              {loading ? t($ => $.setting.modelProvider.refreshing) : t($ => $.setting.modelProvider.refreshButton)}
             </Button>
 
             {lastUpdate && (
               <div className="text-sm text-muted-foreground">
-                最后更新: {formatLastUpdate()}
+                {t($ => $.setting.modelProvider.lastUpdateLabel)} {formatLastUpdate()}
               </div>
             )}
           </div>

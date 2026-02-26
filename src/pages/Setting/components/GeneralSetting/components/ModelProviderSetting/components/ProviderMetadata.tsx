@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ProviderMetadata 组件的属性
@@ -18,6 +19,8 @@ interface ProviderMetadataProps {
  */
 export const ProviderMetadata = React.memo<ProviderMetadataProps>(
   ({ apiEndpoint, providerKey }) => {
+    const { t } = useTranslation();
+
     // 构建文档链接（根据不同供应商）
     const getDocUrl = () => {
       const docUrls: Record<string, string> = {
@@ -31,13 +34,13 @@ export const ProviderMetadata = React.memo<ProviderMetadataProps>(
     return (
       <div className="space-y-2 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">API 端点:</span>
+          <span className="text-muted-foreground">{t($ => $.setting.modelProvider.apiEndpoint)}</span>
           <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
             {apiEndpoint}
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">供应商 ID:</span>
+          <span className="text-muted-foreground">{t($ => $.setting.modelProvider.providerId)}</span>
           <span className="font-mono text-xs">{providerKey}</span>
         </div>
         <div className="flex justify-end pt-2">
@@ -54,7 +57,7 @@ export const ProviderMetadata = React.memo<ProviderMetadataProps>(
               onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink className="w-3 h-3" />
-              查看文档
+              {t($ => $.setting.modelProvider.viewDocs)}
             </a>
           </Button>
         </div>

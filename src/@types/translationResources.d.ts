@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/2/11 15:57:14
+// 生成时间: 2026/2/26 14:10:43
 
 interface Resources {
   translation: {
@@ -102,8 +102,10 @@ interface Resources {
         refreshButton: string;
         refreshing: string;
         lastUpdate: string;
+        lastUpdateLabel: string;
         refreshSuccess: string;
         refreshFailed: string;
+        refreshFailedPrefix: string;
         errors: {
           network_timeout: string;
           server_error: string;
@@ -112,6 +114,18 @@ interface Resources {
           network_error: string;
           aborted: string;
         };
+        status: {
+          available: string;
+          unavailable: string;
+        };
+        modelCount: string;
+        clickToViewDetails: string;
+        searchPlaceholder: string;
+        searchResult: string;
+        totalModels: string;
+        apiEndpoint: string;
+        providerId: string;
+        viewDocs: string;
       };
     };
     table: {
