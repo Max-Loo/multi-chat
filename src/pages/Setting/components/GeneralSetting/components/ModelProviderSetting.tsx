@@ -1,25 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { refreshModelProvider } from '@/store/slices/modelProviderSlice';
 import { RootState, AppDispatch } from '@/store';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { ProviderHeader } from './ModelProviderSetting/components/ProviderHeader';
+import { ProviderGrid } from './ModelProviderSetting/components/ProviderGrid';
+import { ErrorAlert } from './ModelProviderSetting/components/ErrorAlert';
 
-/**
- * 模型供应商设置组件
- * 提供手动刷新模型供应商数据的功能
- */
 const ModelProviderSetting: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
-  const { loading, error, lastUpdate } = useSelector(
+  const { providers, loading, error, lastUpdate } = useSelector(
     (state: RootState) => state.modelProvider
   );
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
 
-  // 清理函数：组件卸载时取消请求
   useEffect(() => {
     return () => {
       if (abortController) {
@@ -28,20 +25,14 @@ const ModelProviderSetting: React.FC = () => {
     };
   }, [abortController]);
 
-  /**
-   * 处理刷新按钮点击
-   */
-  const handleRefresh = () => {
-    // 取消之前的请求（如果存在）
+  const handleRefresh = useCallback(() => {
     if (abortController) {
       abortController.abort();
     }
 
-    // 创建新的 AbortController
     const controller = new AbortController();
     setAbortController(controller);
 
-    // Dispatch refresh action
     dispatch(refreshModelProvider())
       .unwrap()
       .then(() => {
@@ -54,47 +45,35 @@ const ModelProviderSetting: React.FC = () => {
       .finally(() => {
         setAbortController(null);
       });
-  };
+  }, [dispatch, t, abortController]);
+
+  const handleToggleProvider = useCallback((providerKey: string) => {
+    setExpandedProviders((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(providerKey)) {
+        newSet.delete(providerKey);
+      } else {
+        newSet.add(providerKey);
+      }
+      return newSet;
+    });
+  }, []);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h3 className="text-lg font-semibold">模型供应商</h3>
-        <p className="text-sm text-muted-foreground">
-          从远程服务器获取最新的模型供应商信息
-        </p>
-      </div>
+    <div className="flex flex-col gap-6 w-full">
+      <ProviderHeader
+        loading={loading}
+        onRefresh={handleRefresh}
+        lastUpdate={lastUpdate}
+      />
 
-      <div className="flex items-center gap-4">
-        <Button
-          onClick={handleRefresh}
-          disabled={loading}
-          variant="outline"
-          size="sm"
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          {loading ? '刷新中...' : '刷新模型供应商'}
-        </Button>
+      <ErrorAlert error={error} />
 
-        {lastUpdate && (
-          <span className="text-sm text-muted-foreground">
-            最后更新: {new Date(lastUpdate).toLocaleString('zh-CN', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            })}
-          </span>
-        )}
-      </div>
-
-      {error && (
-        <div className="text-sm text-destructive">
-          刷新失败: {error}
-        </div>
-      )}
+      <ProviderGrid
+        providers={providers}
+        expandedProviders={expandedProviders}
+        onToggleProvider={handleToggleProvider}
+      />
     </div>
   );
 };
