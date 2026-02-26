@@ -19,7 +19,14 @@ export const useNavigateToChat = () => {
       chatId,
     }).toString()}`)
   }
+
+  // 清除查询参数，跳转到聊天页面
+  const navigateToChatWithoutParams = () => {
+    navigate('/chat')
+  }
+
   return {
     navigateToChat,
+    navigateToChatWithoutParams,
   }
 }
