@@ -1,12 +1,11 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/2/26 23:32:46
+// 生成时间: 2026/2/27 14:35:24
 
 interface Resources {
   translation: {
     chat: {
       unnamed: string;
-      loading: string;
       rename: string;
       delete: string;
       confirmDelete: string;
@@ -47,7 +46,6 @@ interface Resources {
       confirm: string;
       pageNotFound: string;
       pageNotFoundDescription: string;
-      warning: string;
       goBack: string;
       show: string;
       hide: string;
@@ -90,11 +88,7 @@ interface Resources {
       setting: string;
     };
     provider: {
-      bigModel: string;
-      kimi: string;
-      deepseek: string;
-      apiAddressCustom: string;
-      apiAddressKimi: string;
+
     };
     setting: {
       generalSetting: string;
@@ -103,19 +97,10 @@ interface Resources {
         description: string;
         refreshButton: string;
         refreshing: string;
-        lastUpdate: string;
         lastUpdateLabel: string;
         refreshSuccess: string;
         refreshFailed: string;
         refreshFailedPrefix: string;
-        errors: {
-          network_timeout: string;
-          server_error: string;
-          parse_error: string;
-          no_cache: string;
-          network_error: string;
-          aborted: string;
-        };
         status: {
           available: string;
           unavailable: string;
