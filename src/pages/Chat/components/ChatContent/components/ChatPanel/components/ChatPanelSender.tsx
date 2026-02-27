@@ -4,10 +4,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { isString } from "es-toolkit";
 import React, { useRef, useState } from "react"
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
-import { useAppDispatch } from "@/hooks/redux";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { startSendChatMessage } from "@/store/slices/chatSlices";
 import { useIsChatSending } from "../hooks/useIsChatSending";
 import { useTranslation } from "react-i18next";
+import { selectIncludeReasoningContent, setIncludeReasoningContent } from "@/store/slices/appConfigSlices";
 
 interface SendButtonProps {
   // 是否处于发送状态
@@ -73,6 +74,9 @@ const ChatPanelSender: React.FC = () => {
   const { t } = useTranslation()
 
   const dispatch = useAppDispatch()
+
+  // 获取是否传输推理内容的开关状态
+  const includeReasoningContent = useAppSelector(selectIncludeReasoningContent)
 
   const {
     selectedChat,
@@ -156,6 +160,25 @@ const ChatPanelSender: React.FC = () => {
 
   return (
     <div className="relative z-10 w-full px-4 py-3 bg-background border-t border-border">
+      {/* 推理内容开关 */}
+      <div className="flex items-center gap-2 mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => dispatch(setIncludeReasoningContent(!includeReasoningContent))}
+          title={t($ => $.chat.includeReasoningContentHint)}
+          className={`
+            h-8 px-3 rounded-md
+            transition-all duration-200
+            ${includeReasoningContent
+              ? "border-blue-500 text-blue-500 bg-blue-50 hover:bg-blue-100 hover:text-blue-500"
+              : "border-gray-300 text-gray-500 bg-white hover:border-gray-400 hover:text-gray-700"
+            }
+          `}
+        >
+          {t($ => $.chat.includeReasoningContent)}
+        </Button>
+      </div>
       <div className="relative flex items-end gap-3">
         <Textarea
           className={`

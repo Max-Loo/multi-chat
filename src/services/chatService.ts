@@ -2,7 +2,7 @@ import { streamText, generateId } from 'ai';
 import { createDeepSeek } from '@ai-sdk/deepseek';
 import { createMoonshotAI } from '@ai-sdk/moonshotai';
 import { createZhipu } from 'zhipu-ai-provider';
-import type { LanguageModel } from 'ai';
+import type { LanguageModel, ModelMessage, AssistantContent } from 'ai';
 import { Model } from '@/types/model';
 import { StandardMessage } from '@/types/chat';
 import { ModelProviderKeyEnum } from '@/utils/enums';
@@ -74,25 +74,73 @@ export interface ChatRequestParams {
   message: string;
   /** 对话唯一标识（可选，不传则自动生成） */
   conversationId?: string;
+  /** 是否在历史消息中传输推理内容（默认 false） */
+  includeReasoningContent?: boolean;
 }
+
+
 
 /**
  * 构建消息列表
  * @param historyList 历史聊天记录
  * @param message 最新的用户消息
+ * @param includeReasoningContent 是否包含推理内容
  * @returns ai-sdk 格式的消息列表
  * @internal
  */
 function buildMessages(
   historyList: StandardMessage[],
-  message: string
-): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
+  message: string,
+  includeReasoningContent: boolean = false
+): ModelMessage[] {
   return [
-    ...historyList.map(history => ({
-      role: history.role as 'system' | 'user' | 'assistant',
-      content: history.content,
-    })),
-    { role: 'user' as const, content: message },
+    ...historyList.map(history => {
+      const baseContent = history.content;
+
+      // system 消息的 content 必须是 string（Vercel AI SDK 限制）
+      if (history.role === ChatRoleEnum.SYSTEM) {
+        return {
+          role: 'system' as const,
+          content: baseContent,
+        };
+      }
+
+      // user 消息：只包含文本内容
+      if (history.role === ChatRoleEnum.USER) {
+        return {
+          role: 'user' as const,
+          content: [{ type: 'text' as const, text: baseContent }],
+        };
+      }
+
+      // assistant 消息：可能包含文本内容和推理内容
+      if (history.role === ChatRoleEnum.ASSISTANT) {
+        const parts: AssistantContent = [
+          { type: 'text' as const, text: baseContent },
+        ];
+
+        // 当开关开启且存在非空推理内容时，添加独立的 reasoning part
+        if (
+          includeReasoningContent &&
+          history.reasoningContent &&
+          history.reasoningContent.trim().length > 0
+        ) {
+          parts.push({
+            type: 'reasoning' as const,
+            text: history.reasoningContent,
+          });
+        }
+
+        return {
+          role: 'assistant' as const,
+          content: parts,
+        };
+      }
+
+      // 不应该到达这里
+      throw new Error(`Unknown role: ${history.role}`);
+    }),
+    { role: 'user' as const, content: [{ type: 'text' as const, text: message }] },
   ];
 }
 
@@ -138,15 +186,15 @@ export async function* streamChatCompletion(
   params: ChatRequestParams,
   { signal }: { signal?: AbortSignal } = {}
 ): AsyncIterable<StandardMessage> {
-  const { model, historyList, message, conversationId = generateId() } = params;
+  const { model, historyList, message, conversationId = generateId(), includeReasoningContent = false } = params;
 
   // 获取供应商特定的 provider
   const provider = getProvider(model.providerKey, model.apiKey, model.apiAddress);
-
+  
   // 使用 ai-sdk 的 streamText 发起流式请求
   const result = streamText({
     model: provider(model.modelKey),
-    messages: buildMessages(historyList, message),
+    messages: buildMessages(historyList, message, includeReasoningContent),
     abortSignal: signal,
   });
 

@@ -10,7 +10,7 @@ import { initI18n } from '@/lib/i18n';
 import { initializeMasterKey, handleSecurityWarning } from "@/store/keyring/masterKey";
 import { initializeModels } from "@/store/slices/modelSlice";
 import { initializeChatList } from "@/store/slices/chatSlices";
-import { initializeAppLanguage } from "@/store/slices/appConfigSlices";
+import { initializeAppLanguage, initializeIncludeReasoningContent } from "@/store/slices/appConfigSlices";
 import { initializeModelProvider } from "@/store/slices/modelProviderSlice";
 import { ConfirmProvider } from "@/hooks/useConfirm";
 import { Toaster } from "./components/ui/sonner";
@@ -33,6 +33,7 @@ store.dispatch(initializeModelProvider())
 store.dispatch(initializeModels())
 store.dispatch(initializeChatList())
 store.dispatch(initializeAppLanguage())
+store.dispatch(initializeIncludeReasoningContent())
 
 // 渲染真正的页面
 await InterruptiveInitPromise

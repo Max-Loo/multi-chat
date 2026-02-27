@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/2/26 21:28:29
+// 生成时间: 2026/2/26 23:32:46
 
 interface Resources {
   translation: {
@@ -35,6 +35,8 @@ interface Resources {
       maxPerRow: string;
       itemsUnit: string;
       typeMessage: string;
+      includeReasoningContent: string;
+      includeReasoningContentHint: string;
     };
     common: {
       submit: string;

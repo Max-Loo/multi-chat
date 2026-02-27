@@ -28,5 +28,7 @@
   "enableSplitter": "Enable Splitter：",
   "maxPerRow": "Max per row：",
   "itemsUnit": "",
-  "typeMessage": "Enter your message..."
+  "typeMessage": "Enter your message...",
+  "includeReasoningContent": "Include Reasoning Content",
+  "includeReasoningContentHint": "When enabled, includes model reasoning process in chat history to improve response quality at the cost of increased token usage"
 }

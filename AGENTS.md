@@ -304,10 +304,25 @@ Redux Thunk → ChatService → Vercel AI SDK (ai) → 供应商特定 Provider 
    - 自动处理重试和错误
    - 自动合并流式响应块（ai-sdk 内置）
 
- 3. **响应转换**
-    - 将 ai-sdk 的流式响应转换为 `StandardMessage` 格式
-    - 提取 token 使用情况（`inputTokens`、`outputTokens`）
-    - 对上层透明，保持接口稳定
+  3. **响应转换**
+     - 将 ai-sdk 的流式响应转换为 `StandardMessage` 格式
+     - 提取 token 使用情况（`inputTokens`、`outputTokens`）
+     - 对上层透明，保持接口稳定
+
+**消息格式**：
+- 使用 Vercel AI SDK 标准的 Part 数组格式
+- `system` 消息：`content: '...'`（SDK 限制，仅支持 string）
+- `user` 消息：`content: [{ type: 'text', text: '...' }]`
+- `assistant` 消息：
+  - 基础格式：`content: [{ type: 'text', text: '...' }]`
+  - 包含推理内容：`content: [{ type: 'text', text: '...' }, { type: 'reasoning', text: '...' }]`
+- 推理内容使用独立的 `ReasoningPart`，不与文本内容拼接
+- 符合 Vercel AI SDK 的 `ModelMessage` 类型定义
+
+**类型导出**：
+- `TextPart`: 从 'ai' 包导入并重新导出（`{ type: 'text'; text: string }`）
+- `ReasoningPart`: 本地定义，与 Vercel AI SDK 兼容（`{ type: 'reasoning'; text: string }`）
+- 注意：由于 `@ai-sdk/provider-utils` 不是直接依赖，`ReasoningPart` 在本地定义以保证类型兼容性
 
 **使用示例**：
 
@@ -316,7 +331,12 @@ import { streamChatCompletion } from "@/services/chatService";
 
 // 发起流式聊天请求
 const response = streamChatCompletion(
-  { model, historyList, message },
+  {
+    model,
+    historyList,
+    message,
+    includeReasoningContent: true, // 可选：是否在历史消息中传输推理内容
+  },
   { signal },
 );
 
@@ -324,6 +344,13 @@ for await (const message of response) {
   console.log(message.content);
 }
 ```
+
+**推理内容传输**：
+- 支持在历史消息中传输 `reasoningContent`（模型的推理过程）
+- 通过 `includeReasoningContent` 参数控制是否传输
+- 推理内容使用 Vercel AI SDK 的原生 `reasoning` part 类型（`{ type: 'reasoning', text: '...' }`）
+- 仅对 `role: 'assistant'` 的消息添加推理内容
+- 消息格式：`{ role: 'assistant', content: [{ type: 'text', text: '原始回复' }, { type: 'reasoning', text: '推理内容' }] }`
 
 ### 跨平台兼容性
 

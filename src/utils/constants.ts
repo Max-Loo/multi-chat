@@ -53,3 +53,8 @@ export const ALLOWED_MODEL_PROVIDERS: readonly string[] = [
   "zhipuai", // Zhipu
   "zhipuai-coding-plan",
 ] as const;
+
+/**
+ * 本地存储键名：是否在历史消息中传输推理内容
+ */
+export const LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY = LOCAL_STORAGE_PREFIX + 'include-reasoning-content';

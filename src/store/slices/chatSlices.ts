@@ -8,6 +8,7 @@ import { isNil, isNotNil } from "es-toolkit";
 import { createIdGenerator } from 'ai'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
 import { getCurrentTimestamp } from "@/utils/utils";
+import { selectIncludeReasoningContent } from "./appConfigSlices";
 
 // 生成用户消息 ID 的工具函数（带前缀）
 const generateUserMessageId = createIdGenerator({ prefix: USER_MESSAGE_ID_PREFIX });
@@ -77,7 +78,7 @@ const sendMessage = createAsyncThunk<
     message,
     model,
     historyList,
-  }, { signal, dispatch }) => {
+  }, { signal, dispatch, getState }) => {
     // 先将当前要发送的内容记录进历史记录
     dispatch(pushChatHistory({
       chat,
@@ -92,12 +93,17 @@ const sendMessage = createAsyncThunk<
       },
     }))
 
+    // 获取是否传输推理内容的开关状态
+    const state = getState() as RootState;
+    const includeReasoningContent = selectIncludeReasoningContent(state);
+
     // 使用 ChatService 发起流式聊天请求
     const fetchResponse = streamChatCompletion(
       {
         model,
         historyList,
         message,
+        includeReasoningContent,
       },
       { signal },
     )
