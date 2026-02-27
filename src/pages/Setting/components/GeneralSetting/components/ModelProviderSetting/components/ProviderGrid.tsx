@@ -1,4 +1,5 @@
 import React from 'react';
+import Masonry from 'react-masonry-css';
 import type { RemoteProviderData } from '@/services/modelRemoteService';
 import { ProviderCard } from './ProviderCard';
 
@@ -23,6 +24,18 @@ const getProviderStatus = (provider: RemoteProviderData): 'available' | 'unavail
 };
 
 /**
+ * Masonry 响应式断点配置
+ * - 小屏幕（< 1024px）：3 列
+ * - 中等屏幕（≥ 1024px）：1 列
+ * - 超大屏幕（≥ 1560px）：2 列
+ */
+const breakpointColumnsObj = {
+  default: 3,
+  1560: 2,
+  1024: 1,
+};
+
+/**
  * 供应商网格组件
  * 使用响应式网格布局展示所有供应商卡片
  */
@@ -37,17 +50,22 @@ export const ProviderGrid = React.memo<ProviderGridProps>(
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 w-full">
+      <Masonry
+        breakpointCols={breakpointColumnsObj}
+        className="flex w-full -ml-4"
+        columnClassName="pl-4"
+      >
         {providers.map((provider) => (
-          <ProviderCard
-            key={provider.providerKey}
-            provider={provider}
-            isExpanded={expandedProviders.has(provider.providerKey)}
-            onToggle={() => onToggleProvider(provider.providerKey)}
-            status={getProviderStatus(provider)}
-          />
+          <div key={provider.providerKey} className="mb-4 break-inside-avoid">
+            <ProviderCard
+              provider={provider}
+              isExpanded={expandedProviders.has(provider.providerKey)}
+              onToggle={() => onToggleProvider(provider.providerKey)}
+              status={getProviderStatus(provider)}
+            />
+          </div>
         ))}
-      </div>
+      </Masonry>
     );
   }
 );
