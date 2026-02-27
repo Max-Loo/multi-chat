@@ -5,7 +5,7 @@ import OpenExternalBrowserButton from "@/components/OpenExternalBrowserButton"
 import { EditableModel, ManualConfigModel, Model } from "@/types/model"
 import { DateFormatEnum, ModelProviderKeyEnum } from "@/utils/enums"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { Textarea } from "@/components/ui/textarea"
@@ -252,11 +252,6 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
                 </FormControl>
-                <FormDescription>
-                  <span className="max-w-full text-wrap break-all">
-                    {field.state.value || apiUrl}
-                  </span>
-                </FormDescription>
               <FormMessage />
             </FormItem>
           )}
