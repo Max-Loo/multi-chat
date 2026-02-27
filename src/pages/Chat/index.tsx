@@ -15,7 +15,7 @@ const ChatPage: React.FC = () => {
   const initializationError = useAppSelector(state => state.chat.initializationError)
 
   const dispatch = useAppDispatch()
-  const { navigateToChatWithoutParams } = useNavigateToChat()
+  const { navigateToChat } = useNavigateToChat()
   const [searchParams] = useSearchParams();
 
   // 防止重定向循环的状态标记
@@ -72,11 +72,11 @@ const ChatPage: React.FC = () => {
     } else {
       // 聊天不存在（已删除或从未创建），重定向到 /chat 页面
       // 使用 replace: true 替换浏览器历史记录，避免用户"后退"回到无效 URL
-      navigateToChatWithoutParams({ replace: true })
+      navigateToChat({ replace: true })
       // 标记已执行重定向，防止重复执行
       setHasCheckedRedirect(true)
     }
-  }, [dispatch, searchParams, chatList, loading, initializationError, hasCheckedRedirect, navigateToChatWithoutParams])
+  }, [dispatch, searchParams, chatList, loading, initializationError, hasCheckedRedirect, navigateToChat])
 
   return (
     <div className="flex items-start justify-start w-full h-full overflow-hidden">

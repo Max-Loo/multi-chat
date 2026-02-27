@@ -5,7 +5,7 @@
 import { useNavigate, type NavigateOptions } from "react-router-dom"
 
 interface NavigateToChatOptions extends NavigateOptions {
-  chatId: string;
+  chatId?: string;
 }
 
 export const useNavigateToChat = () => {
@@ -14,20 +14,14 @@ export const useNavigateToChat = () => {
   const navigateToChat = ({
     chatId,
     ...options
-  }: NavigateToChatOptions) => {
-    // 跳转到对应的聊天详情
-    navigate(`/chat?${new URLSearchParams({
-      chatId,
-    }).toString()}`, options)
-  }
-
-  // 清除查询参数，跳转到聊天页面
-  const navigateToChatWithoutParams = (options?: NavigateOptions) => {
-    navigate('/chat', options)
+  }: NavigateToChatOptions = {}) => {
+    const path = chatId
+      ? `/chat?${new URLSearchParams({ chatId }).toString()}`
+      : '/chat'
+    navigate(path, options)
   }
 
   return {
     navigateToChat,
-    navigateToChatWithoutParams,
   }
 }

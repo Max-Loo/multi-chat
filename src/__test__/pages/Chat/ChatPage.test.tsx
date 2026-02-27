@@ -9,7 +9,6 @@ import chatReducer, { initializeChatList } from '@/store/slices/chatSlices';
 /**
  * 创建可变的 mock 函数，用于在测试用例中动态修改
  */
-export const mockNavigateToChatWithoutParams = vi.fn();
 export const mockNavigateToChat = vi.fn();
 export const mockSetSearchParams = vi.fn();
 let mockSearchParams = new URLSearchParams();
@@ -47,7 +46,6 @@ vi.mock('react-router-dom', async () => {
 vi.mock('@/hooks/useNavigateToPage', () => ({
   useNavigateToChat: () => ({
     navigateToChat: mockNavigateToChat,
-    navigateToChatWithoutParams: mockNavigateToChatWithoutParams,
   }),
 }));
 
@@ -145,7 +143,7 @@ describe('ChatPage 重定向逻辑测试', () => {
     );
 
     await waitFor(() => {
-      expect(mockNavigateToChatWithoutParams).toHaveBeenCalledWith({ replace: true });
+      expect(mockNavigateToChat).toHaveBeenCalledWith({ replace: true });
     });
   });
 
@@ -174,7 +172,7 @@ describe('ChatPage 重定向逻辑测试', () => {
 
     await waitFor(() => {
       // 不应调用 navigate 进行重定向
-      expect(mockNavigateToChatWithoutParams).not.toHaveBeenCalled();
+      expect(mockNavigateToChat).not.toHaveBeenCalled();
       // 应正常设置选中的聊天 ID
       const state = store.getState();
       expect(state.chat.selectedChatId).toBe(mockChatId);
@@ -205,7 +203,7 @@ describe('ChatPage 重定向逻辑测试', () => {
     );
 
     await waitFor(() => {
-      expect(mockNavigateToChatWithoutParams).toHaveBeenCalledWith({ replace: true });
+      expect(mockNavigateToChat).toHaveBeenCalledWith({ replace: true });
     });
   });
 
@@ -224,7 +222,7 @@ describe('ChatPage 重定向逻辑测试', () => {
     );
 
     await waitFor(() => {
-      expect(mockNavigateToChatWithoutParams).not.toHaveBeenCalled();
+      expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
   });
 
@@ -248,7 +246,7 @@ describe('ChatPage 重定向逻辑测试', () => {
 
     await waitFor(() => {
       // 加载期间不应调用 navigate
-      expect(mockNavigateToChatWithoutParams).not.toHaveBeenCalled();
+      expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
 
     // 模拟加载完成
@@ -256,7 +254,7 @@ describe('ChatPage 重定向逻辑测试', () => {
 
     await waitFor(() => {
       // 加载完成后应执行检查并重定向（因为列表为空）
-      expect(mockNavigateToChatWithoutParams).toHaveBeenCalledWith({ replace: true });
+      expect(mockNavigateToChat).toHaveBeenCalledWith({ replace: true });
     });
   });
 
@@ -278,7 +276,7 @@ describe('ChatPage 重定向逻辑测试', () => {
 
     // 第一次渲染后，不应调用 navigate（因为没有 chatId 参数）
     await waitFor(() => {
-      expect(mockNavigateToChatWithoutParams).not.toHaveBeenCalled();
+      expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
 
     // 模拟重新渲染（例如通过路由变化）
@@ -292,7 +290,7 @@ describe('ChatPage 重定向逻辑测试', () => {
 
     // 仍然不应调用 navigate
     await waitFor(() => {
-      expect(mockNavigateToChatWithoutParams).not.toHaveBeenCalled();
+      expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
   });
 
@@ -316,7 +314,7 @@ describe('ChatPage 重定向逻辑测试', () => {
 
     await waitFor(() => {
       // 加载失败时不应调用 navigate
-      expect(mockNavigateToChatWithoutParams).not.toHaveBeenCalled();
+      expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
   });
 });
