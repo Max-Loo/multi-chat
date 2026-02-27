@@ -2,7 +2,8 @@ import { lazy, Suspense } from "react"
 import { useCurrentSelectedChat } from "@/hooks/useCurrentSelectedChat"
 import { isNil } from "es-toolkit"
 import { useTranslation } from "react-i18next"
-import FullscreenLoading from "@/components/FullscreenLoading"
+import ModelSelectSkeleton from "./components/ModelSelectSkeleton"
+import ChatPanelSkeleton from "./components/ChatPanel/components/ChatPanelSkeleton"
 
 const ModelSelect = lazy(() => import("./components/ModelSelect"))
 const ChatPanel = lazy(() => import("./components/ChatPanel"))
@@ -24,7 +25,7 @@ const ChatContent: React.FC = () => {
   // 还没有给这个「聊天」配置过模型的状态
   if (!Array.isArray(selectedChat.chatModelList) || selectedChat.chatModelList.length <= 0) {
     return (
-      <Suspense fallback={<FullscreenLoading />}>
+      <Suspense fallback={<ModelSelectSkeleton />}>
         <ModelSelect />
       </Suspense>
     )
@@ -32,7 +33,7 @@ const ChatContent: React.FC = () => {
 
   // 正常的聊天框
   return (
-    <Suspense fallback={<FullscreenLoading />}>
+    <Suspense fallback={<ChatPanelSkeleton columnCount={selectedChat.chatModelList.length} />}>
       <ChatPanel />
     </Suspense>
   )
