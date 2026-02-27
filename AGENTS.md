@@ -152,6 +152,34 @@ await expectDuration(async () => {
 }, 1000); // 1 秒内完成
 ```
 
+### 测试覆盖率
+
+项目当前整体测试覆盖率约 **42.55%**（语句覆盖率），关键 UI 组件测试覆盖率达标。
+
+**关键 UI 组件覆盖率**（2026-02-28）：
+
+- **侧边栏组件**: 80% 语句覆盖率（目标 ≥70%）
+- **聊天页面组件**: 84.37%-100% 语句覆盖率（目标 ≥60%）
+  - ChatPage: 100%
+  - ChatContent: 84.37%
+  - ChatSidebar: 95%
+- **设置页面组件**: 77.77%-80.76% 语句覆盖率（目标 ≥60%）
+  - SettingPage: 77.77%
+  - GeneralSetting: 80.76%
+  - LanguageSetting: 80%
+  - ModelProviderSetting: 77.19%
+  - ProviderCard: 78.26%
+
+**测试统计**：
+- 总测试数：411 个测试
+- 测试文件：24 个
+- 测试框架：Vitest + React Testing Library
+
+**生成覆盖率报告**：
+```bash
+pnpm test:coverage
+```
+
 ## 关键技术细节
 
 - **包管理器**: pnpm

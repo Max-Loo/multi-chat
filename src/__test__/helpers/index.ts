@@ -15,3 +15,6 @@ export * from './assertions';
 
 // 环境隔离
 export * from './isolation';
+
+// 渲染辅助工具
+export * from './render';

@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import ChatPage from '@/pages/Chat/index';
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer, { initializeChatList } from '@/store/slices/chatSlices';
+import chatPageReducer from '@/store/slices/chatPageSlices';
 
 /**
  * 创建可变的 mock 函数，用于在测试用例中动态修改
@@ -113,7 +114,7 @@ describe('ChatPage 重定向逻辑测试', () => {
     store = configureStore({
       reducer: {
         chat: chatReducer,
-        chatPage: () => ({ isSidebarCollapsed: false }),
+        chatPage: chatPageReducer,
         appConfig: () => ({}),
         models: () => ({ models: [] }),
       },
@@ -316,5 +317,70 @@ describe('ChatPage 重定向逻辑测试', () => {
       // 加载失败时不应调用 navigate
       expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
+  });
+
+  /**
+   * @description 测试场景：侧边栏折叠状态切换
+   */
+  it('侧边栏折叠状态应该在 Redux store 中正确更新', async () => {
+    // 初始化聊天列表
+    store.dispatch(initializeChatList.fulfilled([], ''));
+
+    const { container } = render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <ChatPage />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    // 初始状态：侧边栏应该是展开的
+    expect(store.getState().chatPage.isSidebarCollapsed).toBe(false);
+
+    // 获取侧边栏元素
+    const sidebarDiv = container.querySelector('.w-56.border-r');
+    expect(sidebarDiv).toBeInTheDocument();
+    expect(sidebarDiv).not.toHaveClass('-ml-56');
+  });
+
+  /**
+   * @description 测试场景：侧边栏折叠状态持久化
+   */
+  it('侧边栏折叠状态应该在整个组件生命周期中保持', async () => {
+    // 初始化聊天列表
+    store.dispatch(initializeChatList.fulfilled([], ''));
+
+    const { container, rerender } = render(
+      <Provider store={store}>
+        <BrowserRouter>
+          <ChatPage />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    // 初始状态：侧边栏展开
+    expect(store.getState().chatPage.isSidebarCollapsed).toBe(false);
+
+    // 手动 dispatch action 来模拟用户点击折叠按钮
+    store.dispatch({ type: 'chatPage/setIsCollapsed', payload: true });
+
+    // 验证状态已更新
+    expect(store.getState().chatPage.isSidebarCollapsed).toBe(true);
+
+    // 重新渲染组件
+    rerender(
+      <Provider store={store}>
+        <BrowserRouter>
+          <ChatPage />
+        </BrowserRouter>
+      </Provider>
+    );
+
+    // 验证折叠状态保持
+    expect(store.getState().chatPage.isSidebarCollapsed).toBe(true);
+
+    // 验证侧边栏元素有折叠的 CSS 类
+    const sidebarDiv = container.querySelector('.w-56.border-r');
+    expect(sidebarDiv).toHaveClass('-ml-56');
   });
 });
