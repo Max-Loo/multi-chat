@@ -161,7 +161,14 @@ const ChatPanelSender: React.FC = () => {
   return (
     <div className="relative z-10 w-full px-4 py-3 bg-background border-t border-border">
       {/* 推理内容开关 */}
-      <div className="flex items-center gap-2 mb-2">
+      {/*
+        临时隐藏：推理内容开关 UI
+        隐藏原因：当前模型服务商（DeepSeek、Kimi、Zhipu）不支持 Vercel AI SDK 的 `type: 'reasoning'` 消息格式
+        恢复方式：移除下方 <div> 的 `className="hidden"` 属性即可
+        技术债务：待模型服务商支持推理内容后恢复此 UI
+        隐藏日期：2026-02-27
+      */}
+      <div className="hidden items-center gap-2 mb-2">
         <Button
           variant="outline"
           size="sm"
