@@ -2,7 +2,7 @@
  * Mock 工厂类型定义
  */
 
-import { vi } from 'vitest';
+import { Mock } from 'vitest';
 
 /**
  * Tauri Mock 配置选项
@@ -18,35 +18,35 @@ export interface TauriMockOptions {
 export interface TauriMocks {
   /** Shell 模块 Mock */
   shell: {
-    open: ReturnType<typeof vi.fn>;
+    open: Mock;
     Command: {
-      create: ReturnType<typeof vi.fn>;
+      create: Mock;
     };
   };
   /** OS 模块 Mock */
   os: {
-    locale: ReturnType<typeof vi.fn>;
-    platform: ReturnType<typeof vi.fn>;
+    locale: Mock;
+    platform: Mock;
   };
   /** HTTP 模块 Mock */
   http: {
-    fetch: ReturnType<typeof vi.fn>;
-    getFetchFunc: ReturnType<typeof vi.fn>;
+    fetch: Mock;
+    getFetchFunc: Mock;
   };
   /** Store 模块 Mock */
   store: {
-    createLazyStore: ReturnType<typeof vi.fn>;
+    createLazyStore: Mock;
   };
   /** Keyring 模块 Mock */
   keyring: {
-    getPassword: ReturnType<typeof vi.fn>;
-    setPassword: ReturnType<typeof vi.fn>;
-    deletePassword: ReturnType<typeof vi.fn>;
-    isKeyringSupported: ReturnType<typeof vi.fn>;
+    getPassword: Mock;
+    setPassword: Mock;
+    deletePassword: Mock;
+    isKeyringSupported: Mock;
   };
   /** 环境检测 Mock */
   env: {
-    isTauri: ReturnType<typeof vi.fn>;
+    isTauri: Mock;
   };
   /** 重置所有 Mock */
   resetAll: () => void;
@@ -59,11 +59,11 @@ export interface TauriMocks {
  */
 export interface CryptoMocks {
   /** 加密字段 Mock */
-  encryptField: ReturnType<typeof vi.fn>;
+  encryptField: Mock;
   /** 解密字段 Mock */
-  decryptField: ReturnType<typeof vi.fn>;
+  decryptField: Mock;
   /** 判断是否加密 Mock */
-  isEncrypted: ReturnType<typeof vi.fn>;
+  isEncrypted: Mock;
   /** 重置所有 Mock */
   resetAll: () => void;
 }
@@ -73,11 +73,11 @@ export interface CryptoMocks {
  */
 export interface StorageMocks {
   /** 创建 Store Mock */
-  createLazyStore: ReturnType<typeof vi.fn>;
+  createLazyStore: Mock;
   /** 保存到 Store Mock */
-  saveToStore: ReturnType<typeof vi.fn>;
+  saveToStore: Mock;
   /** 从 Store 加载 Mock */
-  loadFromStore: ReturnType<typeof vi.fn>;
+  loadFromStore: Mock;
   /** 重置所有 Mock */
   resetAll: () => void;
 }

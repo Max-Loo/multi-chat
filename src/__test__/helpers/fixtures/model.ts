@@ -21,7 +21,7 @@ export const createMockModel = (overrides?: Partial<Model>): Model => ({
   createdAt: '2024-01-01 00:00:00',
   updateAt: '2024-01-01 00:00:00',
   providerName: 'OpenAI',
-  providerKey: ModelProviderKeyEnum.OPEN_AI,
+  providerKey: ModelProviderKeyEnum.DEEPSEEK,
   nickname: 'Test Model',
   modelName: 'gpt-4',
   modelKey: 'gpt-4',
@@ -69,7 +69,7 @@ export const createDeepSeekModel = (overrides?: Partial<Model>): Model =>
 export const createKimiModel = (overrides?: Partial<Model>): Model =>
   createMockModel({
     providerName: 'Kimi',
-    providerKey: ModelProviderKeyEnum.KIMI,
+    providerKey: ModelProviderKeyEnum.MOONSHOTAI,
     nickname: 'Kimi',
     modelName: 'moonshot-v1-8k',
     modelKey: 'moonshot-v1-8k',
