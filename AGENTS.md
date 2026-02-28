@@ -58,7 +58,45 @@ pnpm test:coverage
 
 ## 测试辅助工具
 
-项目提供统一的测试辅助工具系统，位于 `src/__test__/helpers/` 目录。
+项目提供统一的测试辅助工具系统，位于 `src/__test__/helpers/` 和 `src/__test__/utils/tauriCompat/` 目录。
+
+### Tauri 兼容层测试辅助工具（新增）
+
+提供标准化的环境模拟和 IndexedDB Mock 功能，用于测试跨平台兼容层：
+
+**环境模拟工具** (`src/__test__/utils/tauriCompat/helpers.ts`):
+
+```typescript
+import { mockTauriEnvironment, mockWebEnvironment, resetGlobals } from '@/utils/tauriCompat/helpers';
+
+// 模拟 Tauri 环境
+mockTauriEnvironment();
+window.__TAURI__; // 存在
+
+// 模拟 Web 环境
+mockWebEnvironment();
+window.__TAURI__; // 不存在
+
+// 重置全局对象
+resetGlobals();
+```
+
+**IndexedDB Mock 工具** (`src/__test__/utils/tauriCompat/idb-helpers.ts`):
+
+```typescript
+import {
+  initFakeIndexedDB,
+  cleanupFakeIndexedDB,
+  createTestDB,
+  deleteTestDB
+} from '@/utils/tauriCompat/idb-helpers';
+
+// 初始化 Fake IndexedDB
+const idbCtx = initFakeIndexedDB();
+
+// 清理 Fake IndexedDB
+cleanupFakeIndexedDB(idbCtx);
+```
 
 ### Mock 工厂
 
@@ -154,10 +192,24 @@ await expectDuration(async () => {
 
 ### 测试覆盖率
 
-项目当前整体测试覆盖率约 **42.55%**（语句覆盖率），关键 UI 组件测试覆盖率达标。
+项目当前整体测试覆盖率约 **49.63%**（语句覆盖率），关键 UI 组件测试覆盖率达标。
 
-**关键 UI 组件覆盖率**（2026-02-28）：
+**测试统计**（2026-02-28 更新）：
+- 总测试数：591 个测试
+- 测试文件：36 个
+- 测试框架：Vitest + React Testing Library
+- 新增测试：57 个测试（Tauri 兼容层和数据持久化层）
 
+**关键模块覆盖率**（2026-02-28）：
+
+- **跨平台兼容层**: 测试已添加（HTTP、OS、Shell、Store 兼容层）
+  - HTTP 兼容层测试: 9 个测试
+  - OS 兼容层测试: 4 个测试
+  - Shell 兼容层测试: 8 个测试
+  - Store 兼容层测试: 20 个测试
+- **数据持久化层**: 测试已添加（Store 工具函数、聊天存储）
+  - Store 工具函数测试: 10 个测试
+  - 聊天存储测试: 6 个测试
 - **侧边栏组件**: 80% 语句覆盖率（目标 ≥70%）
 - **聊天页面组件**: 84.37%-100% 语句覆盖率（目标 ≥60%）
   - ChatPage: 100%
