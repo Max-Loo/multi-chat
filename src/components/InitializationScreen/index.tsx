@@ -1,10 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * 全屏加载组件
- * 用于显示全屏加载状态
+ * 初始化屏幕组件
+ * 显示应用初始化过程中的加载动画
  */
-const FullscreenLoading: React.FC = () => {
+const InitializationScreen: React.FC = () => {
   return (
     <div className="flex items-center justify-center w-full h-dvh">
       <div className="flex flex-col items-center space-y-4">
@@ -17,4 +17,4 @@ const FullscreenLoading: React.FC = () => {
   );
 };
 
-export default FullscreenLoading;
+export default InitializationScreen;

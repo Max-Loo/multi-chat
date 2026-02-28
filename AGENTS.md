@@ -276,37 +276,75 @@ pnpm test:coverage
 
 ### 应用启动初始化流程
 
-应用启动时按以下顺序执行初始化：
+应用使用统一的 `InitializationManager` 管理初始化流程，支持依赖关系、并行执行和三级错误处理。
 
-1. **阻断式初始化**（必须完成后才能渲染）：
-   - 国际化初始化（`initI18n()`）
-   - **主密钥初始化（`initializeMasterKey()`）**
-     - 检查系统钥匙串（Tauri）或 IndexedDB（Web）中是否存在主密钥
-     - 不存在则使用 Web Crypto API 生成新的 256-bit 随机密钥
-     - Tauri 环境：将密钥存储到系统钥匙串（macOS Keychain / Windows Credential Manager）
-     - Web 环境：将密钥加密后存储到 IndexedDB
+**初始化步骤配置**（`src/config/initSteps.ts`）：
 
-2. **渲染应用**：应用界面开始显示，Toaster 组件已挂载
+1. **i18n 步骤**（关键步骤，无依赖）
+   - 初始化国际化配置（`initI18n()`）
+   - 失败时显示致命错误屏幕
 
-3. **异步初始化**（并行执行，不阻塞渲染）：
-   - 模型供应商初始化（`initializeModelProvider()`）← **新增**：从远程 API 动态获取 Provider 定义
-   - 模型数据加载（依赖主密钥进行解密）
-   - 聊天列表加载
-   - 应用语言配置加载
+2. **masterKey 步骤**（关键步骤，无依赖）
+   - 初始化主密钥（`initializeMasterKey()`）
+   - 检查系统钥匙串（Tauri）或 IndexedDB（Web）中是否存在主密钥
+   - 不存在则使用 Web Crypto API 生成新的 256-bit 随机密钥
+   - Tauri 环境：将密钥存储到系统钥匙串（macOS Keychain / Windows Credential Manager）
+   - Web 环境：将密钥加密后存储到 IndexedDB
+   - 将主密钥存入 `ExecutionContext` 供依赖步骤使用
+   - 失败时显示致命错误屏幕
 
-4. **安全性警告 Toast**（Web 环境首次使用，应用渲染后执行）：
+3. **models 步骤**（非关键，依赖 `masterKey`）
+   - 加载模型数据（使用 `.unwrap()` 等待 Thunk 完成）
+   - 依赖主密钥进行解密
+   - 失败时显示警告 Toast
 
-- 检查是否需要显示安全性警告（`handleSecurityWarning()`）
-- Web 环境首次使用时显示 shadcn/ui Toast，提示用户 Web 版本安全级别低于桌面版
-- Toast 设置为永久显示（`duration: Infinity`），用户必须点击"I Understand"确认
-- 用户确认后，将"不再提示"保存到 localStorage
+4. **chatList 步骤**（非关键）
+   - 加载聊天列表
+   - 失败时显示警告 Toast
+
+5. **appLanguage 步骤**（非关键，依赖 `i18n`）
+   - 加载应用语言配置
+   - 失败时显示警告 Toast
+
+6. **includeReasoningContent 步骤**（非关键）
+   - 加载推理内容配置
+   - 失败时显示可忽略错误（控制台输出）
+
+7. **modelProvider 步骤**（非关键）
+   - 从远程 API 动态获取模型供应商定义（`initializeModelProvider()`）
+   - 失败时显示警告 Toast
+
+**执行顺序**（拓扑排序）：
+
+```
+第 1 组（并行）：i18n, masterKey
+         ↓
+第 2 组（并行）：models（依赖 masterKey）, appLanguage（依赖 i18n）, chatList, includeReasoningContent, modelProvider
+```
+
+**错误处理机制**：
+
+- **致命错误**（fatal）：显示 `<FatalErrorScreen />` 全屏错误提示，提供"刷新页面"按钮
+- **警告错误**（warning）：显示 Toast 通知，不打断用户操作
+- **可忽略错误**（ignorable）：在控制台输出错误信息
+
+**应用渲染流程**（`src/main.tsx`）：
+
+1. 先渲染 `<InitializationScreen />` 骨架屏
+2. 使用 `InitializationManager.runInitialization()` 执行所有初始化步骤
+3. 根据初始化结果渲染不同界面：
+   - **致命错误**：渲染 `<FatalErrorScreen />`
+   - **modelProvider 致命错误**：渲染 `<NoProvidersAvailable />`
+   - **成功**：渲染 `<RouterProvider />`、`<Toaster />` 等
+4. 显示警告错误 Toast（`result.warnings`）
+5. 处理安全性警告（Web 环境首次使用，`handleSecurityWarning()`）
 
 **重要**:
 
-- 主密钥初始化必须在模型数据加载之前完成，否则无法解密 API 密钥
-- 模型供应商初始化不依赖主密钥（获取的是公开的 Provider 定义，不包含敏感信息）
-- 安全性警告 Toast 在应用渲染后显示，使用友好的 Toast UI 而非阻断式弹窗
-- Toast 永久显示直到用户确认，兼顾用户体验和安全提示效果
+- 所有初始化步骤的配置都在 `src/config/initSteps.ts` 中统一管理
+- 步骤之间通过 `dependencies` 字段声明依赖关系，自动优化执行顺序
+- 关键步骤失败会导致应用无法运行，非关键步骤失败只显示警告
+- 添加新初始化步骤只需在 `src/config/initSteps.ts` 中添加配置，无需修改 `main.tsx`
 
 ### 远程模型数据获取
 

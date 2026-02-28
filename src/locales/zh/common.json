@@ -13,5 +13,13 @@
   "noProvidersAvailable": "无可用的模型供应商",
   "noProvidersDescription": "应用无法连接到模型数据服务器，且本地无可用缓存。",
   "noProvidersHint": "请检查网络连接后点击下方按钮重试。",
-  "reload": "重新加载"
+  "reload": "重新加载",
+  "initializationFailed": "初始化失败",
+  "initializationFailedDescription": "应用初始化过程中发生错误，无法继续运行。",
+  "refreshPage": "刷新页面",
+  "errorDetails": "错误详情",
+  "initializationWarning": "初始化警告",
+  "initializationWarningMessage": "部分功能可能受限",
+  "showErrorDetails": "显示错误详情",
+  "hideErrorDetails": "隐藏错误详情"
 }

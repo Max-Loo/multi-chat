@@ -13,5 +13,13 @@
   "noProvidersAvailable": "No Model Providers Available",
   "noProvidersDescription": "Unable to connect to model data server and no local cache available.",
   "noProvidersHint": "Please check your network connection and try again.",
-  "reload": "Reload"
+  "reload": "Reload",
+  "initializationFailed": "Initialization Failed",
+  "initializationFailedDescription": "An error occurred during application initialization and cannot continue.",
+  "refreshPage": "Refresh Page",
+  "errorDetails": "Error Details",
+  "initializationWarning": "Initialization Warning",
+  "initializationWarningMessage": "Some features may be limited",
+  "showErrorDetails": "Show Error Details",
+  "hideErrorDetails": "Hide Error Details"
 }
