@@ -23,7 +23,7 @@ import { getCurrentTimestamp } from '@/utils/utils';
  * const model = provider('deepseek-chat');
  * ```
  */
-function getProvider(
+export function getProvider(
   providerKey: ModelProviderKeyEnum,
   apiKey: string,
   baseURL: string
@@ -88,7 +88,7 @@ export interface ChatRequestParams {
  * @returns ai-sdk 格式的消息列表
  * @internal
  */
-function buildMessages(
+export function buildMessages(
   historyList: StandardMessage[],
   message: string,
   includeReasoningContent: boolean = false

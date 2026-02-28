@@ -58,6 +58,16 @@
 - **WHEN** 历史记录中包含未知的 role 类型
 - **THEN** 系统 SHALL 抛出错误，错误信息包含 "Unknown role"
 
+#### Scenario: 处理空推理内容
+- **WHEN** `includeReasoningContent` 为 true
+- **WHEN** `reasoningContent` 为空字符串或仅包含空白字符
+- **THEN** 系统 SHALL 不添加 reasoning Part
+
+#### Scenario: 处理空历史记录
+- **WHEN** 传入空的 `historyList` 数组
+- **THEN** 系统 SHALL 仅包含最新的 user 消息
+- **THEN** 系统 SHALL 不抛出错误
+
 ### Requirement: 流式聊天请求测试
 测试系统 SHALL 验证 `streamChatCompletion` 函数能正确处理流式聊天响应。
 
@@ -155,3 +165,43 @@
 - **WHEN** 调用 `streamChatCompletion` 并传入模型对象
 - **THEN** 所有流式响应消息 SHALL 包含正确的 modelKey
 - **THEN** modelKey SHALL 来自传入的模型对象
+
+### Requirement: 测试覆盖率要求
+单元测试必须达到指定的覆盖率指标，确保代码质量。
+
+#### Scenario: 语句覆盖率达标
+- **WHEN** 运行测试覆盖率报告
+- **THEN** `chatService.ts` 的语句覆盖率必须 ≥ 90%
+
+#### Scenario: 分支覆盖率达标
+- **WHEN** 运行测试覆盖率报告
+- **THEN** `chatService.ts` 的分支覆盖率必须 ≥ 80%
+
+#### Scenario: 函数覆盖率达标
+- **WHEN** 运行测试覆盖率报告
+- **THEN** `chatService.ts` 的函数覆盖率必须 = 100%
+
+### Requirement: Mock 策略要求
+测试必须使用适当的 Mock 策略来隔离依赖，确保测试的独立性和速度。
+
+#### Scenario: Mock Vercel AI SDK
+- **WHEN** 测试 `streamChatCompletion()` 函数
+- **THEN** 必须 Mock `ai` 包
+- **THEN** 必须替换 `streamText` 和 `generateId` 函数
+- **THEN** Mock 应返回可控的测试数据
+
+#### Scenario: Mock provider 函数
+- **WHEN** 测试 `getProvider()` 或 `streamChatCompletion()` 函数
+- **THEN** 必须 Mock `createDeepSeek`、`createMoonshotAI`、`createZhipu` 等函数
+- **THEN** Mock 应返回模拟的 LanguageModel 对象
+
+#### Scenario: Mock tauriCompat 函数
+- **WHEN** 测试任何使用 `getFetchFunc()` 的函数
+- **THEN** 必须 Mock `@/utils/tauriCompat` 模块
+- **THEN** `getFetchFunc` 应返回模拟的 fetch 函数
+
+#### Scenario: 测试隔离
+- **WHEN** 运行每个测试用例
+- **THEN** 必须在 `beforeEach` 中清理所有 Mock
+- **THEN** 测试之间不应共享状态
+- **THEN** 每个测试应独立运行
