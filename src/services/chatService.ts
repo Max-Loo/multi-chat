@@ -9,6 +9,7 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
 import { ChatRoleEnum } from '@/types/chat';
 import { getFetchFunc } from '@/utils/tauriCompat';
 import { getCurrentTimestamp } from '@/utils/utils';
+import type { StandardMessageRawResponse } from '@/types/chat';
 
 /**
  * 获取供应商特定的 provider 工厂函数
@@ -205,14 +206,22 @@ export async function* streamChatCompletion(
   const modelKey = model.modelKey;
   let finishReason: string | null = null;
   let usageInfo: StandardMessage['usage'] | undefined;
+
+  // 流式事件统计
+  const streamStartTime = Date.now();
+  let textDeltaCount = 0;
+  let reasoningDeltaCount = 0;
+
   // 迭代完整流（包含文本、推理内容等所有事件）
   for await (const part of result.fullStream) {
     switch (part.type) {
       case 'text-delta':
         content += part.text;
+        textDeltaCount++;
         break;
       case 'reasoning-delta':
         reasoningContent += part.text;
+        reasoningDeltaCount++;
         break;
       default:
         break;
@@ -226,16 +235,115 @@ export async function* streamChatCompletion(
       role: ChatRoleEnum.ASSISTANT,
       content: content,
       reasoningContent,
-      raw: '',
+      raw: null,
     };
   }
 
-  // 等待完成，获取元数据
+  // 等待完成，获取元数据（带错误处理）
   const metadata = await result;
   const finalFinishReason = await metadata.finishReason;
+  const rawFinishReason = await metadata.rawFinishReason;
   const usage = await metadata.usage;
+  const responseData = await metadata.response;
+  const requestData = await metadata.request;
 
   finishReason = finalFinishReason || null;
+
+  // 收集可选元数据（错误不中断主流程）
+  const collectionErrors: Array<{ field: string; message: string }> = [];
+  let providerMetadata: Record<string, Record<string, unknown>> | undefined;
+  let transformedWarnings: Array<{ code?: string; message: string }> | undefined;
+  let transformedSources: Array<{ sourceType: 'url'; id: string; url: string; title?: string; providerMetadata?: Record<string, unknown> }> | undefined;
+
+  try {
+    providerMetadata = await metadata.providerMetadata;
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.warn('Failed to collect provider metadata:', error);
+    collectionErrors.push({ field: 'providerMetadata', message: errorMsg });
+    providerMetadata = undefined;
+  }
+
+  try {
+    const rawWarnings = await metadata.warnings;
+    transformedWarnings = rawWarnings?.map(w => ({
+      code: 'code' in w ? String(w.code) : w.type,
+      message: 'message' in w ? w.message : `${w.type}: ${w.feature}${w.details ? ` (${w.details})` : ''}`,
+    }));
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.warn('Failed to collect warnings:', error);
+    collectionErrors.push({ field: 'warnings', message: errorMsg });
+    transformedWarnings = undefined;
+  }
+
+  try {
+    const rawSources = await metadata.sources;
+    transformedSources = rawSources
+      ?.filter(s => s.sourceType === 'url')
+      .map(s => ({
+        sourceType: s.sourceType as 'url',
+        id: s.id,
+        url: s.url,
+        title: s.title,
+        providerMetadata: s.providerMetadata,
+      }));
+    // 空数组转换为 undefined，方便使用的时候直接校验空状态
+    if (transformedSources && transformedSources.length === 0) {
+      transformedSources = undefined;
+    }
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.warn('Failed to collect sources:', error);
+    collectionErrors.push({ field: 'sources', message: errorMsg });
+    transformedSources = undefined;
+  }
+
+  // 收集响应元数据（过滤敏感信息）
+  const headers = responseData.headers
+    ? Object.fromEntries(
+        Object.entries(responseData.headers).filter(
+          ([key]) => !['authorization', 'Authorization', 'x-api-key', 'X-API-Key'].includes(key)
+        )
+      )
+    : undefined;
+
+  const responseMetadata = {
+    id: responseData.id,
+    modelId: responseData.modelId,
+    timestamp: responseData.timestamp.toISOString(),
+    headers,
+  };
+
+  // 收集请求元数据（过滤敏感信息，限制大小）
+  let requestBody = typeof requestData.body === 'string' ? requestData.body : JSON.stringify(requestData.body);
+  try {
+    const parsedBody = JSON.parse(requestBody);
+    // 移除敏感字段
+    if (parsedBody.apiKey) delete parsedBody.apiKey;
+    if (parsedBody.api_key) delete parsedBody.api_key;
+    if (parsedBody.authorization) delete parsedBody.authorization;
+    if (parsedBody.Authorization) delete parsedBody.Authorization;
+    requestBody = JSON.stringify(parsedBody);
+  } catch {
+    // 如果解析失败，保持原始字符串
+  }
+
+  // 限制请求体大小（10KB = 10240 字节）
+  const MAX_BODY_SIZE = 10240;
+  if (requestBody.length > MAX_BODY_SIZE) {
+    requestBody = requestBody.substring(0, MAX_BODY_SIZE) + '... (truncated)';
+  }
+
+  const requestMetadata = {
+    body: requestBody,
+  };
+
+  // 收集完成原因
+  const finishReasonMetadata = {
+    reason: (finalFinishReason ?? 'other') as 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other',
+    rawReason: rawFinishReason,
+  };
 
   // 解析 token 使用情况（直接映射 Vercel AI SDK 的 usage 对象）
   if (usage) {
@@ -244,6 +352,37 @@ export async function* streamChatCompletion(
       outputTokens: usage.outputTokens ?? 0,
     };
   }
+
+  // 收集完整的 usage 元数据
+  const usageMetadata = {
+    inputTokens: usage?.inputTokens ?? 0,
+    outputTokens: usage?.outputTokens ?? 0,
+    totalTokens: usage?.totalTokens ?? 0,
+    inputTokenDetails: usage?.inputTokenDetails,
+    outputTokenDetails: usage?.outputTokenDetails,
+    raw: usage?.raw,
+  };
+
+  // 计算流式处理耗时
+  const streamEndTime = Date.now();
+  const streamStats = {
+    textDeltaCount,
+    reasoningDeltaCount,
+    duration: streamEndTime - streamStartTime,
+  };
+
+  // 构建原始响应对象（阶段 1：基础字段）
+  const rawResponse: StandardMessageRawResponse = {
+    response: responseMetadata,
+    request: requestMetadata,
+    usage: usageMetadata,
+    finishReason: finishReasonMetadata,
+    providerMetadata,
+    warnings: transformedWarnings,
+    streamStats,
+    sources: transformedSources,
+    ...(collectionErrors.length > 0 && { errors: collectionErrors }),
+  };
 
   // 返回最终消息（包含 finishReason 和 usage）
   yield {
@@ -255,6 +394,6 @@ export async function* streamChatCompletion(
     content: content,
     reasoningContent,
     usage: usageInfo,
-    raw: '',
+    raw: rawResponse,
   };
 }

@@ -1,37 +1,6 @@
-# Chat Message Sending Capability Specification
+# Chat Message Sending Capability Specification (Delta)
 
-## ADDED Requirements
-
-### Requirement: 发送聊天消息
-
-系统 MUST 在 Redux Thunk `sendMessage` 中使用 `ChatService.streamChatCompletion()` 发起流式聊天请求。
-
-系统 MUST 将 `model` 对象、`historyList` 和 `message` 作为参数传递给 `ChatService.streamChatCompletion()`。
-
-系统 MUST 将 `signal`（AbortSignal）作为选项传递给 `ChatService.streamChatCompletion()`。
-
-系统 MUST 使用 `for await...of` 循环迭代 `ChatService.streamChatCompletion()` 返回的异步生成器。
-
-系统 MUST NOT 再使用 `getProviderFactory(model.providerKey).getModelProvider().fetchApi.fetch()` 发起聊天请求。
-
-系统 MUST NOT 再通过 Provider 工厂获取 `fetchApi` 实例。
-
-#### Scenario: 使用 ChatService 发送聊天消息
-- **WHEN** 用户在聊天界面发送消息
-- **AND** Redux Thunk `sendMessage` 被 dispatch
-- **THEN** 系统调用 `ChatService.streamChatCompletion({ model, historyList, message }, { signal })`
-- **AND** 系统通过 `for await (const msg of response)` 迭代流式响应
-- **AND** 系统将每个响应消息 dispatch 到 Redux store
-- **AND** 聊天界面实时显示流式响应
-
-#### Scenario: 不再使用 Provider 工厂的 fetchApi
-- **WHEN** Redux Thunk `sendMessage` 执行
-- **THEN** 系统 MUST NOT 调用 `getProviderFactory(model.providerKey).getModelProvider()`
-- **AND** 系统 MUST NOT 访问 `fetchApi.fetch()` 方法
-- **AND** 系统 MUST NOT 通过 Provider 架构发起聊天请求
-- **AND** 所有聊天请求逻辑由 `ChatService` 处理
-
----
+## MODIFIED Requirements
 
 ### Requirement: 处理流式响应
 
@@ -48,6 +17,7 @@
 系统 MUST 确保 `raw` 字段包含结构化的原始响应数据（`StandardMessageRawResponse` 类型），而非空字符串。
 
 #### Scenario: 处理流式响应消息（包含原始数据）
+
 - **WHEN** `ChatService.streamChatCompletion()` 返回流式响应
 - **AND** 第 1 个响应消息包含 `{ content: "Hello", finishReason: null, raw: null }`
 - **AND** 第 2 个响应消息包含 `{ content: "Hello World", finishReason: null, raw: null }`
@@ -59,6 +29,7 @@
 - **AND** `raw` 字段类型为 `StandardMessageRawResponse`（对象），而非字符串
 
 #### Scenario: 信号中断时停止处理
+
 - **WHEN** 用户在流式响应过程中点击"停止生成"按钮
 - **AND** Redux Thunk 调用 `signal.abort()`
 - **THEN** `ChatService.streamChatCompletion()` 检测到信号中断
@@ -68,6 +39,7 @@
 - **AND** 如果中断前已收到部分响应消息，`raw` 字段可能为 `null` 或包含不完整的元数据
 
 #### Scenario: 向后兼容性（旧消息的 raw 字段）
+
 - **WHEN** 从存储加载旧消息（`raw` 为空字符串或 `null`）
 - **THEN** 系统必须正常显示消息内容
 - **AND** 系统 MUST NOT 因为 `raw` 字段格式不同而抛出异常
@@ -75,6 +47,7 @@
 - **AND** 如果 `raw` 为旧格式，显示"无原始数据"或默认提示
 
 #### Scenario: 新消息的 raw 字段包含完整元数据
+
 - **WHEN** 用户发送新消息并接收完整响应
 - **THEN** 系统 MUST 接收包含完整 `raw` 字段的 `StandardMessage`
 - **AND** `raw` 字段必须包含以下字段：

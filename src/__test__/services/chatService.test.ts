@@ -63,9 +63,24 @@ describe('chatService', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createMockStreamTextResult = (streamItems: any[]) => {
     const asyncGen = createMockStream(streamItems);
+
+    // 完整的元数据 Promise（所有字段都是 Promise）
     const resultPromise = Promise.resolve({
-      finishReason: 'stop',
-      usage: { inputTokens: 10, outputTokens: 5 },
+      finishReason: Promise.resolve('stop'),
+      rawFinishReason: Promise.resolve('stop'),
+      usage: Promise.resolve({ inputTokens: 10, outputTokens: 5 }),
+      response: Promise.resolve({
+        id: 'resp-123',
+        modelId: 'deepseek-chat',
+        timestamp: new Date('2024-01-01T00:00:00.000Z'),
+        headers: { 'content-type': 'application/json', 'x-request-id': 'req-123' },
+      }),
+      request: Promise.resolve({
+        body: '{"model":"deepseek-chat","messages":[]}',
+      }),
+      providerMetadata: Promise.resolve({}),
+      warnings: Promise.resolve([]),
+      sources: Promise.resolve([]),
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,7 +109,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -116,7 +131,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -138,7 +153,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -161,7 +176,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -187,7 +202,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -209,7 +224,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -231,7 +246,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -262,7 +277,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -383,7 +398,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -425,7 +440,7 @@ describe('chatService', () => {
           timestamp: 1234567890,
           modelKey: 'gpt-4',
           finishReason: null,
-          raw: '',
+          raw: null,
         },
       ];
 
@@ -628,6 +643,683 @@ describe('chatService', () => {
       expect(lastResponse.usage).toEqual({
         inputTokens: 10,
         outputTokens: 5,
+      });
+    });
+
+    describe('敏感信息过滤', () => {
+      it('应该从请求体中移除 API Key', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response' },
+        ]);
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          const requestBody = JSON.parse(lastResponse.raw.request.body);
+          expect(requestBody.apiKey).toBeUndefined();
+          expect(requestBody.api_key).toBeUndefined();
+          expect(requestBody.authorization).toBeUndefined();
+          expect(requestBody.Authorization).toBeUndefined();
+        }
+      });
+
+      it('应该从响应头中移除 Authorization 头', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response' },
+        ]);
+
+        // Mock response with sensitive headers
+      const mockResultWithHeaders = {
+        ...mockResult,
+        // eslint-disable-next-line unicorn/no-thenable
+  /* eslint-disable unicorn/no-thenable */
+
+        then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 5 },
+            response: Promise.resolve({
+              id: 'resp-123',
+              modelId: 'deepseek-chat',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+              headers: {
+                'content-type': 'application/json',
+                'authorization': 'Bearer secret-token',
+                'x-api-key': 'secret-key',
+                'x-request-id': 'req-123',
+              },
+            }),
+            request: Promise.resolve({
+              body: '{"model":"deepseek-chat","messages":[]}',
+            }),
+            providerMetadata: Promise.resolve({}),
+            warnings: Promise.resolve([]),
+            sources: Promise.resolve([]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithHeaders as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          expect(lastResponse.raw.response.headers).toBeDefined();
+          expect(lastResponse.raw.response.headers?.['authorization']).toBeUndefined();
+          expect(lastResponse.raw.response.headers?.['Authorization']).toBeUndefined();
+          expect(lastResponse.raw.response.headers?.['x-api-key']).toBeUndefined();
+          expect(lastResponse.raw.response.headers?.['X-API-Key']).toBeUndefined();
+          expect(lastResponse.raw.response.headers?.['x-request-id']).toBe('req-123');
+        }
+      });
+
+      it('应该在请求体超过 10KB 时截断', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response' },
+        ]);
+
+        // Mock request with large body (> 10KB)
+        const largeBody = JSON.stringify({
+          model: 'deepseek-chat',
+          messages: Array(1000).fill({ role: 'user', content: 'x'.repeat(100) }),
+        });
+
+        const mockResultWithLargeBody = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 5 },
+            response: Promise.resolve({
+              id: 'resp-123',
+              modelId: 'deepseek-chat',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+            }),
+            request: Promise.resolve({
+              body: largeBody,
+            }),
+            providerMetadata: Promise.resolve({}),
+            warnings: Promise.resolve([]),
+            sources: Promise.resolve([]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithLargeBody as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          const requestBody = lastResponse.raw.request.body;
+          expect(requestBody.length).toBeLessThanOrEqual(10240 + '... (truncated)'.length);
+          expect(requestBody).toContain('... (truncated)');
+        }
+      });
+    });
+
+    describe('错误处理', () => {
+      it('应该在元数据收集失败时继续 yield 消息内容', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response' },
+        ]);
+
+        // Mock metadata collection to throw errors
+        const mockResultWithError = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 5 },
+            response: Promise.resolve({
+              id: 'resp-123',
+              modelId: 'deepseek-chat',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+            }),
+            request: Promise.resolve({
+              body: '{"model":"deepseek-chat","messages":[]}',
+            }),
+            providerMetadata: Promise.reject(new Error('Network error')),
+            warnings: Promise.reject(new Error('Failed to fetch warnings')),
+            sources: Promise.reject(new Error('Failed to fetch sources')),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithError as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        // 应该成功返回消息，即使元数据收集失败
+        expect(responses.length).toBeGreaterThan(0);
+        const lastResponse = responses[responses.length - 1];
+
+        // 验证消息内容正确
+        expect(lastResponse.content).toBe('Response');
+        expect(lastResponse.finishReason).toBe('stop');
+        expect(lastResponse.usage).toEqual({
+          inputTokens: 10,
+          outputTokens: 5,
+        });
+
+        // 验证 raw 对象包含错误信息
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          expect(lastResponse.raw.errors).toBeDefined();
+          expect(lastResponse.raw.errors?.length).toBeGreaterThan(0);
+          expect(lastResponse.raw.errors?.[0].field).toBe('providerMetadata');
+        }
+      });
+
+      it('应该在部分元数据收集失败时记录错误但不影响其他元数据', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response' },
+        ]);
+
+        // Mock only warnings to fail
+        const mockResultWithPartialError = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 5 },
+            response: Promise.resolve({
+              id: 'resp-123',
+              modelId: 'deepseek-chat',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+            }),
+            request: Promise.resolve({
+              body: '{"model":"deepseek-chat","messages":[]}',
+            }),
+            providerMetadata: Promise.resolve({ deepseek: { version: '2024-01-01' } }),
+            warnings: Promise.reject(new Error('Warnings fetch failed')),
+            sources: Promise.resolve([]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithPartialError as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+
+        // 验证成功的元数据被收集
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          expect(lastResponse.raw.providerMetadata).toBeDefined();
+          expect(lastResponse.raw.providerMetadata?.deepseek).toBeDefined();
+
+          // 验证错误被记录
+          expect(lastResponse.raw.errors).toBeDefined();
+          expect(lastResponse.raw.errors?.length).toBe(1);
+          expect(lastResponse.raw.errors?.[0].field).toBe('warnings');
+        }
+      });
+    });
+
+    describe('原始数据收集', () => {
+      it('应该收集基础元数据（response, request, usage, finishReason）', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response' },
+        ]);
+
+        const mockResultWithMetadata = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: {
+              inputTokens: 100,
+              outputTokens: 50,
+              totalTokens: 150,
+              inputTokenDetails: { cacheReadTokens: 20, cacheWriteTokens: 0, noCacheTokens: 80 },
+              outputTokenDetails: { textTokens: 40, reasoningTokens: 10 },
+            },
+            response: Promise.resolve({
+              id: 'resp-123',
+              modelId: 'deepseek-chat',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+              headers: { 'content-type': 'application/json', 'x-request-id': 'req-123' },
+            }),
+            request: Promise.resolve({
+              body: '{"model":"deepseek-chat","messages":[]}',
+            }),
+            providerMetadata: Promise.resolve({}),
+            warnings: Promise.resolve([]),
+            sources: Promise.resolve([]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithMetadata as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          // 验证 response 元数据
+          expect(lastResponse.raw.response.id).toBe('resp-123');
+          expect(lastResponse.raw.response.modelId).toBe('deepseek-chat');
+          expect(lastResponse.raw.response.timestamp).toBe('2024-01-01T00:00:00.000Z');
+          expect(lastResponse.raw.response.headers).toBeDefined();
+
+          // 验证 request 元数据
+          expect(lastResponse.raw.request.body).toBeDefined();
+          expect(typeof lastResponse.raw.request.body).toBe('string');
+
+          // 验证 usage 元数据
+          expect(lastResponse.raw.usage.inputTokens).toBe(100);
+          expect(lastResponse.raw.usage.outputTokens).toBe(50);
+          expect(lastResponse.raw.usage.totalTokens).toBe(150);
+          expect(lastResponse.raw.usage.inputTokenDetails).toBeDefined();
+          expect(lastResponse.raw.usage.outputTokenDetails).toBeDefined();
+
+          // 验证 finishReason 元数据
+          expect(lastResponse.raw.finishReason.reason).toBe('stop');
+          expect(lastResponse.raw.finishReason.rawReason).toBe('stop');
+        }
+      });
+
+      it('应该正确统计流式事件（textDeltaCount, reasoningDeltaCount, duration）', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Hello' },
+          { type: 'text-delta', text: ' World' },
+          { type: 'reasoning-delta', text: 'Thinking' },
+          { type: 'reasoning-delta', text: ' process' },
+          { type: 'text-delta', text: '!' },
+        ]);
+
+        const mockResultWithMetadata = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 20 },
+            response: Promise.resolve({
+              id: 'resp-123',
+              modelId: 'deepseek-chat',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+            }),
+            request: Promise.resolve({
+              body: '{"model":"deepseek-chat","messages":[]}',
+            }),
+            providerMetadata: Promise.resolve({}),
+            warnings: Promise.resolve([]),
+            sources: Promise.resolve([]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithMetadata as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          // 验证流式事件统计
+          expect(lastResponse.raw.streamStats).toBeDefined();
+          expect(lastResponse.raw.streamStats?.textDeltaCount).toBe(3); // 3个 text-delta 事件
+          expect(lastResponse.raw.streamStats?.reasoningDeltaCount).toBe(2); // 2个 reasoning-delta 事件
+          expect(lastResponse.raw.streamStats?.duration).toBeGreaterThanOrEqual(0); // duration 应该 >= 0
+        }
+      });
+
+      it('应该收集 DeepSeek 供应商特定元数据', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response' },
+        ]);
+
+        const mockResultWithMetadata = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 5 },
+            response: Promise.resolve({
+              id: 'resp-deepseek',
+              modelId: 'deepseek-chat',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+            }),
+            request: Promise.resolve({
+              body: '{}',
+            }),
+            providerMetadata: Promise.resolve({
+              deepseek: { version: '2024-01-01', reasoningTokens: 100 },
+            }),
+            warnings: Promise.resolve([]),
+            sources: Promise.resolve([]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithMetadata as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          expect(lastResponse.raw.providerMetadata).toBeDefined();
+          expect(lastResponse.raw.providerMetadata?.deepseek).toBeDefined();
+          expect(lastResponse.raw.providerMetadata?.deepseek.version).toBe('2024-01-01');
+        }
+      });
+
+      it('应该收集 MoonshotAI 供应商特定元数据', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response' },
+        ]);
+
+        const mockResultWithMetadata = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 5 },
+            response: Promise.resolve({
+              id: 'resp-moonshot',
+              modelId: 'moonshot-v1-8k',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+            }),
+            request: Promise.resolve({
+              body: '{}',
+            }),
+            providerMetadata: Promise.resolve({
+              moonshotai: { apiVersion: 'v2', modelVersion: '1.0' },
+            }),
+            warnings: Promise.resolve([]),
+            sources: Promise.resolve([]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithMetadata as any);
+
+        const params = {
+          model: { ...mockModel, providerKey: ModelProviderKeyEnum.MOONSHOTAI },
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          expect(lastResponse.raw.providerMetadata).toBeDefined();
+          expect(lastResponse.raw.providerMetadata?.moonshotai).toBeDefined();
+          expect(lastResponse.raw.providerMetadata?.moonshotai.apiVersion).toBe('v2');
+        }
+      });
+
+      it('应该收集 Zhipu 供应商特定元数据', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response' },
+        ]);
+
+        const mockResultWithMetadata = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 5 },
+            response: Promise.resolve({
+              id: 'resp-zhipu',
+              modelId: 'glm-web-search',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+            }),
+            request: Promise.resolve({
+              body: '{}',
+            }),
+            providerMetadata: Promise.resolve({
+              zhipu: { apiVersion: 'v3', requestType: 'web_search' },
+            }),
+            warnings: Promise.resolve([]),
+            sources: Promise.resolve([]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithMetadata as any);
+
+        const params = {
+          model: { ...mockModel, providerKey: ModelProviderKeyEnum.ZHIPUAI },
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          expect(lastResponse.raw.providerMetadata).toBeDefined();
+          expect(lastResponse.raw.providerMetadata?.zhipu).toBeDefined();
+          expect(lastResponse.raw.providerMetadata?.zhipu.apiVersion).toBe('v3');
+        }
+      });
+
+      it('应该收集 RAG Sources（web search 模型）', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response with sources' },
+        ]);
+
+        const mockResultWithSources = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 5 },
+            response: Promise.resolve({
+              id: 'resp-123',
+              modelId: 'glm-web-search',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+            }),
+            request: Promise.resolve({
+              body: '{}',
+            }),
+            providerMetadata: Promise.resolve({}),
+            warnings: Promise.resolve([]),
+            sources: Promise.resolve([
+              {
+                sourceType: 'url' as const,
+                id: 'src-1',
+                url: 'https://example.com/article1',
+                title: 'Example Article 1',
+                providerMetadata: { score: 0.95 },
+              },
+              {
+                sourceType: 'url' as const,
+                id: 'src-2',
+                url: 'https://example.com/article2',
+                title: 'Example Article 2',
+                providerMetadata: { score: 0.87 },
+              },
+            ]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithSources as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Search for AI news',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          expect(lastResponse.raw.sources).toBeDefined();
+          expect(lastResponse.raw.sources?.length).toBe(2);
+          expect(lastResponse.raw.sources?.[0].sourceType).toBe('url');
+          expect(lastResponse.raw.sources?.[0].id).toBe('src-1');
+          expect(lastResponse.raw.sources?.[0].url).toBe('https://example.com/article1');
+          expect(lastResponse.raw.sources?.[0].title).toBe('Example Article 1');
+          expect(lastResponse.raw.sources?.[0].providerMetadata).toEqual({ score: 0.95 });
+        }
+      });
+
+      it('应该在无 sources 时设置为 undefined', async () => {
+        const mockResult = createMockStreamTextResult([
+          { type: 'text-delta', text: 'Response without sources' },
+        ]);
+
+        const mockResultWithoutSources = {
+          ...mockResult,
+  /* eslint-disable unicorn/no-thenable */
+
+          then: (cb: any) => cb(Promise.resolve({
+            finishReason: 'stop',
+            usage: { inputTokens: 10, outputTokens: 5 },
+            response: Promise.resolve({
+              id: 'resp-123',
+              modelId: 'deepseek-chat',
+              timestamp: new Date('2024-01-01T00:00:00.000Z'),
+            }),
+            request: Promise.resolve({
+              body: '{}',
+            }),
+            providerMetadata: Promise.resolve({}),
+            warnings: Promise.resolve([]),
+            sources: Promise.resolve([]),
+            rawFinishReason: Promise.resolve('stop'),
+          })),
+        };
+
+        vi.mocked(streamText).mockReturnValueOnce(mockResultWithoutSources as any);
+
+        const params = {
+          model: mockModel,
+          historyList: [],
+          message: 'Hi',
+        };
+
+        const responses: StandardMessage[] = [];
+        for await (const response of streamChatCompletion(params)) {
+          responses.push(response);
+        }
+
+        const lastResponse = responses[responses.length - 1];
+        expect(lastResponse.raw).toBeDefined();
+        expect(lastResponse.raw).not.toBeNull();
+        if (lastResponse.raw) {
+          // 空数组应该被转换为 undefined（因为我们过滤并映射）
+          expect(lastResponse.raw.sources).toBeUndefined();
+        }
       });
     });
   });

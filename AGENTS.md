@@ -451,6 +451,108 @@ for await (const message of response) {
 - 仅对 `role: 'assistant'` 的消息添加推理内容
 - 消息格式：`{ role: 'assistant', content: [{ type: 'text', text: '原始回复' }, { type: 'reasoning', text: '推理内容' }] }`
 
+**原始响应数据收集**：
+- `streamChatCompletion()` 在最终消息中包含完整的供应商 API 原始响应数据
+- `StandardMessage.raw` 字段类型为 `StandardMessageRawResponse | null`
+- 包含完整的请求/响应元数据、Token 使用详情、供应商特定字段、流式统计、RAG 来源信息
+- 自动过滤敏感信息（API Key、Authorization 头等）并限制请求体大小（10KB）
+- 提供类型守卫 `isEnhancedRawResponse()` 和格式化函数 `formatRawResponse()` 用于 UI 层使用
+
+**原始响应数据结构**（`StandardMessageRawResponse`）：
+
+```typescript
+interface StandardMessageRawResponse {
+  /** 响应元数据 */
+  response: {
+    id: string;              // 供应商返回的响应 ID
+    modelId: string;         // 实际使用的模型标识符
+    timestamp: string;       // ISO 8601 格式的响应时间戳
+    headers?: Record<string, string>; // HTTP 响应头（已过滤敏感信息）
+  };
+  
+  /** 请求元数据 */
+  request: {
+    body: string;            // JSON 字符串（已过滤敏感信息和限制大小）
+  };
+  
+  /** Token 使用详细信息 */
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    inputTokenDetails?: {
+      cacheReadTokens?: number;
+      cacheWriteTokens?: number;
+      noCacheTokens?: number;
+    };
+    outputTokenDetails?: {
+      textTokens?: number;
+      reasoningTokens?: number;  // 推理模型专用
+    };
+    raw?: Record<string, unknown>; // 供应商原始数据
+  };
+  
+  /** 完成原因 */
+  finishReason: {
+    reason: 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other';
+    rawReason?: string;      // 供应商原始原因
+  };
+  
+  /** 供应商特定元数据 */
+  providerMetadata?: {
+    [providerName: string]: Record<string, unknown>;
+  };
+  
+  /** 警告信息 */
+  warnings?: Array<{
+    code?: string;
+    message: string;
+  }>;
+  
+  /** 流式事件统计 */
+  streamStats?: {
+    textDeltaCount: number;      // 文本增量事件数
+    reasoningDeltaCount: number; // 推理增量事件数
+    duration: number;            // 总耗时（毫秒）
+  };
+  
+  /** RAG 来源信息（web search 模型） */
+  sources?: Array<{
+    sourceType: 'url';
+    id: string;
+    url: string;
+    title?: string;
+    providerMetadata?: Record<string, unknown>;
+  }>;
+  
+  /** 错误信息（元数据收集失败时） */
+  errors?: Array<{
+    field: string;
+    message: string;
+  }>;
+}
+```
+
+**使用原始响应数据**：
+
+```typescript
+import { isEnhancedRawResponse, formatRawResponse } from '@/types/chat';
+
+// 判断是否为增强格式
+if (isEnhancedRawResponse(message.raw)) {
+  // TypeScript 类型守卫：message.raw 被推断为 StandardMessageRawResponse
+  console.log('Response ID:', message.raw.response.id);
+  console.log('Input tokens:', message.raw.usage.inputTokens);
+  
+  // 格式化为可读 JSON
+  const formatted = formatRawResponse(message.raw);
+  console.log(formatted);
+} else {
+  // 旧消息或无数据
+  console.log('No raw data available');
+}
+```
+
 ### 跨平台兼容性
 
 **背景**: 项目支持两种运行模式 - Tauri 桌面模式和 Web 浏览器模式。某些 Tauri 插件 API 在 Web 环境中不可用，需要提供降级方案。
