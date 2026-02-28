@@ -117,7 +117,7 @@ export async function createTestDB(
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(databaseName, version);
 
-    request.onupgradeneeded = (event) => {
+    request.addEventListener('upgradeneeded', (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
 
       // 创建所有对象存储
@@ -126,10 +126,10 @@ export async function createTestDB(
           db.createObjectStore(storeName);
         }
       });
-    };
+    });
 
-    request.onsuccess = () => resolve(request);
-    request.onerror = () => reject(request.error);
+    request.addEventListener('success', () => resolve(request));
+    request.addEventListener('error', () => reject(request.error));
   });
 }
 
@@ -153,8 +153,8 @@ export async function deleteTestDB(
   return new Promise((resolve, reject) => {
     const request = indexedDB.deleteDatabase(databaseName);
 
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+    request.addEventListener('success', () => resolve());
+    request.addEventListener('error', () => reject(request.error));
   });
 }
 

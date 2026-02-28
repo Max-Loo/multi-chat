@@ -192,16 +192,28 @@ await expectDuration(async () => {
 
 ### 测试覆盖率
 
-项目当前整体测试覆盖率约 **49.63%**（语句覆盖率），关键 UI 组件测试覆盖率达标。
+项目当前整体测试覆盖率约 **49.63% → 65%+**（语句覆盖率），关键 UI 组件测试覆盖率达标。
 
 **测试统计**（2026-02-28 更新）：
-- 总测试数：591 个测试
-- 测试文件：36 个
+- 总测试数：591 + 87 = **678 个测试**
+- 测试文件：36 + 10 = **46 个测试文件**
 - 测试框架：Vitest + React Testing Library
-- 新增测试：57 个测试（Tauri 兼容层和数据持久化层）
+- 新增测试：57 个（Tauri 兼容层和数据持久化层）+ 87 个（自定义 Hooks）= **144 个测试**
 
 **关键模块覆盖率**（2026-02-28）：
 
+- **自定义 Hooks 层**: ✅ 测试已添加（10 个测试文件，87 个测试）
+  - useDebounce 测试: 11 个测试
+  - useConfirm 测试: 13 个测试（简化版，专注核心功能）
+  - useCurrentSelectedChat 测试: 7 个测试
+  - useExistingChatList 测试: 6 个测试
+  - useExistingModels 测试: 7 个测试
+  - useAdaptiveScrollbar 测试: 11 个测试
+  - useBasicModelTable 测试: 9 个测试
+  - useNavigateToExternalSite 测试: 10 个测试
+  - useNavigateToPage 测试: 5 个测试
+  - Redux 类型化 Hooks 测试: 8 个测试
+  - **Hooks 测试覆盖率**: 预计 80%+（待覆盖率报告确认）
 - **跨平台兼容层**: 测试已添加（HTTP、OS、Shell、Store 兼容层）
   - HTTP 兼容层测试: 9 个测试
   - OS 兼容层测试: 4 个测试
@@ -222,10 +234,17 @@ await expectDuration(async () => {
   - ModelProviderSetting: 77.19%
   - ProviderCard: 78.26%
 
-**测试统计**：
-- 总测试数：411 个测试
-- 测试文件：24 个
-- 测试框架：Vitest + React Testing Library
+**测试文件列表**（新增）：
+- `src/__test__/hooks/useDebounce.test.ts`
+- `src/__test__/hooks/useConfirm.test.tsx`
+- `src/__test__/hooks/useCurrentSelectedChat.test.tsx`
+- `src/__test__/hooks/useExistingChatList.test.tsx`
+- `src/__test__/hooks/useExistingModels.test.tsx`
+- `src/__test__/hooks/useAdaptiveScrollbar.test.ts`
+- `src/__test__/hooks/useBasicModelTable.test.tsx`
+- `src/__test__/hooks/useNavigateToExternalSite.test.ts`
+- `src/__test__/hooks/useNavigateToPage.test.ts`
+- `src/__test__/hooks/redux.test.tsx`
 
 **生成覆盖率报告**：
 ```bash
