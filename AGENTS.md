@@ -51,7 +51,7 @@
 
 ### 当前文档状态
 
-- **总行数**：350 行（精简前 1316 行，减少 73%）
+- **总行数**：428 行（精简前 1316 行，减少 67%）
 - **文档参考章节**：提供关键文件路径索引
 
 ## 项目概述
@@ -98,6 +98,12 @@ pnpm tsc
 
 # 运行测试
 pnpm test
+
+# 运行集成测试
+pnpm test:integration
+
+# 运行所有测试
+pnpm test:all
 ```
 
 更多命令：见 `package.json` 的 `scripts` 字段。
@@ -307,6 +313,7 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 - 组件测试可放置在 `src/__test__/components/` 或组件同目录的 `__tests__` 目录
 - 测试数据 fixtures 放置在 `src/__test__/fixtures/` 目录
 - 工具函数测试放置在 `src/__test__/utils/` 目录
+- 集成测试放置在 `src/__test__/integration/` 目录
 
 **测试命名规范**：
 
@@ -324,6 +331,9 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
   - 使用 Vitest 的 `vi.fn()` Mock 函数
   - 优先测试用户交互行为，而非内部实现
 - **集成测试**：仅 Mock 外部服务，保持内部模块真实交互
+  - 使用 MSW Mock API 请求
+  - 使用真实 Redux store 和存储层
+  - 详细规范：`src/__test__/integration/README.md`
 
 **测试运行命令**：
 
@@ -360,6 +370,9 @@ pnpm test:run
 | 测试辅助工具     | `src/__test__/helpers/`              |
 | 测试 Fixtures    | `src/__test__/fixtures/`             |
 | 测试配置         | `vite.config.ts` (test 字段)         |
+| 集成测试配置     | `vitest.integration.config.ts`       |
+| 集成测试辅助工具 | `src/__test__/helpers/integration/`  |
+| 集成测试指南     | `src/__test__/integration/README.md` |
 | 国际化配置       | `src/lib/i18n.ts`                    |
 
 ### 按架构层次查找
@@ -388,10 +401,12 @@ pnpm test:run
 
 测试层
 ├── src/__test__/helpers/        # 测试辅助工具
+├── src/__test__/helpers/integration/  # 集成测试辅助工具
 ├── src/__test__/fixtures/       # 测试数据 fixtures
 ├── src/__test__/router/         # 路由测试
 ├── src/__test__/components/     # 组件测试
-└── src/__test__/utils/          # 工具函数测试
+├── src/__test__/utils/          # 工具函数测试
+└── src/__test__/integration/    # 集成测试
 ```
 
 ### 其他配置文件
@@ -401,6 +416,7 @@ pnpm test:run
 | Tauri 插件列表  | `package.json`                                           |
 | Tauri 配置      | `src-tauri/tauri.conf.json`                              |
 | 测试配置        | `vite.config.ts` (test 字段，行 37-90)                   |
+| 集成测试配置    | `vitest.integration.config.ts`                           |
 | ESLint 配置     | `.eslintrc.json`                                         |
 | TypeScript 配置 | `tsconfig.json`                                          |
 | 覆盖率报告      | `coverage/index.html` (运行 `pnpm test:coverage` 后生成) |

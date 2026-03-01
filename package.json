@@ -18,7 +18,10 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest -c vitest.integration.config.ts",
+    "test:integration:run": "vitest run -c vitest.integration.config.ts",
+    "test:all": "pnpm test:run && pnpm test:integration:run"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.20",
@@ -91,6 +94,7 @@
     "i18next-cli": "^1.31.0",
     "knip": "^5.83.1",
     "lint-staged": "^16.2.7",
+    "msw": "^2.12.10",
     "oxlint": "^1.35.0",
     "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^4.1.14",
