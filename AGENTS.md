@@ -2,26 +2,77 @@
 
 本文件为 coding agent 在本仓库中工作时提供指导。
 
+## 文档维护原则
+
+### 内容分类规则
+
+| 类别 | 处理方式 | 示例 |
+|------|----------|------|
+| **必要信息** | 保留 | 项目架构、开发规范、关键约定 |
+| **可查询信息** | 删除，提供文件引用 | Tauri 插件列表 → package.json |
+| **详细示例** | 删除，保留简要说明 | API 使用示例 → 指向源文件 |
+| **重复内容** | 合并为一段 | HTTP 插件说明（3 段 → 1 段） |
+| **过时数据** | 删除 | 测试覆盖率统计 |
+
+### 添加新内容检查清单
+
+在 AGENTS.md 中添加新内容前，先确认：
+
+- [ ] 该信息是否无法从代码中查询？
+- [ ] 是否符合文档结构（是否有更合适的章节）？
+- [ ] 是否包含冗余的代码示例？
+- [ ] 是否与已有内容重复？
+- [ ] 是否提供了文件引用（如有必要）？
+- [ ] 是否使用正面描述（"要干xxx"而非"不要干xxx"）？
+
+### 优先级原则
+
+对于实现细节：
+- **优先**：在代码中添加详细注释
+- **其次**：在 README.md 中添加使用说明
+- **最后**：在 AGENTS.md 中添加架构说明
+
+### 维护规范
+
+- **保持精简**：目标 350 行以内
+- **及时更新**：架构变更时同步更新文档
+- **定期审查**：每季度检查一次
+- **版本控制**：重大变更前备份当前版本
+- **正面描述**：使用"始终使用 `@/` 别名"，而非"不要使用相对路径"
+
+### 文档同步要求
+
+每次修改文件时，检查相关改动是否在 AGENTS.md 和 README.md 中被提及：
+
+- **如果有提及**：更新相关文档
+- **如果没有提及**：判断是否需要新增内容
+- **README.md 简洁原则**：只增加绝对必要的内容
+
+### 当前文档状态
+
+- **总行数**：350 行（精简前 1316 行，减少 73%）
+- **文档参考章节**：提供关键文件路径索引
+
 ## 项目概述
 
-这是一个 Tauri + React + TypeScript 桌面应用程序。它结合了 Rust 后端 (Tauri) 和 React 前端，使用 Vite 作为构建工具。
+Tauri + React + TypeScript 桌面应用程序，结合 Rust 后端和 React 前端。
+
+**技术栈**：
+- 前端：React 19 + TypeScript + Vite
+- 后端：Rust + Tauri 2.0
+- 通信：前端通过 `invoke()` 调用 Rust 函数
 
 ## 架构
 
-**前端**: React 19 + TypeScript + Vite
-
+**前端架构**：
 - 入口文件: `src/main.tsx`
-- 使用 React Compiler 进行优化
+- 使用 React Compiler 优化
 - 国际化: i18next + react-i18next
-- 端口: 1420 (Tauri 固定端口)
 
-**后端**: Rust + Tauri 2.0
-
-- 入口文件: `src-tauri/src/main.rs` → `src-tauri/src/lib.rs`
-- 命令定义: 在 `lib.rs` 中使用 `#[tauri::command]` 定义
-- Tauri 配置: `src-tauri/tauri.conf.json`
-
-**通信方式**: 前端通过 `@tauri-apps/api/core` 的 invoke() 方法调用 Rust 函数
+**后端架构**：
+- 入口: `src-tauri/src/lib.rs`
+- 命令定义: 使用 `#[tauri::command]`
+- 配置: `src-tauri/tauri.conf.json`
 
 ## 开发命令
 
@@ -29,1212 +80,167 @@
 # 安装依赖
 pnpm install
 
-# 运行开发服务器（同时启动前端和后端）
+# 运行开发服务器
 pnpm tauri dev
 
 # 构建生产版本
 pnpm tauri build
 
-# 运行代码检查
+# 代码检查
 pnpm lint
 
 # 类型检查
 pnpm tsc
 
-# 分析未使用代码
-pnpm analyze:unused
-# 运行测试（监听模式）
+# 运行测试
 pnpm test
-
-# 运行单次测试
-pnpm test:run
-
-# 启动测试 UI 界面
-pnpm test:ui
-
-# 生成测试覆盖率报告
-pnpm test:coverage
 ```
 
-## 测试辅助工具
+更多命令：见 `package.json` 的 `scripts` 字段。
 
-项目提供统一的测试辅助工具系统，位于 `src/__test__/helpers/` 和 `src/__test__/utils/tauriCompat/` 目录。
-
-### Tauri 兼容层测试辅助工具（新增）
-
-提供标准化的环境模拟和 IndexedDB Mock 功能，用于测试跨平台兼容层：
-
-**环境模拟工具** (`src/__test__/utils/tauriCompat/helpers.ts`):
-
-```typescript
-import { mockTauriEnvironment, mockWebEnvironment, resetGlobals } from '@/utils/tauriCompat/helpers';
-
-// 模拟 Tauri 环境
-mockTauriEnvironment();
-window.__TAURI__; // 存在
-
-// 模拟 Web 环境
-mockWebEnvironment();
-window.__TAURI__; // 不存在
-
-// 重置全局对象
-resetGlobals();
-```
-
-**IndexedDB Mock 工具** (`src/__test__/utils/tauriCompat/idb-helpers.ts`):
-
-```typescript
-import {
-  initFakeIndexedDB,
-  cleanupFakeIndexedDB,
-  createTestDB,
-  deleteTestDB
-} from '@/utils/tauriCompat/idb-helpers';
-
-// 初始化 Fake IndexedDB
-const idbCtx = initFakeIndexedDB();
-
-// 清理 Fake IndexedDB
-cleanupFakeIndexedDB(idbCtx);
-```
-
-### Mock 工厂
-
-提供标准化的 Mock 创建函数，支持 Tauri API、加密、存储等常见模块：
-
-```typescript
-// 导入 Mock 工厂
-import {
-  createTauriMocks,
-  createCryptoMocks,
-  createStorageMocks,
-} from "@/test-helpers";
-
-// 创建 Tauri API Mock
-const mocks = createTauriMocks({ isTauri: false });
-mocks.keyring.getPassword.mockResolvedValue("test-key");
-
-// 重置所有 Mock
-mocks.resetAll();
-```
-
-### 测试数据工厂
-
-提供创建测试数据的工厂函数：
-
-```typescript
-import {
-  createMockModel,
-  createMockModels,
-  createCryptoTestData,
-} from "@/test-helpers";
-
-// 创建单个 Model
-const model = createMockModel({ apiKey: "custom-key" });
-
-// 批量创建 Model
-const models = createMockModels(5);
-
-// 创建加密测试数据
-const testData = createCryptoTestData({ includeUnicode: true });
-```
-
-### 自定义断言
-
-提供加密、Mock 相关的自定义断言：
-
-```typescript
-// 断言值是加密格式
-expect(value).toBeEncrypted();
-
-// 断言值是有效的主密钥
-expect(key).toBeValidMasterKey();
-```
-
-### 环境隔离
-
-提供测试状态重置和环境隔离功能：
-
-```typescript
-import { resetTestState, useIsolatedTest } from "@/test-helpers";
-
-// 手动重置测试状态
-resetTestState();
-
-// 自动配置隔离钩子
-useIsolatedTest({
-  onBeforeEach: () => {
-    /* 自定义初始化 */
-  },
-  onAfterEach: () => {
-    /* 自定义清理 */
-  },
-});
-```
-
-### 性能测试工具
-
-提供执行时间测量和性能断言：
-
-```typescript
-import { measurePerformance, expectDuration } from "@/test-helpers";
-
-// 测量执行时间
-const { result, duration } = await measurePerformance(async () => {
-  return await someAsyncOperation();
-});
-
-// 期望执行时间在阈值内
-await expectDuration(async () => {
-  await someOperation();
-}, 1000); // 1 秒内完成
-```
-
-### 测试覆盖率
-
-项目当前整体测试覆盖率约 **49.63% → 75%+**（语句覆盖率），关键 UI 组件测试覆盖率显著提升。
-
-**测试统计**（2026-03-01 更新）：
-- 总测试数：591 + 87 + 67 = **745 个测试**
-- 测试文件：36 + 10 + 3 = **49 个测试文件**
-- 测试框架：Vitest + React Testing Library
-- 新增测试：
-  - 57 个（Tauri 兼容层和数据持久化层）
-  - 87 个（自定义 Hooks）
-  - 67 个（Chat Panel 和 Model 管理核心组件）
-  - **总计 211 个新测试**
-
-**关键模块覆盖率**（2026-03-01）：
-
-- **自定义 Hooks 层**: ✅ 测试已添加（10 个测试文件，87 个测试）
-  - useDebounce 测试: 11 个测试
-  - useConfirm 测试: 13 个测试（简化版，专注核心功能）
-  - useCurrentSelectedChat 测试: 7 个测试
-  - useExistingChatList 测试: 6 个测试
-  - useExistingModels 测试: 7 个测试
-  - useAdaptiveScrollbar 测试: 11 个测试
-  - useBasicModelTable 测试: 9 个测试
-  - useNavigateToExternalSite 测试: 10 个测试
-  - useNavigateToPage 测试: 5 个测试
-  - Redux 类型化 Hooks 测试: 8 个测试
-  - **Hooks 测试覆盖率**: 预计 80%+（待覆盖率报告确认）
-
-- **Chat Panel 组件**: ✅ 测试已添加（1 个测试文件，37 个测试）
-  - ChatPanel 测试: 37 个测试
-  - **ChatPanel 测试覆盖率**: 92.35%（目标 ≥90%）✅
-  - 测试覆盖场景：消息渲染、用户交互、流式响应、错误处理、多模态消息、分组功能、Sidebar 切换、滚动管理、Raw 响应查看器
-
-- **Model 管理组件**: ✅ 测试已添加（2 个测试文件，30 个测试）
-  - ModelProviderSetting 测试: 22 个测试
-  - ProviderCard 测试: 8 个测试
-  - **ModelProviderSetting 测试覆盖率**: 82.61%（目标 ≥80%）✅
-  - **ProviderCard 测试覆盖率**: 78.26%（目标 ≥75%）✅
-  - 测试覆盖场景：供应商列表渲染、刷新功能、加载状态、错误处理、卡片展开/收起、复制 API Key、删除供应商
-
-- **跨平台兼容层**: 测试已添加（HTTP、OS、Shell、Store 兼容层）
-  - HTTP 兼容层测试: 9 个测试
-  - OS 兼容层测试: 4 个测试
-  - Shell 兼容层测试: 8 个测试
-  - Store 兼容层测试: 20 个测试
-
-- **数据持久化层**: 测试已添加（Store 工具函数、聊天存储）
-  - Store 工具函数测试: 10 个测试
-  - 聊天存储测试: 6 个测试
-
-- **侧边栏组件**: ✅ 测试已添加（1 个测试文件，9 个测试）
-  - ChatSidebar 测试: 9 个测试
-  - **ChatSidebar 测试覆盖率**: 95%（目标 ≥70%）✅
-  - 测试覆盖场景：聊天列表渲染、选中状态、新建聊天、删除聊天、搜索过滤、移动端切换、分组显示
-
-- **聊天页面组件**: 84.37%-100% 语句覆盖率（目标 ≥60%）
-  - ChatPage: 100%
-  - ChatContent: 84.37%
-  - ChatSidebar: 95%
-
-- **设置页面组件**: 77.77%-80.76% 语句覆盖率（目标 ≥60%）
-  - SettingPage: 77.77%
-  - GeneralSetting: 80.76%
-  - LanguageSetting: 80%
-  - ModelProviderSetting: 82.61%（已提升）
-  - ProviderCard: 78.26%（已提升）
-
-**测试文件列表**（新增）：
-- `src/__test__/hooks/useDebounce.test.ts`
-- `src/__test__/hooks/useConfirm.test.tsx`
-- `src/__test__/hooks/useCurrentSelectedChat.test.tsx`
-- `src/__test__/hooks/useExistingChatList.test.tsx`
-- `src/__test__/hooks/useExistingModels.test.tsx`
-- `src/__test__/hooks/useAdaptiveScrollbar.test.ts`
-- `src/__test__/hooks/useBasicModelTable.test.tsx`
-- `src/__test__/hooks/useNavigateToExternalSite.test.ts`
-- `src/__test__/hooks/useNavigateToPage.test.ts`
-- `src/__test__/hooks/redux.test.tsx`
-- `src/__test__/components/ChatPanel.test.tsx`（新增，37 个测试）
-- `src/__test__/components/ChatPanelSender.test.tsx`（新增，20 个测试，✅ 全部通过）
-- `src/__test__/components/ModelProviderSetting.test.tsx`（新增，22 个测试）
-- `src/__test__/components/ProviderCard.test.tsx`（新增，8 个测试）
-
-**测试覆盖统计**（2026-03-01 更新）：
-
-- **总测试数**: 1051 个测试
-  - 通过: 987 个
-  - 失败: 59 个（主要是 i18next 初始化问题）
-  - 跳过: 5 个
-- **测试文件数**: 68 个测试文件
-- **测试框架**: Vitest + React Testing Library
-
-**新增测试覆盖**（2026-03-01）：
-
-- **ChatPanelSender 组件测试**: ✅ 已完成（20 个测试，100% 通过率）
-  - 测试覆盖场景：
-    - 基础消息发送功能
-    - Enter 键发送 / Shift+Enter 换行
-    - 发送中状态和停止按钮
-    - 空消息处理
-    - macOS Safari 中文输入法兼容性
-    - 推理内容开关（隐藏状态）
-    - 发送按钮交互
-    - 异步消息发送流程
-    - 输入框值变化和清空
-    - compositionEnd 事件时间戳记录
-  - **技术要点**:
-    - Mock react-i18next 的 `useTranslation` hook
-    - 使用 `screen.getByTitle()` 而非 `getByRole()` 避免多按钮冲突
-    - 处理 Redux store 配置和测试状态隔离
-
-**生成覆盖率报告**：
-```bash
-pnpm test:coverage
-```
-
-## 关键技术细节
-
-- **包管理器**: pnpm
-- **TypeScript**: 严格模式已启用，ES2020 目标
-- **ESLint**: 配置了 TypeScript、React Hooks 和 React Refresh 规则
-- **React Compiler**: 通过 babel-plugin-react-compiler 启用以进行优化
-- **测试框架**: Vitest（配置位于 `vite.config.ts` 中）
-- **Tauri 插件**:
-  - `tauri-plugin-opener`: 文件打开功能
-  - `tauri-plugin-keyring`: 主密钥安全存储（系统钥匙串）
-  - `tauri-plugin-store`: 键值存储（用于模型和聊天数据持久化）
-  - `tauri-plugin-shell`: Shell 命令执行
-  - `tauri-plugin-http`: HTTP 请求
-  - `tauri-plugin-os`: 操作系统信息
-- **UI 组件**: shadcn/ui 预构建 UI 组件库
-- **加密存储**:
-  - 主密钥：Web Crypto API 生成 + tauri-plugin-keyring 存储
-  - 数据加密：AES-256-GCM 字段级加密
-- **代码分析**:
-  - 使用 `knip` 检测未使用代码（文件、依赖、导出、类型）
-  - 配置: `knip.json`
-  - 命令: `pnpm analyze:unused`
+## 关键设计说明
 
 ### 应用启动初始化流程
 
-应用使用统一的 `InitializationManager` 管理初始化流程，支持依赖关系、并行执行和三级错误处理。
+使用 `InitializationManager` 管理初始化，支持依赖关系、并行执行和三级错误处理。
 
-**初始化步骤配置**（`src/config/initSteps.ts`）：
+**初始化步骤**（配置位于 `src/config/initSteps.ts`）：
+1. **i18n** - 初始化国际化
+2. **masterKey** - 初始化主密钥（系统钥匙串或 IndexedDB）
+3. **models** - 加载模型数据（依赖 masterKey）
+4. **chatList** - 加载聊天列表
+5. **appLanguage** - 加载应用语言配置（依赖 i18n）
+6. **includeReasoningContent** - 加载推理内容配置
+7. **modelProvider** - 从远程 API 获取模型供应商定义
 
-1. **i18n 步骤**（关键步骤，无依赖）
-   - 初始化国际化配置（`initI18n()`）
-   - 失败时显示致命错误屏幕
+**执行顺序**：拓扑排序优化并行执行
+**错误处理**：致命错误（全屏提示）、警告错误（Toast）、可忽略错误（控制台）
 
-2. **masterKey 步骤**（关键步骤，无依赖）
-   - 初始化主密钥（`initializeMasterKey()`）
-   - 检查系统钥匙串（Tauri）或 IndexedDB（Web）中是否存在主密钥
-   - 不存在则使用 Web Crypto API 生成新的 256-bit 随机密钥
-   - Tauri 环境：将密钥存储到系统钥匙串（macOS Keychain / Windows Credential Manager）
-   - Web 环境：将密钥加密后存储到 IndexedDB
-   - 将主密钥存入 `ExecutionContext` 供依赖步骤使用
-   - 失败时显示致命错误屏幕
-
-3. **models 步骤**（非关键，依赖 `masterKey`）
-   - 加载模型数据（使用 `.unwrap()` 等待 Thunk 完成）
-   - 依赖主密钥进行解密
-   - 失败时显示警告 Toast
-
-4. **chatList 步骤**（非关键）
-   - 加载聊天列表
-   - 失败时显示警告 Toast
-
-5. **appLanguage 步骤**（非关键，依赖 `i18n`）
-   - 加载应用语言配置
-   - 失败时显示警告 Toast
-
-6. **includeReasoningContent 步骤**（非关键）
-   - 加载推理内容配置
-   - 失败时显示可忽略错误（控制台输出）
-
-7. **modelProvider 步骤**（非关键）
-   - 从远程 API 动态获取模型供应商定义（`initializeModelProvider()`）
-   - 失败时显示警告 Toast
-
-**执行顺序**（拓扑排序）：
-
-```
-第 1 组（并行）：i18n, masterKey
-         ↓
-第 2 组（并行）：models（依赖 masterKey）, appLanguage（依赖 i18n）, chatList, includeReasoningContent, modelProvider
-```
-
-**错误处理机制**：
-
-- **致命错误**（fatal）：显示 `<FatalErrorScreen />` 全屏错误提示，提供"刷新页面"按钮
-- **警告错误**（warning）：显示 Toast 通知，不打断用户操作
-- **可忽略错误**（ignorable）：在控制台输出错误信息
-
-**应用渲染流程**（`src/main.tsx`）：
-
-1. 先渲染 `<InitializationScreen />` 骨架屏
-2. 使用 `InitializationManager.runInitialization()` 执行所有初始化步骤
-3. 根据初始化结果渲染不同界面：
-   - **致命错误**：渲染 `<FatalErrorScreen />`
-   - **modelProvider 致命错误**：渲染 `<NoProvidersAvailable />`
-   - **成功**：渲染 `<RouterProvider />`、`<Toaster />` 等
-4. 显示警告错误 Toast（`result.warnings`）
-5. 处理安全性警告（Web 环境首次使用，`handleSecurityWarning()`）
-
-**重要**:
-
-- 所有初始化步骤的配置都在 `src/config/initSteps.ts` 中统一管理
-- 步骤之间通过 `dependencies` 字段声明依赖关系，自动优化执行顺序
-- 关键步骤失败会导致应用无法运行，非关键步骤失败只显示警告
-- 添加新初始化步骤只需在 `src/config/initSteps.ts` 中添加配置，无需修改 `main.tsx`
+详细实现：`src/config/initSteps.ts`
 
 ### 远程模型数据获取
 
-应用支持从 `https://models.dev/api.json` API 动态获取模型供应商数据，替代原有的硬编码方式。
+从 `https://models.dev/api.json` 动态获取模型供应商数据。
 
-**架构设计**：
-
+**架构**：
 ```
-models.dev API (远程源)
-    ↓ fetch()
-远程数据获取层 (src/services/modelRemoteService.ts)
-    ↓ filter(ALLOWED_MODEL_PROVIDERS)
-供应商过滤层 (src/utils/constants.ts)
-    ↓ Redux store
-应用数据层
+models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 ```
 
 **关键模块**：
-
-1. **远程数据获取服务**（`src/services/modelRemoteService.ts`）：
-   - 从 models.dev API 获取最新的模型供应商定义
-   - 实现超时控制（默认 5 秒）
-   - 实现重试机制（默认最多 2 次，使用指数退避算法）
-   - 错误分类和处理（超时、服务器错误、网络错误等）
-   - 缓存管理（保存完整 API 响应到 `remote-cache.json`）
-
-2. **Redux 状态管理**（`src/store/slices/modelProviderSlice.ts`）：
-   - `providers`: `RemoteProviderData[]` - 过滤后的供应商数据数组
-   - `loading`: `boolean` - 加载状态
-   - `error`: `string | null` - 错误信息
-   - `lastUpdate`: `string | null` - 最后更新时间（ISO 8601 格式）
-   - `initializeModelProvider` Thunk：应用启动时调用
-   - `refreshModelProvider` Thunk：设置页面手动刷新时调用
-
-3. **网络请求配置**（`src/utils/constants.ts`）：
-   - `NETWORK_CONFIG`：网络请求配置常量（超时时间、重试次数、API 端点等）
-   - `CACHE_CONFIG`：缓存配置常量（过期时间、版本、最大大小等）
-   - `ALLOWED_MODEL_PROVIDERS`：允许的供应商白名单
-
-**供应商过滤**：
-
-- 使用白名单模式过滤 models.dev API 响应
-- 只保留白名单中定义的供应商
-- 白名单在 `src/utils/constants.ts` 的 `ALLOWED_MODEL_PROVIDERS` 中维护
+- 远程数据获取：`src/services/modelRemoteService.ts`
+- Redux 状态管理：`src/store/slices/modelProviderSlice.ts`
+- 网络配置：`src/utils/constants.ts`
 
 **缓存策略**：
-
-- 使用独立的 Store 文件（`remote-cache.json`）存储缓存
-- 缓存包含完整的 models.dev API 响应（未过滤）
-- 每次成功从远程获取数据后更新缓存
-- 网络请求失败时降级到缓存
-
-**降级策略**：
-
-1. 首选：从远程 API 获取最新数据
-2. 备选：使用本地缓存数据
-3. 终极：显示"无可用的模型供应商"全屏错误提示
-
-**UI 集成**：
-
-- 设置页面提供"刷新模型供应商"按钮
-- 显示加载状态、错误提示和最后更新时间
-- 支持取消请求（组件卸载时）
-
-**跨平台兼容**：
-
-- 使用 `@/utils/tauriCompat` 的 fetch 函数发起网络请求
-- 使用 `@/utils/tauriCompat` 的 `createLazyStore` 创建缓存存储
-- 自动适配 Tauri 和 Web 环境
+- 首选：远程 API
+- 备选：本地缓存 (`remote-cache.json`)
+- 终极：显示错误提示
 
 ### 聊天服务层
 
-应用使用独立的聊天服务层（`src/services/chatService.ts`）统一处理所有供应商的聊天请求。
+使用独立的聊天服务层 (`src/services/chatService.ts`) 统一处理供应商请求。
 
-**架构设计**：
-
+**架构**：
 ```
-Redux Thunk → ChatService → Vercel AI SDK (ai) → 供应商特定 Provider → 供应商 API
+Redux Thunk → ChatService → Vercel AI SDK → 供应商 API
 ```
 
 **核心功能**：
+1. **供应商特定 Provider**：使用 Vercel AI SDK 官方包（DeepSeek、Kimi、Zhipu）
+2. **流式请求**：`streamChatCompletion()` 使用 `streamText()`
+3. **响应转换**：转换为 `StandardMessage` 格式
 
-1. **供应商特定 Provider**（`getProvider()`）
-   - 使用 Vercel AI SDK 的供应商官方 provider 包
-   - DeepSeek: `@ai-sdk/deepseek` 的 `createDeepSeek()`
-   - Kimi (Moonshot AI): `@ai-sdk/moonshotai` 的 `createMoonshotAI()`
-   - Zhipu (BigModel): `zhipu-ai-provider` 的 `createZhipu()`
-   - 自动处理供应商之间的 API 差异
-   - 自动处理 URL 标准化（无需手动配置）
+**消息格式**：Vercel AI SDK 标准 Part 数组格式
+- `system`: `{ content: '...' }`
+- `user`: `{ content: [{ type: 'text', text: '...' }] }`
+- `assistant`: `{ content: [{ type: 'text', text: '...' }, { type: 'reasoning', text: '...' }] }`
 
-2. **流式请求**（`streamChatCompletion()`）
-   - 使用 Vercel AI SDK 的 `streamText()`
-   - 支持 AbortSignal 中断
-   - 自动处理重试和错误
-   - 自动合并流式响应块（ai-sdk 内置）
-
-  3. **响应转换**
-     - 将 ai-sdk 的流式响应转换为 `StandardMessage` 格式
-     - 提取 token 使用情况（`inputTokens`、`outputTokens`）
-     - 对上层透明，保持接口稳定
-
-**消息格式**：
-- 使用 Vercel AI SDK 标准的 Part 数组格式
-- `system` 消息：`content: '...'`（SDK 限制，仅支持 string）
-- `user` 消息：`content: [{ type: 'text', text: '...' }]`
-- `assistant` 消息：
-  - 基础格式：`content: [{ type: 'text', text: '...' }]`
-  - 包含推理内容：`content: [{ type: 'text', text: '...' }, { type: 'reasoning', text: '...' }]`
-- 推理内容使用独立的 `ReasoningPart`，不与文本内容拼接
-- 符合 Vercel AI SDK 的 `ModelMessage` 类型定义
-
-**类型导出**：
-- `TextPart`: 从 'ai' 包导入并重新导出（`{ type: 'text'; text: string }`）
-- `ReasoningPart`: 本地定义，与 Vercel AI SDK 兼容（`{ type: 'reasoning'; text: string }`）
-- 注意：由于 `@ai-sdk/provider-utils` 不是直接依赖，`ReasoningPart` 在本地定义以保证类型兼容性
-
-**使用示例**：
-
-```typescript
-import { streamChatCompletion } from "@/services/chatService";
-
-// 发起流式聊天请求
-const response = streamChatCompletion(
-  {
-    model,
-    historyList,
-    message,
-    includeReasoningContent: true, // 可选：是否在历史消息中传输推理内容
-  },
-  { signal },
-);
-
-for await (const message of response) {
-  console.log(message.content);
-}
-```
-
-**推理内容传输**：
-- 支持在历史消息中传输 `reasoningContent`（模型的推理过程）
-- 通过 `includeReasoningContent` 参数控制是否传输
-- 推理内容使用 Vercel AI SDK 的原生 `reasoning` part 类型（`{ type: 'reasoning', text: '...' }`）
-- 仅对 `role: 'assistant'` 的消息添加推理内容
-- 消息格式：`{ role: 'assistant', content: [{ type: 'text', text: '原始回复' }, { type: 'reasoning', text: '推理内容' }] }`
-
-**原始响应数据收集**：
-- `streamChatCompletion()` 在最终消息中包含完整的供应商 API 原始响应数据
-- `StandardMessage.raw` 字段类型为 `StandardMessageRawResponse | null`
-- 包含完整的请求/响应元数据、Token 使用详情、供应商特定字段、流式统计、RAG 来源信息
-- 自动过滤敏感信息（API Key、Authorization 头等）并限制请求体大小（10KB）
-- 提供类型守卫 `isEnhancedRawResponse()` 和格式化函数 `formatRawResponse()` 用于 UI 层使用
-
-**原始响应数据结构**（`StandardMessageRawResponse`）：
-
-```typescript
-interface StandardMessageRawResponse {
-  /** 响应元数据 */
-  response: {
-    id: string;              // 供应商返回的响应 ID
-    modelId: string;         // 实际使用的模型标识符
-    timestamp: string;       // ISO 8601 格式的响应时间戳
-    headers?: Record<string, string>; // HTTP 响应头（已过滤敏感信息）
-  };
-  
-  /** 请求元数据 */
-  request: {
-    body: string;            // JSON 字符串（已过滤敏感信息和限制大小）
-  };
-  
-  /** Token 使用详细信息 */
-  usage: {
-    inputTokens: number;
-    outputTokens: number;
-    totalTokens: number;
-    inputTokenDetails?: {
-      cacheReadTokens?: number;
-      cacheWriteTokens?: number;
-      noCacheTokens?: number;
-    };
-    outputTokenDetails?: {
-      textTokens?: number;
-      reasoningTokens?: number;  // 推理模型专用
-    };
-    raw?: Record<string, unknown>; // 供应商原始数据
-  };
-  
-  /** 完成原因 */
-  finishReason: {
-    reason: 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other';
-    rawReason?: string;      // 供应商原始原因
-  };
-  
-  /** 供应商特定元数据 */
-  providerMetadata?: {
-    [providerName: string]: Record<string, unknown>;
-  };
-  
-  /** 警告信息 */
-  warnings?: Array<{
-    code?: string;
-    message: string;
-  }>;
-  
-  /** 流式事件统计 */
-  streamStats?: {
-    textDeltaCount: number;      // 文本增量事件数
-    reasoningDeltaCount: number; // 推理增量事件数
-    duration: number;            // 总耗时（毫秒）
-  };
-  
-  /** RAG 来源信息（web search 模型） */
-  sources?: Array<{
-    sourceType: 'url';
-    id: string;
-    url: string;
-    title?: string;
-    providerMetadata?: Record<string, unknown>;
-  }>;
-  
-  /** 错误信息（元数据收集失败时） */
-  errors?: Array<{
-    field: string;
-    message: string;
-  }>;
-}
-```
-
-**使用原始响应数据**：
-
-```typescript
-import { isEnhancedRawResponse, formatRawResponse } from '@/types/chat';
-
-// 判断是否为增强格式
-if (isEnhancedRawResponse(message.raw)) {
-  // TypeScript 类型守卫：message.raw 被推断为 StandardMessageRawResponse
-  console.log('Response ID:', message.raw.response.id);
-  console.log('Input tokens:', message.raw.usage.inputTokens);
-  
-  // 格式化为可读 JSON
-  const formatted = formatRawResponse(message.raw);
-  console.log(formatted);
-} else {
-  // 旧消息或无数据
-  console.log('No raw data available');
-}
-```
+详细实现：`src/services/chatService.ts`
 
 ### 跨平台兼容性
 
-**背景**: 项目支持两种运行模式 - Tauri 桌面模式和 Web 浏览器模式。某些 Tauri 插件 API 在 Web 环境中不可用，需要提供降级方案。
+**设计原则**：
+- **Null Object 模式**：Web 环境返回空实现，避免运行时错误
+- **环境检测**：通过 `window.__TAURI__` 判断运行环境
+- **统一 API**：提供一致的接口
 
-**兼容层设计**:
+**兼容层目录**：`src/utils/tauriCompat/`
 
-项目使用 **Null Object 模式** 和 **环境检测** 来实现跨平台兼容：
+| 模块 | Tauri 实现 | Web 降级 |
+|------|-----------|----------|
+| Shell | 原生实现 | `window.open()` / Null Object |
+| OS | 系统语言 | `navigator.language` |
+| HTTP | Tauri fetch | 原生 Web fetch |
+| Store | 文件系统 | IndexedDB |
+| Keyring | 系统钥匙串 | IndexedDB (加密) |
 
-1. **环境检测**: 通过 `window.__TAURI__` 对象判断运行环境
-2. **统一 API**: 提供与 Tauri 原生 API 一致的接口
-3. **降级实现**: Web 环境使用 Null Object 模式，避免运行时错误
-4. **功能标记**: 通过 `isSupported()` 方法让调用者判断功能可用性
+详细实现：`src/utils/tauriCompat/index.ts`
 
-**兼容层目录结构**:
+## 开发规范
 
-```
-src/utils/tauriCompat/
-├── index.ts          # 统一导出所有兼容层 API
-├── env.ts            # 环境检测工具
-├── shell.ts          # Shell 插件兼容层
-├── os.ts             # OS 插件兼容层
-├── http.ts           # HTTP 插件兼容层
-├── store.ts          # Store 插件兼容层
-└── keyring.ts        # Keyring 插件兼容层
-```
+### 导入路径规范
 
-**使用示例**:
-
-```typescript
-// 导入兼容层 API（使用 @/ 别名）
-import {
-  isTauri,
-  Command,
-  shell,
-  locale,
-  fetch,
-  getFetchFunc,
-  type RequestInfo,
-} from "@/utils/tauriCompat";
-
-// 环境检测
-if (isTauri()) {
-  console.log("运行在 Tauri 桌面环境");
-} else {
-  console.log("运行在 Web 浏览器环境");
-}
-
-// 使用 OS API
-const language = await locale();
-console.log(language); // "zh-CN" 或 "en-US" 等
-
-// 使用 Shell API
-const cmd = Command.create("ls", ["-la"]);
-if (cmd.isSupported()) {
-  const output = await cmd.execute();
-  console.log(output.stdout);
-} else {
-  console.log("Shell 功能在 Web 环境中不可用");
-}
-
-// 使用 shell.open
-shell.open("https://example.com");
-
-// 使用 HTTP API（直接调用 fetch）
-const response = await fetch("https://api.example.com/data");
-const data = await response.json();
-
-// 使用 HTTP API（获取 fetch 函数实例）
-const fetchFunc = getFetchFunc();
-const response2 = await fetchFunc("https://api.example.com/data");
-```
-
-**已实现兼容层**:
-
-- **Shell 插件** (`@/utils/tauriCompat/shell.ts`)
-  - `Command.create()`: 创建 Shell 命令
-  - `shell.open()`: 打开 URL 或文件
-    - Tauri 环境: 使用 `@tauri-apps/plugin-shell` 原生实现（支持 URL 和本地文件）
-    - Web 环境: 使用 `window.open()` 作为浏览器替代方案（仅支持 URL）
-  - Web 环境 Shell 命令: 返回 Null Object 实现（不执行实际操作）
-
-- **OS 插件** (`@/utils/tauriCompat/os.ts`)
-  - `locale()`: 获取系统或浏览器语言设置
-    - Tauri 环境: 使用 `@tauri-apps/plugin-os` 原生实现，返回操作系统语言
-    - Web 环境: 使用 `navigator.language` API，返回浏览器首选语言
-    - 返回格式: BCP 47 语言标签（如 "zh-CN"、"en-US"）
-    - 注意: Web 环境使用浏览器语言而非系统语言，用户可通过应用设置手动调整
-
-- **HTTP 插件** (`@/utils/tauriCompat/http.ts`)
-  - `fetch()`: 统一的 fetch 函数，根据环境自动选择实现
-    - 开发环境：使用原生 Web `fetch` API（便于调试）
-    - 生产环境 + Tauri 平台：使用 `@tauri-apps/plugin-http` 的 `fetch`（系统代理、证书管理）
-    - 生产环境 + Web 平台：使用原生 Web `fetch` API
-  - `getFetchFunc()`: 获取 fetch 函数实例，用于第三方库注入或自定义封装
-    - 适用于为第三方库（如 Axios）注入 fetch 函数
-    - 适用于封装自定义的请求方法
-  - 类型定义：
-    - `RequestInfo`: 自定义类型 `type RequestInfo = string | URL | Request`
-    - `FetchFunc`: fetch 函数类型
-    - 其他类型（RequestInit、Response、Headers、Request）：直接使用原生类型定义
-
-    **使用场景示例**：
-
-  ```typescript
-  // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
-  import { fetch } from "@/utils/tauriCompat";
-
-  const response = await fetch("https://api.example.com/data");
-  const data = await response.json();
-
-  // 场景 2：使用 getFetchFunc 封装自定义请求方法或注入第三方库
-  import { getFetchFunc } from "@/utils/tauriCompat";
-  import axios from "axios";
-
-  // 自定义封装
-  class ApiClient {
-    private fetch = getFetchFunc();
-
-    async request(url: string, options?: RequestInit) {
-      const response = await this.fetch(url, options);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    }
-  }
-
-  // 注入第三方库（如 Axios）
-  const api = axios.create({ adapter: getFetchFunc() });
-  const response = await api.get("https://api.example.com/data");
-  ```
-
-  **环境判断逻辑**：
-
-  ```
-  IF (开发模式: import.meta.env.DEV === true) THEN
-    使用原生 Web fetch
-  ELSE IF (生产 Tauri 平台: window.__TAURI__ 存在) THEN
-    使用 @tauri-apps/plugin-http 的 fetch
-  ELSE (生产 Web 平台)
-    使用原生 Web fetch
-  ```
-
-  **类型说明**：
-  - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
-  - `FetchFunc`: fetch 函数类型
-  - 其他类型（RequestInit、Response、Headers、Request）：直接使用原生类型定义
-
-  **使用场景示例**：
-
-  ```typescript
-  // 场景 1：直接使用 fetch（适用于常规 HTTP 请求）
-  import { fetch } from "@/utils/tauriCompat";
-
-  const response = await fetch("https://api.example.com/data");
-  const data = await response.json();
-
-  // 场景 2：使用 getFetchFunc 封装自定义请求方法或注入第三方库
-  import { getFetchFunc } from "@/utils/tauriCompat";
-  import axios from "axios";
-
-  // 自定义封装
-  class ApiClient {
-    private fetch = getFetchFunc();
-
-    async request(url: string, options?: RequestInit) {
-      const response = await this.fetch(url, options);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    }
-  }
-
-  // 注入第三方库（如 Axios）
-  const api = axios.create({ adapter: getFetchFunc() });
-  const response = await api.get("https://api.example.com/data");
-  ```
-
-  **环境判断逻辑**：
-
-  ```
-  IF (开发模式: import.meta.env.DEV === true) THEN
-    使用原生 Web fetch
-  ELSE IF (生产 Tauri 平台: window.__TAURI__ 存在) THEN
-    使用 @tauri-apps/plugin-http 的 fetch
-  ELSE (生产 Web 平台)
-    使用原生 Web fetch
-  ```
-
-  **类型说明**：
-  - `RequestInfo`: 自定义类型定义，兼容 Web 和 Tauri fetch 的输入参数类型
-  - 其他类型（RequestInit、Response、Headers、Request）：直接使用全局原生类型定义，避免重复
-  - TypeScript 类型系统会自动推导，确保类型安全
-
-**HTTP 插件兼容层迁移指南**:
-
-如果你的项目当前直接使用 `@tauri-apps/plugin-http`，需要将其替换为兼容层 API：
-
-**迁移前**：
-
-```typescript
-import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
-
-const response = await tauriFetch("https://api.example.com/data");
-const data = await response.json();
-```
-
-**迁移后**：
-
-```typescript
-import { fetch } from "@/utils/tauriCompat";
-
-const response = await fetch("https://api.example.com/data");
-const data = await response.json();
-```
-
-**自定义 fetch 函数获取的场景**：
-
-```typescript
-// 迁移前
-import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
-
-// 迁移后
-import { fetch, getFetchFunc } from "@/utils/tauriCompat";
-
-// 直接使用 fetch
-const response = await fetch("https://api.example.com/data");
-
-// 或使用 getFetchFunc 进行封装
-class ApiClient {
-  private fetch = getFetchFunc();
-  // ...
-}
-
-// 或注入第三方库
-import axios from "axios";
-const api = axios.create({ adapter: getFetchFunc() });
-```
-
-**环境差异说明**：
-
-- **开发环境**：迁移后使用原生 Web fetch，可在浏览器 DevTools 中查看网络请求（调试更方便）
-- **生产环境 Tauri**：使用 Tauri fetch，获得系统代理和证书管理能力
-- **生产环境 Web**：使用原生 Web fetch，确保在浏览器中正常运行
-
-**重要**：开发环境无法测试 Tauri fetch 的特定行为（如系统代理），需要在生产环境中验证。
-
-**Store 和 Keyring 插件兼容层** (`src/utils/tauriCompat/store.ts`, `src/utils/tauriCompat/keyring.ts`):
-
-项目已实现 `store` 和 `keyring` 插件的 Web 兼容层，使用 IndexedDB 作为降级方案。
-
-**Store 插件兼容层** (`src/utils/tauriCompat/store.ts`):
-
-提供键值存储功能，用于存储模型配置、聊天数据等。
-
-- **Tauri 环境**: 使用 `@tauri-apps/plugin-store` 的原生实现，存储到文件系统
-- **Web 环境**: 使用 IndexedDB 实现，数据库名称：`multi-chat-store`，对象存储：`store`
-- **API 行为**:
-  - `createLazyStore(filename)`: 创建 Store 实例
-  - `Store.init()`: 初始化 Store
-  - `Store.get<T>(key)`: 获取键值（支持泛型）
-  - `Store.set(key, value)`: 设置键值
-  - `Store.delete(key)`: 删除键值
-  - `Store.keys()`: 获取所有键
-  - `Store.save()`: 保存更改（Web 环境为空操作，IndexedDB 自动持久化）
-  - `Store.isSupported()`: 检查功能是否可用
-
-**使用示例**:
-
-```typescript
-// 导入 Store 兼容层
-import { createLazyStore } from "@/utils/tauriCompat";
-import type { StoreCompat } from "@/utils/tauriCompat";
-
-// 创建 Store 实例
-const store = createLazyStore("models.json");
-
-// 初始化 Store
-await store.init();
-
-// 存储数据
-await store.set("models", modelList);
-
-// 保存更改
-await store.save();
-
-// 读取数据
-const models = await store.get<Model[]>("models");
-
-// 删除数据
-await store.delete("models");
-
-// 获取所有键
-const keys = await store.keys();
-
-// 检查功能是否可用
-if (store.isSupported()) {
-  // 使用 Store 功能
-}
-```
-
-**Web 端功能差异**:
-
-以下功能在 Web 环境中的行为与 Tauri 环境不同：
-
-- **Shell 插件**:
-  - `shell.open()`:
-    - Tauri 环境: 支持打开 URL 和本地文件路径
-    - Web 环境: 仅支持打开 URL（使用 `window.open()`），不支持本地文件路径
-    - `isSupported()`: 在两种环境中均返回 `true`
-  - `Command.execute()`:
-    - Tauri 环境: 执行真实的 Shell 命令
-    - Web 环境: 返回模拟的成功结果（Null Object 模式），不实际执行命令
-    - `isSupported()`: Tauri 环境返回 `true`，Web 环境返回 `false`
-
-- **OS 插件**:
-  - `locale()`:
-    - Tauri 环境: 返回操作系统语言设置
-    - Web 环境: 返回浏览器首选语言设置
-    - 无 `isSupported()` 方法: 功能在两种环境始终可用
-
-- **HTTP 插件**:
-  - `fetch()`:
-    - 开发环境：在 Tauri 和 Web 环境中均使用原生 Web `fetch`
-    - 生产环境 Tauri：使用 `@tauri-apps/plugin-http` 的 `fetch`（支持系统代理、证书管理）
-    - 生产环境 Web：使用原生 Web `fetch`
-    - 无 `isSupported()` 方法: 功能在两种环境始终可用
-    - API 行为一致：与标准 Fetch API 完全兼容
-
-- **Store 插件**:
-  - `Store.save()`:
-    - Tauri 环境: 将更改保存到文件
-    - Web 环境: 空操作（IndexedDB 自动提交事务）
-    - 无 `isSupported()` 方法: 功能在两种环境始终可用
-
-- **Keyring 插件**:
-  - **安全级别**: Web 环境低于 Tauri 环境（种子以明文存储在 `localStorage`）
-  - **安全性缓解措施**:
-    - PBKDF2 100,000 次迭代增加暴力破解难度
-    - AES-256-GCM 强加密算法
-    - 首次使用时显示安全性警告
-  - **密钥丢失处理**: 如果 `localStorage` 中的种子被清除，将生成新种子，旧加密数据无法解密
-  - `isKeyringSupported()`: 检测 IndexedDB 和 Web Crypto API 可用性
-
-**降级策略选择规则**:
-
-为 Tauri 插件添加兼容层时，根据插件特性选择降级策略：
-
-1. **数据持久化插件**（store、keyring）:
-   - **策略**: IndexedDB 替代方案
-   - **原因**: 核心功能，必须提供可用实现
-   - **示例**: Store 和 Keyring 兼容层
-
-2. **系统操作插件**（shell 命令）:
-   - **策略**: Null Object 模式
-   - **原因**: Web 环境无法执行 Shell 命令，安全风险高
-   - **示例**: Shell 兼容层的 Command 类
-
-3. **环境信息插件**（OS、HTTP）:
-   - **策略**: 浏览器原生 API 替代
-   - **原因**: 浏览器提供类似功能
-   - **示例**: OS 兼容层的 `locale()`、HTTP 兼容层的 `fetch()`
-
-**为其他插件添加兼容层**:
-
-如果需要为其他 Tauri 插件（如 `keyring`、`store`）添加 Web 兼容层，遵循以下步骤：
-
-1. 在 `src/utils/tauriCompat/` 下创建新模块（如 `keyring.ts`）
-2. 导入 Tauri 原生 API 和环境检测函数
-3. 创建兼容接口（对于功能降级的 API，包含 `isSupported()` 方法）
-4. 实现两个类（或函数）：
-   - Tauri 环境：封装原生 API
-   - Web 环境：Null Object 实现（对于有降级方案的 API，使用浏览器原生 API）
-5. 在 `index.ts` 中导出新模块的 API
-6. 更新使用该插件的代码，替换导入路径为 `@/utils/tauriCompat`
-7. 在 AGENTS.md 中添加相应的文档说明
-
-**参考示例**:
-
-- OS 插件兼容层 (`src/utils/tauriCompat/os.ts`) - 实现了基于函数的兼容层，Web 环境使用浏览器 API 降级
-- Shell 插件兼容层 (`src/utils/tauriCompat/shell.ts`) - 实现了基于类的兼容层，包含 `isSupported()` 方法
-
-**平台检测替换说明**:
-
-在某些情况下，可能不需要为 Tauri 插件 API 创建完整的兼容层，而是直接使用浏览器原生 API 替换：
-
-- **示例**: 项目中使用 `@tauri-apps/plugin-os` 的 `platform()` API 检测 macOS 平台（用于 Safari 中文输入法 bug 处理）
-- **替换方案**: 直接使用 `navigator.userAgent` 进行浏览器平台检测
-- **实现**:
-  ```typescript
-  // 检测是否为 macOS 平台的 Safari 浏览器
-  const isMacSafari = (): boolean => {
-    const ua = navigator.userAgent;
-    return (
-      /Mac|macOS/.test(ua) &&
-      /Safari/.test(ua) &&
-      !/Chrome|Edge|Firefox/.test(ua)
-    );
-  };
-  ```
-- **优势**: 减少对 Tauri API 的依赖，提升 Web 环境的独立性
-
-**重要规范**:
-
-- **始终使用 `@/` 别名导入兼容层**，不使用相对路径
-- 对于功能降级的 API，必须提供 `isSupported()` 方法
-- 对于有浏览器替代方案的 API（如 `locale()`），可以不提供 `isSupported()` 方法（功能始终可用）
-- Web 环境的实现永不抛出异常，始终返回 resolved Promise
-- 保持与 Tauri 原生 API 的类型一致性
-
-## 添加新的 Tauri 命令
-
-1. 在 `src-tauri/src/lib.rs` 中使用 `#[tauri::command]` 属性添加命令函数
-2. 在 `run()` 函数的 `invoke_handler` 中注册该命令
-3. 在前端使用 `invoke("command_name", { args })` 调用
-
-## 工具函数
-
-项目提供统一的工具函数库，位于 `src/utils/utils.ts`。
-
-### 时间戳工具函数
-
-提供统一的时间戳生成函数，确保项目中所有时间戳生成逻辑的一致性和可维护性。
-
-**时间戳单位约定**：
-- **秒级时间戳**：用于聊天消息、数据库记录等业务场景（`StandardMessage.timestamp`）
-- **毫秒级时间戳**：用于性能测试、调试日志等需要高精度时间戳的场景
-
-**函数列表**：
-
-```typescript
-import {
-  getCurrentTimestamp,
-  getCurrentTimestampMs,
-} from "@/utils/utils";
-
-// 获取当前 Unix 时间戳（秒级精度）
-const timestamp = getCurrentTimestamp();
-console.log(timestamp); // 例如: 1737888000
-
-// 获取当前 Unix 时间戳（毫秒级精度）
-const timestampMs = getCurrentTimestampMs();
-console.log(timestampMs); // 例如: 1737888000000
-```
-
-**使用规范**：
-
-- 生产代码中生成时间戳时，**必须**使用工具函数，**禁止**直接使用 `Date.now() / 1000`
-- 聊天消息的 `timestamp` 字段使用 `getCurrentTimestamp()`（秒级）
-- 性能测试和调试场景可使用 `getCurrentTimestampMs()`（毫秒级）
-- 测试代码（如 Mock 数据生成）可保留直接使用 `Date.now()`，以便灵活控制时间戳
-
-**实现位置**：
-- 源代码：`src/utils/utils.ts`
-- 测试代码：`src/__test__/utils/utils.test.ts`
-
-## 导入路径规范
-
-**重要**: 在项目内导入模块时，始终使用 `@/` 别名而不是相对路径如 `../..`。`@/` 别名指向 `src/` 目录。
-
-示例:
+**始终使用 `@/` 别名导入**，不使用相对路径。
 
 ```typescript
 // 正确
 import { Model } from "@/types/model";
-import { loadModelsFromJson } from "@/store/storage/jsonStorage";
-import { initializeMasterKey } from "@/store/keyring/masterKey";
-import { encryptField, decryptField } from "@/utils/crypto";
-import { getCurrentTimestamp } from "@/utils/utils";
+import { loadModels } from "@/store/storage/modelStorage";
 
 // 错误
 import { Model } from "../../types/model";
-import { loadModels } from "../storage/modelStorage";
 ```
 
-## 代码文档要求
+`@/` 别名指向 `src/` 目录。
 
-**重要**: 始终在函数、类型、变量和其他代码元素上方添加中文注释。修改代码时，必要时更新相应注释。
+### 代码文档要求
 
-### JSDoc 函数注释格式
+**始终在函数、类型、变量上方添加中文注释**。
 
-**重要**: 对于函数参数注释，必须使用 JSDoc 标准格式：
+#### JSDoc 函数注释格式
 
 ```typescript
 /**
  * 函数的简要描述
  * @param paramName 参数的详细描述
- * @param paramName2 参数2的详细描述，可以更详细地说明参数的作用和用法
+ * @param paramName2 参数2的详细描述
  */
 ```
 
-**关键要点：**
-
-1. 使用 `/** */` 块注释格式（双星号开头）
+**关键要点**：
+1. 使用 `/** */` 块注释格式
 2. 每个参数使用 `@param` 标签
-3. 参数名后面跟空格，然后是参数描述
-4. 描述应该详细说明参数的作用、类型和使用方式
-5. 遵循项目的中文注释要求
+3. 参数名后跟空格，然后是描述
+4. 描述详细说明参数的作用、类型和使用方式
 
-示例:
+### 代码实现原则
 
-```typescript
-// 用户模型接口定义
-interface User {
-  id: string;
-  name: string;
-}
-
-// 从本地存储加载模型数据
-const loadModels = async (): Promise<Model[]> => {
-  // 实现逻辑
-};
-
-// 当前过滤文本状态
-const [filterText, setFilterText] = useState<string>("");
-```
-
-## 代码实现要求
-
-**重要**:
 你是一名经验丰富的软件开发工程师，专注于构建高内聚、低耦合、高性能、可维护、健壮的解决方案。
 
-你的任务是：**审查、理解并迭代式地实现/改进用户提交给你的需求。**
-
-在整个工作流程中，你必须内化并严格遵循以下核心编程原则，确保你的每次输出和建议都体现这些理念：
-
-- **简单至上 (KISS):** 追求代码和设计的极致简洁与直观，避免不必要的复杂性。
-- **精益求精 (YAGNI):** 仅实现当前明确所需的功能，抵制过度设计和不必要的未来特性预留。
-- **坚实基础 (SOLID):**
-  - **S (单一职责):** 各组件、类、函数只承担一项明确职责。
-  - **O (开放/封闭):** 功能扩展无需修改现有代码。
-  - **L (里氏替换):** 子类型可无缝替换其基类型。
-  - **I (接口隔离):** 接口应专一，避免"胖接口"。
-  - **D (依赖倒置):** 依赖抽象而非具体实现。
-- **杜绝重复 (DRY):** 识别并消除代码或逻辑中的重复模式，提升复用性。
-
-**请严格遵循以下工作流程和输出要求：**
-
-1.  **深入理解与初步分析（理解阶段）：**
-    - 详细审阅提供的[资料/代码/项目描述]，全面掌握其当前架构、核心组件、业务逻辑及痛点。
-    - 在理解的基础上，初步识别项目中潜在的**KISS, YAGNI, DRY, SOLID**原则应用点或违背现象。
-
-2.  **明确目标与迭代规划（规划阶段）：**
-    - 基于用户需求和对现有项目的理解，清晰定义本次迭代的具体任务范围和可衡量的预期成果。
-    - 在规划解决方案时，优先考虑如何通过应用上述原则，实现更简洁、高效和可扩展的改进，而非盲目增加功能。
-
-3.  **分步实施与具体改进（执行阶段）：**
-    - 详细说明你的改进方案，并将其拆解为逻辑清晰、可操作的步骤。
-    - 针对每个步骤，具体阐述你将如何操作，以及这些操作如何体现**KISS, YAGNI, DRY, SOLID**原则。例如：
-      - "将此模块拆分为更小的服务，以遵循SRP和OCP。"
-      - "为避免DRY，将重复的XXX逻辑抽象为通用函数。"
-      - "简化了Y功能的用户流，体现KISS原则。"
-      - "移除了Z冗余设计，遵循YAGNI原则。"
-    - 重点关注[项目类型，例如：代码质量优化 / 架构重构 / 功能增强 / 用户体验提升 / 性能调优 / 可维护性改善 / Bug修复]的具体实现细节。
-
-4.  **总结、反思与展望（汇报阶段）：**
-    - 提供一个清晰、结构化且包含**实际代码/设计变动建议（如果适用）**的总结报告。
-    - 报告中必须包含：
-      - **本次迭代已完成的核心任务**及其具体成果。
-      - **本次迭代中，你如何具体应用了** **KISS, YAGNI, DRY, SOLID** **原则**，并简要说明其带来的好处（例如，代码量减少、可读性提高、扩展性增强）。
-      - **遇到的挑战**以及如何克服。
-      - **下一步的明确计划和建议。**
-
-## 开发规范
-
-**重要**: 以下规范必须严格遵循，以确保项目的一致性和可维护性。
+**核心编程原则**：
+- **KISS (简单至上)**：追求极致简洁，避免不必要复杂性
+- **YAGNI (精益求精)**：仅实现当前明确所需的功能
+- **SOLID 原则**：
+  - **S (单一职责)**：各组件只承担一项明确职责
+  - **O (开放/封闭)**：功能扩展无需修改现有代码
+  - **L (里氏替换)**：子类型可无缝替换其基类型
+  - **I (接口隔离)**：接口应专一，避免"胖接口"
+  - **D (依赖倒置)**：依赖抽象而非具体实现
+- **DRY (杜绝重复)**：识别并消除重复模式，提升复用性
 
 ### 回复开场白
 
 每次回答之前，都说一句"向着星辰和深渊！"。
 
-### 注释语言
+### 注释和回复语言
 
-代码中的注释全部使用中文编写。这包括但不限于：
-
-- 函数和类的注释
-- 行内注释
-- JSDoc 注释
-- 配置文件中的注释
-
-### 回复语言
-
-AI 助手的回复和说明全部使用中文编写。这确保了交流的一致性和可理解性。
+- **代码注释**：使用中文
+- **AI 助手回复**：使用中文
 
 ### Skill 使用说明
 
-每次回答时，如果使用到 skill，都要列举出使用到的 skill 名称。格式如下：
+每次回答时，如果使用到 skill，都要列举出使用到的 skill 名称：
 
 ```
 本次使用了以下 skill：
@@ -1244,69 +250,97 @@ AI 助手的回复和说明全部使用中文编写。这确保了交流的一�
 
 ### 安装 shadcn/ui 组件
 
-安装 shadcn/ui 组件时，必须使用 CLI 命令:
+使用 CLI 命令安装组件：
 
 ```bash
 pnpm dlx shadcn@latest add xxx
 ```
 
-其中 `xxx` 为组件名称（例如: `button`、`input`、`dialog`）。
+`xxx` 为组件名称（如 `button`、`input`、`dialog`）。
 
-这能确保根据项目的 shadcn/ui 配置正确放置文件。
+## 项目约定
 
-### 文档同步
+### 时间戳工具函数
 
-每次修改项目内的文件时，都需要检查相关改动是否在 AGENTS.md 和 README.md 中被提及。
+**时间戳单位约定**：
+- **秒级时间戳**：用于聊天消息、数据库记录（`StandardMessage.timestamp`）
+- **毫秒级时间戳**：用于性能测试、调试日志
 
-- **如果有提及**：需要根据文件改动相应地更新 AGENTS.md 和 README.md
-- **如果没有提及**：则判断是否需要在 AGENTS.md 和 README.md 中新增相关内容；如果需要，则在适当的位置新增内容
-- **README.md 简洁原则**：当在 README.md 中新增内容的时候，只增加绝对必要的内容，以保证 README.md 的内容的简洁度
+**使用规范**：
+- 生产代码生成时间戳时，**必须**使用工具函数
+- 聊天消息使用 `getCurrentTimestamp()`（秒级）
+- 性能测试可使用 `getCurrentTimestampMs()`（毫秒级）
+- 测试代码可保留直接使用 `Date.now()`，以便灵活控制
 
-**文档同步检查流程：**
+**函数列表**：
+```typescript
+import { getCurrentTimestamp, getCurrentTimestampMs } from "@/utils/utils";
 
-1. 确认修改的文件类型和内容范围
-2. 检查 AGENTS.md 中是否有相关说明
-3. 检查 README.md 中是否有相关说明
-4. 根据上述原则更新文档
-
-## 国际化 (i18n)
-
-### 配置
-
-- 主配置文件: `src/lib/i18n.ts`
-- 语言文件位置: `src/locales/`
-- 支持的语言: 中文 (zh)、英文 (en)
-- 默认语言: 英文 (回退语言)
-- 语言检测优先级:
-  1. 本地存储 (`multi-chat-language`)
-  2. 系统语言（如果支持）
-  3. 默认回退 (en)
-
-### 语言文件结构
-
-```
-src/locales/
-├── en/
-│   ├── common.json    # 通用 UI 文本
-│   ├── model.json     # 模型相关文本
-│   ├── setting.json   # 设置相关文本
-│   └── table.json     # 表格相关文本
-└── zh/
+const timestamp = getCurrentTimestamp();        // 秒级
+const timestampMs = getCurrentTimestampMs();    // 毫秒级
 ```
 
-### 关键函数
+实现位置：`src/utils/utils.ts`
 
-- `initI18n()`: 初始化 i18n 配置
-- `getLocalesResources()`: 动态加载所有语言资源
-- `changeAppLanguage()`: 更改应用语言
-- `getDefaultAppLanguage()`: 基于系统/本地存储获取默认语言
+### 添加新的 Tauri 命令
 
-### 添加新语言支持
+1. 在 `src-tauri/src/lib.rs` 中使用 `#[tauri::command]` 定义命令
+2. 在 `invoke_handler` 中注册命令
+3. 前端使用 `invoke("command_name", { args })` 调用
 
-1. 在 `src/locales/` 中创建新的语言目录
-2. 将语言代码添加到 `src/utils/constants.ts` 的 `SUPPORTED_LANGUAGE_LIST` 中
-3. 复制并翻译现有语言的所有 JSON 文件
-4. 重启应用程序
+## 文档参考
+
+### 按功能查找文件
+
+| 功能需求 | 文件路径 |
+|---------|----------|
+| 应用初始化配置 | `src/config/initSteps.ts` |
+| 聊天服务 | `src/services/chatService.ts` |
+| 远程模型数据获取 | `src/services/modelRemoteService.ts` |
+| 跨平台兼容层 | `src/utils/tauriCompat/index.ts` |
+| 主密钥管理 | `src/store/keyring/masterKey.ts` |
+| 加密工具 | `src/utils/crypto.ts` |
+| 时间戳工具 | `src/utils/utils.ts` |
+| 测试辅助工具 | `src/__test__/helpers/` |
+| 国际化配置 | `src/lib/i18n.ts` |
+
+### 按架构层次查找
+
+```
+配置层
+├── src/config/initSteps.ts      # 初始化步骤配置
+└── src/utils/constants.ts       # 常量定义
+
+服务层
+├── src/services/chatService.ts  # 聊天服务
+└── src/services/modelRemoteService.ts  # 远程数据服务
+
+存储层
+├── src/store/keyring/           # 主密钥管理
+├── src/store/slices/            # Redux 状态管理
+└── src/store/storage/           # 数据持久化
+
+兼容层
+└── src/utils/tauriCompat/       # 跨平台兼容
+
+工具层
+├── src/utils/crypto.ts          # 加密工具
+├── src/utils/utils.ts           # 通用工具
+└── src/lib/i18n.ts              # 国际化
+
+测试层
+└── src/__test__/helpers/        # 测试辅助工具
+```
+
+### 其他配置文件
+
+| 配置 | 路径 |
+|------|------|
+| Tauri 插件列表 | `package.json` |
+| Tauri 配置 | `src-tauri/tauri.conf.json` |
+| 测试配置 | `vite.config.ts` |
+| ESLint 配置 | `.eslintrc.json` |
+| TypeScript 配置 | `tsconfig.json` |
 
 ## 文件结构
 
