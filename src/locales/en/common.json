@@ -7,8 +7,19 @@
   "confirm": "Confirm",
   "pageNotFound": "Page not found",
   "pageNotFoundDescription": "Sorry, the page you visited does not exist",
-  "warning": "Warning",
   "goBack": "Go back",
   "show": "Show",
-  "hide": "Hide"
+  "hide": "Hide",
+  "noProvidersAvailable": "No Model Providers Available",
+  "noProvidersDescription": "Unable to connect to model data server and no local cache available.",
+  "noProvidersHint": "Please check your network connection and try again.",
+  "reload": "Reload",
+  "initializationFailed": "Initialization Failed",
+  "initializationFailedDescription": "An error occurred during application initialization and cannot continue.",
+  "refreshPage": "Refresh Page",
+  "errorDetails": "Error Details",
+  "initializationWarning": "Initialization Warning",
+  "initializationWarningMessage": "Some features may be limited",
+  "showErrorDetails": "Show Error Details",
+  "hideErrorDetails": "Hide Error Details"
 }

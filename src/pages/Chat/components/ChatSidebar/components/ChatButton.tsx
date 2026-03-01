@@ -68,6 +68,11 @@ const ChatButton = memo<ChatButtonProps>(({
           chat,
         }))
         toast.success(t($ => $.chat.deleteChatSuccess))
+
+        // 如果删除的是当前选中的聊天，清除 URL 查询参数
+        if (chat.id === selectedChatId) {
+          navigateToChat()
+        }
       } catch {
         toast.error(t($ => $.chat.deleteChatFailed))
       }

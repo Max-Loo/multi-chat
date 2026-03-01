@@ -1,3 +1,25 @@
 {
-  "generalSetting": "General Setting"
+  "generalSetting": "General Setting",
+  "modelProvider": {
+    "title": "Model Provider",
+    "description": "Fetch the latest model provider information from remote server",
+    "refreshButton": "Refresh Model Provider",
+    "refreshing": "Refreshing...",
+    "lastUpdateLabel": "Last Update:",
+    "refreshSuccess": "Model provider data updated",
+    "refreshFailed": "Refresh Failed",
+    "refreshFailedPrefix": "Refresh failed:",
+    "status": {
+      "available": "Available",
+      "unavailable": "Unavailable"
+    },
+    "modelCount": "{{count}} models",
+    "clickToViewDetails": "Click to view details",
+    "searchPlaceholder": "Search model name or ID...",
+    "searchResult": "Found {{count}} models",
+    "totalModels": "{{count}} models",
+    "apiEndpoint": "API Endpoint:",
+    "providerId": "Provider ID:",
+    "viewDocs": "View Docs"
+  }
 }

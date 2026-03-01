@@ -1,13 +1,14 @@
 import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { isString } from "es-toolkit";
+import { isNil, isString } from "es-toolkit";
 import React, { useRef, useState } from "react"
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
-import { useAppDispatch } from "@/hooks/redux";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { startSendChatMessage } from "@/store/slices/chatSlices";
 import { useIsChatSending } from "../hooks/useIsChatSending";
 import { useTranslation } from "react-i18next";
+import { selectIncludeReasoningContent, setIncludeReasoningContent } from "@/store/slices/appConfigSlices";
 
 interface SendButtonProps {
   // 是否处于发送状态
@@ -74,6 +75,9 @@ const ChatPanelSender: React.FC = () => {
 
   const dispatch = useAppDispatch()
 
+  // 获取是否传输推理内容的开关状态
+  const includeReasoningContent = useAppSelector(selectIncludeReasoningContent)
+
   const {
     selectedChat,
   } = useTypedSelectedChat()
@@ -92,6 +96,10 @@ const ChatPanelSender: React.FC = () => {
   const sendMessage = (message: string) => {
     if (!isString(message) || !message.trim()) {
       // 空消息不会发送
+      return
+    }
+    if (isNil(selectedChat)) {
+      // 没有选中的聊天，无法发送
       return
     }
     // 清空现有的输入
@@ -156,6 +164,32 @@ const ChatPanelSender: React.FC = () => {
 
   return (
     <div className="relative z-10 w-full px-4 py-3 bg-background border-t border-border">
+      {/* 推理内容开关 */}
+      {/*
+        临时隐藏：推理内容开关 UI
+        隐藏原因：当前模型服务商（DeepSeek、Kimi、Zhipu）不支持 Vercel AI SDK 的 `type: 'reasoning'` 消息格式
+        恢复方式：移除下方 <div> 的 `className="hidden"` 属性即可
+        技术债务：待模型服务商支持推理内容后恢复此 UI
+        隐藏日期：2026-02-27
+      */}
+      <div className="hidden items-center gap-2 mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => dispatch(setIncludeReasoningContent(!includeReasoningContent))}
+          title={t($ => $.chat.includeReasoningContentHint)}
+          className={`
+            h-8 px-3 rounded-md
+            transition-all duration-200
+            ${includeReasoningContent
+              ? "border-blue-500 text-blue-500 bg-blue-50 hover:bg-blue-100 hover:text-blue-500"
+              : "border-gray-300 text-gray-500 bg-white hover:border-gray-400 hover:text-gray-700"
+            }
+          `}
+        >
+          {t($ => $.chat.includeReasoningContent)}
+        </Button>
+      </div>
       <div className="relative flex items-end gap-3">
         <Textarea
           className={`

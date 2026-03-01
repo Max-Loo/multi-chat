@@ -3,10 +3,15 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { loadChatsFromJson } from "../storage";
 import { RootState } from "..";
 import { Model } from "@/types/model";
-import { getProviderFactory } from "@/lib/factory/modelProviderFactory";
+import { streamChatCompletion } from "@/services/chatService";
 import { isNil, isNotNil } from "es-toolkit";
-import { v4 as uuidV4 } from 'uuid'
+import { createIdGenerator } from 'ai'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
+import { getCurrentTimestamp } from "@/utils/utils";
+import { selectIncludeReasoningContent } from "./appConfigSlices";
+
+// 生成用户消息 ID 的工具函数（带前缀）
+const generateUserMessageId = createIdGenerator({ prefix: USER_MESSAGE_ID_PREFIX });
 
 export interface ChatSliceState {
   // 所有聊天的列表
@@ -73,31 +78,32 @@ const sendMessage = createAsyncThunk<
     message,
     model,
     historyList,
-  }, { signal, dispatch }) => {
+  }, { signal, dispatch, getState }) => {
     // 先将当前要发送的内容记录进历史记录
     dispatch(pushChatHistory({
       chat,
       model,
       message: {
-        id: USER_MESSAGE_ID_PREFIX + uuidV4(),
+        id: generateUserMessageId(),
         role: ChatRoleEnum.USER,
         content: message,
-        timestamp: Date.now() / 1000,
+        timestamp: getCurrentTimestamp(),
         modelKey: model.modelKey,
         finishReason: null,
       },
     }))
 
-    // 获取请求方法
-    const {
-      fetchApi,
-    } = getProviderFactory(model.providerKey).getModelProvider()
+    // 获取是否传输推理内容的开关状态
+    const state = getState() as RootState;
+    const includeReasoningContent = selectIncludeReasoningContent(state);
 
-    const fetchResponse = fetchApi.fetch(
+    // 使用 ChatService 发起流式聊天请求
+    const fetchResponse = streamChatCompletion(
       {
         model,
         historyList,
         message,
+        includeReasoningContent,
       },
       { signal },
     )
@@ -382,25 +388,27 @@ const chatSlice = createSlice({
       .addCase(startSendChatMessage.rejected, (state, action) => {
         const { chat } = action.meta.arg
         const currentChat = state.runningChat[chat.id]
-        Object.entries(currentChat).forEach(([modelId, historyItem]) => {
-          // 除非在聊天的过程中被删除，否则都应该存在
-          const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
-          if (chatIdx === -1) return
-
-          const chatModelList = state.chatList[chatIdx].chatModelList
-          if (!Array.isArray(chatModelList)) return
-
-          const modelIdx = chatModelList.findIndex(item => item.modelId === modelId)
-          if (modelIdx === -1) return
-
-          if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
-            chatModelList[modelIdx].chatHistoryList = []
-          }
-          // 将临时的数据回写到总的数组中
-          if (isNotNil(historyItem.history)) {
-            chatModelList[modelIdx].chatHistoryList.push(historyItem.history)
-          }
-        })
+        if (isNotNil(currentChat)) {
+          Object.entries(currentChat).forEach(([modelId, historyItem]) => {
+            // 除非在聊天的过程中被删除，否则都应该存在
+            const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
+            if (chatIdx === -1) return
+  
+            const chatModelList = state.chatList[chatIdx].chatModelList
+            if (!Array.isArray(chatModelList)) return
+  
+            const modelIdx = chatModelList.findIndex(item => item.modelId === modelId)
+            if (modelIdx === -1) return
+  
+            if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
+              chatModelList[modelIdx].chatHistoryList = []
+            }
+            // 将临时的数据回写到总的数组中
+            if (isNotNil(historyItem.history)) {
+              chatModelList[modelIdx].chatHistoryList.push(historyItem.history)
+            }
+          })
+        }
 
       })
   },

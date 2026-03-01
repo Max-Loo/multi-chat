@@ -7,6 +7,7 @@ import { useAppDispatch } from "@/hooks/redux"
 import { editModel } from "@/store/slices/modelSlice"
 import { useTranslation } from "react-i18next"
 import { toast } from 'sonner'
+import { isBoolean } from "es-toolkit"
 
 interface EditModelModalProps {
   // 是否打开弹窗
@@ -30,7 +31,12 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
   const { t } = useTranslation()
 
   const isOpen = useMemo(() => {
-    return Boolean(isModalOpen ?? modelProviderKey)
+    // 如果 isModalOpen 显式设置为 true，则根据 isModalOpen 的状态控制开关弹窗
+    if (isBoolean(isModalOpen)) {
+      return isModalOpen
+    }
+    // 如果 isModalOpen 未定义，则根据 modelProviderKey 决定
+    return Boolean(modelProviderKey)
   }, [isModalOpen, modelProviderKey])
 
   // 完成编辑校验成功后的回调

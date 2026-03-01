@@ -4,50 +4,84 @@ import { Provider } from "react-redux";
 import { store } from "@/store";
 import './main.css'
 import { interceptClickAToJump } from "./lib/global";
-import FullscreenLoading from "./components/FullscreenLoading";
-import { RouterProvider } from 'react-router-dom';
-import router from './router';
-import { initI18n } from '@/lib/i18n';
-import { initializeMasterKey, handleSecurityWarning } from "@/store/keyring/masterKey";
-import { initializeModels } from "@/store/slices/modelSlice";
-import { initializeChatList } from "@/store/slices/chatSlices";
-import { initializeAppLanguage } from "@/store/slices/appConfigSlices";
-import { registerAllProviders } from "./lib/factory/modelProviderFactory/ProviderRegistry";
+import InitializationScreen from "./components/InitializationScreen";
+import { FatalErrorScreen } from "./components/FatalErrorScreen";
+import { NoProvidersAvailable } from '@/components/NoProvidersAvailable';
+import { handleSecurityWarning } from "@/store/keyring/masterKey";
 import { ConfirmProvider } from "@/hooks/useConfirm";
 import { Toaster } from "./components/ui/sonner";
+import { toast } from "sonner";
+import { InitializationManager } from "@/lib/initialization";
+import { initSteps } from "@/config/initSteps";
+import { RouterProvider } from "react-router-dom";
+import router from '@/router';
 
-const rootDom = ReactDOM.createRoot(document.getElementById("root") as HTMLElement)
+const rootDom = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 
-// 先预渲染一个开屏动画
-rootDom.render(<FullscreenLoading />)
+// 先预渲染初始化屏幕
+rootDom.render(<InitializationScreen />);
 
-registerAllProviders()
-interceptClickAToJump()
+interceptClickAToJump();
 
-// 阻断式的初始化逻辑（渲染前需要保证初始化完成）
-const InterruptiveInitPromise = Promise.all([
-  initI18n(),
-  initializeMasterKey(),
-]);
+// 使用新的初始化系统执行初始化
+const manager = new InitializationManager();
+const result = await manager.runInitialization({
+  steps: initSteps,
+  onProgress: (current, total, currentStep) => {
+    console.log(`初始化进度: ${current}/${total} - ${currentStep}`);
+  },
+});
 
-// 可以异步完成的初始化逻辑
-store.dispatch(initializeModels())
-store.dispatch(initializeChatList())
-store.dispatch(initializeAppLanguage())
+// 根据初始化结果渲染不同界面
+if (!result.success) {
+  // 初始化失败，显示致命错误屏幕
+  rootDom.render(
+    <React.StrictMode>
+      <FatalErrorScreen errors={result.fatalErrors} />
+      <Toaster />
+    </React.StrictMode>
+  );
+} else {
+  // 初始化成功，检查 modelProvider 的致命错误
+  const modelProviderError = store.getState().modelProvider.error;
+  const modelProviderLoading = store.getState().modelProvider.loading;
 
-// 渲染真正的页面
-await InterruptiveInitPromise
+  // 检查是否应该显示"无可用的模型供应商"错误提示
+  const shouldShowNoProvidersError =
+    !modelProviderLoading &&
+    modelProviderError === '无法获取模型供应商数据，请检查网络连接';
 
-rootDom.render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <ConfirmProvider>
-        <RouterProvider router={router} />
+  if (shouldShowNoProvidersError) {
+    // 显示无可用模型供应商提示
+    rootDom.render(
+      <React.StrictMode>
+        <NoProvidersAvailable />
         <Toaster />
-      </ConfirmProvider>
-    </Provider>
-  </React.StrictMode>,
-)
+      </React.StrictMode>
+    );
+  } else {
+    // 正常渲染应用
+    rootDom.render(
+      <React.StrictMode>
+        <Provider store={store}>
+          <ConfirmProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </ConfirmProvider>
+        </Provider>
+      </React.StrictMode>
+    );
+  }
 
-// 应用渲染后，处理安全性警告（现在可以使用 Toast）
-await handleSecurityWarning();
+  // 显示警告错误 Toast
+  if (result.warnings.length > 0) {
+    result.warnings.forEach((warning) => {
+      toast.warning(warning.message, {
+        description: import.meta.env.DEV ? String(warning.originalError) : undefined,
+      });
+    });
+  }
+
+  // 应用渲染后，处理安全性警告（现在可以使用 Toast）
+  await handleSecurityWarning();
+}

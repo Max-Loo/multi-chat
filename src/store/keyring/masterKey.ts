@@ -4,6 +4,7 @@
  * Tauri 环境使用系统钥匙串，Web 环境使用 IndexedDB + AES-256-GCM 加密
  */
 import { getPassword, setPassword, isTauri } from "@/utils/tauriCompat";
+import { toast } from 'sonner';
 
 // 服务名和账户名配置
 const SERVICE_NAME = "com.multichat.app";
@@ -151,8 +152,7 @@ export const handleSecurityWarning = async (): Promise<void> => {
     return;
   }
 
-  // 动态导入 toast（避免在模块顶层导入）
-  const { toast } = await import('sonner');
+  // 使用静态导入的 toast（统一项目中的 sonner 导入方式，优化构建产物）
 
   // 显示永久性 Toast 通知
   const message =

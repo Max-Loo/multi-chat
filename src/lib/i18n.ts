@@ -55,31 +55,27 @@ export const initI18n = async () => {
     return initI18nPromise
   }
 
-  try {
-    const [
+  const [
+    resources,
+    defaultLang,
+  ] = await Promise.all([
+    getLocalesResources(),
+    getDefaultAppLanguage(),
+  ])
+  console.log('Loaded resources:', resources, defaultLang);
+
+  initI18nPromise = i18n
+    .use(initReactI18next) // passes i18n down to react-i18next
+    .init({
       resources,
-      defaultLang,
-    ] = await Promise.all([
-      getLocalesResources(),
-      getDefaultAppLanguage(),
-    ])
-    console.log('Loaded resources:', resources, defaultLang);
+      lng: defaultLang,
+      fallbackLng: 'en',
+      interpolation: {
+        escapeValue: false, // react already safes from xss
+      },
+    });
 
-    initI18nPromise = i18n
-      .use(initReactI18next) // passes i18n down to react-i18next
-      .init({
-        resources,
-        lng: defaultLang,
-        fallbackLng: 'en',
-        interpolation: {
-          escapeValue: false, // react already safes from xss
-        },
-      });
-
-    return initI18nPromise
-  } catch (error) {
-    console.error('Failed to initialize i18n:', error);
-  }
+  return initI18nPromise
 }
 
 /**

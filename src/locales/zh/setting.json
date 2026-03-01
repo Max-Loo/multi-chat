@@ -1,3 +1,25 @@
 {
-  "generalSetting": "常规设置"
+  "generalSetting": "常规设置",
+  "modelProvider": {
+    "title": "模型供应商",
+    "description": "从远程服务器获取最新的模型供应商信息",
+    "refreshButton": "刷新模型供应商",
+    "refreshing": "刷新中...",
+    "lastUpdateLabel": "最后更新:",
+    "refreshSuccess": "模型供应商数据已更新",
+    "refreshFailed": "刷新失败",
+    "refreshFailedPrefix": "刷新失败:",
+    "status": {
+      "available": "可用",
+      "unavailable": "不可用"
+    },
+    "modelCount": "共 {{count}} 个模型",
+    "clickToViewDetails": "点击查看详情",
+    "searchPlaceholder": "搜索模型名称或 ID...",
+    "searchResult": "找到 {{count}} 个模型",
+    "totalModels": "共 {{count}} 个模型",
+    "apiEndpoint": "API 端点:",
+    "providerId": "供应商 ID:",
+    "viewDocs": "查看文档"
+  }
 }

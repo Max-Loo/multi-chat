@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
-import FullscreenLoading from '../FullscreenLoading';
+import InitializationScreen from '@/components/InitializationScreen';
 
 interface LayoutProps {
   className?: string;
@@ -14,7 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ className = '' }) => {
       <Sidebar />
       {/* 主内容区域 */}
       <div className="flex-1 h-full">
-        <Suspense fallback={<FullscreenLoading />}>
+        <Suspense fallback={<InitializationScreen />}>
           <Outlet />
         </Suspense>
       </div>

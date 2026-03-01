@@ -1,8 +1,12 @@
+import { lazy, Suspense } from "react"
 import { useCurrentSelectedChat } from "@/hooks/useCurrentSelectedChat"
-import ModelSelect from "./components/ModelSelect"
-import ChatPanel from "./components/ChatPanel"
 import { isNil } from "es-toolkit"
 import { useTranslation } from "react-i18next"
+import ModelSelectSkeleton from "./components/ModelSelectSkeleton"
+import ChatPanelSkeleton from "./components/ChatPanel/components/ChatPanelSkeleton"
+
+const ModelSelect = lazy(() => import("./components/ModelSelect"))
+const ChatPanel = lazy(() => import("./components/ChatPanel"))
 
 /**
  * @description 聊天页面的具体内容
@@ -20,12 +24,18 @@ const ChatContent: React.FC = () => {
 
   // 还没有给这个「聊天」配置过模型的状态
   if (!Array.isArray(selectedChat.chatModelList) || selectedChat.chatModelList.length <= 0) {
-    return <ModelSelect />
+    return (
+      <Suspense fallback={<ModelSelectSkeleton />}>
+        <ModelSelect />
+      </Suspense>
+    )
   }
 
   // 正常的聊天框
   return (
-    <ChatPanel />
+    <Suspense fallback={<ChatPanelSkeleton columnCount={selectedChat.chatModelList.length} />}>
+      <ChatPanel />
+    </Suspense>
   )
 }
 

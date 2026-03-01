@@ -4,21 +4,25 @@ import { useMemo } from "react"
 
 // 消除空值的「当前选中的聊天」
 export const useTypedSelectedChat = (): {
-  selectedChat: Chat;
+  selectedChat: Chat | null;
   chatModelList: ChatModel[]
 } => {
   const selectedChat = useCurrentSelectedChat()
 
-  const typedSelectedChat = useMemo(() => {
-    return selectedChat as Chat
+  // 统一返回 null 而不是 undefined
+  const normalizedSelectedChat = useMemo(() => {
+    return selectedChat ?? null
   }, [selectedChat])
 
   const chatModelList = useMemo(() => {
-    return typedSelectedChat.chatModelList || []
-  }, [typedSelectedChat])
+    if (!normalizedSelectedChat) {
+      return []
+    }
+    return normalizedSelectedChat.chatModelList || []
+  }, [normalizedSelectedChat])
 
   return {
-    selectedChat: typedSelectedChat,
+    selectedChat: normalizedSelectedChat,
     chatModelList,
   }
 }

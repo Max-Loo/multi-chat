@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-02-27T06:26:55.362Z",
+  "summary": {
+    "totalFiles": 7,
+    "totalKeys": 116,
+    "usedKeys": 124,
+    "unusedKeys": 14
+  },
+  "files": {
+    "chat": {
+      "filePath": "/Users/luyuexing/Documents/projects/personal/multi-chat/src/locales/en/chat.json",
+      "totalKeys": 32,
+      "unusedKeys": [
+        "chat.loading"
+      ],
+      "unusedCount": 1
+    },
+    "common": {
+      "filePath": "/Users/luyuexing/Documents/projects/personal/multi-chat/src/locales/en/common.json",
+      "totalKeys": 16,
+      "unusedKeys": [
+        "common.warning"
+      ],
+      "unusedCount": 1
+    },
+    "provider": {
+      "filePath": "/Users/luyuexing/Documents/projects/personal/multi-chat/src/locales/en/provider.json",
+      "totalKeys": 5,
+      "unusedKeys": [
+        "provider.bigModel",
+        "provider.kimi",
+        "provider.deepseek",
+        "provider.apiAddressCustom",
+        "provider.apiAddressKimi"
+      ],
+      "unusedCount": 5
+    },
+    "setting": {
+      "filePath": "/Users/luyuexing/Documents/projects/personal/multi-chat/src/locales/en/setting.json",
+      "totalKeys": 26,
+      "unusedKeys": [
+        "setting.modelProvider.lastUpdate",
+        "setting.modelProvider.errors.network_timeout",
+        "setting.modelProvider.errors.server_error",
+        "setting.modelProvider.errors.parse_error",
+        "setting.modelProvider.errors.no_cache",
+        "setting.modelProvider.errors.network_error",
+        "setting.modelProvider.errors.aborted"
+      ],
+      "unusedCount": 7
+    }
+  }
+}

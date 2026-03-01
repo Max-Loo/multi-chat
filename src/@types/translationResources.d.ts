@@ -1,12 +1,11 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/2/5 22:38:26
+// 生成时间: 2026/2/28 21:13:41
 
 interface Resources {
   translation: {
     chat: {
       unnamed: string;
-      loading: string;
       rename: string;
       delete: string;
       confirmDelete: string;
@@ -35,6 +34,8 @@ interface Resources {
       maxPerRow: string;
       itemsUnit: string;
       typeMessage: string;
+      includeReasoningContent: string;
+      includeReasoningContentHint: string;
     };
     common: {
       submit: string;
@@ -45,10 +46,21 @@ interface Resources {
       confirm: string;
       pageNotFound: string;
       pageNotFoundDescription: string;
-      warning: string;
       goBack: string;
       show: string;
       hide: string;
+      noProvidersAvailable: string;
+      noProvidersDescription: string;
+      noProvidersHint: string;
+      reload: string;
+      initializationFailed: string;
+      initializationFailedDescription: string;
+      refreshPage: string;
+      errorDetails: string;
+      initializationWarning: string;
+      initializationWarningMessage: string;
+      showErrorDetails: string;
+      hideErrorDetails: string;
     };
     model: {
       addModel: string;
@@ -84,14 +96,32 @@ interface Resources {
       setting: string;
     };
     provider: {
-      bigModel: string;
-      kimi: string;
-      deepseek: string;
-      apiAddressCustom: string;
-      apiAddressKimi: string;
+
     };
     setting: {
       generalSetting: string;
+      modelProvider: {
+        title: string;
+        description: string;
+        refreshButton: string;
+        refreshing: string;
+        lastUpdateLabel: string;
+        refreshSuccess: string;
+        refreshFailed: string;
+        refreshFailedPrefix: string;
+        status: {
+          available: string;
+          unavailable: string;
+        };
+        modelCount: string;
+        clickToViewDetails: string;
+        searchPlaceholder: string;
+        searchResult: string;
+        totalModels: string;
+        apiEndpoint: string;
+        providerId: string;
+        viewDocs: string;
+      };
     };
     table: {
       nickname: string;

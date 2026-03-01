@@ -5,23 +5,45 @@
 
 /**
  * 将 hex 字符串转换为 Uint8Array
+ * @internal 此函数内部使用，导出仅用于测试
  * @param hex - hex 编码的字符串
  * @returns Uint8Array
+ * @throws {Error} 如果输入包含非 hex 字符（0-9, a-f, A-F）或长度不是偶数
  */
-const hexToBytes = (hex: string): Uint8Array => {
+export const hexToBytes = (hex: string): Uint8Array => {
+  // 空字符串是有效的，直接返回空数组
+  if (hex.length === 0) {
+    return new Uint8Array(0);
+  }
+
+  // 验证输入是否为有效的 hex 字符串
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new Error(`无效的 hex 字符串：包含非 hex 字符`);
+  }
+
+  // 验证长度是否为偶数
+  if (hex.length % 2 !== 0) {
+    throw new Error(`无效的 hex 字符串：长度必须为偶数，当前为 ${hex.length}`);
+  }
+
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+    const byteValue = parseInt(hex.substring(i, i + 2), 16);
+    if (isNaN(byteValue)) {
+      throw new Error(`无效的 hex 字符串：无法解析 "${hex.substring(i, i + 2)}"`);
+    }
+    bytes[i / 2] = byteValue;
   }
   return bytes;
 };
 
 /**
  * 将 Uint8Array 转换为 Base64 字符串
+ * @internal 此函数内部使用，导出仅用于测试
  * @param bytes - Uint8Array
  * @returns Base64 编码的字符串
  */
-const bytesToBase64 = (bytes: Uint8Array): string => {
+export const bytesToBase64 = (bytes: Uint8Array): string => {
   const binString = Array.from(bytes, (byte) =>
     String.fromCharCode(byte)
   ).join("");
@@ -30,12 +52,18 @@ const bytesToBase64 = (bytes: Uint8Array): string => {
 
 /**
  * 将 Base64 字符串转换为 Uint8Array
+ * @internal 此函数内部使用，导出仅用于测试
  * @param base64 - Base64 编码的字符串
  * @returns Uint8Array
+ * @throws {Error} 如果输入不是有效的 Base64 字符串
  */
-const base64ToBytes = (base64: string): Uint8Array => {
-  const binString = atob(base64);
-  return Uint8Array.from(binString, (char) => char.charCodeAt(0));
+export const base64ToBytes = (base64: string): Uint8Array => {
+  try {
+    const binString = atob(base64);
+    return Uint8Array.from(binString, (char) => char.charCodeAt(0));
+  } catch (error) {
+    throw new Error(`无效的 Base64 字符串：${error instanceof Error ? error.message : '未知错误'}`, { cause: error });
+  }
 };
 
 /**
@@ -50,6 +78,11 @@ export const encryptField = async (
   plaintext: string,
   masterKey: string
 ): Promise<string> => {
+  // 验证密钥格式（在try块外面，避免被包装为通用错误）
+  if (masterKey.length === 0) {
+    throw new Error('密钥不能为空');
+  }
+
   try {
     // 将 hex 密钥转换为 Uint8Array
     const keyData = hexToBytes(masterKey);
@@ -94,7 +127,6 @@ export const encryptField = async (
     // 添加 "enc:" 前缀
     return `enc:${base64}`;
   } catch (error) {
-    console.error("加密失败:", error);
     throw new Error("加密敏感数据失败，请检查主密钥是否有效", { cause: error });
   }
 };
@@ -160,9 +192,14 @@ export const decryptField = async (
     const decoder = new TextDecoder();
     return decoder.decode(plaintextData);
   } catch (error) {
-    console.error("解密失败:", error);
+    // 保留原始验证错误的详细信息
+    if (error instanceof Error && error.message.startsWith("无效的加密数据格式")) {
+      throw error;
+    }
+
+    // 系统错误包装为用户友好消息
     throw new Error(
-      "解密敏感数据失败，可能是主密钥已更改或数据已损坏，需要重新配置 API 密钥",
+      "解密敏感数据失败，可能是主密钥已更改或数据已损坏",
       { cause: error }
     );
   }

@@ -5,7 +5,7 @@ import OpenExternalBrowserButton from "@/components/OpenExternalBrowserButton"
 import { EditableModel, ManualConfigModel, Model } from "@/types/model"
 import { DateFormatEnum, ModelProviderKeyEnum } from "@/utils/enums"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/ui/password-input"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,12 +13,13 @@ import { Switch } from "@/components/ui/switch"
 import { z } from "zod"
 import { useForm } from "@tanstack/react-form"
 import { useEffect, useMemo, useState } from "react"
+import { useSelector } from "react-redux"
 import ModelSelect from "./ModelSelect"
-import { v4 as uuidv4 } from 'uuid'
+import { generateId } from 'ai'
 import dayjs from "dayjs"
-import { getProviderFactory } from "@/lib/factory/modelProviderFactory"
 import { isBoolean } from "es-toolkit"
 import { useTranslation } from "react-i18next"
+import { RootState } from "@/store"
 
 interface ModelConfigFormProps {
   // 当前需要配置的模型供应商的Key
@@ -51,13 +52,17 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   const { t } = useTranslation()
 
   // 当前配置的提供商的相关信息
-  const currentProvider = useMemo(() => {
-    return getProviderFactory(modelProviderKey).getModelProvider()
-  }, [modelProviderKey])
+  const currentProvider = useSelector((state: RootState) =>
+    state.modelProvider.providers.find(p => p.providerKey === modelProviderKey)
+  )
+
+  if (!currentProvider) {
+    return <div className="text-destructive">Provider not found</div>
+  }
 
   const {
-    modelList: defaultModelList,
-    apiAddress: apiAddressInstance,
+    models: defaultModelList,
+    api: apiUrl,
   } = currentProvider
 
   // 表单的初始化值
@@ -65,11 +70,11 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
     return {
       nickname: modelParams.nickname || '',
       apiKey: modelParams.apiKey || '',
-      apiAddress: modelParams.apiAddress || apiAddressInstance.defaultApiAddress,
+      apiAddress: modelParams.apiAddress || apiUrl,
       remark: modelParams.remark || '',
       modelKey: modelParams.modelKey || '',
     }
-  }, [apiAddressInstance, modelParams])
+  }, [apiUrl, modelParams])
 
   // 表单验证 schema
   const formSchema = useMemo(() => z.object({
@@ -107,13 +112,13 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
     // 否则返回一个全新的model
     return {
       ...manualConfig,
-      id: uuidv4(),
+      id: generateId(),
       createdAt: dayjs().format(DateFormatEnum.DAY_AND_TIME),
       updateAt: dayjs().format(DateFormatEnum.DAY_AND_TIME),
-      providerName: currentProvider.name,
-      providerKey: currentProvider.key,
+      providerName: currentProvider.providerName,
+      providerKey: currentProvider.providerKey as ModelProviderKeyEnum,
       // 表单里面选择的是 modelKey,需要自己回填 modelName
-      modelName: defaultModelList.find(item => {
+      modelName: defaultModelList.find((item: { modelKey: string; modelName: string }) => {
         return item.modelKey === manualConfig.modelKey
       })?.modelName || '',
     }
@@ -157,10 +162,10 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   return (<>
     <div className="flex items-center justify-between">
       <div className="flex items-center justify-start h-5 mb-4 text-xl">
-        { currentProvider.name }
-        {/* 点击跳转到官网 */}
+        {currentProvider.providerName}
+        {/* 点击跳转到 models.dev */}
         <OpenExternalBrowserButton
-          siteUrl={currentProvider.officialSite}
+          siteUrl={`https://models.dev`}
           className="text-lg! ml-1"
         />
       </div>
@@ -234,29 +239,19 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
             <FormItem field={field} className="w-full grow xl:w-[calc(50%-16px)]">
               <FormLabel className="text-base">{t($ => $.model.apiAddress)}</FormLabel>
               <FormControl>
-                <Input
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={() => {
-                    field.handleBlur()
-                    // 失焦时的特殊逻辑：如果没有输入，重置为默认地址
-                    if (!field.state.value) {
-                      field.handleChange(apiAddressInstance.defaultApiAddress)
-                    }
-                  }}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormControl>
-              <FormDescription>
-                <span className="flex flex-wrap justify-between w-full gap-4">
-                  <span className="max-w-full text-wrap break-all">
-                    {apiAddressInstance.getOpenaiDisplayAddress(field.state.value)}
-                  </span>
-                  <span className="ml-auto">
-                    {apiAddressInstance.getAddressFormDescription?.() || t($ => $.provider.apiAddressCustom)}
-                  </span>
-                </span>
-              </FormDescription>
+                  <Input
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={() => {
+                      field.handleBlur()
+                      // 失焦时的特殊逻辑：如果没有输入，重置为默认地址
+                      if (!field.state.value) {
+                        field.handleChange(apiUrl)
+                      }
+                    }}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                </FormControl>
               <FormMessage />
             </FormItem>
           )}
