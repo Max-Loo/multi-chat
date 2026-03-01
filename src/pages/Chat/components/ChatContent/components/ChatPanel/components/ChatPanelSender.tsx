@@ -38,6 +38,7 @@ const SendButton: React.FC<SendButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
       title={isSending ? t($ => $.chat.stopSending) : t($ => $.chat.sendMessage)}
+      data-testid="send-button"
     >
       {isSending ? <>
         <div
@@ -203,6 +204,7 @@ const ChatPanelSender: React.FC = () => {
           onChange={(e) => { setText(e.target.value) }}
           onKeyDown={onPressEnterBtn}
           onCompositionEnd={(e) => { setCompositionEndTimestamp(e.timeStamp) }}
+          data-testid="message-input"
         />
         {/* 发送按钮 */}
         <SendButton

@@ -196,6 +196,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  data-testid="model-nickname"
                 />
               </FormControl>
               <FormMessage />
@@ -220,6 +221,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  data-testid="model-api-key"
                 />
               </FormControl>
               <FormMessage />
@@ -250,6 +252,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
                       }
                     }}
                     onChange={(e) => field.handleChange(e.target.value)}
+                    data-testid="model-api-address"
                   />
                 </FormControl>
               <FormMessage />
@@ -299,7 +302,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
         />
 
         <FormItem className="flex items-center justify-end w-full grow">
-          <Button type="submit">{t($ => $.common.submit)}</Button>
+          <Button type="submit" data-testid="submit-button">{t($ => $.common.submit)}</Button>
         </FormItem>
       </form>
     </Form>

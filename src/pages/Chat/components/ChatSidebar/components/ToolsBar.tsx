@@ -104,6 +104,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
           className="rounded-lg ml-1 h-8 w-8 p-0"
           onClick={handleCreateChat}
           title={t($ => $.chat.createChat)}
+          data-testid="create-chat-button"
         >
           <Plus size={16} />
         </Button>

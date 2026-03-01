@@ -73,6 +73,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
         className="w-full mt-3"
         content={content}
         placement="end"
+        data-testid="chat-bubble"
+        data-role="user"
       />
     }
     // AI 助手对话气泡
@@ -85,6 +87,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
         content={content}
         variant="borderless"
         placement="start"
+        data-testid="chat-bubble"
+        data-role="assistant"
         contentRender={(content) => {
           return <>
             {reasoningContent && <Think

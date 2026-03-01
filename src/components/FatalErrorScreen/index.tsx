@@ -37,7 +37,7 @@ export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) =>
   const { t } = useTranslation();
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-background p-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-background p-4" data-testid="error-screen">
       <div className="flex max-w-2xl flex-col gap-6">
         {/* 错误图标和标题 */}
         <div className="flex flex-col items-center text-center gap-4">

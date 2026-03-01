@@ -84,6 +84,7 @@ const ModelTable: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => handleEditModel(row.original)}
+            data-testid="edit-button"
           >
             <Pencil />
           </Button>
@@ -93,6 +94,7 @@ const ModelTable: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setModelToDelete(row.original)}
+                data-testid="delete-button"
               >
                 <Trash2 />
               </Button>
@@ -141,6 +143,7 @@ const ModelTable: React.FC = () => {
       <div className="flex items-center justify-between mt-2 mb-4">
         <Button
           onClick={handleAddModel}
+          data-testid="add-model-button"
         >
           <Plus className="mr-2 h-4 w-4" />
           {t($ => $.model.addModel)}
@@ -162,6 +165,7 @@ const ModelTable: React.FC = () => {
         emptyText={initializationError
           ? t($ => $.model.fixErrorReload)
           : t($ => $.model.noModelData)}
+        rowTestId="model-card"
       />
       <EditModelModal
         modelProviderKey={currentEditingModel?.providerKey}

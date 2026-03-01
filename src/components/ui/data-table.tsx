@@ -54,6 +54,11 @@ interface DataTableProps<TData, TValue> {
    * 表格容器的类名
    */
   className?: string;
+  /**
+   * 行的 data-testid 前缀（会在每行添加 data-testid="{prefix}-{rowKey}"）
+   * @example rowTestId="model-card" 会生成 data-testid="model-card-123"
+   */
+  rowTestId?: string;
 }
 
 /**
@@ -77,6 +82,7 @@ export function DataTable<TData, TValue>({
   loading = false,
   emptyText,
   className,
+  rowTestId,
 }: DataTableProps<TData, TValue>) {
   const { t } = useTranslation();
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -141,6 +147,7 @@ export function DataTable<TData, TValue>({
               <TableRow
                 key={getRowKey(row.original, row.index)}
                 data-state={row.getIsSelected() && 'selected'}
+                data-testid={rowTestId ? `${rowTestId}-${getRowKey(row.original, row.index)}` : undefined}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>

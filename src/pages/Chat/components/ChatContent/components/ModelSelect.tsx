@@ -126,7 +126,7 @@ const ModelSelect: React.FC = () => {
   }
 
   return (<>
-    <div className="flex justify-between w-full h-12 pl-4 pr-4">
+    <div className="flex justify-between w-full h-12 pl-4 pr-4" data-testid="model-select">
       {/* 快速预览选中模型 */}
       <div className="flex flex-wrap items-center justify-start h-full">
         {checkedModelList.length > 0 && <Button

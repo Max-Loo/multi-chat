@@ -82,6 +82,7 @@ const ChatPage: React.FC = () => {
     <div className="flex items-start justify-start w-full h-full overflow-hidden">
       {/* 可隐藏的侧边栏 */}
       <div
+        data-testid="sidebar"
         className={`
           h-full overflow-hidden w-56 border-r border-gray-200 shrink-0
           transition-all duration-300 ease-in-out
@@ -92,6 +93,7 @@ const ChatPage: React.FC = () => {
       </div>
       {/* 主内容 */}
       <div
+        data-testid="main-content"
         className={`
           h-full grow overflow-x-auto transition-all duration-300 ease-in-out
         `}

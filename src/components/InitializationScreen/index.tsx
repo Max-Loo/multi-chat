@@ -6,10 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 const InitializationScreen: React.FC = () => {
   return (
-    <div className="flex items-center justify-center w-full h-dvh">
+    <div className="flex items-center justify-center w-full h-dvh" data-testid="initialization-screen">
       <div className="flex flex-col items-center space-y-4">
         {/* 圆形加载动画 */}
-        <Skeleton className="h-16 w-16 rounded-full animate-pulse" />
+        <Skeleton className="h-16 w-16 rounded-full animate-pulse" data-testid="loading-indicator" />
         {/* 加载文本 */}
         <Skeleton className="h-4 w-32" />
       </div>
