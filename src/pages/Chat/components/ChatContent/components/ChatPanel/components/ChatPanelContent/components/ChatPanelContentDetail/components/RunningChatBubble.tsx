@@ -24,10 +24,13 @@ const RunningChatBubble = memo<RunningChatBubbleProps>(({
 
   // 当前的某个聊天窗口
   const currentChatModel = useMemo(() => {
+    if (isNil(selectedChat)) {
+      return undefined
+    }
     return runningChat[selectedChat.id]?.[chatModel.modelId]
   }, [
     runningChat,
-    selectedChat.id,
+    selectedChat,
     chatModel.modelId,
   ])
 

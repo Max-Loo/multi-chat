@@ -1,6 +1,6 @@
 /**
  * React Router 测试 Mock 工厂
- * 
+ *
  * 提供 React Router hooks 和相关功能的 Mock 创建函数
  */
 
@@ -79,3 +79,109 @@ export const createMockSearchParams = (
 
   return [mockParams, mockSetParams] as const;
 };
+
+/**
+ * 创建嵌套路由参数 Mock
+ * @param params 嵌套路由参数对象
+ * @returns Mock 的嵌套路由参数
+ *
+ * @example
+ * // 创建嵌套路由参数：/chat/:chatId/model/:modelId
+ * const nestedParams = createNestedRouteParams({
+ *   chatId: 'chat-123',
+ *   modelId: 'model-456',
+ * });
+ */
+export const createNestedRouteParams = (params: Record<string, string>): Record<string, string> => {
+  return { ...params };
+};
+
+/**
+ * 创建包含查询参数的 Mock Location
+ * @param pathname 路径名
+ * @param queryParams 查询参数对象
+ * @returns Mock 的 Location 对象
+ *
+ * @example
+ * // 创建包含查询参数的 location：/chat?chatId=123&modelId=456
+ * const location = createMockLocationWithQuery('/chat', {
+ *   chatId: '123',
+ *   modelId: '456',
+ * });
+ */
+export const createMockLocationWithQuery = (
+  pathname: string,
+  queryParams?: Record<string, string>
+) => {
+  const searchParams = new URLSearchParams();
+  if (queryParams) {
+    Object.entries(queryParams).forEach(([key, value]) => {
+      searchParams.set(key, value);
+    });
+  }
+
+  return {
+    pathname,
+    search: searchParams.toString(),
+    hash: '',
+    state: null,
+    key: 'test',
+  };
+};
+
+/**
+ * 创建带有嵌套路由参数的 React Router Mock
+ * @param config Mock 配置选项（支持嵌套路由参数）
+ * @returns React Router Mock 对象
+ *
+ * @example
+ * // 为 /chat/:chatId/model/:modelId 创建 Mock
+ * const mocks = createReactRouterMocksWithNestedParams({
+ *   pathname: '/chat/chat-123/model/model-456',
+ *   params: {
+ *     chatId: 'chat-123',
+ *     modelId: 'model-456',
+ *   },
+ * });
+ */
+export const createReactRouterMocksWithNestedParams = (config?: {
+  /** 当前路径名 */
+  pathname?: string;
+  /** 嵌套路由参数 */
+  params?: Record<string, string>;
+  /** 查询参数 */
+  queryParams?: Record<string, string>;
+  /** hash 值 */
+  hash?: string;
+}): ReactRouterMocks => {
+  const {
+    pathname = '/',
+    params = {},
+    queryParams,
+    hash = '',
+  } = config || {};
+
+  let mockSearchParams = new URLSearchParams();
+  if (queryParams) {
+    Object.entries(queryParams).forEach(([key, value]) => {
+      mockSearchParams.set(key, value);
+    });
+  }
+
+  const mockSetSearchParams = vi.fn();
+
+  return {
+    useNavigate: vi.fn(),
+    useLocation: vi.fn(() => ({
+      pathname,
+      search: mockSearchParams.toString(),
+      hash,
+      state: null,
+      key: 'test',
+    })),
+    useParams: vi.fn(() => params),
+    searchParams: mockSearchParams,
+    setSearchParams: mockSetSearchParams,
+  };
+};
+

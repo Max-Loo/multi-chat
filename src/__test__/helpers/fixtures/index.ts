@@ -6,3 +6,4 @@
 
 export * from './model';
 export * from './crypto';
+export * from './modelProvider';

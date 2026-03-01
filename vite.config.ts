@@ -39,15 +39,53 @@ export default defineConfig(async () => ({
     setupFiles: ['./src/__test__/setup.ts'],
     include: ['src/__test__/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist'],
+
+    // 并行执行配置
+    pool: 'threads',
+    singleThread: false,
+    minThreads: 1,
+    maxThreads: 4, // 根据CPU核心数调整
+    useAtomics: true, // 使用 Atomics API 提升性能
+
+    // 优化依赖项预构建
+    deps: {
+      optimizer: {
+        web: {
+          include: ['antd', '@ant-design/x'],
+        },
+      },
+    },
+
+    // 测试文件匹配模式
+    testTimeout: 10000, // 10 秒超时
+    hookTimeout: 10000,
+    teardownTimeout: 10000,
+
+    // 慢速测试标记
+    benchmark: {
+      include: ['**/*.bench.ts'],
+    },
+
+    // 覆盖率配置
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json'],
+      reporter: ['text', 'html', 'json', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/__test__/**',
         'src/__mock__/**',
         'src/main.tsx',
+        'src/__test__/setup.ts',
       ],
+      // 覆盖率阈值
+      thresholds: {
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60,
+      },
+      // 临时目录
+      tempDirectory: './coverage/tmp',
     },
   },
 

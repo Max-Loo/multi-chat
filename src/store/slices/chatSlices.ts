@@ -388,25 +388,27 @@ const chatSlice = createSlice({
       .addCase(startSendChatMessage.rejected, (state, action) => {
         const { chat } = action.meta.arg
         const currentChat = state.runningChat[chat.id]
-        Object.entries(currentChat).forEach(([modelId, historyItem]) => {
-          // 除非在聊天的过程中被删除，否则都应该存在
-          const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
-          if (chatIdx === -1) return
-
-          const chatModelList = state.chatList[chatIdx].chatModelList
-          if (!Array.isArray(chatModelList)) return
-
-          const modelIdx = chatModelList.findIndex(item => item.modelId === modelId)
-          if (modelIdx === -1) return
-
-          if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
-            chatModelList[modelIdx].chatHistoryList = []
-          }
-          // 将临时的数据回写到总的数组中
-          if (isNotNil(historyItem.history)) {
-            chatModelList[modelIdx].chatHistoryList.push(historyItem.history)
-          }
-        })
+        if (isNotNil(currentChat)) {
+          Object.entries(currentChat).forEach(([modelId, historyItem]) => {
+            // 除非在聊天的过程中被删除，否则都应该存在
+            const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
+            if (chatIdx === -1) return
+  
+            const chatModelList = state.chatList[chatIdx].chatModelList
+            if (!Array.isArray(chatModelList)) return
+  
+            const modelIdx = chatModelList.findIndex(item => item.modelId === modelId)
+            if (modelIdx === -1) return
+  
+            if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
+              chatModelList[modelIdx].chatHistoryList = []
+            }
+            // 将临时的数据回写到总的数组中
+            if (isNotNil(historyItem.history)) {
+              chatModelList[modelIdx].chatHistoryList.push(historyItem.history)
+            }
+          })
+        }
 
       })
   },

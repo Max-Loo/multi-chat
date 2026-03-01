@@ -61,6 +61,16 @@ vi.mock('@/utils/tauriCompat/store', () => ({
 
 // keyring 模块默认不自动 Mock（需真实实现或按需 Mock）
 
+// Mock antd 相关模块（解决目录导入问题）
+vi.mock('antd', () => ({
+  default: {},
+}));
+
+vi.mock('@ant-design/x', () => ({
+  Bubble: vi.fn(() => null),
+  Think: vi.fn(() => null),
+}));
+
 // ========================================
 // 全局 Mock 实例初始化
 // ========================================

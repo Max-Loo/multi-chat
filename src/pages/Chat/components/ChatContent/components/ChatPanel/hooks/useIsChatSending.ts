@@ -17,6 +17,10 @@ export const useIsChatSending = (): {
 
   // 将每个独立窗口的发送状态汇总起来
   const isSending = useMemo(() => {
+    if (isNil(selectedChat)) {
+      return false
+    }
+
     const chat = runningChat[selectedChat.id]
 
     if (isNil(chat)) {

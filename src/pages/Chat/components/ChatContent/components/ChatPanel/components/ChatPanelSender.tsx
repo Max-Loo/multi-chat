@@ -1,7 +1,7 @@
 import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { isString } from "es-toolkit";
+import { isNil, isString } from "es-toolkit";
 import React, { useRef, useState } from "react"
 import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
@@ -96,6 +96,10 @@ const ChatPanelSender: React.FC = () => {
   const sendMessage = (message: string) => {
     if (!isString(message) || !message.trim()) {
       // 空消息不会发送
+      return
+    }
+    if (isNil(selectedChat)) {
+      // 没有选中的聊天，无法发送
       return
     }
     // 清空现有的输入

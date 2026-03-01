@@ -10,7 +10,7 @@ import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import ChatBubble from "./components/ChatBubble"
 import RunningChatBubble from "./components/RunningChatBubble";
 import { useIsChatSending } from "../../../../hooks/useIsChatSending";
-import { isNil } from "es-toolkit"
+import { isNil, isNotNil } from "es-toolkit"
 import { useTranslation } from "react-i18next" 
 
 interface ChatPanelContentDetailProps {
@@ -139,7 +139,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     <RunningChatBubble chatModel={chatModel} />
     {/* 展示可能的错误信息 */}
     {
-      runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage
+      isNotNil(selectedChat) && runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage
       && <Alert
         variant="destructive"
         className="self-start"

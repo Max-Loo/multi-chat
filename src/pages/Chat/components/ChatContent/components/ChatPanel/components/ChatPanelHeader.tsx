@@ -61,7 +61,7 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
         <span
           className="text-base"
         >
-          {selectedChat.name || t($ => $.chat.unnamed)}
+          {selectedChat?.name || t($ => $.chat.unnamed)}
         </span>
       </div>
       {chatModelList.length > 1 && <div className="flex items-center justify-start text-sm">
