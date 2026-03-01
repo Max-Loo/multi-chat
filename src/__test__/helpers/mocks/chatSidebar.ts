@@ -6,7 +6,7 @@
 
 import { vi } from 'vitest';
 import type { Chat } from '@/types/chat';
-import { createMockMessage } from './chatPanel';
+import { createMockPanelMessage } from './chatPanel';
 import { generateId } from 'ai';
 
 /**
@@ -37,12 +37,12 @@ export const createMockChatWithModels = (
   const chatModelList = Array.from({ length: modelCount }, (_, i) => ({
     modelId: `model-${i}`,
     chatHistoryList: [
-      createMockMessage({
+      createMockPanelMessage({
         id: `msg-${i}-1`,
         role: 'user' as any,
         content: `User message ${i + 1}`,
       }),
-      createMockMessage({
+      createMockPanelMessage({
         id: `msg-${i}-2`,
         role: 'assistant' as any,
         content: `Assistant response ${i + 1}`,

@@ -6,7 +6,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import chatReducer from '@/store/slices/chatSlices';
 import chatPageReducer from '@/store/slices/chatPageSlices';
 import ChatContent from '@/pages/Chat/components/ChatContent';
-import { resetTestState } from '../../helpers/isolation';
+import { resetTestState } from '@/__test__/helpers/isolation';
 
 /**
  * Mock useCurrentSelectedChat hook

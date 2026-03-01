@@ -12,11 +12,11 @@ import type { StandardMessage } from '@/types/chat';
 import type { Model as ChatModel } from '@/types/model';
 
 /**
- * 创建 Mock 聊天消息
+ * 创建 Mock 聊天消息（面板专用）
  * @param overrides 覆盖默认消息属性
  * @returns Mock 消息对象
  */
-export const createMockMessage = (overrides?: Partial<StandardMessage>): StandardMessage => {
+export const createMockPanelMessage = (overrides?: Partial<StandardMessage>): StandardMessage => {
   const now = Math.floor(Date.now() / 1000);
   return {
     id: 'test-message-1',

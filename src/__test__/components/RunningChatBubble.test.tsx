@@ -9,7 +9,7 @@ import { render } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import RunningChatBubble from '@/pages/Chat/components/ChatContent/components/ChatPanel/components/ChatPanelContent/components/ChatPanelContentDetail/components/RunningChatBubble';
-import { createMockMessage } from '@/__test__/helpers/mocks/chatPanel';
+import { createMockPanelMessage } from '@/__test__/helpers/mocks/chatPanel';
 import { ChatRoleEnum, type ChatModel } from '@/types/chat';
 
 /**
@@ -144,7 +144,7 @@ describe('RunningChatBubble', () => {
               [mockSelectedChat.id]: {
                 [chatModel.modelId]: {
                   isSending: false,
-                  history: createMockMessage({
+                  history: createMockPanelMessage({
                     role: ChatRoleEnum.ASSISTANT,
                     content: 'Response',
                   }),
@@ -172,7 +172,7 @@ describe('RunningChatBubble', () => {
       const chatModel = createMockChatModelForTest('model-1');
 
       const streamingContent = 'This is a streaming response';
-      const streamingMessage = createMockMessage({
+      const streamingMessage = createMockPanelMessage({
         role: ChatRoleEnum.ASSISTANT,
         content: streamingContent,
       });
@@ -217,7 +217,7 @@ describe('RunningChatBubble', () => {
 
       const reasoningContent = 'This is the reasoning process';
       const finalAnswer = 'Final answer';
-      const reasoningMessage = createMockMessage({
+      const reasoningMessage = createMockPanelMessage({
         role: ChatRoleEnum.ASSISTANT,
         content: finalAnswer,
         reasoningContent,
@@ -263,7 +263,7 @@ describe('RunningChatBubble', () => {
 
       // 初始内容
       const initialContent = 'Initial content';
-      const initialMessage = createMockMessage({
+      const initialMessage = createMockPanelMessage({
         role: ChatRoleEnum.ASSISTANT,
         content: initialContent,
       });
@@ -295,7 +295,7 @@ describe('RunningChatBubble', () => {
 
       // 模拟内容更新
       const updatedContent = 'Updated content with more text';
-      const updatedMessage = createMockMessage({
+      const updatedMessage = createMockPanelMessage({
         role: ChatRoleEnum.ASSISTANT,
         content: updatedContent,
       });
@@ -339,7 +339,7 @@ describe('RunningChatBubble', () => {
               [mockSelectedChat.id]: {
                 [chatModel.modelId]: {
                   isSending: true,
-                  history: createMockMessage({
+                  history: createMockPanelMessage({
                     role: ChatRoleEnum.ASSISTANT,
                     content: '',
                   }),
@@ -394,7 +394,7 @@ describe('RunningChatBubble', () => {
               'other-chat-id': {
                 [chatModel.modelId]: {
                   isSending: true,
-                  history: createMockMessage({
+                  history: createMockPanelMessage({
                     role: ChatRoleEnum.ASSISTANT,
                     content: 'Response from other chat',
                   }),
@@ -427,7 +427,7 @@ describe('RunningChatBubble', () => {
               [mockSelectedChat.id]: {
                 'other-model-id': {
                   isSending: true,
-                  history: createMockMessage({
+                  history: createMockPanelMessage({
                     role: ChatRoleEnum.ASSISTANT,
                     content: 'Response from other model',
                   }),
@@ -454,7 +454,7 @@ describe('RunningChatBubble', () => {
     it('应该正确处理只有 reasoningContent 而没有 content 的情况', () => {
       const chatModel = createMockChatModelForTest('model-1');
 
-      const reasoningOnlyMessage = createMockMessage({
+      const reasoningOnlyMessage = createMockPanelMessage({
         role: ChatRoleEnum.ASSISTANT,
         content: '',
         reasoningContent: 'Only reasoning content',
@@ -492,7 +492,7 @@ describe('RunningChatBubble', () => {
     it('应该正确处理 null 的 finishReason', () => {
       const chatModel = createMockChatModelForTest('model-1');
 
-      const messageWithNullFinishReason = createMockMessage({
+      const messageWithNullFinishReason = createMockPanelMessage({
         role: ChatRoleEnum.ASSISTANT,
         content: 'Response with null finishReason',
         finishReason: null,

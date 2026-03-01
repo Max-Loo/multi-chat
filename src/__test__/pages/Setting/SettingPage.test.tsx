@@ -2,7 +2,7 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import SettingPage from '@/pages/Setting/index';
-import { resetTestState } from '../../helpers/isolation';
+import { resetTestState } from '@/__test__/helpers/isolation';
 
 /**
  * Mock SettingSidebar component

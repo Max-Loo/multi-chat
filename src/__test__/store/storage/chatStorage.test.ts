@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { saveChatsToJson, loadChatsFromJson } from '@/store/storage/chatStorage';
 import type { Chat } from '@/types/chat';
-import { initFakeIndexedDB, cleanupFakeIndexedDB } from '../../utils/tauriCompat/idb-helpers';
+import { initFakeIndexedDB, cleanupFakeIndexedDB } from '@/__test__/utils/tauriCompat/idb-helpers';
 
 /**
  * 聊天存储测试套件
