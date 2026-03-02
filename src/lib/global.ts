@@ -41,7 +41,6 @@ export const getDefaultAppLanguage = async (): Promise<string> => {
 
   if (systemLocale) {
     const systemLang = systemLocale.split('-')[0]
-    console.log(systemLocale, systemLang);
     // 判断当前系统语言是否已经被支持
     if (SUPPORTED_LANGUAGE_LIST.includes(systemLang)) {
       return systemLang

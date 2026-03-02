@@ -117,7 +117,7 @@ describe('ProviderCardDetails', () => {
 
       const { container } = render(<ProviderCardDetails provider={mockProvider} />);
       const searchInput = within(container).getByPlaceholderText(/搜索模型/i);
-      
+
       // 初始状态：显示所有模型
       expect(within(container).getAllByText('DeepSeek Chat').length).toBeGreaterThan(0);
       expect(within(container).getAllByText('DeepSeek Coder').length).toBeGreaterThan(0);

@@ -32,7 +32,7 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
 
 describe('useIsChatSending', () => {
   describe('基础场景', () => {
-    it('单个聊天发送中场景', () => {
+    it('应该返回发送中状态 当单个聊天正在发送', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
       const store = createTestStore({
@@ -56,7 +56,7 @@ describe('useIsChatSending', () => {
       expect(result.current.isSending).toBe(true);
     });
 
-    it('多个聊天部分发送中场景', () => {
+    it('应该返回发送中状态 当多个聊天部分正在发送', () => {
       const chat1 = createMockChat({ id: 'chat-1' });
       const chat2 = createMockChat({ id: 'chat-2' });
       const chat3 = createMockChat({ id: 'chat-3' });
@@ -88,7 +88,7 @@ describe('useIsChatSending', () => {
       expect(result.current.isSending).toBe(true);
     });
 
-    it('当前聊天未发送场景', () => {
+    it('应该返回非发送中状态 当当前聊天未发送', () => {
       const chat1 = createMockChat({ id: 'chat-1' });
       const chat2 = createMockChat({ id: 'chat-2' });
 
@@ -118,7 +118,7 @@ describe('useIsChatSending', () => {
   });
 
   describe('完成和空场景', () => {
-    it('所有模型完成发送场景', () => {
+    it('应该返回非发送中状态 当所有模型完成发送', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
       const store = createTestStore({
@@ -143,7 +143,7 @@ describe('useIsChatSending', () => {
       expect(result.current.isSending).toBe(false);
     });
 
-    it('runningChat 为空场景', () => {
+    it('应该返回非发送中状态 当 runningChat 为空', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
       const store = createTestStore({
@@ -163,7 +163,7 @@ describe('useIsChatSending', () => {
       expect(result.current.isSending).toBe(false);
     });
 
-    it('当前聊天在 runningChat 中不存在', () => {
+    it('应该返回非发送中状态 当当前聊天在 runningChat 中不存在', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
       const store = createTestStore({
@@ -189,7 +189,7 @@ describe('useIsChatSending', () => {
   });
 
   describe('性能优化', () => {
-    it('useMemo 依赖追踪 - selectedChat 变化时重新计算', () => {
+    it('应该重新计算 当 selectedChat 变化时', () => {
       const chat1 = createMockChat({ id: 'chat-1' });
       const chat2 = createMockChat({ id: 'chat-2' });
 
@@ -227,7 +227,7 @@ describe('useIsChatSending', () => {
       expect(newResult.current.isSending).toBe(false);
     });
 
-    it('useMemo 依赖追踪 - runningChat 变化时重新计算', () => {
+    it('应该重新计算 当 runningChat 变化时', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
       const store = createTestStore({

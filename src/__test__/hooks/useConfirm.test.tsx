@@ -26,7 +26,7 @@ describe('useConfirm', () => {
   });
 
   describe('ConfirmProvider 渲染测试', () => {
-    it('应成功渲染 ConfirmProvider', () => {
+    it('应该成功渲染 ConfirmProvider', () => {
       const { container } = render(
         <ConfirmProvider>
           <div>Test Children</div>
@@ -35,7 +35,7 @@ describe('useConfirm', () => {
       expect(container).toBeTruthy();
     });
 
-    it('应渲染子组件', () => {
+    it('应该渲染子组件 当 ConfirmProvider 渲染时', () => {
       render(
         <ConfirmProvider>
           <div data-testid="test-child">Test Children</div>
@@ -46,7 +46,7 @@ describe('useConfirm', () => {
   });
 
   describe('Hook 基本功能测试', () => {
-    it('应返回 modal 对象', () => {
+    it('应该返回 modal 对象 当使用 useConfirm Hook', () => {
       const { result } = renderHook(() => useConfirm(), { wrapper });
 
       expect(result.current).toBeDefined();
@@ -55,7 +55,7 @@ describe('useConfirm', () => {
       expect(result.current.modal.warning).toBeInstanceOf(Function);
     });
 
-    it('应支持调用 confirm 方法', () => {
+    it('应该支持调用 confirm 方法 当调用 modal.confirm', () => {
       const { result } = renderHook(() => useConfirm(), { wrapper });
 
       expect(() => {
@@ -66,7 +66,7 @@ describe('useConfirm', () => {
       }).not.toThrow();
     });
 
-    it('应支持调用 warning 方法', () => {
+    it('应该支持调用 warning 方法 当调用 modal.warning', () => {
       const { result } = renderHook(() => useConfirm(), { wrapper });
 
       expect(() => {
@@ -115,7 +115,7 @@ describe('useConfirm', () => {
   });
 
   describe('Context 外使用测试', () => {
-    it('应在 Context 外使用时抛出错误', () => {
+    it('应该抛出错误 当在 Context 外使用时', () => {
       const originalError = console.error;
       console.error = vi.fn();
 
@@ -128,7 +128,7 @@ describe('useConfirm', () => {
   });
 
   describe('回调函数功能测试', () => {
-    it('应支持 onOk 回调函数', () => {
+    it('应该支持 onOk 回调函数 当传入 onOk 参数', () => {
       const onOk = vi.fn();
       const { result } = renderHook(() => useConfirm(), { wrapper });
 
@@ -145,7 +145,7 @@ describe('useConfirm', () => {
       expect(typeof onOk).toBe('function');
     });
 
-    it('应支持 onCancel 回调函数', () => {
+    it('应该支持 onCancel 回调函数 当传入 onCancel 参数', () => {
       const onCancel = vi.fn();
       const { result } = renderHook(() => useConfirm(), { wrapper });
 

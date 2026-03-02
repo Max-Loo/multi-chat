@@ -108,6 +108,8 @@ pnpm test:all
 
 更多命令：见 `package.json` 的 `scripts` 字段。
 
+**测试相关问题**：详细测试规范请查看 `src/__test__/README.md`
+
 ## 关键设计说明
 
 ### 应用启动初始化流程
@@ -305,49 +307,6 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 
 实现位置：`src/utils/utils.ts`
 
-### 测试编写规范
-
-**测试文件组织**：
-
-- 核心模块测试（router、Layout、关键工具）放置在 `src/__test__/` 目录
-- 组件测试可放置在 `src/__test__/components/` 或组件同目录的 `__tests__` 目录
-- 测试数据 fixtures 放置在 `src/__test__/fixtures/` 目录
-- 工具函数测试放置在 `src/__test__/utils/` 目录
-- 集成测试放置在 `src/__test__/integration/` 目录
-
-**测试命名规范**：
-
-- 测试文件命名：`*.test.ts` 或 `*.test.tsx`
-- 测试用例命名格式："should [expected behavior] when [condition]"（中文："应该 [预期行为] 当 [条件]"）
-- 示例：`should navigate to chat page when chat ID is valid`
-- 示例：`应该渲染用户消息当消息角色为 user`
-
-**Mock 使用规范**：
-
-- **单元测试**：Mock 所有外部依赖（API、文件系统、时间）
-  - 使用 Vitest 的 `vi.fn()` 和 `vi.mock()`
-  - 示例：`const mockFn = vi.fn(); vi.mock('@/utils/api', () => ({ fetchData: mockFn }));`
-- **组件测试**：Mock API 请求，避免 Mock 实现细节
-  - 使用 Vitest 的 `vi.fn()` Mock 函数
-  - 优先测试用户交互行为，而非内部实现
-- **集成测试**：仅 Mock 外部服务，保持内部模块真实交互
-  - 使用 MSW Mock API 请求
-  - 使用真实 Redux store 和存储层
-  - 详细规范：`src/__test__/integration/README.md`
-
-**测试运行命令**：
-
-```bash
-# 运行测试并监听文件变化
-pnpm test
-
-# 运行测试并生成覆盖率报告
-pnpm test:coverage
-
-# 运行所有测试
-pnpm test:run
-```
-
 ### 添加新的 Tauri 命令
 
 1. 在 `src-tauri/src/lib.rs` 中使用 `#[tauri::command]` 定义命令
@@ -367,13 +326,8 @@ pnpm test:run
 | 主密钥管理       | `src/store/keyring/masterKey.ts`     |
 | 加密工具         | `src/utils/crypto.ts`                |
 | 时间戳工具       | `src/utils/utils.ts`                 |
-| 测试辅助工具     | `src/__test__/helpers/`              |
-| 测试 Fixtures    | `src/__test__/fixtures/`             |
-| 测试配置         | `vite.config.ts` (test 字段)         |
-| 集成测试配置     | `vitest.integration.config.ts`       |
-| 集成测试辅助工具 | `src/__test__/helpers/integration/`  |
-| 集成测试指南     | `src/__test__/integration/README.md` |
 | 国际化配置       | `src/lib/i18n.ts`                    |
+| 测试规范         | `src/__test__/README.md`             |
 
 ### 按架构层次查找
 
@@ -400,26 +354,17 @@ pnpm test:run
 └── src/lib/i18n.ts              # 国际化
 
 测试层
-├── src/__test__/helpers/        # 测试辅助工具
-├── src/__test__/helpers/integration/  # 集成测试辅助工具
-├── src/__test__/fixtures/       # 测试数据 fixtures
-├── src/__test__/router/         # 路由测试
-├── src/__test__/components/     # 组件测试
-├── src/__test__/utils/          # 工具函数测试
-└── src/__test__/integration/    # 集成测试
+└── src/__test__/                # 测试目录（详见 README.md）
 ```
 
 ### 其他配置文件
 
-| 配置            | 路径                                                     |
-| --------------- | -------------------------------------------------------- |
-| Tauri 插件列表  | `package.json`                                           |
-| Tauri 配置      | `src-tauri/tauri.conf.json`                              |
-| 测试配置        | `vite.config.ts` (test 字段，行 37-90)                   |
-| 集成测试配置    | `vitest.integration.config.ts`                           |
-| ESLint 配置     | `.eslintrc.json`                                         |
-| TypeScript 配置 | `tsconfig.json`                                          |
-| 覆盖率报告      | `coverage/index.html` (运行 `pnpm test:coverage` 后生成) |
+| 配置            | 路径                              |
+| --------------- | --------------------------------- |
+| Tauri 插件列表  | `package.json`                    |
+| Tauri 配置      | `src-tauri/tauri.conf.json`       |
+| ESLint 配置     | `.eslintrc.json`                  |
+| TypeScript 配置 | `tsconfig.json`                   |
 
 ## 文件结构
 

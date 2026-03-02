@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Sidebar from '@/components/Sidebar';
 
 /**
- * Mock react-router-dom hooks
+ * Mock react-router-dom for routing
  */
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -15,14 +15,14 @@ vi.mock('react-router-dom', async () => {
 });
 
 /**
- * Mock useCurrentSelectedChat hook
+ * Mock useCurrentSelectedChat hook (internal hook)
  */
 vi.mock('@/hooks/useCurrentSelectedChat', () => ({
   useCurrentSelectedChat: () => mockSelectedChat,
 }));
 
 /**
- * Mock useNavigateToChat hook
+ * Mock useNavigateToChat hook (internal hook)
  */
 vi.mock('@/hooks/useNavigateToPage', () => ({
   useNavigateToChat: () => ({
@@ -31,7 +31,7 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 }));
 
 /**
- * Mock react-i18next
+ * Mock react-i18next for internationalization
  */
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

@@ -3,7 +3,8 @@
  * 使用 Web Crypto API 生成密钥，使用 Keyring 兼容层存储密钥
  * Tauri 环境使用系统钥匙串，Web 环境使用 IndexedDB + AES-256-GCM 加密
  */
-import { getPassword, setPassword, isTauri } from "@/utils/tauriCompat";
+import { getPassword, setPassword } from "@/utils/tauriCompat";
+import { isTauri } from "@/utils/tauriCompat/env";
 import { toast } from 'sonner';
 
 // 服务名和账户名配置

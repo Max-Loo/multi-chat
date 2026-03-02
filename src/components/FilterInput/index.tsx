@@ -28,6 +28,7 @@ const FilterInput: React.FC<FilterInputProps> = ({
     <div className={`relative flex items-center ${className}`}>
       <Search className="absolute left-3 h-4 w-4 text-gray-400" />
       <Input
+        data-testid="filter-input"
         placeholder={finalPlaceholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}

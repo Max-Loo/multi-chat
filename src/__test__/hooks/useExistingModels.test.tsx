@@ -40,8 +40,8 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
 
 describe('useExistingModels', () => {
 
-  describe('获取模型列表测试', () => {
-    it('应返回完整的模型数组（无删除标记）', () => {
+  describe('模型列表返回行为', () => {
+    it('应该返回所有未删除的模型 当存储中有多个模型', () => {
       const model1 = createMockModel('model-1', false);
       const model2 = createMockModel('model-2', false);
       const model3 = createMockModel('model-3', false);
@@ -58,11 +58,11 @@ describe('useExistingModels', () => {
       const wrapper = createWrapper(store);
       const { result } = renderHook(() => useExistingModels(), { wrapper });
 
-      expect(result.current).toHaveLength(3);
       expect(result.current).toEqual([model1, model2, model3]);
+      expect(result.current).toHaveLength(3);
     });
 
-    it('应过滤掉已删除的模型', () => {
+    it('应该过滤掉已删除的模型 当存储中包含已删除模型', () => {
       const model1 = createMockModel('model-1', false);
       const model2 = createMockModel('model-2', true);
       const model3 = createMockModel('model-3', false);
@@ -80,12 +80,12 @@ describe('useExistingModels', () => {
       const wrapper = createWrapper(store);
       const { result } = renderHook(() => useExistingModels(), { wrapper });
 
-      expect(result.current).toHaveLength(2);
       expect(result.current).toEqual([model1, model3]);
+      expect(result.current).toHaveLength(2);
       expect(result.current.every((model) => !model.isDeleted)).toBe(true);
     });
 
-    it('应保留模型顺序', () => {
+    it('应该保持原始模型顺序 当过滤已删除模型后', () => {
       const model1 = createMockModel('model-1', false);
       const model2 = createMockModel('model-2', false);
       const model3 = createMockModel('model-3', false);
@@ -108,8 +108,8 @@ describe('useExistingModels', () => {
     });
   });
 
-  describe('空列表测试', () => {
-    it('应返回空数组', () => {
+  describe('空列表和特殊情况', () => {
+    it('应该返回空数组 当存储中没有模型', () => {
       const store = createTestStore({
         models: {
           models: [],
@@ -126,7 +126,7 @@ describe('useExistingModels', () => {
       expect(result.current).toHaveLength(0);
     });
 
-    it('当所有模型都已删除时应返回空数组', () => {
+    it('应该返回空数组 当所有模型都已删除', () => {
       const model1 = createMockModel('model-1', true);
       const model2 = createMockModel('model-2', true);
       const model3 = createMockModel('model-3', true);
@@ -148,8 +148,8 @@ describe('useExistingModels', () => {
     });
   });
 
-  describe('Memoization 测试', () => {
-    it('应在 models 不变时返回相同的引用', () => {
+  describe('性能优化行为', () => {
+    it('应该返回相同引用 当模型列表未变化时', () => {
       const model1 = createMockModel('model-1', false);
 
       const store = createTestStore({
@@ -171,29 +171,6 @@ describe('useExistingModels', () => {
       const secondResult = result.current;
 
       expect(firstResult).toBe(secondResult);
-    });
-  });
-
-  describe('使用 createMockModel 工厂测试', () => {
-    it('应使用 createMockModel 创建测试数据', () => {
-      const store = createTestStore({
-        models: {
-          models: [
-            createMockModel('test-1', false),
-            createMockModel('test-2', false),
-          ],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-      });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingModels(), { wrapper });
-
-      expect(result.current).toHaveLength(2);
-      expect(result.current[0].id).toBe('test-1');
-      expect(result.current[1].id).toBe('test-2');
     });
   });
 });

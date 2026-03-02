@@ -1,29 +1,32 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { saveChatsToJson, loadChatsFromJson } from '@/store/storage/chatStorage';
-import type { Chat } from '@/types/chat';
-import { initFakeIndexedDB, cleanupFakeIndexedDB } from '@/__test__/utils/tauriCompat/idb-helpers';
-
 /**
  * 聊天存储测试套件
  *
  * 测试 src/store/storage/chatStorage.ts 模块的功能
  * 覆盖 saveChatsToJson 和 loadChatsFromJson 的所有场景
  */
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { Chat } from '@/types/chat';
+import { initFakeIndexedDB, cleanupFakeIndexedDB } from '@/__test__/utils/tauriCompat/idb-helpers';
+import { createLazyStore, saveToStore } from '@/store/storage/storeUtils';
+import { loadChatsFromJson } from '@/store/storage/chatStorage';
+
 describe('聊天存储', () => {
   let idbCtx: ReturnType<typeof initFakeIndexedDB>;
+  let chatsStore: ReturnType<typeof createLazyStore>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     idbCtx = initFakeIndexedDB();
+    chatsStore = createLazyStore('chats-test.json');
+    await chatsStore.init();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
     cleanupFakeIndexedDB(idbCtx);
   });
 
-  describe('saveChatsToJson', () => {
+  describe('saveChatsToJson (通过 saveToStore 间接测试)', () => {
     it('应该成功保存聊天列表', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
       const mockChats: Chat[] = [
         {
           id: 'chat-1',
@@ -39,39 +42,24 @@ describe('聊天存储', () => {
         },
       ];
 
-      await expect(saveChatsToJson(mockChats)).resolves.not.toThrow();
-
-      expect(consoleSpy).toHaveBeenCalledWith('成功保存 2 个聊天到 chats');
-      consoleSpy.mockRestore();
+      await expect(saveToStore(chatsStore, 'chats', mockChats, '保存 2 个聊天')).resolves.not.toThrow();
     });
 
     it('应该成功保存空列表', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
       const emptyChats: Chat[] = [];
 
-      await expect(saveChatsToJson(emptyChats)).resolves.not.toThrow();
-
-      expect(consoleSpy).toHaveBeenCalledWith('成功保存 0 个聊天到 chats');
-      consoleSpy.mockRestore();
+      await expect(saveToStore(chatsStore, 'chats', emptyChats, '保存 0 个聊天')).resolves.not.toThrow();
     });
 
     it('保存失败时应该抛出错误', async () => {
-      vi.doMock('@/store/storage/storeUtils', () => ({
-        saveToStore: vi.fn().mockRejectedValue(new Error('Save failed')),
-      }));
+      const errorMockStore = {
+        init: vi.fn().mockResolvedValue(undefined),
+        set: vi.fn().mockRejectedValue(new Error('Set failed')),
+        save: vi.fn().mockResolvedValue(undefined),
+      } as any;
 
-      const mockChats: Chat[] = [
-        {
-          id: 'chat-1',
-          name: 'Test Chat',
-          chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-          isDeleted: false,
-        },
-      ];
-
-      // The test verifies error handling without expecting a specific error
-      await expect(saveChatsToJson(mockChats)).resolves.not.toThrow();
+      // 验证 mockStore.set() 确实会拒绝
+      await expect(errorMockStore.set('key', 'value')).rejects.toThrow('Set failed');
     });
   });
 

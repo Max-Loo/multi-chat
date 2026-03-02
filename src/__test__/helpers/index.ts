@@ -18,3 +18,6 @@ export * from './isolation';
 
 // 渲染辅助工具
 export * from './render';
+
+// 通用测试工具函数
+export * from './testing-utils';

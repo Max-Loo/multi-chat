@@ -1,5 +1,6 @@
 import { beforeAll, afterEach, afterAll } from 'vitest'
 import { setupServer } from 'msw/node'
+import 'fake-indexeddb/auto'
 
 /**
  * 集成测试设置文件

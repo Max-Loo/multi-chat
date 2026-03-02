@@ -44,7 +44,6 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
 };
 
 describe('useBasicModelTable', () => {
-
   describe('表格列配置测试', () => {
     it('应返回正确的列定义数组', () => {
       const store = createTestStore({

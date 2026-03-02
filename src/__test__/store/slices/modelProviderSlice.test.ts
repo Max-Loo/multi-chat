@@ -1,7 +1,16 @@
 /**
  * modelProviderSlice 单元测试
- * 
+ *
  * 测试 Redux Thunk、状态管理和错误降级策略
+ *
+ * 删除的冗余测试（基本的 Redux reducer 测试）：
+ * - initialState (1 test)：基本的 Redux reducer 初始状态
+ *
+ * 保留的关键测试：
+ * - 错误降级策略：远程失败时降级到缓存
+ * - 完全失败处理：远程和缓存都失败时返回空数组
+ * - Redux 状态不可变性：验证 Immer 正确工作
+ * - rejectWithValue 处理：验证错误包装逻辑
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -96,17 +105,7 @@ describe('modelProviderSlice', () => {
     store = createTestStore();
   });
 
-  describe('initialState', () => {
-    it('应该返回正确的初始状态', () => {
-      const state = store.getState().modelProvider;
-      expect(state).toEqual({
-        providers: [],
-        loading: false,
-        error: null,
-        lastUpdate: null,
-      });
-    });
-  });
+  // initialState 测试已被删除：基本的 Redux reducer 测试
 
   describe('clearError', () => {
     it('应该清除错误信息', () => {

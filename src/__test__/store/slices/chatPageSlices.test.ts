@@ -1,7 +1,16 @@
 /**
  * chatPageSlices 单元测试
- * 
+ *
  * 测试聊天页面状态管理，包括侧边栏折叠状态和页面显示状态
+ *
+ * 删除的冗余测试（简单的 Redux reducer 测试）：
+ * - 侧边栏折叠状态变更 (2 tests)：基本的 Redux reducer 状态转换
+ * - 聊天页面显示状态变更 (2 tests)：基本的 Redux reducer 状态转换
+ *
+ * 保留的关键测试：
+ * - Redux Toolkit 最佳实践：不可变性、action creators
+ * - 与 Redux store 的集成：连续 dispatch、忽略不相关的 action
+ * - 初始状态验证
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -18,43 +27,11 @@ describe('chatPageSlices', () => {
     isShowChatPage: false,
   };
 
-  describe('侧边栏折叠状态变更', () => {
-    it('应该更新 isSidebarCollapsed 为 true 当 dispatch setIsCollapsed(true)', () => {
-      const state = chatPageReducer(initialState, setIsCollapsed(true));
-      expect(state.isSidebarCollapsed).toBe(true);
-      expect(state.isShowChatPage).toBe(false);
-    });
-
-    it('应该更新 isSidebarCollapsed 为 false 当 dispatch setIsCollapsed(false)', () => {
-      const modifiedState: ChatPageSliceState = {
-        isSidebarCollapsed: true,
-        isShowChatPage: false,
-      };
-      const state = chatPageReducer(modifiedState, setIsCollapsed(false));
-      expect(state.isSidebarCollapsed).toBe(false);
-      expect(state.isShowChatPage).toBe(false);
-    });
-  });
-
-  describe('聊天页面显示状态变更', () => {
-    it('应该更新 isShowChatPage 为 true 当 dispatch setIsShowChatPage(true)', () => {
-      const state = chatPageReducer(initialState, setIsShowChatPage(true));
-      expect(state.isShowChatPage).toBe(true);
-      expect(state.isSidebarCollapsed).toBe(false);
-    });
-
-    it('应该更新 isShowChatPage 为 false 当 dispatch setIsShowChatPage(false)', () => {
-      const modifiedState: ChatPageSliceState = {
-        isSidebarCollapsed: false,
-        isShowChatPage: true,
-      };
-      const state = chatPageReducer(modifiedState, setIsShowChatPage(false));
-      expect(state.isShowChatPage).toBe(false);
-      expect(state.isSidebarCollapsed).toBe(false);
-    });
-  });
+  // 侧边栏折叠状态变更测试已被删除：基本的 Redux reducer 测试
+  // 聊天页面显示状态变更测试已被删除：基本的 Redux reducer 测试
 
   describe('初始状态', () => {
+    // 保留初始状态测试：验证 reducer 的默认行为
     it('应该返回正确的初始状态', () => {
       const state = chatPageReducer(undefined, { type: 'unknown' });
       expect(state).toEqual({

@@ -229,7 +229,7 @@ class TauriKeyringCompat implements KeyringCompat {
  * Web 环境的 Keyring 实现
  * 使用 IndexedDB + AES-256-GCM 加密实现
  */
-class WebKeyringCompat implements KeyringCompat {
+export class WebKeyringCompat implements KeyringCompat {
   private db: IDBDatabase | null = null;
   private encryptionKey: CryptoKey | null = null;
 
@@ -370,6 +370,18 @@ class WebKeyringCompat implements KeyringCompat {
         reject(new Error(`删除密码失败: ${request.error}`));
       });
     });
+  }
+
+  /**
+   * 关闭数据库连接并重置状态
+   * 用于测试环境清理
+   */
+  close(): void {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
+    this.encryptionKey = null;
   }
 
   /**
