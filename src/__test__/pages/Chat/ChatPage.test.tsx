@@ -33,6 +33,8 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
  * Mock react-i18next
  * 使用正确的翻译函数签名，支持 t($ => $.namespace.key) 语法
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Reason: 测试错误处理，需要构造无效输入
 const mockT = (key: string | ((s: any) => string)): string => {
   if (typeof key === 'function') {
     return key({ common: { search: '搜索', hideSidebar: '隐藏侧边栏', createChat: '创建聊天' }, chat: { sendMessage: '发送消息', stopSending: '停止发送', includeReasoningContentHint: '包含推理内容提示', showSidebar: '显示侧边栏', scrollToBottom: '滚动到底部' }, model: {} });
@@ -254,6 +256,7 @@ describe('ChatPage 行为测试', () => {
     const store = createTestStore({
       chatPage: {
         isSidebarCollapsed: false,
+        isShowChatPage: false,
       },
     });
 
@@ -278,6 +281,7 @@ describe('ChatPage 行为测试', () => {
     const store = createTestStore({
       chatPage: {
         isSidebarCollapsed: true,
+        isShowChatPage: false,
       },
     });
 

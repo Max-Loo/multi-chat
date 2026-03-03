@@ -58,7 +58,11 @@ describe('ChatPanelContentDetail', () => {
    */
   const createTestStore = (overrides?: {
     chatModel?: ChatModel;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 测试错误处理，需要构造无效输入
     models?: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 测试错误处理，需要构造无效输入
     runningChat?: any;
   }) => {
     const defaultChatModel: ChatModel = {
@@ -91,6 +95,8 @@ describe('ChatPanelContentDetail', () => {
         chat: chatReducer,
         chatPage: chatPageReducer,
         models: modelReducer,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: Redux Toolkit 严格类型系统限制
       } as any,
       preloadedState: {
         chat: {
@@ -117,6 +123,8 @@ describe('ChatPanelContentDetail', () => {
           loading: false,
           error: null,
         },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: Redux Toolkit 严格类型系统限制
       } as any,
     });
   };
@@ -291,6 +299,8 @@ describe('ChatPanelContentDetail', () => {
     it('应该处理 null 或 undefined 的 chatHistoryList', () => {
       const chatModel1: ChatModel = {
         modelId: 'model-1',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
         chatHistoryList: null as any,
       };
 
@@ -306,6 +316,8 @@ describe('ChatPanelContentDetail', () => {
 
       const chatModel2: ChatModel = {
         modelId: 'model-1',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
         chatHistoryList: undefined as any,
       };
 

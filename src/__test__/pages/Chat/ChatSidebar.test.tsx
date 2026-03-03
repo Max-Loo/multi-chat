@@ -27,6 +27,8 @@ vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
  */
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: ((keyOrSelector: string | ((resources: any) => string)) => {
       if (typeof keyOrSelector === 'function') {
         const mockResources = {
@@ -50,6 +52,8 @@ vi.mock('react-i18next', () => ({
         return keyOrSelector(mockResources);
       }
       return keyOrSelector;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 测试错误处理，需要构造无效输入
     }) as any,
     i18n: {
       language: 'zh',
@@ -85,6 +89,8 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 /**
  * 创建测试用的 Redux store
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Reason: Redux Toolkit 严格类型系统限制
 function createTestStore(preloadedState?: any) {
   return configureStore({
     reducer: {
@@ -98,6 +104,8 @@ function createTestStore(preloadedState?: any) {
 /**
  * 渲染 ChatSidebar 组件的辅助函数
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Reason: Redux Toolkit 严格类型系统限制
 function renderChatSidebar(store: any) {
   return render(
     <Provider store={store}>

@@ -56,6 +56,8 @@ describe('聊天存储', () => {
         init: vi.fn().mockResolvedValue(undefined),
         set: vi.fn().mockRejectedValue(new Error('Set failed')),
         save: vi.fn().mockResolvedValue(undefined),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: 测试错误处理，需要构造无效输入
       } as any;
 
       // 验证 mockStore.set() 确实会拒绝

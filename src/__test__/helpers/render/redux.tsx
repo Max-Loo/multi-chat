@@ -7,8 +7,9 @@
 import { render, type RenderOptions } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, type EnhancedStore } from '@reduxjs/toolkit';
 import { ConfirmProvider } from '@/hooks/useConfirm';
+import type { RootState } from '@/store';
 import chatReducer from '@/store/slices/chatSlices';
 import chatPageReducer from '@/store/slices/chatPageSlices';
 import modelsReducer from '@/store/slices/modelSlice';
@@ -19,7 +20,7 @@ import appConfigReducer from '@/store/slices/appConfigSlices';
  * @param preloadedState 预加载的状态
  * @returns 配置好的 Redux store
  */
-export const createTestStore = (preloadedState?: any) => {
+export const createTestStore = (preloadedState?: Partial<RootState>): EnhancedStore<RootState> => {
   return configureStore({
     reducer: {
       chat: chatReducer,
@@ -28,16 +29,16 @@ export const createTestStore = (preloadedState?: any) => {
       appConfig: appConfigReducer,
       modelProvider: (state = { providers: [], loading: false, error: null, lastUpdate: null }) => state,
     } as any,
-    preloadedState,
-  });
+    preloadedState: preloadedState as any,
+  }) as EnhancedStore<RootState>;
 };
 
 /**
  * 渲染选项
  */
 interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
-  store?: any;
-  preloadedState?: any;
+  store?: EnhancedStore<RootState>;
+  preloadedState?: Partial<RootState>;
   route?: string;
 }
 
@@ -48,7 +49,7 @@ interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
  * @returns 渲染结果
  */
 export const renderWithProviders = (
-  ui: any,
+  ui: React.ReactElement,
   options: RenderWithProvidersOptions = {}
 ) => {
   const {
@@ -61,7 +62,7 @@ export const renderWithProviders = (
   window.history.pushState({}, 'Test page', route);
 
   // 创建包装器组件
-  const AllTheProviders = ({ children }: any) => {
+  const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
     return (
       <Provider store={store}>
         <BrowserRouter>

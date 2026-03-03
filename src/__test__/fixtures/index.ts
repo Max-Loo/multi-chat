@@ -13,8 +13,5 @@ export * from './chat';
 // Router 相关 fixtures
 export * from './router';
 
-// Store 相关 fixtures
-export * from './store';
-
-// ChatPanel 相关 fixtures（由于与 chat.ts 有冲突，需要按需导入）
-// export * from './chatPanel';
+// ModelProvider 相关 fixtures
+export * from './modelProvider';

@@ -18,13 +18,19 @@ const createTestStore = (preloadedState?: Partial<RootState>) => {
       chatPage: chatPageReducer,
       appConfig: appConfigReducer,
       modelProvider: modelProviderReducer,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     } as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     preloadedState: preloadedState as any,
   });
 };
 
 const createWrapper = (store: ReturnType<typeof createTestStore>) => {
   return ({ children }: { children: React.ReactNode }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     return <Provider store={store as any}>{children}</Provider>;
   };
 };

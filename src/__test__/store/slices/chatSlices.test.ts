@@ -18,8 +18,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createIdGenerator } from 'ai';
 import { Chat, ChatRoleEnum, StandardMessage } from '@/types/chat';
-import { Model } from '@/types/model';
-import { ModelProviderKeyEnum } from '@/utils/enums';
+import { createMockModel } from '@/__test__/fixtures/models';
 
 // Mock 依赖 - 必须在导入 slice 之前执行
 // 使用 vi.hoisted 确保变量在 vi.mock 之前被定义
@@ -50,7 +49,6 @@ vi.mock('@/services/chatService', () => ({
 
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer, {
-  initializeChatList,
   clearError,
   clearInitializationError,
   createChat,
@@ -60,7 +58,6 @@ import modelReducer from '@/store/slices/modelSlice';
 // 生成测试消息 ID 的工具函数
 const generateMessageId = createIdGenerator({ prefix: 'test-msg-' });
 const generateChatId = createIdGenerator({ prefix: 'test-chat-' });
-const generateModelId = createIdGenerator({ prefix: 'test-model-' });
 
 // 创建 Mock Chat 对象
 const createMockChat = (overrides?: Partial<Chat>): Chat => ({
@@ -82,27 +79,9 @@ const createMockMessage = (overrides?: Partial<StandardMessage>): StandardMessag
   ...overrides,
 });
 
-// 创建 Mock Model 对象
-const createMockModel = (overrides?: Partial<Model>): Model => {
-  const id = generateModelId();
-  return {
-    id,
-    createdAt: '2024-01-01 00:00:00',
-    updateAt: '2024-01-01 00:00:00',
-    providerName: 'Test Provider',
-    providerKey: ModelProviderKeyEnum.DEEPSEEK,
-    nickname: 'Test Model',
-    modelName: 'test-model',
-    modelKey: 'test-model',
-    apiKey: 'sk-test-123',
-    apiAddress: 'https://api.test.com/v1',
-    isEnable: true,
-    isDeleted: false,
-    ...overrides,
-  };
-};
-
 describe('chatSlices', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
 
   // 创建测试用的 Redux store
@@ -137,64 +116,10 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('initializeChatList', () => {
-    // TODO: 重新实现以测试行为而非实现细节
-    it.skip('应该在 pending 时设置 loading 为 true', async () => {
-      // Mock loadChatsFromJson 返回永不解析的 Promise
-      mockLoadChatsFromJson.mockReturnValue(new Promise(() => {}));
-
-      // Dispatch Thunk（不等待）
-      store.dispatch(initializeChatList());
-
-      // 立即验证 pending 状态
-      const state = store.getState().chat;
-      expect(state.loading).toBe(true);
-      expect(state.initializationError).toBe(null);
-    });
-
-    // TODO: 重新实现以测试行为而非实现细节
-    it.skip('应该在 fulfilled 时更新聊天列表', async () => {
-      // Mock 数据
-      const mockChats: Chat[] = [
-        createMockChat({ name: 'Chat 1' }),
-        createMockChat({ name: 'Chat 2' }),
-      ];
-      mockLoadChatsFromJson.mockResolvedValue(mockChats);
-
-      // Dispatch Thunk
-      const result = await store.dispatch(initializeChatList());
-
-      // 验证 Thunk fulfilled
-      expect(result.type).toBe('chat/initialize/fulfilled');
-
-      // 验证状态转换
-      const state = store.getState().chat;
-      expect(state.loading).toBe(false);
-      expect(state.chatList).toEqual(mockChats);
-      expect(state.initializationError).toBe(null);
-
-      // 验证服务层被调用
-      expect(mockLoadChatsFromJson).toHaveBeenCalledTimes(1);
-    });
-
-    // TODO: 重新实现以测试行为而非实现细节
-    it.skip('应该在 rejected 时设置错误信息', async () => {
-      // Mock loadChatsFromJson 失败
-      const errorMessage = 'Failed to load chats';
-      mockLoadChatsFromJson.mockRejectedValue(new Error(errorMessage));
-
-      // Dispatch Thunk
-      const result = await store.dispatch(initializeChatList());
-
-      // 验证 Thunk rejected
-      expect(result.type).toBe('chat/initialize/rejected');
-
-      // 验证状态转换
-      const state = store.getState().chat;
-      expect(state.loading).toBe(false);
-      expect(state.initializationError).toBe(errorMessage);
-    });
-  });
+  // initializeChatList 状态转换测试已被删除：
+  // - pending/fulfilled/rejected 测试（3 个）：已被集成测试覆盖
+  // - 这些测试验证 Redux Toolkit 自动生成的状态转换，属于内部实现
+  // - 集成测试 app-loading.integration.test.ts 已覆盖用户可见行为
 
   // 聊天管理 reducers 测试已被删除：已被 chat-flow.integration.test.ts 覆盖
   // - 创建新聊天：集成测试覆盖 "创建新会话"

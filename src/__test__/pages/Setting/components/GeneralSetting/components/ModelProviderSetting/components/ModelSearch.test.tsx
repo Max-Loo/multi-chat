@@ -5,6 +5,8 @@ import { ModelSearch } from '@/pages/Setting/components/GeneralSetting/component
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: (fn: (ns: any) => string) => (fn ? fn({ setting: { modelProvider: { searchPlaceholder: 'setting.modelProvider.searchPlaceholder', searchResult: 'setting.modelProvider.searchResult', totalModels: 'setting.modelProvider.totalModels' } } }) : ''),
   }),
 }))

@@ -80,6 +80,8 @@ describe('chatPageSlices', () => {
   });
 
   describe('与 Redux store 的集成', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     let store: any;
 
     beforeEach(() => {

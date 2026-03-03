@@ -27,6 +27,8 @@ const createTestStore = (state: Partial<RootState>) => {
   return configureStore({
     reducer: {
       modelProvider: modelProviderReducer,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     } as any,
     preloadedState: {
       modelProvider: state.modelProvider,
@@ -136,7 +138,11 @@ describe('ModelProviderDisplay', () => {
       const store = createTestStore(mockState);
       const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay providerKey={"test-provider" as any} />, { wrapper });
+      render(<ModelProviderDisplay
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
+        providerKey={"test-provider" as any}
+      />, { wrapper });
 
       const img = screen.getByAltText('Test Provider');
       expect(img).toBeInTheDocument();
@@ -161,7 +167,11 @@ describe('ModelProviderDisplay', () => {
       const store = createTestStore(mockState);
       const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay providerKey={"non-existent" as any} />, { wrapper });
+      render(<ModelProviderDisplay
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
+        providerKey={"non-existent" as any}
+      />, { wrapper });
 
       expect(screen.getByText('non-existent')).toBeInTheDocument();
     });
@@ -186,7 +196,11 @@ describe('ModelProviderDisplay', () => {
       const store = createTestStore(mockState);
       const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay providerKey={"unknown-provider" as any} />, { wrapper });
+      render(<ModelProviderDisplay
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
+        providerKey={"unknown-provider" as any}
+      />, { wrapper });
 
       expect(screen.getByText('unknown-provider')).toBeInTheDocument();
     });
@@ -204,7 +218,11 @@ describe('ModelProviderDisplay', () => {
       const store = createTestStore(mockState);
       const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay providerKey={"any-provider" as any} />, { wrapper });
+      render(<ModelProviderDisplay
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
+        providerKey={"any-provider" as any}
+      />, { wrapper });
 
       expect(screen.getByText('any-provider')).toBeInTheDocument();
     });

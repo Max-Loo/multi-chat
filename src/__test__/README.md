@@ -336,6 +336,126 @@ global.fetch = vi.fn(() => /* ... */);
 vi.mock('@/utils/idb', () => ({ /* ... */ }));
 ```
 
+## MSW (Mock Service Worker) 使用指南
+
+> 详细文档：`src/__test__/msw/README.md`
+
+### 什么是 MSW？
+
+MSW 是一个 API Mock 库，通过拦截网络请求返回 Mock 数据。相比 `vi.mock`，MSW 更接近真实场景，支持测试完整的网络交互流程。
+
+### 可用的 Handlers
+
+项目已为所有主要 API 提供了预配置的 MSW handlers：
+
+| Handler | 用途 | 文件位置 |
+|---------|------|---------|
+| `deepSeekHandlers` | DeepSeek API | `msw/handlers/deepseek.ts` |
+| `kimiHandlers` | Moonshot AI (Kimi) API | `msw/handlers/kimi.ts` |
+| `zhipuHandlers` | ZhipuAI API | `msw/handlers/zhipu.ts` |
+| `modelsDevHandlers` | models.dev API | `msw/handlers/models-dev.ts` |
+
+### 快速开始
+
+```typescript
+import { server } from '@/__test__/msw/setup';
+import { deepSeekHandlers } from '@/__test__/msw/handlers';
+
+describe('ChatService', () => {
+  beforeEach(() => {
+    // 使用 DeepSeek 成功场景
+    server.use(deepSeekHandlers.success());
+  });
+
+  it('应该返回流式响应', async () => {
+    const response = await streamChatCompletion(messages);
+    expect(response).toBeDefined();
+  });
+});
+```
+
+### 场景配置
+
+```typescript
+// 成功场景（可自定义延迟和响应）
+server.use(deepSeekHandlers.success({ delay: 1000 }));
+
+// 网络错误场景
+server.use(deepSeekHandlers.networkError());
+
+// 超时场景（默认 30 秒）
+server.use(deepSeekHandlers.timeout({ delay: 30000 }));
+
+// 服务器错误场景（自定义状态码和消息）
+server.use(deepSeekHandlers.serverError({ status: 500, message: 'Internal Server Error' }));
+```
+
+### CORS 处理
+
+MSW server 已配置 `onUnhandledRequest: 'bypass'`，自动跳过 CORS preflight 请求（OPTIONS）。
+
+**配置位置**：`src/__test__/msw/setup.ts`
+
+## 类型安全指南
+
+> 详细文档：`src/__test__/guidelines/TYPE_SAFETY_GUIDE.md`
+
+### 核心原则
+
+**始终为 Mock 对象定义类型，避免使用 `any`**。
+
+### 为 Mock 对象定义类型
+
+```typescript
+// ✅ 正确：定义接口
+interface MockStreamTextResult {
+  stream: ReadableStream;
+  metadata: {
+    finishReason: string;
+    usage: {
+      promptTokens: number;
+      completionTokens: number;
+    };
+  };
+}
+
+const mockStreamResult: MockStreamTextResult = {
+  stream: new ReadableStream(),
+  metadata: { /* ... */ },
+};
+
+// ❌ 错误：使用 any
+const mockStreamResult: any = { /* ... */ };
+```
+
+### 使用 Vitest 的 Mocked 工具
+
+```typescript
+import { mocked } from 'vitest/mocked';
+
+// Mock 整个模块
+vi.mock('@/utils/api', () => ({
+  fetchData: vi.fn(),
+}));
+
+// 类型安全的访问
+import { fetchData } from '@/utils/api';
+const mockFetchData = mocked(fetchData);
+mockFetchData.mockResolvedValue({ data: 'test' });
+```
+
+### 何时使用 `any`
+
+仅在以下情况使用 `any`，并必须添加注释：
+
+```typescript
+// 使用 any 的原因：第三方库类型过于复杂，定义完整类型收益低
+const complexMock: any = createComplexThirdPartyMock();
+
+// 使用 any 的原因：测试框架限制，无法推断正确类型
+const store: any = configureStore({ /* ... */ });
+```
+
 ## 测试目录结构重组说明
 
 ### 重组原因

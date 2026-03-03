@@ -290,6 +290,8 @@ describe('ChatBubble', () => {
 
     it('应该为未知角色返回 null', () => {
       const message = createMockPanelMessage({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
         role: 'unknown' as any,
         content: 'Unknown role message',
       });

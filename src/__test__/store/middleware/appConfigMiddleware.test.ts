@@ -25,6 +25,8 @@ vi.mock('@/lib/i18n', () => ({
 const mockChangeAppLanguage = vi.mocked(changeAppLanguage);
 
 describe('appConfigMiddleware', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
 
   // 创建测试用的 Redux store

@@ -17,6 +17,8 @@ import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: (keyOrFn: string | ((_: any) => string)) => {
       if (typeof keyOrFn === 'function') {
         return keyOrFn({
@@ -51,7 +53,11 @@ const createTestStore = (state: Partial<RootState>) => {
     reducer: {
       chat: chatReducer,
       appConfig: (state = { includeReasoningContent: false, language: 'en' }) => state,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     } as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     preloadedState: state as any,
   });
 };

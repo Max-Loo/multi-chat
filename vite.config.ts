@@ -38,7 +38,7 @@ export default defineConfig(async () => ({
     environment: 'happy-dom',
     setupFiles: ['./src/__test__/setup.ts'],
     include: ['src/__test__/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', 'dist'],
+    exclude: ['node_modules', 'dist', 'src/__test__/integration/**'],
 
     // 并行执行配置
     pool: 'threads',

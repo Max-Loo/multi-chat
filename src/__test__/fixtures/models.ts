@@ -15,6 +15,13 @@ const generateId = createIdGenerator({ prefix: 'test-model-' });
  * 创建 Mock Model 对象
  * @param overrides 要覆盖的字段
  * @returns Model 对象
+ * @example
+ * ```ts
+ * const model = createMockModel({
+ *   nickname: 'Custom Model',
+ *   apiKey: 'sk-custom-key'
+ * });
+ * ```
  */
 export const createMockModel = (overrides?: Partial<Model>): Model => ({
   id: generateId(),
@@ -36,6 +43,17 @@ export const createMockModel = (overrides?: Partial<Model>): Model => ({
  * @param count 创建数量
  * @param overrides 每个对象要覆盖的字段（可选，可以是函数）
  * @returns Model 对象数组
+ * @example
+ * ```ts
+ * // 创建 5 个相同的模型
+ * const models = createMockModels(5);
+ *
+ * // 创建 5 个不同的模型
+ * const models = createMockModels(5, (index) => ({
+ *   nickname: `Model ${index + 1}`,
+ *   modelKey: `model-${index + 1}`
+ * }));
+ * ```
  */
 export const createMockModels = (
   count: number,
@@ -50,6 +68,14 @@ export const createMockModels = (
 /**
  * 创建 DeepSeek 模型
  * @param overrides 要覆盖的字段
+ * @returns DeepSeek 模型对象
+ * @example
+ * ```ts
+ * const model = createDeepSeekModel({
+ *   nickname: 'DeepSeek V3',
+ *   modelName: 'deepseek-chat'
+ * });
+ * ```
  */
 export const createDeepSeekModel = (overrides?: Partial<Model>): Model =>
   createMockModel({
@@ -65,6 +91,14 @@ export const createDeepSeekModel = (overrides?: Partial<Model>): Model =>
 /**
  * 创建 Kimi 模型
  * @param overrides 要覆盖的字段
+ * @returns Kimi 模型对象
+ * @example
+ * ```ts
+ * const model = createKimiModel({
+ *   nickname: 'Kimi 32k',
+ *   modelName: 'moonshot-v1-32k'
+ * });
+ * ```
  */
 export const createKimiModel = (overrides?: Partial<Model>): Model =>
   createMockModel({
@@ -80,6 +114,14 @@ export const createKimiModel = (overrides?: Partial<Model>): Model =>
 /**
  * 创建已加密 API Key 的模型
  * @param overrides 要覆盖的字段
+ * @returns 已加密 API Key 的模型对象
+ * @example
+ * ```ts
+ * const model = createEncryptedModel({
+ *   nickname: 'Encrypted Model',
+ *   apiKey: 'enc:encrypted-data-here'
+ * });
+ * ```
  */
 export const createEncryptedModel = (overrides?: Partial<Model>): Model =>
   createMockModel({

@@ -14,6 +14,13 @@ import { createMockRemoteProviders } from './modelProvider';
  * 创建 Mock ChatPageState
  * @param overrides 要覆盖的字段
  * @returns ChatPageSliceState 对象
+ * @example
+ * ```ts
+ * const state = createMockChatPageState({
+ *   isSidebarCollapsed: true,
+ *   isShowChatPage: true
+ * });
+ * ```
  */
 export const createMockChatPageState = (
   overrides?: Partial<ChatPageSliceState>
@@ -27,6 +34,13 @@ export const createMockChatPageState = (
  * 创建 Mock AppConfigState
  * @param overrides 要覆盖的字段
  * @returns AppConfigSliceState 对象
+ * @example
+ * ```ts
+ * const state = createMockAppConfigState({
+ *   language: 'en',
+ *   includeReasoningContent: true
+ * });
+ * ```
  */
 export const createMockAppConfigState = (
   overrides?: Partial<AppConfigSliceState>
@@ -40,6 +54,13 @@ export const createMockAppConfigState = (
  * 创建 Mock ModelProviderState
  * @param overrides 要覆盖的字段
  * @returns ModelProviderSliceState 对象
+ * @example
+ * ```ts
+ * const state = createMockModelProviderState({
+ *   loading: true,
+ *   error: 'Network error'
+ * });
+ * ```
  */
 export const createMockModelProviderState = (
   overrides?: Partial<ModelProviderSliceState>
@@ -55,6 +76,18 @@ export const createMockModelProviderState = (
  * 创建完整的 Mock RootState
  * @param overrides 要覆盖的字段
  * @returns RootState 对象
+ * @example
+ * ```ts
+ * const state = createMockRootState({
+ *   appConfig: createMockAppConfigState({ language: 'en' }),
+ *   model: {
+ *     models: [],
+ *     activeModelId: null,
+ *     loading: false,
+ *     error: null,
+ *   }
+ * });
+ * ```
  */
 export const createMockRootState = (
   overrides?: Partial<RootState>

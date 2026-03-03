@@ -6,9 +6,13 @@ import { NoProvidersAvailable } from '@/components/NoProvidersAvailable'
 // Mock i18n
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: (keyOrFn: any) => {
       if (typeof keyOrFn === 'function') {
         // 处理 t($ => $.common.noProvidersAvailable) 形式
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
         const mockObj: any = {
           common: {
             noProvidersAvailable: '无可用模型供应商',

@@ -15,6 +15,13 @@ const generateMessageId = createIdGenerator({ prefix: 'test-msg-' });
  * 创建 Mock StandardMessage 对象
  * @param overrides 要覆盖的字段
  * @returns StandardMessage 对象
+ * @example
+ * ```ts
+ * const message = createMockMessage({
+ *   role: ChatRoleEnum.USER,
+ *   content: 'Hello, world!'
+ * });
+ * ```
  */
 export const createMockMessage = (overrides?: Partial<StandardMessage>): StandardMessage => ({
   id: generateMessageId(),
@@ -30,6 +37,11 @@ export const createMockMessage = (overrides?: Partial<StandardMessage>): Standar
  * 创建用户消息
  * @param content 消息内容
  * @param overrides 要覆盖的字段
+ * @returns 用户消息对象
+ * @example
+ * ```ts
+ * const message = createUserMessage('What is the capital of France?');
+ * ```
  */
 export const createUserMessage = (
   content: string = 'Hello, how are you?',
@@ -45,6 +57,11 @@ export const createUserMessage = (
  * 创建助手消息
  * @param content 消息内容
  * @param overrides 要覆盖的字段
+ * @returns 助手消息对象
+ * @example
+ * ```ts
+ * const message = createAssistantMessage('The capital of France is Paris.');
+ * ```
  */
 export const createAssistantMessage = (
   content: string = 'I am doing well, thank you!',
@@ -61,6 +78,14 @@ export const createAssistantMessage = (
  * @param content 消息内容
  * @param reasoning 推理内容
  * @param overrides 要覆盖的字段
+ * @returns 包含推理内容的消息对象
+ * @example
+ * ```ts
+ * const message = createReasoningMessage(
+ *   'The answer is 42.',
+ *   'Let me think... 1+1=2, 2*21=42, therefore 42.'
+ * );
+ * ```
  */
 export const createReasoningMessage = (
   content: string,
@@ -78,6 +103,11 @@ export const createReasoningMessage = (
  * 创建系统消息
  * @param content 消息内容
  * @param overrides 要覆盖的字段
+ * @returns 系统消息对象
+ * @example
+ * ```ts
+ * const message = createSystemMessage('You are a helpful assistant.');
+ * ```
  */
 export const createSystemMessage = (
   content: string = 'You are a helpful assistant.',
@@ -94,6 +124,11 @@ export const createSystemMessage = (
  * @param inputTokens 输入 token 数量
  * @param outputTokens 输出 token 数量
  * @param overrides 要覆盖的字段
+ * @returns 包含 token 使用信息的消息对象
+ * @example
+ * ```ts
+ * const message = createMessageWithUsage(150, 300);
+ * ```
  */
 export const createMessageWithUsage = (
   inputTokens: number = 100,
@@ -112,6 +147,17 @@ export const createMessageWithUsage = (
  * 批量创建消息（模拟对话历史）
  * @param count 消息数量
  * @param overrides 每个消息要覆盖的字段（可选，可以是函数）
+ * @returns 消息对象数组
+ * @example
+ * ```ts
+ * // 创建 5 条消息（交替的用户和助手消息）
+ * const messages = createMockMessages(5);
+ *
+ * // 创建自定义消息序列
+ * const messages = createMockMessages(3, (index) => ({
+ *   content: `Message ${index + 1}`
+ * }));
+ * ```
  */
 export const createMockMessages = (
   count: number,

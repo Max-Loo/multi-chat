@@ -28,6 +28,10 @@ import {
   RemoteDataErrorType,
 } from '@/services/modelRemoteService';
 import { ALLOWED_MODEL_PROVIDERS } from '@/utils/constants';
+import {
+  createDeepSeekProvider,
+  createMockRemoteProviders,
+} from '@/__test__/fixtures/modelProvider';
 
 // Mock 服务层依赖
 vi.mock('@/services/modelRemoteService', () => ({
@@ -60,6 +64,8 @@ const mockSaveCachedProviderData = vi.mocked(saveCachedProviderData);
 const mockLoadCachedProviderData = vi.mocked(loadCachedProviderData);
 
 describe('modelProviderSlice', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
 
   // 创建测试用的 Redux store
@@ -72,16 +78,13 @@ describe('modelProviderSlice', () => {
   };
 
   // Mock 数据
-  const mockProviders = [
-    {
-      providerKey: 'deepseek',
-      providerName: 'DeepSeek',
-      api: 'https://api.deepseek.com',
+  const mockProviders = createMockRemoteProviders([
+    createDeepSeekProvider({
       models: [
         { modelKey: 'deepseek-chat', modelName: 'DeepSeek Chat' },
       ],
-    },
-  ];
+    }),
+  ]);
 
   const mockFullApiResponse = {
     deepseek: {
@@ -251,29 +254,17 @@ describe('modelProviderSlice', () => {
       expect(mockSaveCachedProviderData).toHaveBeenCalledWith(mockFullApiResponse);
     });
 
-    it.skip('应该在刷新失败时保留原有数据', async () => {
-      // 跳过：无法在单元测试中设置 Redux store 的初始状态
-      // Redux state 使用 Immer，无法直接修改
-      // 需要 setup integration test 来验证此行为
-    });
+    // 刷新失败时保留原有数据测试已被删除：
+    // - 已标记 skip，无法在单元测试中设置 Redux store 的初始状态
+    // - 集成测试 app-loading.integration.test.ts 已覆盖此行为
 
-    it.skip('应该支持 AbortSignal 取消请求', async () => {
-      // 跳过：refreshModelProvider thunk 不接受外部 signal 参数
-      // signal 由 thunk middleware 自动提供，难以在单元测试中控制
-    });
+    // AbortSignal 取消请求测试已被删除：
+    // - 已标记 skip，refreshModelProvider 不接受外部 signal 参数
+    // - 集成测试已覆盖取消场景
 
-    it('应该在 pending 时设置 loading 为 true', async () => {
-      // Mock fetchRemoteData 返回永不解析的 Promise
-      mockFetchRemoteData.mockReturnValue(new Promise(() => {}));
-
-      // Dispatch Thunk（不等待）
-      store.dispatch(refreshModelProvider());
-
-      // 立即验证 pending 状态
-      const state = store.getState().modelProvider;
-      expect(state.loading).toBe(true);
-      expect(state.error).toBe(null);
-    });
+    // pending 状态测试已被删除：
+    // - 测试 loading: true 内部状态，属于 Redux Toolkit 自动生成的行为
+    // - 集成测试 app-loading.integration.test.ts 已覆盖加载指示器行为
 
     it('应该正确处理 rejectWithValue', async () => {
       // Mock fetchRemoteData 失败

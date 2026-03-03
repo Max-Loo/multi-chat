@@ -51,11 +51,12 @@ vi.mock('@/lib/global', () => ({
 
 import { configureStore } from '@reduxjs/toolkit';
 import appConfigReducer, {
-  initializeAppLanguage,
   initializeIncludeReasoningContent,
 } from '@/store/slices/appConfigSlices';
 
 describe('appConfigSlices', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
 
   // 创建测试用的 Redux store
@@ -85,41 +86,10 @@ describe('appConfigSlices', () => {
     });
   });
 
-  describe('initializeAppLanguage', () => {
-    // TODO: 重新实现以测试行为而非实现细节
-    it.skip('应该在 fulfilled 时更新语言设置', async () => {
-      const mockLanguage = 'zh-CN';
-      mockGetDefaultAppLanguage.mockResolvedValue(mockLanguage);
-
-      // Dispatch Thunk
-      const result = await store.dispatch(initializeAppLanguage());
-
-      // 验证 Thunk fulfilled
-      expect(result.type).toBe('appConfig/language/initialize/fulfilled');
-
-      // 验证 Mock 被调用
-      expect(mockGetDefaultAppLanguage).toHaveBeenCalledTimes(1);
-
-      // 验证状态转换
-      const state = store.getState().appConfig;
-      expect(state.language).toBe(mockLanguage);
-    });
-
-    // TODO: 重新实现以测试行为而非实现细节
-    it.skip('应该在 rejected 时传播错误', async () => {
-      const errorMessage = 'Failed to initialize language';
-      mockGetDefaultAppLanguage.mockRejectedValue(new Error(errorMessage));
-
-      // Dispatch Thunk
-      const result = await store.dispatch(initializeAppLanguage());
-
-      // 验证 Mock 被调用
-      expect(mockGetDefaultAppLanguage).toHaveBeenCalledTimes(1);
-
-      // 验证 Thunk rejected
-      expect(result.type).toBe('appConfig/language/initialize/rejected');
-    });
-  });
+  // initializeAppLanguage 状态转换测试已被删除：
+  // - fulfilled/rejected 测试（2 个）：已被集成测试覆盖
+  // - 这些测试验证 Redux Toolkit 自动生成的状态转换，属于内部实现
+  // - 集成测试 settings-change.integration.test.ts 已覆盖语言设置行为
 
   describe('initializeIncludeReasoningContent', () => {
     it('应该在 localStorage 存储值为 true 时返回 true', async () => {

@@ -8,6 +8,8 @@ import { ErrorAlert } from '@/pages/Setting/components/GeneralSetting/components
  */
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: ((keyOrSelector: string | ((_: any) => string)) => {
       if (typeof keyOrSelector === 'function') {
         const mockResources = {

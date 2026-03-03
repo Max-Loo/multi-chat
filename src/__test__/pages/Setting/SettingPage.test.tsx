@@ -26,6 +26,8 @@ vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
  */
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: ((keyOrSelector: string | ((resources: any) => string)) => {
       if (typeof keyOrSelector === 'function') {
         const mockResources = {
@@ -36,6 +38,8 @@ vi.mock('react-i18next', () => ({
         return keyOrSelector(mockResources);
       }
       return keyOrSelector;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 测试错误处理，需要构造无效输入
     }) as any,
   }),
 }));

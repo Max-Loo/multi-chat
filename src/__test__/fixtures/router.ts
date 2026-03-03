@@ -9,6 +9,11 @@ import type { RouteObject } from 'react-router-dom';
 /**
  * 获取路由配置结构数据
  * @returns 路由配置对象
+ * @example
+ * ```ts
+ * const routes = getRouteStructure();
+ * expect(routes[0].path).toBe('/');
+ * ```
  */
 export const getRouteStructure = (): RouteObject[] => [
   {
@@ -70,6 +75,12 @@ export const getRouteStructure = (): RouteObject[] => [
 /**
  * 获取所有路由路径
  * @returns 路由路径数组
+ * @example
+ * ```ts
+ * const routes = getAllRoutes();
+ * expect(routes).toContain('/chat');
+ * expect(routes).toContain('/model/table');
+ * ```
  */
 export const getAllRoutes = (): string[] => [
   '/',
@@ -85,6 +96,11 @@ export const getAllRoutes = (): string[] => [
 /**
  * 获取重定向规则
  * @returns 重定向规则映射
+ * @example
+ * ```ts
+ * const rules = getRedirectRules();
+ * expect(rules['/']).toBe('/chat');
+ * ```
  */
 export const getRedirectRules = (): Record<string, string> => ({
   '/': '/chat',
@@ -96,6 +112,11 @@ export const getRedirectRules = (): Record<string, string> => ({
 /**
  * 获取无效路由路径（用于测试错误处理）
  * @returns 无效路由路径数组
+ * @example
+ * ```ts
+ * const invalidRoutes = getInvalidRoutes();
+ * expect(invalidRoutes).toContain('/invalid');
+ * ```
  */
 export const getInvalidRoutes = (): string[] => [
   '/invalid',
@@ -107,6 +128,12 @@ export const getInvalidRoutes = (): string[] => [
 /**
  * 获取嵌套路由测试数据
  * @returns 嵌套路由路径和预期父路由
+ * @example
+ * ```ts
+ * const nestedRoutes = getNestedRoutes();
+ * expect(nestedRoutes[0].path).toBe('/model/table');
+ * expect(nestedRoutes[0].parent).toBe('/model');
+ * ```
  */
 export const getNestedRoutes = (): Array<{ path: string; parent: string }> => [
   { path: '/model/table', parent: '/model' },

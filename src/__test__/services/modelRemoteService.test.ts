@@ -12,11 +12,16 @@ import {
   isRemoteDataFresh,
   RemoteDataError,
   RemoteDataErrorType,
-  type ModelsDevApiResponse,
 } from '@/services/modelRemoteService';
 import { fetch } from '@/utils/tauriCompat/http';
 import { createLazyStore } from '@/utils/tauriCompat/store';
 import { ALLOWED_MODEL_PROVIDERS, NETWORK_CONFIG } from '@/utils/constants';
+import {
+  createDeepSeekApiResponse,
+  createKimiApiResponse,
+  createOpenAIApiResponse,
+  createMockApiResponse,
+} from '@/__test__/fixtures/modelProvider';
 
 // Mock tauriCompat/http for system boundary (network requests)
 vi.mock('@/utils/tauriCompat/http');
@@ -50,6 +55,8 @@ describe('modelRemoteService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 测试错误处理，需要构造无效输入
     mockCreateLazyStore.mockReturnValue(mockStore as any);
   });
 
@@ -58,51 +65,18 @@ describe('modelRemoteService', () => {
   });
 
   describe('fetchRemoteData', () => {
-    const mockApiResponse: ModelsDevApiResponse = {
-      deepseek: {
-        id: 'deepseek',
-        name: 'DeepSeek',
-        api: 'https://api.deepseek.com',
-        env: ['DEEPSEEK_API_KEY'],
-        npm: '@ai-sdk/deepseek',
-        doc: 'https://docs.deepseek.com',
+    const mockApiResponse = createMockApiResponse([
+      createDeepSeekApiResponse({
         models: {
           'deepseek-chat': {
             id: 'deepseek-chat',
             name: 'DeepSeek Chat',
           },
         },
-      },
-      kimi: {
-        id: 'kimi',
-        name: 'Kimi',
-        api: 'https://api.moonshot.cn',
-        env: ['MOONSHOT_API_KEY'],
-        npm: '@ai-sdk/moonshotai',
-        doc: 'https://docs.moonshot.cn',
-        models: {
-          'moonshot-v1-8k': {
-            id: 'moonshot-v1-8k',
-            name: 'Moonshot v1 8k',
-          },
-        },
-      },
-      // 这个不在白名单中，应该被过滤掉
-      openai: {
-        id: 'openai',
-        name: 'OpenAI',
-        api: 'https://api.openai.com',
-        env: ['OPENAI_API_KEY'],
-        npm: '@ai-sdk/openai',
-        doc: 'https://docs.openai.com',
-        models: {
-          'gpt-4': {
-            id: 'gpt-4',
-            name: 'GPT-4',
-          },
-        },
-      },
-    };
+      }),
+      createKimiApiResponse(),
+      createOpenAIApiResponse(),
+    ]);
 
     it('应该成功获取并返回完整 API 响应和过滤后的数据', async () => {
       // Mock fetch 成功响应
@@ -394,22 +368,9 @@ describe('modelRemoteService', () => {
 
   describe('saveCachedProviderData', () => {
     it('应该保存完整的 API 响应和时间戳', async () => {
-      const mockApiResponse: ModelsDevApiResponse = {
-        deepseek: {
-          id: 'deepseek',
-          name: 'DeepSeek',
-          api: 'https://api.deepseek.com',
-          env: ['DEEPSEEK_API_KEY'],
-          npm: '@ai-sdk/deepseek',
-          doc: 'https://docs.deepseek.com',
-          models: {
-            'deepseek-chat': {
-              id: 'deepseek-chat',
-              name: 'DeepSeek Chat',
-            },
-          },
-        },
-      };
+      const mockApiResponse = createMockApiResponse([
+        createDeepSeekApiResponse(),
+      ]);
 
       await saveCachedProviderData(mockApiResponse);
 
@@ -442,36 +403,10 @@ describe('modelRemoteService', () => {
   describe('loadCachedProviderData', () => {
     it('应该成功加载并过滤缓存数据', async () => {
       const mockCachedData = {
-        apiResponse: {
-          deepseek: {
-            id: 'deepseek',
-            name: 'DeepSeek',
-            api: 'https://api.deepseek.com',
-            env: ['DEEPSEEK_API_KEY'],
-            npm: '@ai-sdk/deepseek',
-            doc: 'https://docs.deepseek.com',
-            models: {
-              'deepseek-chat': {
-                id: 'deepseek-chat',
-                name: 'DeepSeek Chat',
-              },
-            },
-          },
-          openai: {
-            id: 'openai',
-            name: 'OpenAI',
-            api: 'https://api.openai.com',
-            env: ['OPENAI_API_KEY'],
-            npm: '@ai-sdk/openai',
-            doc: 'https://docs.openai.com',
-            models: {
-              'gpt-4': {
-                id: 'gpt-4',
-                name: 'GPT-4',
-              },
-            },
-          },
-        },
+        apiResponse: createMockApiResponse([
+          createDeepSeekApiResponse(),
+          createOpenAIApiResponse(),
+        ]),
         metadata: {
           lastRemoteUpdate: new Date().toISOString(),
           source: 'remote',
@@ -507,14 +442,8 @@ describe('modelRemoteService', () => {
 
   describe('adaptApiResponseToInternalFormat', () => {
     it('应该正确过滤和转换数据格式', async () => {
-      const mockApiResponse: ModelsDevApiResponse = {
-        deepseek: {
-          id: 'deepseek',
-          name: 'DeepSeek',
-          api: 'https://api.deepseek.com',
-          env: ['DEEPSEEK_API_KEY'],
-          npm: '@ai-sdk/deepseek',
-          doc: 'https://docs.deepseek.com',
+      const mockApiResponse = createMockApiResponse([
+        createDeepSeekApiResponse({
           models: {
             'deepseek-chat': {
               id: 'deepseek-chat',
@@ -525,22 +454,9 @@ describe('modelRemoteService', () => {
               name: 'DeepSeek Coder',
             },
           },
-        },
-        openai: {
-          id: 'openai',
-          name: 'OpenAI',
-          api: 'https://api.openai.com',
-          env: ['OPENAI_API_KEY'],
-          npm: '@ai-sdk/openai',
-          doc: 'https://docs.openai.com',
-          models: {
-            'gpt-4': {
-              id: 'gpt-4',
-              name: 'GPT-4',
-            },
-          },
-        },
-      };
+        }),
+        createOpenAIApiResponse(),
+      ]);
 
       // Mock fetch 成功响应
       mockFetch.mockResolvedValue({

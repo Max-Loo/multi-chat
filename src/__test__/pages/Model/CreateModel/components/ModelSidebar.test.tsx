@@ -23,6 +23,8 @@ afterEach(() => {
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: (keyOrFn: string | ((_: any) => string)) => {
       if (typeof keyOrFn === 'function') {
         return keyOrFn({
@@ -46,6 +48,8 @@ vi.mock('react-i18next', () => ({
  * 创建测试用 Redux store
  * @param providers 供应商列表
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Reason: Redux Toolkit 严格类型系统限制
 const createTestStore = (providers?: any[]) => {
   return configureStore({
     reducer: {
@@ -66,6 +70,8 @@ const createTestStore = (providers?: any[]) => {
  * 创建测试包装器
  * @param store Redux store
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Reason: Redux Toolkit 严格类型系统限制
 const createWrapper = (store: any) => {
   return function({ children }: { children: React.ReactNode }) {
     return (

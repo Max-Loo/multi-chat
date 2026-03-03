@@ -19,6 +19,8 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
 // Mock react-i18next
   vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: (keyOrFn: string | ((_: any) => string)) => {
       const translations = {
         model: {
@@ -96,7 +98,11 @@ const createTestStore = (state: Partial<RootState>) => {
     reducer: {
       models: modelReducer,
       modelProvider: modelProviderReducer,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     } as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     preloadedState: state as any,
   });
 };

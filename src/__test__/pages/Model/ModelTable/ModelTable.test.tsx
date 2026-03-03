@@ -20,6 +20,8 @@ import type { Model } from '@/types/model';
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: (keyOrFn: string | ((_: any) => string)) => {
       if (typeof keyOrFn === 'function') {
         return keyOrFn({
@@ -80,7 +82,11 @@ const createTestStore = (state: Partial<RootState>) => {
     reducer: {
       models: modelReducer,
       modelProvider: modelProviderReducer,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     } as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     preloadedState: state as any,
   });
 };
@@ -103,18 +109,24 @@ describe('ModelTable', () => {
       createMockModel({
         id: '1',
         nickname: 'DeepSeek Chat',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
         providerKey: 'deepseek' as any,
         modelKey: 'deepseek-chat',
       }),
       createMockModel({
         id: '2',
         nickname: 'Kimi Chat',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
         providerKey: 'moonshotai' as any,
         modelKey: 'moonshot-v1-8k',
       }),
       createMockModel({
         id: '3',
         nickname: 'Zhipu Chat',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 测试错误处理，需要构造无效输入
         providerKey: 'zhipu' as any,
         modelKey: 'glm-4',
       }),
