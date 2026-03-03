@@ -101,9 +101,6 @@ importers:
       markdown-it:
         specifier: ^14.1.0
         version: 14.1.0
-      multi-chat:
-        specifier: 'link:'
-        version: 'link:'
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
