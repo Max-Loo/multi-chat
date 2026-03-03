@@ -42,7 +42,7 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
   const [expanded, setExpanded] = useState(initiallyExpanded);
 
   return (
-    <Card className="mb-2 bg-muted/50 border-none shadow-none">
+    <Card className="mb-2 bg-transparent border-none shadow-none">
       {/* 折叠按钮 */}
       <Button
         variant="ghost"
@@ -56,7 +56,7 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
             <img
               src={`https://models.dev/logos/${provider.providerKey}.svg`}
               alt={provider.providerKey}
-              className={`h-4 w-4 ${loading && 'animate-pulse-fade'}`}
+              className={`h-5 w-5 ${loading && 'animate-pulse-fade'}`}
             />
           )}
 
@@ -74,7 +74,7 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
 
       {/* 推理内容 */}
       {expanded && (
-        <div className="px-4 pb-4 mt-2">
+        <div className="pl-4 pb-4 mt-2 border-l-2 border-gray-300">
           <div
             className="text-sm text-muted-foreground"
             dangerouslySetInnerHTML={{
