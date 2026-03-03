@@ -12,6 +12,20 @@
   .scrollbar-thin {
     scrollbar-width: thin;
   }
+  .animate-pulse-fade {
+    animation: pulse-fade 2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-fade {
+  0%, 100% {
+    opacity: 0.3;
+    filter: brightness(1.5);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1);
+  }
 }
 
 body {

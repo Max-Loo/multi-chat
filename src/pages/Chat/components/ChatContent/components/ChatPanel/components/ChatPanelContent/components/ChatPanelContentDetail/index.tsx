@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowDown } from "lucide-react"
 import DetailTitle from "./components/DetailTitle";
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
-import ChatBubble from "./components/ChatBubble"
+import { ChatBubble } from "@/components/chat/ChatBubble"
 import RunningChatBubble from "./components/RunningChatBubble";
 import { useIsChatSending } from "../../../../hooks/useIsChatSending";
 import { isNil, isNotNil } from "es-toolkit"
@@ -27,6 +27,9 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
   const {
     selectedChat,
   } = useTypedSelectedChat()
+
+  // 获取所有模型（用于查找 provider）
+  const models = useAppSelector(state => state.models.models)
 
   // 当前在运行的聊天
   const runningChat = useAppSelector(state => state.chat.runningChat)
@@ -130,9 +133,16 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     <DetailTitle chatModel={chatModel} />
     {/* 历史记录列表 */}
     {historyList.map(historyRecord => {
+      // 根据 modelKey 查找对应的模型，获取 provider 信息
+      const provider = models.find(model => model.modelKey === historyRecord.modelKey)
+
       return <ChatBubble
         key={historyRecord.id}
-        historyRecord={historyRecord}
+        role={historyRecord.role}
+        content={historyRecord.content || ''}
+        reasoningContent={historyRecord.reasoningContent}
+        isRunning={false}
+        provider={provider ? { providerKey: provider.providerKey } : undefined}
       />
     })}
     {/* 单独展示正在生成的消息 */}

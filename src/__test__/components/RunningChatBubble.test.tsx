@@ -25,12 +25,12 @@ const createMockChatModelForTest = (modelId: string = 'model-1'): ChatModel => {
 };
 
 // Mock ChatBubble 组件
-vi.mock('@/pages/Chat/components/ChatContent/components/ChatPanel/components/ChatPanelContent/components/ChatPanelContentDetail/components/ChatBubble', () => ({
-  default: vi.fn(({ isRunningBubble, historyRecord }) => (
+vi.mock('@/components/chat/ChatBubble', () => ({
+  ChatBubble: vi.fn(({ isRunning, content, reasoningContent }) => (
     <div data-testid="chat-bubble-mock">
-      <div data-testid="is-running-bubble">{isRunningBubble ? 'true' : 'false'}</div>
-      <div data-testid="history-content">{historyRecord?.content || ''}</div>
-      <div data-testid="history-reasoning">{historyRecord?.reasoningContent || ''}</div>
+      <div data-testid="is-running-bubble">{isRunning ? 'true' : 'false'}</div>
+      <div data-testid="history-content">{content || ''}</div>
+      <div data-testid="history-reasoning">{reasoningContent || ''}</div>
     </div>
   )),
 }));
@@ -56,6 +56,7 @@ describe('RunningChatBubble', () => {
     // 创建一个 fresh 的 Redux store
     mockStore = configureStore({
       reducer: {
+        models: (state = { models: [] }) => state,
         chat: (state = {
           runningChat: {},
         }) => state,
@@ -70,6 +71,7 @@ describe('RunningChatBubble', () => {
       // 设置 runningChat 状态：isSending=true，但 history.content 为空
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -109,6 +111,7 @@ describe('RunningChatBubble', () => {
       // 设置 runningChat 状态：isSending=true，但 history 为 undefined
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -139,6 +142,7 @@ describe('RunningChatBubble', () => {
       // 设置 runningChat 状态：isSending=false
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -180,6 +184,7 @@ describe('RunningChatBubble', () => {
       // 设置 runningChat 状态：isSending=true，有内容
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -226,6 +231,7 @@ describe('RunningChatBubble', () => {
       // 设置 runningChat 状态：包含推理内容
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -270,6 +276,7 @@ describe('RunningChatBubble', () => {
 
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -302,6 +309,7 @@ describe('RunningChatBubble', () => {
 
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -334,6 +342,7 @@ describe('RunningChatBubble', () => {
       // 设置 runningChat 状态：isSending=true，但 content 为空（触发 loading 状态）
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -366,6 +375,7 @@ describe('RunningChatBubble', () => {
       // runningChat 中没有对应的聊天或模型
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {},
           }),
@@ -389,6 +399,7 @@ describe('RunningChatBubble', () => {
       // runningChat 中有另一个聊天的数据
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               'other-chat-id': {
@@ -422,6 +433,7 @@ describe('RunningChatBubble', () => {
       // runningChat 中有另一个模型的数据
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -462,6 +474,7 @@ describe('RunningChatBubble', () => {
 
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {
@@ -500,6 +513,7 @@ describe('RunningChatBubble', () => {
 
       mockStore = configureStore({
         reducer: {
+        models: (state = { models: [] }) => state,
           chat: () => ({
             runningChat: {
               [mockSelectedChat.id]: {

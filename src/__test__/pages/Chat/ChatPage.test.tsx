@@ -15,7 +15,7 @@ export const mockSetSearchParams = vi.fn();
 let mockSearchParams = new URLSearchParams();
 
 /**
- * Mock 所有使用 @ant-design/x 的组件
+ * Mock 所有使用的自定义聊天组件
  */
 vi.mock('@/pages/Chat/components/ChatSidebar/components/ChatButton', () => ({
   default: () => <div data-testid="chat-button">Mock ChatButton</div>,

@@ -1,10 +1,10 @@
 import { memo, useMemo } from "react";
-import ChatBubble from "./ChatBubble";
+import { ChatBubble } from "@/components/chat/ChatBubble";
 import { useAppSelector } from "@/hooks/redux";
 import { ChatModel } from "@/types/chat";
 import { useTypedSelectedChat } from "../../../../../hooks/useTypedSelectedChat";
 import { isNil } from "es-toolkit";
-import { Bubble } from "@ant-design/x";
+import { Spinner } from "@/components/ui/spinner";
 
 interface RunningChatBubbleProps {
   chatModel: ChatModel
@@ -21,6 +21,8 @@ const RunningChatBubble = memo<RunningChatBubbleProps>(({
   } = useTypedSelectedChat()
   // 当前在运行的聊天
   const runningChat = useAppSelector(state => state.chat.runningChat)
+  // 获取所有模型（用于查找 provider）
+  const models = useAppSelector(state => state.models.models)
 
   // 当前的某个聊天窗口
   const currentChatModel = useMemo(() => {
@@ -40,17 +42,27 @@ const RunningChatBubble = memo<RunningChatBubbleProps>(({
 
   // 刚开始获取消息的状态，拦截并展示一个loading
   if (isNil(currentChatModel.history) || (!currentChatModel.history.content && !currentChatModel.history.reasoningContent)) {
-    return <Bubble
-      className="w-full mt-3"
-      variant="borderless"
-      placement="start" loading={true} content=""
-    />
+    return (
+      <div className="w-full mt-3 flex justify-start">
+        <div className="bg-muted text-muted-foreground px-4 py-3 rounded-lg flex items-center">
+          <Spinner className="size-4" />
+        </div>
+      </div>
+    )
   }
 
+  // TypeScript 无法推断这里 history 一定存在，使用非空断言
+  const history = currentChatModel.history!
+
+  // 根据 modelKey 查找对应的模型，获取 provider 信息
+  const provider = models.find(model => model.modelKey === history.modelKey)
 
   return <ChatBubble
-    isRunningBubble={true}
-    historyRecord={currentChatModel.history}
+    role={history.role}
+    content={history.content || ''}
+    reasoningContent={history.reasoningContent}
+    isRunning={true}
+    provider={provider}
   />
 })
 
