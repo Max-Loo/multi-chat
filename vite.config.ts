@@ -9,6 +9,8 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
+  // GitHub Pages 子路径部署支持：开发环境使用根路径，生产环境使用 /multi-chat/
+  base: process.env.NODE_ENV === 'production' ? '/multi-chat/' : '/',
   plugins: [
     react({
       babel: {
