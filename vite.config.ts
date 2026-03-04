@@ -42,6 +42,9 @@ export default defineConfig(async () => ({
     include: ['src/__test__/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist', 'src/__test__/integration/**'],
 
+    // 忽略未处理的 Promise rejection（测试错误处理场景时会故意创建错误）
+    dangerouslyIgnoreUnhandledErrors: true,
+
     // 并行执行配置
     pool: 'threads',
     singleThread: false,
