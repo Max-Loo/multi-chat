@@ -334,6 +334,140 @@ global.fetch = vi.fn(() => /* ... */);
 
 // Mock IndexedDB because it's not available in Node.js environment
 vi.mock('@/utils/idb', () => ({ /* ... */ }));
+
+// Mock Vercel AI SDK because we need to test chat service without making real API calls
+// and to control the stream responses for testing various scenarios
+vi.mock('ai', () => ({
+  streamText: vi.fn(),
+  generateId: vi.fn(() => 'mock-generated-id'),
+}));
+
+// Mock DeepSeek provider because it requires real API credentials
+// and we want to test the provider selection logic
+vi.mock('@ai-sdk/deepseek', () => ({
+  createDeepSeek: vi.fn(() => vi.fn((modelId: string) => ({
+    provider: 'deepseek' as const,
+    modelId,
+  }))),
+}));
+
+// Mock storeUtils to prevent real IndexedDB operations during tests
+// This ensures tests run faster and don't leave test data in the database
+vi.mock('@/store/storage/storeUtils', () => ({
+  createLazyStore: vi.fn(() => ({
+    init: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+// Mock date-fns because date formatting depends on current locale
+// and we want consistent test results across different environments
+vi.mock('date-fns', () => ({
+  format: vi.fn(() => '2024-01-01'),
+}));
+
+// Mock tauriCompat/env to simulate Tauri environment
+// This allows testing both Tauri and web behaviors
+vi.mock('@/utils/tauriCompat/env', () => ({
+  isTauri: vi.fn().mockReturnValue(false),
+}));
+```
+
+### SDK Mock 注释案例
+
+#### Vercel AI SDK 的注释规范
+
+```typescript
+/**
+ * Mock Vercel AI SDK core functions
+ * 
+ * Reason: Testing chat service logic without making real API calls.
+ * This allows us to:
+ * - Control stream responses for testing edge cases
+ * - Simulate network errors and timeouts
+ * - Test response parsing without external dependencies
+ * 
+ * @see src/__test__/helpers/mocks/aiSdk.ts for mock utilities
+ */
+vi.mock('ai', () => ({
+  streamText: vi.fn(),
+  generateId: vi.fn(() => 'mock-generated-id'),
+}));
+
+/**
+ * Mock DeepSeek provider SDK
+ * 
+ * Reason: Provider instantiation requires valid API credentials.
+ * We mock this to test provider selection and configuration logic
+ * without exposing real credentials in tests.
+ */
+vi.mock('@ai-sdk/deepseek', () => ({
+  createDeepSeek: vi.fn(() => vi.fn((modelId: string) => ({
+    provider: 'deepseek' as const,
+    modelId,
+  }))),
+}));
+
+/**
+ * Mock streamText with custom response
+ * 
+ * This test verifies that our service correctly handles stream responses
+ * and converts them to our internal message format.
+ */
+const mockResult = createMockStreamResult([
+  { type: 'text-delta', text: 'Hello' },
+  { type: 'text-delta', text: ' World' },
+]);
+vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
+```
+
+#### Tauri API Mock 注释案例
+
+```typescript
+/**
+ * Mock Tauri keyring API
+ * 
+ * Reason: Keyring requires system keychain access which is not available
+ * in test environment. We use in-memory mock instead.
+ */
+vi.mock('@/utils/tauriCompat', () => ({
+  getPassword: vi.fn().mockResolvedValue(null),
+  setPassword: vi.fn().mockResolvedValue(undefined),
+}));
+
+/**
+ * Mock Tauri shell API
+ * 
+ * Reason: Opening external links should not actually open browsers during tests.
+ */
+vi.mock('@/utils/tauriCompat/shell', () => ({
+  shell: {
+    open: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+```
+
+### Mock 注释检查清单
+
+在添加 Mock 时，确保包含以下信息：
+
+- [ ] **Mock 目标**: 清楚地说明被 Mock 的是什么
+- [ ] **Mock 原因**: 解释为什么需要 Mock（通常是环境限制或测试隔离）
+- [ ] **预期行为**: 描述 Mock 的行为对测试的影响
+- [ ] **恢复机制**: 确保测试后清理 Mock 状态
+
+**示例**:
+```typescript
+// ✅ 完整的 Mock 注释
+/**
+ * Mock streamText to return controlled stream responses
+ * 
+ * Reason: Testing stream consumption logic without real API calls
+ * Mock behavior: Returns predefined text deltas and metadata
+ * Cleanup: vi.clearAllMocks() in afterEach resets all mocks
+ */
+vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
 ```
 
 ## MSW (Mock Service Worker) 使用指南
@@ -990,6 +1124,392 @@ const message = createMockPanelMessage({
 });
 ```
 
+## Vercel AI SDK Mock 最佳实践
+
+> 参考规范：`openspec/changes/enable-skipped-unit-tests/spec.md`
+
+### 支持的 SDK 版本
+
+- **ai**: ^6.0.99
+- **@ai-sdk/deepseek**: ^2.0.20
+- **@ai-sdk/moonshotai**: ^2.0.5
+- **zhipu-ai-provider**: ^0.2.2
+
+### Mock 方法：依赖注入（推荐）
+
+**为什么使用依赖注入？**
+
+Vitest 的 `vi.mock()` 无法完全拦截 Vercel AI SDK 的 HTTP 请求，因为 provider 对象内部的 `doStream()` 方法仍会调用真实的 HTTP 客户端。依赖注入可以完全避免这个问题。
+
+**使用方法：**
+
+```typescript
+import { streamChatCompletion } from '@/services/chatService';
+import { createMockStreamResult } from '@/__test__/helpers/mocks/aiSdk';
+
+// 1. 创建 mock 函数
+const mockStreamText = vi.fn();
+const mockGenerateId = vi.fn(() => 'test-id');
+
+// 2. 配置 mock 返回值
+const mockResult = createMockStreamResult([
+  { type: 'text-delta', text: 'Hello' },
+  { type: 'text-delta', text: ' World' },
+]);
+mockStreamText.mockReturnValueOnce(mockResult as any);
+
+// 3. 调用 streamChatCompletion，传入依赖注入
+const params = {
+  model: mockModel,
+  historyList: [],
+  message: 'Hi',
+};
+
+const responses = [];
+for await (const response of streamChatCompletion(params, {
+  dependencies: { streamText: mockStreamText, generateId: mockGenerateId }
+})) {
+  responses.push(response);
+}
+
+// 4. 验证结果
+expect(responses[0].content).toBe('Hello World');
+expect(mockStreamText).toHaveBeenCalledTimes(1);
+```
+
+**依赖注入接口：**
+
+```typescript
+interface AISDKDependencies {
+  streamText: typeof realStreamText;
+  generateId: typeof realGenerateId;
+}
+```
+
+**优势：**
+- ✅ 完全避免真实 HTTP 调用
+- ✅ 完全控制测试行为
+- ✅ 类型安全
+- ✅ 不影响全局 mock，其他测试继续工作
+
+### 基本使用方法（已弃用）
+
+> ⚠️ **注意**：以下方法使用全局 `vi.mock()`，可能导致真实 HTTP 调用被触发。新测试应该使用依赖注入方法。
+
+```typescript
+import { streamText } from 'ai';
+import { createMockStreamResult, StreamEvents } from '@/__test__/helpers/mocks/aiSdk';
+
+// Mock streamText 返回值
+const mockResult = createMockStreamResult([
+  { type: 'text-delta', text: 'Hello' },
+  { type: 'text-delta', text: ' World' },
+]);
+
+vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
+```
+
+### 流式事件类型
+
+Vercel AI SDK 支持以下流式事件类型：
+
+```typescript
+// 文本增量事件
+type TextDeltaEvent = { type: 'text-delta'; text: string };
+
+// 推理增量事件（用于 R1 等推理模型）
+type ReasoningDeltaEvent = { type: 'reasoning-delta'; text: string };
+
+// 错误事件
+type ErrorEvent = { type: 'error'; error: Error };
+```
+
+### Mock 工厂函数
+
+#### createMockStreamResult
+
+创建模拟的 streamText 返回值，支持流式事件和元数据。
+
+```typescript
+import { createMockStreamResult } from '@/__test__/helpers/mocks/aiSdk';
+
+// 基本使用
+const mockResult = createMockStreamResult([
+  { type: 'text-delta', text: 'Hello' },
+  { type: 'text-delta', text: ' World' },
+]);
+
+// 带自定义元数据
+const mockResult = createMockStreamResult(
+  [{ type: 'text-delta', text: 'Response' }],
+  {
+    finishReason: 'stop',
+    usage: { inputTokens: 100, outputTokens: 50 },
+    response: {
+      id: 'resp-123',
+      modelId: 'deepseek-chat',
+      timestamp: new Date(),
+    },
+  }
+);
+```
+
+#### createMockStreamResultWithMetadata
+
+创建带完整自定义元数据的流式响应。
+
+```typescript
+import { createMockStreamResultWithMetadata } from '@/__test__/helpers/mocks/aiSdk';
+
+const mockResult = createMockStreamResultWithMetadata({
+  streamItems: [{ type: 'text-delta', text: 'Hello' }],
+  finishReason: 'stop',
+  usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+  response: {
+    id: 'resp-123',
+    modelId: 'deepseek-chat',
+    timestamp: new Date(),
+    headers: { 'content-type': 'application/json' },
+  },
+  request: { body: '{"model":"deepseek-chat"}' },
+  providerMetadata: { deepseek: { version: '2024-01-01' } },
+  warnings: [],
+  sources: [],
+});
+```
+
+#### 预定义流式事件
+
+```typescript
+import { StreamEvents } from '@/__test__/helpers/mocks/aiSdk';
+
+// 使用预定义事件
+const mockResult = createMockStreamResult(StreamEvents.GREETING);
+
+// 可用的预定义事件：
+// - StreamEvents.GREETING: ["Hello", " World", "!"]
+// - StreamEvents.WITH_REASONING: 包含推理内容
+// - StreamEvents.EMPTY: 空响应
+// - StreamEvents.SINGLE_CHAR: 单个字符
+```
+
+#### 创建推理事件序列
+
+```typescript
+import { createReasoningStreamEvents } from '@/__test__/helpers/mocks/aiSdk';
+
+// 创建包含推理和响应的事件序列
+const events = createReasoningStreamEvents(
+  'Let me think about this...',  // 推理内容
+  'The answer is 42.'            // 响应内容
+);
+
+const mockResult = createMockStreamResult(events);
+```
+
+#### 创建文本流事件
+
+```typescript
+import { createTextStreamEvents } from '@/__test__/helpers/mocks/aiSdk';
+
+// 将长文本拆分为多个 text-delta 事件
+const events = createTextStreamEvents('Hello World!', 2);
+// 结果: [{type: 'text-delta', text: 'He'}, {type: 'text-delta', text: 'll'}, ...]
+
+const mockResult = createMockStreamResult(events);
+```
+
+### 错误场景 Mock
+
+#### 网络错误
+
+```typescript
+import { createMockNetworkError } from '@/__test__/helpers/mocks/aiSdk';
+
+const networkError = createMockNetworkError('Network error', 500);
+vi.mocked(streamText).mockRejectedValueOnce(networkError);
+```
+
+#### API 错误
+
+```typescript
+import { createMockAPIError } from '@/__test__/helpers/mocks/aiSdk';
+
+const apiError = createMockAPIError(429, 'Rate limit exceeded');
+vi.mocked(streamText).mockRejectedValueOnce(apiError);
+```
+
+#### 超时错误
+
+```typescript
+import { createMockTimeoutError } from '@/__test__/helpers/mocks/aiSdk';
+
+const timeoutError = createMockTimeoutError();
+vi.mocked(streamText).mockRejectedValueOnce(timeoutError);
+```
+
+#### 中断流式响应
+
+```typescript
+import { createMockAbortedStreamResult } from '@/__test__/helpers/mocks/aiSdk';
+
+// 创建在中途被中断的流（产生 3 个事件后中断）
+const abortedResult = createMockAbortedStreamResult(3);
+vi.mocked(streamText).mockReturnValueOnce(abortedResult as any);
+```
+
+#### 流式超时
+
+```typescript
+import { createMockStreamTimeoutResult } from '@/__test__/helpers/mocks/aiSdk';
+
+// 创建在流中间超时的响应（产生 2 个事件后超时）
+const timeoutResult = createMockStreamTimeoutResult(2);
+vi.mocked(streamText).mockReturnValueOnce(timeoutResult as any);
+```
+
+### 供应商特定 Mock
+
+#### 创建 Language Model Provider
+
+```typescript
+import { createMockLanguageModel } from '@/__test__/helpers/mocks/aiSdk';
+
+const mockProvider = createMockLanguageModel('deepseek', 'deepseek-chat');
+const model = mockProvider('deepseek-chat');
+// 结果: { provider: 'deepseek', modelId: 'deepseek-chat' }
+```
+
+#### 创建 Provider Factory
+
+```typescript
+import { createMockProviderFactory } from '@/__test__/helpers/mocks/aiSdk';
+import { createDeepSeek } from '@ai-sdk/deepseek';
+
+const mockCreateDeepSeek = createMockProviderFactory('deepseek');
+vi.mocked(createDeepSeek).mockImplementation(mockCreateDeepSeek);
+```
+
+#### 预定义元数据模板
+
+```typescript
+import { MetadataTemplates, createMockStreamResult } from '@/__test__/helpers/mocks/aiSdk';
+
+// 使用 DeepSeek 模板
+const mockResult = createMockStreamResult(
+  [{ type: 'text-delta', text: 'Hello' }],
+  MetadataTemplates.DEEPSEEK
+);
+
+// 可用的模板：
+// - MetadataTemplates.DEEPSEEK
+// - MetadataTemplates.MOONSHOTAI
+// - MetadataTemplates.ZHIPU
+```
+
+### RAG/Web Search 测试
+
+```typescript
+import { createMockStreamResultWithMetadata } from '@/__test__/helpers/mocks/aiSdk';
+
+const mockResult = createMockStreamResultWithMetadata({
+  streamItems: [{ type: 'text-delta', text: 'According to the sources...' }],
+  sources: [
+    {
+      sourceType: 'url',
+      id: 'src-1',
+      url: 'https://example.com/article',
+      title: 'Example Article',
+      providerMetadata: { score: 0.95 },
+    },
+  ],
+});
+```
+
+### 完整的测试示例
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { streamText } from 'ai';
+import { createMockStreamResult, StreamEvents } from '@/__test__/helpers/mocks/aiSdk';
+import { streamChatCompletion } from '@/services/chatService';
+
+describe('chatService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('应该成功发起流式请求', async () => {
+    // Arrange
+    const mockResult = createMockStreamResult([
+      { type: 'text-delta', text: 'Hello' },
+      { type: 'text-delta', text: ' World' },
+    ]);
+    vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
+
+    const params = {
+      model: mockModel,
+      historyList: [],
+      message: 'Hi',
+    };
+
+    // Act
+    const responses = [];
+    for await (const response of streamChatCompletion(params)) {
+      responses.push(response);
+    }
+
+    // Assert
+    expect(responses.length).toBeGreaterThan(0);
+    expect(responses[0]).toMatchObject({
+      role: 'assistant',
+      modelKey: 'deepseek-chat',
+    });
+  });
+
+  it('应该处理推理内容', async () => {
+    // Arrange
+    const mockResult = createMockStreamResult([
+      { type: 'reasoning-delta', text: 'Thinking...' },
+      { type: 'text-delta', text: 'The answer is 42.' },
+    ]);
+    vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
+
+    // Act & Assert
+    // ... 测试逻辑
+  });
+});
+```
+
+### 注意事项
+
+1. **类型断言**: 由于 Mock 对象和真实 SDK 返回类型不完全一致，需要添加 `as any` 类型断言：
+   ```typescript
+   vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
+   ```
+
+2. **元数据 Promise**: streamText 返回的元数据字段都是 Promise，会自动 resolve：
+   ```typescript
+   const { finishReason, usage } = await result;
+   // finishReason 和 usage 都是 Promise
+   ```
+
+3. **AsyncIterable 接口**: 返回的对象既是 AsyncIterable 又是 Thenable：
+   ```typescript
+   // 使用 for await...of 消费流
+   for await (const event of result) { }
+   
+   // 使用 await 获取元数据
+   const metadata = await result;
+   ```
+
+4. **清理 Mock**: 每个测试后清理 Mock：
+   ```typescript
+   afterEach(() => {
+     vi.clearAllMocks();
+   });
+   ```
+
 ## Fixtures 使用指南
 
 ### Message Fixtures
@@ -1306,6 +1826,204 @@ const message = {
 **运行集成测试**：
 ```bash
 pnpm test:integration
+```
+
+## 常见问题排查指南
+
+### Vercel AI SDK Mock 相关问题
+
+#### 问题 1: streamText Mock 不生效
+
+**症状**: 测试中调用 streamText 时仍然使用真实实现
+
+**原因**: vi.mock() 需要在文件顶层静态调用，且必须在任何导入之前
+
+**解决方案**:
+```typescript
+// ✅ 正确：在 setup.ts 中全局 Mock
+vi.mock('ai', () => ({
+  streamText: vi.fn(),
+  generateId: vi.fn(() => 'mock-generated-id'),
+}));
+
+// ✅ 正确：在测试文件中使用 vi.mocked()
+import { streamText } from 'ai';
+vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
+```
+
+#### 问题 2: 流式响应无法消费
+
+**症状**: for await...of 循环无法读取到数据
+
+**原因**: Mock 结果需要同时实现 AsyncIterable 和 Thenable 接口
+
+**解决方案**:
+```typescript
+const mockResult = {
+  // 必须实现 Symbol.asyncIterator
+  [Symbol.asyncIterator]: async function* () {
+    yield { type: 'text-delta', text: 'Hello' };
+  },
+  // 必须实现 then 方法
+  then(callback) {
+    return Promise.resolve({ finishReason: 'stop', ... }).then(callback);
+  },
+  // 可选的 fullStream 属性
+  fullStream: async function* () { ... }(),
+};
+```
+
+**推荐使用**: `createMockStreamResult()` 辅助函数
+
+#### 问题 3: 元数据字段为 undefined
+
+**症状**: await result 后，finishReason、usage 等字段为 undefined
+
+**原因**: 这些字段是 Promise，需要正确 resolve
+
+**解决方案**:
+```typescript
+const mockResult = {
+  then: (callback) => {
+    return Promise.resolve({
+      finishReason: Promise.resolve('stop'),  // 注意是 Promise
+      usage: Promise.resolve({ inputTokens: 10, outputTokens: 5 }),
+      // ...
+    }).then(callback);
+  },
+};
+```
+
+#### 问题 4: TypeScript 类型错误
+
+**症状**: 编译时报类型不匹配错误
+
+**解决方案**:
+```typescript
+// 使用类型断言
+vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
+
+// 或者使用更宽松的类型
+const mockResult: unknown = createMockStreamResult([...]);
+vi.mocked(streamText).mockReturnValueOnce(mockResult as ReturnType<typeof streamText>);
+```
+
+### 测试环境问题
+
+#### 问题 5: IndexedDB 在测试中不可用
+
+**症状**: 测试中报 "IndexedDB is not available" 错误
+
+**解决方案**:
+```typescript
+// 在 setup.ts 中导入 fake-indexeddb
+import 'fake-indexeddb/auto';
+
+// 或者 Mock storeUtils
+vi.mock('@/store/storage/storeUtils', () => ({
+  createLazyStore: vi.fn(() => ({
+    init: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+```
+
+#### 问题 6: 测试之间相互影响
+
+**症状**: 单个测试通过，但全部运行时失败
+
+**原因**: Mock 状态未正确清理或全局状态污染
+
+**解决方案**:
+```typescript
+describe('测试套件', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    // 重置其他全局状态
+  });
+
+  afterEach(() => {
+    resetTestState();  // 使用辅助函数
+  });
+});
+```
+
+#### 问题 7: crypto.subtle 在 Node.js 环境中不可用
+
+**症状**: 测试加密功能时报 "crypto.subtle is undefined"
+
+**解决方案**:
+```typescript
+// 在 setup.ts 中提供 polyfill
+import { webcrypto } from 'node:crypto';
+if (!global.crypto) {
+  global.crypto = webcrypto as unknown as Crypto;
+}
+```
+
+### Mock 配置问题
+
+#### 问题 8: vi.mock() 中的变量访问失败
+
+**症状**: Mock 工厂函数中访问外部变量为 undefined
+
+**原因**: vi.mock() 是提升的（hoisted），不能访问外部作用域变量
+
+**解决方案**:
+```typescript
+// ❌ 错误：无法访问 vi
+vi.mock('@/utils/api', () => ({
+  fetchData: vi.fn(),  // vi 未定义
+}));
+
+// ✅ 正确：在工厂函数内部使用 vi
+vi.mock('@/utils/api', async (importOriginal) => {
+  const { vi } = await import('vitest');
+  return {
+    fetchData: vi.fn(),
+  };
+});
+```
+
+#### 问题 9: MSW 请求未被拦截
+
+**症状**: MSW 配置的 handler 没有拦截到请求
+
+**解决方案**:
+```typescript
+// 1. 确保在 setup.ts 中初始化 MSW
+import { setupServer } from 'msw/node';
+export const server = setupServer(...handlers);
+beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
+afterAll(() => server.close());
+afterEach(() => server.resetHandlers());
+
+// 2. 在测试中使用正确的 URL
+server.use(
+  rest.get('https://api.example.com/data', (req, res, ctx) => {
+    return res(ctx.json({ data: 'test' }));
+  })
+);
+```
+
+### 性能问题
+
+#### 问题 10: 测试运行缓慢
+
+**原因和解决方案**:
+1. **过多的 vi.mock()**: 使用全局 Mock 替代文件级 Mock
+2. **未清理的定时器**: 确保清理所有 setTimeout/setInterval
+3. **真实数据库连接**: 使用内存数据库或完全 Mock
+4. **大型组件渲染**: 考虑使用 shallow rendering 或拆分测试
+
+```typescript
+// 使用 fake timers 加速时间相关测试
+vi.useFakeTimers();
+// ... 执行测试
+vi.advanceTimersByTime(1000);
+vi.useRealTimers();
 ```
 
 ## 相关文档

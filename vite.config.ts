@@ -44,7 +44,7 @@ export default defineConfig(async () => ({
     pool: 'threads',
     singleThread: false,
     minThreads: 1,
-    maxThreads: 4, // 根据CPU核心数调整
+    maxThreads: 1, // 限制为单线程，确保 mock 正确工作
     useAtomics: true, // 使用 Atomics API 提升性能
 
     // 优化依赖项预构建

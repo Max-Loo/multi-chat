@@ -205,3 +205,64 @@
 - **THEN** 必须在 `beforeEach` 中清理所有 Mock
 - **THEN** 测试之间不应共享状态
 - **THEN** 每个测试应独立运行
+
+### Requirement: 敏感信息过滤测试
+streamChatCompletion SHALL 从原始响应中过滤敏感信息。
+
+#### Scenario: 请求体中的 API Key 移除
+- **WHEN** 收集请求元数据
+- **THEN** raw.request.body 中不包含 apiKey、api_key、authorization、Authorization 字段
+
+#### Scenario: 响应头中的敏感信息移除
+- **WHEN** 收集响应元数据
+- **THEN** raw.response.headers 中不包含 authorization、x-api-key 等敏感头
+
+#### Scenario: 请求体大小限制
+- **WHEN** 请求体超过 10KB
+- **THEN** raw.request.body 被截断并添加 "... (truncated)" 后缀
+
+### Requirement: 错误处理测试
+streamChatCompletion SHALL 在元数据收集失败时继续返回消息内容。
+
+#### Scenario: providerMetadata 收集失败
+- **WHEN** providerMetadata Promise 被拒绝
+- **THEN** 消息内容仍然被 yield，错误被记录在 raw.errors 中
+
+#### Scenario: warnings 收集失败
+- **WHEN** warnings Promise 被拒绝
+- **THEN** 不影响其他元数据收集，错误被记录在 raw.errors 中
+
+#### Scenario: sources 收集失败
+- **WHEN** sources Promise 被拒绝
+- **THEN** 消息正常返回，错误被记录在 raw.errors 中
+
+### Requirement: 原始数据收集测试
+streamChatCompletion SHALL 收集完整的原始响应数据。
+
+#### Scenario: 基础元数据收集
+- **WHEN** 流式响应完成
+- **THEN** raw 对象包含 response、request、usage、finishReason 字段
+
+#### Scenario: 流式事件统计
+- **WHEN** 处理包含多个 text-delta 和 reasoning-delta 的流
+- **THEN** raw.streamStats 正确统计 textDeltaCount、reasoningDeltaCount 和 duration
+
+#### Scenario: DeepSeek 供应商元数据
+- **WHEN** 使用 DeepSeek provider 完成请求
+- **THEN** raw.providerMetadata 包含 deepseek 特定字段
+
+#### Scenario: MoonshotAI 供应商元数据
+- **WHEN** 使用 MoonshotAI provider 完成请求
+- **THEN** raw.providerMetadata 包含 moonshotai 特定字段
+
+#### Scenario: Zhipu 供应商元数据
+- **WHEN** 使用 Zhipu provider 完成请求
+- **THEN** raw.providerMetadata 包含 zhipu 特定字段
+
+#### Scenario: RAG Sources 收集
+- **WHEN** 响应包含 sources（如 web search 模型）
+- **THEN** raw.sources 包含格式化的 source 列表
+
+#### Scenario: 空 sources 处理
+- **WHEN** 响应 sources 为空数组
+- **THEN** raw.sources 为 undefined（而非空数组）

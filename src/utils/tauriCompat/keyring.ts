@@ -397,7 +397,7 @@ export class WebKeyringCompat implements KeyringCompat {
  * Keyring 兼容层实例
  * 根据运行环境自动选择合适的实现
  */
-const keyringCompat: KeyringCompat = isTauri()
+export const keyringCompat: KeyringCompat = isTauri()
   ? new TauriKeyringCompat()
   : new WebKeyringCompat();
 
@@ -415,8 +415,8 @@ const keyringCompat: KeyringCompat = isTauri()
  * await setPassword('com.multichat.app', 'master-key', 'my-secret-key');
  * ```
  */
-export const setPassword = async (service: string, user: string, password: string): Promise<void> => {
-  await keyringCompat.setPassword(service, user, password);
+export const setPassword = (service: string, user: string, password: string): Promise<void> => {
+  return keyringCompat.setPassword(service, user, password);
 };
 
 /**
@@ -432,7 +432,7 @@ export const setPassword = async (service: string, user: string, password: strin
  * const key = await getPassword('com.multichat.app', 'master-key');
  * ```
  */
-export const getPassword = async (service: string, user: string): Promise<string | null> => {
+export const getPassword = (service: string, user: string): Promise<string | null> => {
   return keyringCompat.getPassword(service, user);
 };
 
