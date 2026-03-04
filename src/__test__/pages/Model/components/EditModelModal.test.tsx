@@ -19,6 +19,8 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: (keyOrFn: string | ((_: any) => string)) => {
       // 创建完整的翻译对象，包含所有嵌套属性
       const translations = {
@@ -78,7 +80,11 @@ const createTestStore = (state: Partial<RootState>) => {
     reducer: {
       models: modelReducer,
       modelProvider: modelProviderReducer,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     } as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Redux Toolkit 严格类型系统限制
     preloadedState: state as any,
   });
 };
@@ -91,6 +97,8 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
 
 describe('EditModelModal', () => {
   let mockModel: ReturnType<typeof createMockModel>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: 测试错误处理，需要构造无效输入
   let mockOnModalCancel: any;
 
   const mockProviders = [
@@ -166,6 +174,8 @@ describe('EditModelModal', () => {
       const wrapper = createWrapper(store);
       render(
         <EditModelModal
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // Reason: 测试错误处理，需要构造无效输入
           onModalCancel={mockOnModalCancel as any}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
@@ -236,6 +246,8 @@ describe('EditModelModal', () => {
       render(
         <EditModelModal
           isModalOpen={true}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // Reason: 测试错误处理，需要构造无效输入
           onModalCancel={mockOnModalCancel as any}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
@@ -311,6 +323,8 @@ describe('EditModelModal', () => {
       render(
         <EditModelModal
           isModalOpen={true}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // Reason: 测试错误处理，需要构造无效输入
           onModalCancel={mockOnModalCancel as any}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
@@ -386,6 +400,8 @@ describe('EditModelModal', () => {
       render(
         <EditModelModal
           isModalOpen={true}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // Reason: 测试错误处理，需要构造无效输入
           onModalCancel={mockOnModalCancel as any}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
@@ -419,6 +435,8 @@ describe('EditModelModal', () => {
       render(
         <EditModelModal
           isModalOpen={true}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // Reason: 测试错误处理，需要构造无效输入
           onModalCancel={mockOnModalCancel as any}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}

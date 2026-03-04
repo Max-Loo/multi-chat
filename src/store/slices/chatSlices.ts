@@ -188,10 +188,6 @@ const chatSlice = createSlice({
     setSelectedChatId: (state, action: PayloadAction<string | null>) => {
       state.selectedChatId = action.payload
     },
-    // 清空当前选中的聊天的ID
-    clearSelectChatId: (state) => {
-      state.selectedChatId = null
-    },
     // 清除操作错误信息
     clearError: (state) => {
       state.error = null;
@@ -420,7 +416,6 @@ export const {
   clearError,
   clearInitializationError,
   setSelectedChatId,
-  clearSelectChatId,
   createChat,
   editChat,
   editChatName,

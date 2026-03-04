@@ -1,5 +1,8 @@
 # Multi-Chat
 
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://max-loo.github.io/multi-chat/)
+[![Deploy to GitHub Pages](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml/badge.svg)](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml)
+
 一个基于 Tauri + React + TypeScript 的多模型聊天应用，支持同时与多个 AI 模型进行对话，方便对比不同模型的回答。
 
 ## 功能特点
@@ -90,6 +93,37 @@ pnpm tauri build
 pnpm web:build
 ```
 
+### 部署到 GitHub Pages
+
+本项目支持部署到 GitHub Pages，提供在线访问能力。
+
+**在线访问地址**: [https://max-loo.github.io/multi-chat/](https://max-loo.github.io/multi-chat/)
+
+**本地部署命令**:
+```bash
+# 构建并部署到 GitHub Pages
+pnpm deploy:gh-pages
+```
+
+**GitHub Actions 自动部署**: 当创建版本 tag（`v*.*.*`）时，GitHub Actions 使用官方 Pages Actions（`actions/upload-pages-artifact` + `actions/deploy-pages`）自动构建并部署。版本发布流程如下：
+
+1. 更新 `package.json` 中的版本号
+2. 创建 PR 并合并到 `main` 分支
+3. `create-tag.yml` workflow 自动创建版本 tag
+4. `deploy-to-gh-pages.yml` workflow 触发自动部署
+   - **build job**: 构建 Web 应用并上传 artifact
+   - **deploy job**: 将 artifact 部署到 GitHub Pages
+
+同时，桌面应用构建（`build-and-release.yml`）也会并行触发，确保桌面和 Web 版本同步发布。
+
+**技术细节**:
+- 使用 GitHub Pages 官方 Actions（推荐方式）
+- 分离构建和部署为两个独立的 job
+- 更安全的权限模型（`pages: write` + `id-token: write`）
+- 不需要维护 gh-pages 分支
+
+同时，桌面应用构建（`build-and-release.yml`）也会并行触发，确保桌面和 Web 版本同步发布。
+
 ### 其他常用命令
 
 ```bash
@@ -104,12 +138,23 @@ pnpm update-version
 
 # 生成国际化类型定义
 pnpm generate-i18n-types
+
+# 运行测试
+pnpm test
+
+# 运行测试并生成覆盖率报告
+pnpm test:coverage
+
+# 运行所有测试（包括集成测试）
+pnpm test:all
 ```
 
-```bash
-# 构建生产版本
-pnpm tauri build
-```
+**详细测试文档**：项目有完整的测试规范和指南，请查看 [测试文档](./src/__test__/README.md) 了解：
+- 行为驱动测试原则
+- 测试隔离和 Mock 策略
+- 测试目录结构和组织方式
+- Before/After 对比示例
+- 常见反模式和解决方案
 
 ## 使用指南
 

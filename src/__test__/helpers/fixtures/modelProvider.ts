@@ -78,6 +78,28 @@ export const createKimiProvider = (overrides?: Partial<RemoteProviderData>): Rem
   });
 
 /**
+ * 创建 ZhipuAI 供应商数据
+ * @param overrides 要覆盖的字段
+ */
+export const createZhipuProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData =>
+  createMockRemoteProvider({
+    providerKey: ModelProviderKeyEnum.ZHIPUAI,
+    providerName: 'ZhipuAI',
+    api: 'https://open.bigmodel.cn/api/paas/v4',
+    models: [
+      {
+        modelKey: 'glm-4-flash',
+        modelName: 'GLM-4 Flash',
+      },
+      {
+        modelKey: 'glm-4-plus',
+        modelName: 'GLM-4 Plus',
+      },
+    ],
+    ...overrides,
+  });
+
+/**
  * 批量创建 Mock RemoteProviderData 对象
  * @param providers 供应商配置数组
  * @returns RemoteProviderData 对象数组
@@ -86,7 +108,7 @@ export const createMockRemoteProviders = (
   providers?: Array<Partial<RemoteProviderData>>
 ): RemoteProviderData[] => {
   if (!providers || providers.length === 0) {
-    return [createDeepSeekProvider(), createKimiProvider()];
+    return [createDeepSeekProvider(), createKimiProvider(), createZhipuProvider()];
   }
   return providers.map(p => createMockRemoteProvider(p));
 };

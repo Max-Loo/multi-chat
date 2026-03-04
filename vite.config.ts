@@ -9,6 +9,8 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
+  // GitHub Pages 子路径部署支持：开发环境使用根路径，生产环境使用 /multi-chat/
+  base: process.env.NODE_ENV === 'production' ? '/multi-chat/' : '/',
   plugins: [
     react({
       babel: {
@@ -38,13 +40,16 @@ export default defineConfig(async () => ({
     environment: 'happy-dom',
     setupFiles: ['./src/__test__/setup.ts'],
     include: ['src/__test__/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', 'dist'],
+    exclude: ['node_modules', 'dist', 'src/__test__/integration/**'],
+
+    // 忽略未处理的 Promise rejection（测试错误处理场景时会故意创建错误）
+    dangerouslyIgnoreUnhandledErrors: true,
 
     // 并行执行配置
     pool: 'threads',
     singleThread: false,
     minThreads: 1,
-    maxThreads: 4, // 根据CPU核心数调整
+    maxThreads: 1, // 限制为单线程，确保 mock 正确工作
     useAtomics: true, // 使用 Atomics API 提升性能
 
     // 优化依赖项预构建

@@ -138,7 +138,6 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
       // 特殊处理「是否启用」的开关
       isEnable: isModelEnable,
     })
-    console.log(fullModel);
     
     onFinish(fullModel)
   }

@@ -28,6 +28,8 @@ vi.mock('@/store/storage', () => ({
 const mockSaveModelsToJson = vi.mocked(saveModelsToJson);
 
 describe('modelMiddleware', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
 
   // 创建测试用的 Redux store（包含 middleware 和完整的 RootState）

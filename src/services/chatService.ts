@@ -1,4 +1,4 @@
-import { streamText, generateId } from 'ai';
+import { streamText as realStreamText, generateId as realGenerateId } from 'ai';
 import { createDeepSeek } from '@ai-sdk/deepseek';
 import { createMoonshotAI } from '@ai-sdk/moonshotai';
 import { createZhipu } from 'zhipu-ai-provider';
@@ -10,6 +10,24 @@ import { ChatRoleEnum } from '@/types/chat';
 import { getFetchFunc } from '@/utils/tauriCompat';
 import { getCurrentTimestamp } from '@/utils/utils';
 import type { StandardMessageRawResponse } from '@/types/chat';
+
+/**
+ * Vercel AI SDK 依赖接口（用于依赖注入和测试）
+ */
+export interface AISDKDependencies {
+  /** streamText 函数（用于发起流式聊天请求） */
+  streamText: typeof realStreamText;
+  /** generateId 函数（用于生成唯一标识符） */
+  generateId: typeof realGenerateId;
+}
+
+/**
+ * 默认的 AI SDK 依赖（使用真实的 Vercel AI SDK）
+ */
+const defaultAISDKDependencies: AISDKDependencies = {
+  streamText: realStreamText,
+  generateId: realGenerateId,
+};
 
 /**
  * 获取供应商特定的 provider 工厂函数
@@ -148,7 +166,7 @@ export function buildMessages(
 /**
  * 发起流式聊天请求
  * @param params 请求参数
- * @param options 取消信号等选项
+ * @param options 选项（包含取消信号、可选的依赖注入）
  * @returns 流式响应生成器
  * @description
  * 提供统一的聊天请求处理接口，使用 Vercel AI SDK 与各种供应商通信。
@@ -159,6 +177,7 @@ export function buildMessages(
  * 3. 将 ai-sdk 流式响应转换为 StandardMessage 格式
  * 4. 支持 AbortSignal 中断请求
  * 5. 自动生成消息 ID 和时间戳
+ * 6. 支持依赖注入（用于测试）
  *
  * 消息 ID 生成规则：
  * - 如果 params 中提供了 conversationId，则使用 conversationId 作为消息 ID
@@ -170,12 +189,23 @@ export function buildMessages(
  * - 统一的接口（对上层透明）
  * - 支持开发环境代理（通过 fetch 配置）
  * - 自动处理 URL 标准化（ai-sdk provider 内置）
+ * - 支持依赖注入（便于单元测试）
  *
  * @example
  * ```typescript
+ * // 正常使用（使用真实 AI SDK）
  * const response = streamChatCompletion(
  *   { model, historyList, message, conversationId },
  *   { signal },
+ * );
+ *
+ * // 测试中使用（注入 mock 依赖）
+ * const response = streamChatCompletion(
+ *   { model, historyList, message, conversationId },
+ *   { 
+ *     signal,
+ *     dependencies: { streamText: mockStreamText, generateId: mockGenerateId }
+ *   },
  * );
  *
  * for await (const message of response) {
@@ -185,15 +215,17 @@ export function buildMessages(
  */
 export async function* streamChatCompletion(
   params: ChatRequestParams,
-  { signal }: { signal?: AbortSignal } = {}
+  options: { signal?: AbortSignal; dependencies?: AISDKDependencies } = {}
 ): AsyncIterable<StandardMessage> {
-  const { model, historyList, message, conversationId = generateId(), includeReasoningContent = false } = params;
+  const { signal, dependencies = defaultAISDKDependencies } = options;
+  const { streamText: streamTextFn, generateId: generateIdFn } = dependencies;
+  const { model, historyList, message, conversationId = generateIdFn(), includeReasoningContent = false } = params;
 
   // 获取供应商特定的 provider
   const provider = getProvider(model.providerKey, model.apiKey, model.apiAddress);
   
-  // 使用 ai-sdk 的 streamText 发起流式请求
-  const result = streamText({
+  // 使用 ai-sdk 的 streamText 发起流式请求（支持依赖注入）
+  const result = streamTextFn({
     model: provider(model.modelKey),
     messages: buildMessages(historyList, message, includeReasoningContent),
     abortSignal: signal,

@@ -229,7 +229,7 @@ class TauriKeyringCompat implements KeyringCompat {
  * Web 环境的 Keyring 实现
  * 使用 IndexedDB + AES-256-GCM 加密实现
  */
-class WebKeyringCompat implements KeyringCompat {
+export class WebKeyringCompat implements KeyringCompat {
   private db: IDBDatabase | null = null;
   private encryptionKey: CryptoKey | null = null;
 
@@ -373,6 +373,18 @@ class WebKeyringCompat implements KeyringCompat {
   }
 
   /**
+   * 关闭数据库连接并重置状态
+   * 用于测试环境清理
+   */
+  close(): void {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
+    this.encryptionKey = null;
+  }
+
+  /**
    * 检查功能是否可用
    * @returns {boolean} 如果浏览器支持 IndexedDB 和 Web Crypto API 返回 true
    */
@@ -385,7 +397,7 @@ class WebKeyringCompat implements KeyringCompat {
  * Keyring 兼容层实例
  * 根据运行环境自动选择合适的实现
  */
-const keyringCompat: KeyringCompat = isTauri()
+export const keyringCompat: KeyringCompat = isTauri()
   ? new TauriKeyringCompat()
   : new WebKeyringCompat();
 
@@ -403,8 +415,8 @@ const keyringCompat: KeyringCompat = isTauri()
  * await setPassword('com.multichat.app', 'master-key', 'my-secret-key');
  * ```
  */
-export const setPassword = async (service: string, user: string, password: string): Promise<void> => {
-  await keyringCompat.setPassword(service, user, password);
+export const setPassword = (service: string, user: string, password: string): Promise<void> => {
+  return keyringCompat.setPassword(service, user, password);
 };
 
 /**
@@ -420,7 +432,7 @@ export const setPassword = async (service: string, user: string, password: strin
  * const key = await getPassword('com.multichat.app', 'master-key');
  * ```
  */
-export const getPassword = async (service: string, user: string): Promise<string | null> => {
+export const getPassword = (service: string, user: string): Promise<string | null> => {
   return keyringCompat.getPassword(service, user);
 };
 
