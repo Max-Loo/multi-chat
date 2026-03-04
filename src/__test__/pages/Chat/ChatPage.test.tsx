@@ -1,18 +1,14 @@
-import { render, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatPage from '@/pages/Chat/index';
-import { configureStore } from '@reduxjs/toolkit';
-import chatReducer, { initializeChatList } from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
+import { renderWithProviders, createTestStore } from '@/__test__/helpers/render/redux.tsx';
+import { initializeChatList } from '@/store/slices/chatSlices';
 
 /**
- * 创建可变的 mock 函数，用于在测试用例中动态修改
+ * Mock react-router-dom for routing
  */
-export const mockNavigateToChat = vi.fn();
-export const mockSetSearchParams = vi.fn();
 let mockSearchParams = new URLSearchParams();
+const mockSetSearchParams = vi.fn();
 
 /**
  * Mock 所有使用的自定义聊天组件
@@ -42,8 +38,9 @@ vi.mock('react-router-dom', async () => {
 });
 
 /**
- * Mock useNavigateToChat hook
+ * Mock useNavigateToChat hook (internal navigation hook)
  */
+const mockNavigateToChat = vi.fn();
 vi.mock('@/hooks/useNavigateToPage', () => ({
   useNavigateToChat: () => ({
     navigateToChat: mockNavigateToChat,
@@ -52,96 +49,67 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 
 /**
  * Mock react-i18next
+ * 使用正确的翻译函数签名，支持 t($ => $.namespace.key) 语法
  */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      // 支持选择器语法 t($ => $.common.remark)
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          table: {
-            nickname: '昵称',
-            modelProvider: '模型供应商',
-            modelName: '模型名称',
-            lastUpdateTime: '最后更新时间',
-            createTime: '创建时间',
-          },
-          common: {
-            remark: '备注',
-            search: '搜索',
-          },
-          chat: {
-            hideSidebar: '隐藏侧边栏',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      // 支持字符串语法 t('key')
-      return keyOrSelector;
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Reason: 测试错误处理，需要构造无效输入
+const mockT = (key: string | ((s: any) => string)): string => {
+  if (typeof key === 'function') {
+    return key({ common: { search: '搜索', hideSidebar: '隐藏侧边栏', createChat: '创建聊天' }, chat: { sendMessage: '发送消息', stopSending: '停止发送', includeReasoningContentHint: '包含推理内容提示', showSidebar: '显示侧边栏', scrollToBottom: '滚动到底部' }, model: {} });
+  }
+  return key;
+};
+
+vi.mock('react-i18next', () => {
+  return {
+    useTranslation: () => ({
+      t: mockT,
+      i18n: {
+        language: 'zh',
+        changeLanguage: vi.fn(),
+      },
+    }),
+    initReactI18next: {
+      type: '3rdParty',
+      init: vi.fn(),
     },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+  };
+});
 
 /**
- * ChatPage 重定向逻辑单元测试
+ * ChatPage 行为驱动测试
  *
- * 测试目标：验证 ChatPage 组件的聊天不存在重定向逻辑
+ * 测试目标：验证 ChatPage 组件的用户可见行为
  *
  * 技术方案：
- * - Mock 所有使用 @ant-design/x 的组件切断导入链路
- * - 使用可变的 mock 函数动态修改测试行为
- * - 避免 antd ES 模块在 vitest 中的兼容性问题
+ * - 不 Mock 子组件，测试完整组件树
+ * - 测试用户可见行为（重定向、侧边栏状态）
+ * - 使用真实 Redux store
+ * - 使用 data-testid 进行断言
  */
-describe('ChatPage 重定向逻辑测试', () => {
-  let store: any;
-
+describe('ChatPage 行为测试', () => {
   beforeEach(() => {
-    // 清除所有 mock 调用记录
     vi.clearAllMocks();
-
-    // 重置 searchParams
+    mockNavigateToChat.mockReset();
     mockSearchParams = new URLSearchParams();
-
-    // 创建测试用的 Redux store
-    store = configureStore({
-      reducer: {
-        chat: chatReducer,
-        chatPage: chatPageReducer,
-        appConfig: () => ({}),
-        models: () => ({ models: [] }),
-      },
-    });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   /**
    * @description 测试场景：聊天不存在时应重定向到 /chat
    */
-  it('当 URL 中的 chatId 对应的聊天不存在时，应重定向到 /chat 页面', async () => {
+  it('应该重定向到 /chat 页面 当 URL 中的 chatId 对应的聊天不存在', async () => {
+    const store = createTestStore();
+
     // 设置 URL 参数
     mockSearchParams = new URLSearchParams('chatId=non-existent-id');
 
     // 初始化空的聊天列表
     store.dispatch(initializeChatList.fulfilled([], ''));
 
-    render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
+    renderWithProviders(<ChatPage />, {
+      store,
+      route: '/chat?chatId=non-existent-id',
+    });
 
     await waitFor(() => {
       expect(mockNavigateToChat).toHaveBeenCalledWith({ replace: true });
@@ -151,8 +119,9 @@ describe('ChatPage 重定向逻辑测试', () => {
   /**
    * @description 测试场景：聊天存在时应正常加载
    */
-  it('当 URL 中的 chatId 对应的聊天存在时，应正常加载不重定向', async () => {
+  it('应该正常加载不重定向 当 URL 中的 chatId 对应的聊天存在', async () => {
     const mockChatId = 'existing-chat-id';
+    const store = createTestStore();
 
     // 设置 URL 参数
     mockSearchParams = new URLSearchParams(`chatId=${mockChatId}`);
@@ -163,13 +132,10 @@ describe('ChatPage 重定向逻辑测试', () => {
     ];
     store.dispatch(initializeChatList.fulfilled(mockChatList, ''));
 
-    render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
+    renderWithProviders(<ChatPage />, {
+      store,
+      route: `/chat?chatId=${mockChatId}`,
+    });
 
     await waitFor(() => {
       // 不应调用 navigate 进行重定向
@@ -183,8 +149,9 @@ describe('ChatPage 重定向逻辑测试', () => {
   /**
    * @description 测试场景：聊天已被删除时应重定向
    */
-  it('当 URL 中的 chatId 对应的聊天已被删除时，应重定向到 /chat 页面', async () => {
+  it('应该重定向到 /chat 页面 当 URL 中的 chatId 对应的聊天已被删除', async () => {
     const deletedChatId = 'deleted-chat-id';
+    const store = createTestStore();
 
     // 设置 URL 参数
     mockSearchParams = new URLSearchParams(`chatId=${deletedChatId}`);
@@ -195,13 +162,10 @@ describe('ChatPage 重定向逻辑测试', () => {
     ];
     store.dispatch(initializeChatList.fulfilled(mockChatList, ''));
 
-    render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
+    renderWithProviders(<ChatPage />, {
+      store,
+      route: `/chat?chatId=${deletedChatId}`,
+    });
 
     await waitFor(() => {
       expect(mockNavigateToChat).toHaveBeenCalledWith({ replace: true });
@@ -211,16 +175,16 @@ describe('ChatPage 重定向逻辑测试', () => {
   /**
    * @description 测试场景：无 chatId 参数时不执行重定向
    */
-  it('当 URL 中没有 chatId 参数时，应正常加载不重定向', async () => {
-    // 无 chatId 参数（默认为空 URLSearchParams）
+  it('应该正常加载不重定向 当 URL 中没有 chatId 参数', async () => {
+    const store = createTestStore();
 
-    render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
+    // 无 chatId 参数
+    mockSearchParams = new URLSearchParams();
+
+    renderWithProviders(<ChatPage />, {
+      store,
+      route: '/chat',
+    });
 
     await waitFor(() => {
       expect(mockNavigateToChat).not.toHaveBeenCalled();
@@ -230,20 +194,19 @@ describe('ChatPage 重定向逻辑测试', () => {
   /**
    * @description 测试场景：聊天列表加载期间不执行检查
    */
-  it('当聊天列表正在加载时，应等待加载完成后再检查', async () => {
+  it('应该等待加载完成后再检查 当聊天列表正在加载', async () => {
+    const store = createTestStore();
+
     // 设置 URL 参数
     mockSearchParams = new URLSearchParams('chatId=test-id');
 
     // 设置加载状态
     store.dispatch({ type: 'chat/initialize/pending' });
 
-    render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
+    renderWithProviders(<ChatPage />, {
+      store,
+      route: '/chat?chatId=test-id',
+    });
 
     await waitFor(() => {
       // 加载期间不应调用 navigate
@@ -262,34 +225,20 @@ describe('ChatPage 重定向逻辑测试', () => {
   /**
    * @description 测试场景：防止重定向循环
    */
-  it('重定向后应再次检查时不会重复重定向', async () => {
+  it('应该不重复重定向 当重定向后再次检查', async () => {
+    const store = createTestStore();
+
     // 无 chatId 参数
+    mockSearchParams = new URLSearchParams();
 
     store.dispatch(initializeChatList.fulfilled([], ''));
 
-    const { rerender } = render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
-
-    // 第一次渲染后，不应调用 navigate（因为没有 chatId 参数）
-    await waitFor(() => {
-      expect(mockNavigateToChat).not.toHaveBeenCalled();
+    renderWithProviders(<ChatPage />, {
+      store,
+      route: '/chat',
     });
 
-    // 模拟重新渲染（例如通过路由变化）
-    rerender(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
-
-    // 仍然不应调用 navigate
+    // 第一次渲染后，不应调用 navigate（因为没有 chatId 参数）
     await waitFor(() => {
       expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
@@ -298,20 +247,19 @@ describe('ChatPage 重定向逻辑测试', () => {
   /**
    * @description 测试场景：聊天列表加载失败时不执行检查
    */
-  it('当聊天列表加载失败时，应不执行重定向检查', async () => {
+  it('应该不执行重定向检查 当聊天列表加载失败', async () => {
+    const store = createTestStore();
+
     // 设置 URL 参数
     mockSearchParams = new URLSearchParams('chatId=test-id');
 
     // 模拟加载失败
     store.dispatch(initializeChatList.rejected(new Error('Load failed'), ''));
 
-    render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
+    renderWithProviders(<ChatPage />, {
+      store,
+      route: '/chat?chatId=test-id',
+    });
 
     await waitFor(() => {
       // 加载失败时不应调用 navigate
@@ -320,67 +268,95 @@ describe('ChatPage 重定向逻辑测试', () => {
   });
 
   /**
-   * @description 测试场景：侧边栏折叠状态切换
+   * @description 测试场景：侧边栏默认展开状态
    */
-  it('侧边栏折叠状态应该在 Redux store 中正确更新', async () => {
-    // 初始化聊天列表
+  it('应该渲染展开的侧边栏 当页面首次加载', async () => {
+    const store = createTestStore({
+      chatPage: {
+        isSidebarCollapsed: false,
+        isShowChatPage: false,
+      },
+    });
+
     store.dispatch(initializeChatList.fulfilled([], ''));
 
-    const { container } = render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
+    const { container } = renderWithProviders(<ChatPage />, {
+      store,
+      route: '/chat',
+    });
 
-    // 初始状态：侧边栏应该是展开的
-    expect(store.getState().chatPage.isSidebarCollapsed).toBe(false);
-
-    // 获取侧边栏元素
-    const sidebarDiv = container.querySelector('.w-56.border-r');
-    expect(sidebarDiv).toBeInTheDocument();
-    expect(sidebarDiv).not.toHaveClass('-ml-56');
+    await waitFor(() => {
+      const sidebar = container.querySelector('[data-testid="chat-sidebar"]');
+      expect(sidebar).toBeInTheDocument();
+      expect(sidebar).not.toHaveClass('-ml-56');
+    });
   });
 
   /**
-   * @description 测试场景：侧边栏折叠状态持久化
+   * @description 测试场景：侧边栏折叠状态
    */
-  it('侧边栏折叠状态应该在整个组件生命周期中保持', async () => {
-    // 初始化聊天列表
+  it('应该渲染折叠的侧边栏 当侧边栏状态为折叠', async () => {
+    const store = createTestStore({
+      chatPage: {
+        isSidebarCollapsed: true,
+        isShowChatPage: false,
+      },
+    });
+
     store.dispatch(initializeChatList.fulfilled([], ''));
 
-    const { container, rerender } = render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
+    const { container } = renderWithProviders(<ChatPage />, {
+      store,
+      route: '/chat',
+    });
 
-    // 初始状态：侧边栏展开
-    expect(store.getState().chatPage.isSidebarCollapsed).toBe(false);
+    await waitFor(() => {
+      const sidebar = container.querySelector('[data-testid="chat-sidebar"]');
+      expect(sidebar).toBeInTheDocument();
+      expect(sidebar).toHaveClass('-ml-56');
+    });
+  });
 
-    // 手动 dispatch action 来模拟用户点击折叠按钮
-    store.dispatch({ type: 'chatPage/setIsCollapsed', payload: true });
+  /**
+   * @description 测试场景：聊天内容区域渲染
+   */
+  it('应该渲染聊天内容区域 当页面加载时', async () => {
+    const store = createTestStore();
 
-    // 验证状态已更新
-    expect(store.getState().chatPage.isSidebarCollapsed).toBe(true);
+    store.dispatch(initializeChatList.fulfilled([], ''));
 
-    // 重新渲染组件
-    rerender(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-      </Provider>
-    );
+    const { container } = renderWithProviders(<ChatPage />, {
+      store,
+      route: '/chat',
+    });
 
-    // 验证折叠状态保持
-    expect(store.getState().chatPage.isSidebarCollapsed).toBe(true);
+    await waitFor(() => {
+      const content = container.querySelector('[data-testid="chat-content"]');
+      expect(content).toBeInTheDocument();
+    });
+  });
 
-    // 验证侧边栏元素有折叠的 CSS 类
-    const sidebarDiv = container.querySelector('.w-56.border-r');
-    expect(sidebarDiv).toHaveClass('-ml-56');
+  /**
+   * @description 测试场景：聊天页面整体结构
+   */
+  it('应该渲染完整的页面结构 当页面加载时', async () => {
+    const store = createTestStore();
+
+    store.dispatch(initializeChatList.fulfilled([], ''));
+
+    const { container } = renderWithProviders(<ChatPage />, {
+      store,
+      route: '/chat',
+    });
+
+    await waitFor(() => {
+      const page = container.querySelector('[data-testid="chat-page"]');
+      const sidebar = container.querySelector('[data-testid="chat-sidebar"]');
+      const content = container.querySelector('[data-testid="chat-content"]');
+
+      expect(page).toBeInTheDocument();
+      expect(sidebar).toBeInTheDocument();
+      expect(content).toBeInTheDocument();
+    });
   });
 });

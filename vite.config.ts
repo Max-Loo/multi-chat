@@ -40,13 +40,13 @@ export default defineConfig(async () => ({
     environment: 'happy-dom',
     setupFiles: ['./src/__test__/setup.ts'],
     include: ['src/__test__/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', 'dist'],
+    exclude: ['node_modules', 'dist', 'src/__test__/integration/**'],
 
     // 并行执行配置
     pool: 'threads',
     singleThread: false,
     minThreads: 1,
-    maxThreads: 4, // 根据CPU核心数调整
+    maxThreads: 1, // 限制为单线程，确保 mock 正确工作
     useAtomics: true, // 使用 Atomics API 提升性能
 
     // 优化依赖项预构建

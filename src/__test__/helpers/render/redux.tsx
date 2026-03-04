@@ -1,77 +1,81 @@
 /**
- * Redux 渲染辅助工具
- * 
- * 提供带有 Redux Provider 的组件渲染函数
+ * Redux 测试渲染辅助工具
+ *
+ * 提供带有 Redux store、Router、i18n 和 ConfirmProvider 的组件渲染函数
  */
 
-import React from 'react';
-import { render, RenderOptions } from '@testing-library/react';
-import { ReactElement } from 'react';
+import { render, type RenderOptions } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { configureStore, Store } from '@reduxjs/toolkit';
+import { BrowserRouter } from 'react-router-dom';
+import { configureStore, type EnhancedStore } from '@reduxjs/toolkit';
+import { ConfirmProvider } from '@/hooks/useConfirm';
+import type { RootState } from '@/store';
+import chatReducer from '@/store/slices/chatSlices';
+import chatPageReducer from '@/store/slices/chatPageSlices';
+import modelsReducer from '@/store/slices/modelSlice';
+import appConfigReducer from '@/store/slices/appConfigSlices';
 
 /**
- * 带有 Redux Provider 的渲染选项
+ * 创建测试用的 Redux store
+ * @param preloadedState 预加载的状态
+ * @returns 配置好的 Redux store
  */
-export interface RenderWithReduxOptions extends Omit<RenderOptions, 'wrapper'> {
-  /** Redux store 实例，如果不提供则自动创建 */
-  store?: Store;
-  /** Redux reducers，用于自动创建 store */
-  reducers?: Record<string, any>;
-  /** 初始 state，用于自动创建 store */
-  preloadedState?: any;
+export const createTestStore = (preloadedState?: Partial<RootState>): EnhancedStore<RootState> => {
+  return configureStore({
+    reducer: {
+      chat: chatReducer,
+      chatPage: chatPageReducer,
+      models: modelsReducer,
+      appConfig: appConfigReducer,
+      modelProvider: (state = { providers: [], loading: false, error: null, lastUpdate: null }) => state,
+    } as any,
+    preloadedState: preloadedState as any,
+  }) as EnhancedStore<RootState>;
+};
+
+/**
+ * 渲染选项
+ */
+interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
+  store?: EnhancedStore<RootState>;
+  preloadedState?: Partial<RootState>;
+  route?: string;
 }
 
 /**
- * 带有 Redux Provider 的渲染函数
- * @param ui 要渲染的 React 元素
+ * 带有 Redux Provider、Router 和 ConfirmProvider 的渲染函数
+ * @param ui 要渲染的 React 组件
  * @param options 渲染选项
- * @returns 渲染结果和 store
+ * @returns 渲染结果
  */
-export function renderWithRedux(
-  ui: ReactElement,
-  options: RenderWithReduxOptions = {},
-) {
+export const renderWithProviders = (
+  ui: React.ReactElement,
+  options: RenderWithProvidersOptions = {}
+) => {
   const {
-    store,
-    reducers = {},
-    preloadedState,
+    store = createTestStore(options.preloadedState),
+    route = '/',
     ...renderOptions
   } = options;
 
-  // 如果没有提供 store，则自动创建
-  const actualStore = store || configureStore({
-    reducer: reducers as any,
-    preloadedState,
-  });
+  // 设置路由
+  window.history.pushState({}, 'Test page', route);
 
-  // 创建带有 Redux Provider 的 wrapper
-  function Wrapper({ children }: { children: React.ReactNode }) {
-    return <Provider store={actualStore}>{children}</Provider>;
-  }
+  // 创建包装器组件
+  const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
+    return (
+      <Provider store={store}>
+        <BrowserRouter>
+          <ConfirmProvider>
+            {children}
+          </ConfirmProvider>
+        </BrowserRouter>
+      </Provider>
+    );
+  };
 
   return {
-    ...render(ui, { wrapper: Wrapper, ...renderOptions }),
-    store: actualStore,
+    store,
+    ...render(ui, { wrapper: AllTheProviders, ...renderOptions }),
   };
-}
-
-/**
- * 带有 Redux Provider 和 Router 的渲染函数
- * @param ui 要渲染的 React 元素
- * @param options 渲染选项
- * @returns 渲染结果和 store
- */
-export function renderWithReduxAndRouter(
-  ui: ReactElement,
-  options: RenderWithReduxOptions & {
-    /** 路由路径，默认为 '/' */
-    route?: string;
-  } = {},
-) {
-  const { ...reduxOptions } = options;
-
-  // TODO: 在需要时可以添加 Router Provider
-  // 目前先使用 renderWithRedux，后续可以扩展
-  return renderWithRedux(ui, reduxOptions);
-}
+};

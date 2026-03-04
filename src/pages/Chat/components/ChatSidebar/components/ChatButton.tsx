@@ -150,13 +150,14 @@ const ChatButton = memo<ChatButtonProps>(({
 
   return (
     <div
+      data-testid={`chat-button-${chat.id}`}
       className={`w-full py-2 px-1 flex justify-between rounded-none cursor-pointer
         ${chat.id === selectedChatId ? 'bg-primary/20' : 'hover:bg-accent'}
         ${isRenaming && 'pl-1 pr-1'}
       `}
       onClick={() => onClickChat(chat)}
     >
-      <span className="pl-2 text-sm flex items-center">{chat.name || t($ => $.chat.unnamed)}</span>
+      <span data-testid="chat-name" className="pl-2 text-sm flex items-center">{chat.name || t($ => $.chat.unnamed)}</span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

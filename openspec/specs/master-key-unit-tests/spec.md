@@ -138,3 +138,37 @@
 #### Scenario: 所有代码分支都被测试
 - **WHEN** 运行测试覆盖率检查
 - **THEN** Tauri/Web 环境分支、成功/失败分支、边界条件都被测试用例覆盖
+
+### Requirement: 主密钥轮换测试
+密钥轮换功能 SHALL 支持安全更换主密钥。
+
+#### Scenario: 成功轮换密钥
+- **WHEN** 调用密钥轮换功能
+- **THEN** 生成新密钥，使用旧密钥解密数据后使用新密钥重新加密
+
+#### Scenario: 轮换失败回滚
+- **WHEN** 密钥轮换过程中发生错误
+- **THEN** 保持旧密钥不变，确保数据不丢失
+
+#### Scenario: 轮换后旧密钥失效
+- **WHEN** 密钥轮换成功完成
+- **THEN** 旧密钥不再能用于解密数据
+
+### Requirement: 跨平台兼容性测试
+主密钥管理 SHALL 在 Tauri 和 Web 环境下都能正常工作。
+
+#### Scenario: Tauri 环境完整流程
+- **WHEN** 在 Tauri 环境中执行生成、存储、获取、检查操作
+- **THEN** 所有操作都使用系统钥匙串，流程完整成功
+
+#### Scenario: Web 环境完整流程
+- **WHEN** 在 Web 环境中执行生成、存储、获取、检查操作
+- **THEN** 所有操作都使用 localStorage + 加密，流程完整成功
+
+#### Scenario: 环境检测正确性
+- **WHEN** 运行环境变化（如从 Web 切换到 Tauri 桌面版）
+- **THEN** isTauri() 正确反映当前环境
+
+#### Scenario: 环境切换数据处理
+- **WHEN** 从 Web 切换到 Tauri 环境
+- **THEN** 提供数据迁移机制或清晰的迁移指导

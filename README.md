@@ -138,12 +138,23 @@ pnpm update-version
 
 # 生成国际化类型定义
 pnpm generate-i18n-types
+
+# 运行测试
+pnpm test
+
+# 运行测试并生成覆盖率报告
+pnpm test:coverage
+
+# 运行所有测试（包括集成测试）
+pnpm test:all
 ```
 
-```bash
-# 构建生产版本
-pnpm tauri build
-```
+**详细测试文档**：项目有完整的测试规范和指南，请查看 [测试文档](./src/__test__/README.md) 了解：
+- 行为驱动测试原则
+- 测试隔离和 Mock 策略
+- 测试目录结构和组织方式
+- Before/After 对比示例
+- 常见反模式和解决方案
 
 ## 使用指南
 

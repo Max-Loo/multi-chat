@@ -13,7 +13,7 @@ import type { StandardMessageRawResponse } from '@/types/chat';
 
 describe('chat types', () => {
   describe('isEnhancedRawResponse', () => {
-    it('应该返回 true 对于有效的增强原始响应对象', () => {
+    it('应该返回 true 当传入有效的增强原始响应对象', () => {
       const validRaw: StandardMessageRawResponse = {
         response: {
           id: 'resp-123',
@@ -36,19 +36,19 @@ describe('chat types', () => {
       expect(isEnhancedRawResponse(validRaw)).toBe(true);
     });
 
-    it('应该返回 false 对于 null', () => {
+    it('应该返回 false 当传入 null', () => {
       expect(isEnhancedRawResponse(null)).toBe(false);
     });
 
-    it('应该返回 false 对于 undefined', () => {
+    it('应该返回 false 当传入 undefined', () => {
       expect(isEnhancedRawResponse(undefined)).toBe(false);
     });
 
-    it('应该返回 false 对于空字符串', () => {
+    it('应该返回 false 当传入空字符串', () => {
       expect(isEnhancedRawResponse('')).toBe(false);
     });
 
-    it('应该返回 false 对于缺少 response 字段的对象', () => {
+    it('应该返回 false 当传入缺少 response 字段的对象', () => {
       const invalidRaw = {
         request: { body: '{}' },
         usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
@@ -58,7 +58,7 @@ describe('chat types', () => {
       expect(isEnhancedRawResponse(invalidRaw)).toBe(false);
     });
 
-    it('应该正确进行类型推断（TypeScript 类型守卫）', () => {
+    it('应该正确进行类型推断 当使用 TypeScript 类型守卫', () => {
       const raw = {
         response: {
           id: 'resp-123',
@@ -90,15 +90,15 @@ describe('chat types', () => {
   });
 
   describe('formatRawResponse', () => {
-    it('应该返回"无原始数据"对于 null', () => {
+    it('应该返回"无原始数据" 当传入 null', () => {
       expect(formatRawResponse(null)).toBe('无原始数据');
     });
 
-    it('应该返回"无原始数据"对于 undefined', () => {
+    it('应该返回"无原始数据" 当传入 undefined', () => {
       expect(formatRawResponse(undefined)).toBe('无原始数据');
     });
 
-    it('应该返回格式化的 JSON 字符串对于有效的原始响应', () => {
+    it('应该返回格式化的 JSON 字符串 当传入有效的原始响应', () => {
       const raw: StandardMessageRawResponse = {
         response: {
           id: 'resp-123',
@@ -125,7 +125,7 @@ describe('chat types', () => {
       expect(formatted).toContain('"outputTokens": 5');
     });
 
-    it('应该使用 2 个空格缩进格式化 JSON', () => {
+    it('应该使用 2 个空格缩进格式化 JSON 当格式化输出时', () => {
       const raw: StandardMessageRawResponse = {
         response: {
           id: 'resp-123',

@@ -12,15 +12,24 @@ import {
   isRemoteDataFresh,
   RemoteDataError,
   RemoteDataErrorType,
-  type ModelsDevApiResponse,
 } from '@/services/modelRemoteService';
 import { fetch } from '@/utils/tauriCompat/http';
 import { createLazyStore } from '@/utils/tauriCompat/store';
 import { ALLOWED_MODEL_PROVIDERS, NETWORK_CONFIG } from '@/utils/constants';
+import {
+  createDeepSeekApiResponse,
+  createKimiApiResponse,
+  createOpenAIApiResponse,
+  createMockApiResponse,
+} from '@/__test__/fixtures/modelProvider';
 
-// Mock 依赖模块
+// Mock tauriCompat/http for system boundary (network requests)
 vi.mock('@/utils/tauriCompat/http');
+
+// Mock tauriCompat/store for system boundary (file system storage)
 vi.mock('@/utils/tauriCompat/store');
+
+// Mock constants to control test environment
 vi.mock('@/utils/constants', async () => {
   const actual = await vi.importActual('@/utils/constants');
   return {
@@ -46,6 +55,8 @@ describe('modelRemoteService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 测试错误处理，需要构造无效输入
     mockCreateLazyStore.mockReturnValue(mockStore as any);
   });
 
@@ -54,51 +65,18 @@ describe('modelRemoteService', () => {
   });
 
   describe('fetchRemoteData', () => {
-    const mockApiResponse: ModelsDevApiResponse = {
-      deepseek: {
-        id: 'deepseek',
-        name: 'DeepSeek',
-        api: 'https://api.deepseek.com',
-        env: ['DEEPSEEK_API_KEY'],
-        npm: '@ai-sdk/deepseek',
-        doc: 'https://docs.deepseek.com',
+    const mockApiResponse = createMockApiResponse([
+      createDeepSeekApiResponse({
         models: {
           'deepseek-chat': {
             id: 'deepseek-chat',
             name: 'DeepSeek Chat',
           },
         },
-      },
-      kimi: {
-        id: 'kimi',
-        name: 'Kimi',
-        api: 'https://api.moonshot.cn',
-        env: ['MOONSHOT_API_KEY'],
-        npm: '@ai-sdk/moonshotai',
-        doc: 'https://docs.moonshot.cn',
-        models: {
-          'moonshot-v1-8k': {
-            id: 'moonshot-v1-8k',
-            name: 'Moonshot v1 8k',
-          },
-        },
-      },
-      // 这个不在白名单中，应该被过滤掉
-      openai: {
-        id: 'openai',
-        name: 'OpenAI',
-        api: 'https://api.openai.com',
-        env: ['OPENAI_API_KEY'],
-        npm: '@ai-sdk/openai',
-        doc: 'https://docs.openai.com',
-        models: {
-          'gpt-4': {
-            id: 'gpt-4',
-            name: 'GPT-4',
-          },
-        },
-      },
-    };
+      }),
+      createKimiApiResponse(),
+      createOpenAIApiResponse(),
+    ]);
 
     it('应该成功获取并返回完整 API 响应和过滤后的数据', async () => {
       // Mock fetch 成功响应
@@ -153,6 +131,8 @@ describe('modelRemoteService', () => {
     });
 
     it('应该在超时时抛出 NETWORK_TIMEOUT 错误', async () => {
+      vi.useFakeTimers();
+
       // Mock fetch 延迟超过超时时间，并正确响应abort
       mockFetch.mockImplementation((_url, options) => {
         return new Promise((resolve, reject) => {
@@ -180,24 +160,38 @@ describe('modelRemoteService', () => {
         });
       });
 
-      const error = await fetchRemoteData({ timeout: 100 }).catch(err => err);
+      const errorPromise = fetchRemoteData({ timeout: 100 }).catch(err => err);
+
+      // 快进到超时触发
+      await vi.runAllTimersAsync();
+
+      const error = await errorPromise;
       expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_TIMEOUT);
       expect(error.message).toContain('100ms');
-    }, 10000);
+
+      vi.useRealTimers();
+    });
 
     it('应该在超时时中止 AbortController', async () => {
+      vi.useFakeTimers();
+
       // Mock fetch 延迟超过超时时间，并正确响应abort
       mockFetch.mockImplementation((_url, options) => {
         return new Promise((resolve, reject) => {
+          let settled = false;
           // 监听abort事件
           options?.signal?.addEventListener('abort', () => {
-            reject(new DOMException('Aborted', 'AbortError'));
+            if (!settled) {
+              settled = true;
+              reject(new DOMException('Aborted', 'AbortError'));
+            }
           });
 
           // 200ms后才resolve，超过100ms超时
           setTimeout(() => {
-            if (!options?.signal?.aborted) {
+            if (!settled && !options?.signal?.aborted) {
+              settled = true;
               resolve({
                 ok: true,
                 status: 200,
@@ -214,14 +208,17 @@ describe('modelRemoteService', () => {
         });
       });
 
-      const timeoutPromise = fetchRemoteData({ timeout: 100 });
+      const timeoutPromise = fetchRemoteData({ timeout: 100 }).catch(err => err);
 
-      await expect(timeoutPromise).rejects.toThrow();
+      // 快进所有定时器
+      await vi.runAllTimersAsync();
 
-      // 验证超时错误
-      const error = await timeoutPromise.catch(err => err);
+      const error = await timeoutPromise;
+      expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_TIMEOUT);
-    }, 10000);
+
+      vi.useRealTimers();
+    });
 
     it('应该在网络错误后重试并成功', async () => {
       vi.useFakeTimers();
@@ -316,20 +313,24 @@ describe('modelRemoteService', () => {
     });
 
     it('应该在达到最大重试次数后失败', async () => {
+      vi.useFakeTimers();
+
       // Mock fetch 持续失败
       mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
 
-      const resultPromise = fetchRemoteData({ maxRetries: 2 });
+      const resultPromise = fetchRemoteData({ maxRetries: 2 }).catch(err => err);
 
-      await expect(resultPromise).rejects.toThrow();
+      // 快进所有定时器（重试延迟）
+      await vi.runAllTimersAsync();
 
-      // 验证错误类型
-      const error = await resultPromise.catch(err => err);
+      const error = await resultPromise;
       expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
 
       // 验证重试 3 次（初始 + 2 次重试）
       expect(mockFetch).toHaveBeenCalledTimes(3);
+
+      vi.useRealTimers();
     });
 
     it('应该在 404 错误时不重试', async () => {
@@ -367,22 +368,9 @@ describe('modelRemoteService', () => {
 
   describe('saveCachedProviderData', () => {
     it('应该保存完整的 API 响应和时间戳', async () => {
-      const mockApiResponse: ModelsDevApiResponse = {
-        deepseek: {
-          id: 'deepseek',
-          name: 'DeepSeek',
-          api: 'https://api.deepseek.com',
-          env: ['DEEPSEEK_API_KEY'],
-          npm: '@ai-sdk/deepseek',
-          doc: 'https://docs.deepseek.com',
-          models: {
-            'deepseek-chat': {
-              id: 'deepseek-chat',
-              name: 'DeepSeek Chat',
-            },
-          },
-        },
-      };
+      const mockApiResponse = createMockApiResponse([
+        createDeepSeekApiResponse(),
+      ]);
 
       await saveCachedProviderData(mockApiResponse);
 
@@ -415,36 +403,10 @@ describe('modelRemoteService', () => {
   describe('loadCachedProviderData', () => {
     it('应该成功加载并过滤缓存数据', async () => {
       const mockCachedData = {
-        apiResponse: {
-          deepseek: {
-            id: 'deepseek',
-            name: 'DeepSeek',
-            api: 'https://api.deepseek.com',
-            env: ['DEEPSEEK_API_KEY'],
-            npm: '@ai-sdk/deepseek',
-            doc: 'https://docs.deepseek.com',
-            models: {
-              'deepseek-chat': {
-                id: 'deepseek-chat',
-                name: 'DeepSeek Chat',
-              },
-            },
-          },
-          openai: {
-            id: 'openai',
-            name: 'OpenAI',
-            api: 'https://api.openai.com',
-            env: ['OPENAI_API_KEY'],
-            npm: '@ai-sdk/openai',
-            doc: 'https://docs.openai.com',
-            models: {
-              'gpt-4': {
-                id: 'gpt-4',
-                name: 'GPT-4',
-              },
-            },
-          },
-        },
+        apiResponse: createMockApiResponse([
+          createDeepSeekApiResponse(),
+          createOpenAIApiResponse(),
+        ]),
         metadata: {
           lastRemoteUpdate: new Date().toISOString(),
           source: 'remote',
@@ -480,14 +442,8 @@ describe('modelRemoteService', () => {
 
   describe('adaptApiResponseToInternalFormat', () => {
     it('应该正确过滤和转换数据格式', async () => {
-      const mockApiResponse: ModelsDevApiResponse = {
-        deepseek: {
-          id: 'deepseek',
-          name: 'DeepSeek',
-          api: 'https://api.deepseek.com',
-          env: ['DEEPSEEK_API_KEY'],
-          npm: '@ai-sdk/deepseek',
-          doc: 'https://docs.deepseek.com',
+      const mockApiResponse = createMockApiResponse([
+        createDeepSeekApiResponse({
           models: {
             'deepseek-chat': {
               id: 'deepseek-chat',
@@ -498,22 +454,9 @@ describe('modelRemoteService', () => {
               name: 'DeepSeek Coder',
             },
           },
-        },
-        openai: {
-          id: 'openai',
-          name: 'OpenAI',
-          api: 'https://api.openai.com',
-          env: ['OPENAI_API_KEY'],
-          npm: '@ai-sdk/openai',
-          doc: 'https://docs.openai.com',
-          models: {
-            'gpt-4': {
-              id: 'gpt-4',
-              name: 'GPT-4',
-            },
-          },
-        },
-      };
+        }),
+        createOpenAIApiResponse(),
+      ]);
 
       // Mock fetch 成功响应
       mockFetch.mockResolvedValue({
@@ -553,80 +496,102 @@ describe('modelRemoteService', () => {
       // Mock fetch 支持signal检测，并返回NETWORK_ERROR（因为实现会将AbortError包装成NETWORK_ERROR）
       mockFetch.mockImplementation((_url, options) => {
         return new Promise((_, reject) => {
+          let settled = false;
           // 检查signal是否已aborted
           if (options?.signal?.aborted) {
+            settled = true;
             reject(new DOMException('Aborted', 'AbortError'));
             return;
           }
 
           // 监听abort事件
           options?.signal?.addEventListener('abort', () => {
-            reject(new DOMException('Aborted', 'AbortError'));
+            if (!settled) {
+              settled = true;
+              reject(new DOMException('Aborted', 'AbortError'));
+            }
           });
         });
       });
 
-      const fetchPromise = fetchRemoteData({ signal: abortController.signal, maxRetries: 0 });
+      const fetchPromise = fetchRemoteData({ signal: abortController.signal, maxRetries: 0 }).catch(err => err);
 
       // 立即取消请求
       abortController.abort();
 
-      await expect(fetchPromise).rejects.toThrow();
-
-      const error = await fetchPromise.catch(err => err);
+      const error = await fetchPromise;
       expect(error).toBeInstanceOf(RemoteDataError);
       // 当前实现将AbortError包装成NETWORK_ERROR（不是ABORTED）
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
     }, 10000);
 
     it('应该在取消时不触发重试', async () => {
+      vi.useFakeTimers();
+
       const abortController = new AbortController();
 
       // Mock fetch 支持signal检测
       mockFetch.mockImplementation((_url, options) => {
         return new Promise((_, reject) => {
+          let settled = false;
           // 检查signal是否已aborted
           if (options?.signal?.aborted) {
+            settled = true;
             reject(new DOMException('Aborted', 'AbortError'));
             return;
           }
 
           // 监听abort事件
           options?.signal?.addEventListener('abort', () => {
-            reject(new DOMException('Aborted', 'AbortError'));
+            if (!settled) {
+              settled = true;
+              reject(new DOMException('Aborted', 'AbortError'));
+            }
           });
         });
       });
 
-      const fetchPromise = fetchRemoteData({ signal: abortController.signal, maxRetries: 2 });
+      const fetchPromise = fetchRemoteData({ signal: abortController.signal, maxRetries: 2 }).catch(err => err);
 
       // 立即取消请求
       abortController.abort();
 
-      await expect(fetchPromise).rejects.toThrow();
+      // 快进所有定时器（重试延迟）
+      await vi.runAllTimersAsync();
+
+      await fetchPromise;
 
       // 当前实现会将AbortError识别为NETWORK_ERROR并触发重试
       // 这是实现的行为，所以验证fetch被调用3次（初始+2次重试）
       expect(mockFetch).toHaveBeenCalledTimes(3);
-    }, 10000);
+
+      vi.useRealTimers();
+    });
   });
 
   describe('combineSignals', () => {
     it('应该在任意信号中止时组合信号中止', async () => {
+      vi.useFakeTimers();
+
       const abortController1 = new AbortController();
 
       // Mock fetch 支持signal检测
       mockFetch.mockImplementation((_url, options) => {
         return new Promise((_, reject) => {
+          let settled = false;
           // 检查signal是否已aborted
           if (options?.signal?.aborted) {
+            settled = true;
             reject(new DOMException('Aborted', 'AbortError'));
             return;
           }
 
           // 监听abort事件
           options?.signal?.addEventListener('abort', () => {
-            reject(new DOMException('Aborted', 'AbortError'));
+            if (!settled) {
+              settled = true;
+              reject(new DOMException('Aborted', 'AbortError'));
+            }
           });
         });
       });
@@ -635,31 +600,43 @@ describe('modelRemoteService', () => {
         timeout: 10000,
         signal: abortController1.signal,
         maxRetries: 2,
-      });
+      }).catch(err => err);
 
       // 立即触发中止
       abortController1.abort();
 
-      await expect(fetchPromise).rejects.toThrow();
+      // 快进所有定时器（重试延迟）
+      await vi.runAllTimersAsync();
+
+      await fetchPromise;
 
       // 当前实现会将AbortError识别为NETWORK_ERROR并触发重试
       expect(mockFetch).toHaveBeenCalledTimes(3);
-    }, 10000);
+
+      vi.useRealTimers();
+    });
 
     it('应该在超时信号触发时中止请求', async () => {
+      vi.useFakeTimers();
+
       const abortController = new AbortController();
 
       // Mock fetch 延迟超过超时时间，并正确响应abort
       mockFetch.mockImplementation((_url, options) => {
         return new Promise((resolve, reject) => {
+          let settled = false;
           // 监听abort事件
           options?.signal?.addEventListener('abort', () => {
-            reject(new DOMException('Aborted', 'AbortError'));
+            if (!settled) {
+              settled = true;
+              reject(new DOMException('Aborted', 'AbortError'));
+            }
           });
 
           // 200ms后才resolve，超过100ms超时
           setTimeout(() => {
-            if (!options?.signal?.aborted) {
+            if (!settled && !options?.signal?.aborted) {
+              settled = true;
               resolve({
                 ok: true,
                 status: 200,
@@ -694,15 +671,18 @@ describe('modelRemoteService', () => {
       const fetchPromise = fetchRemoteData({
         timeout: 100,
         signal: abortController.signal,
-      });
+      }).catch(err => err);
 
-      // 等待超时
-      await expect(fetchPromise).rejects.toThrow();
+      // 快进所有定时器
+      await vi.runAllTimersAsync();
 
       // 验证超时导致中止
-      const error = await fetchPromise.catch(err => err);
+      const error = await fetchPromise;
+      expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_TIMEOUT);
-    }, 10000);
+
+      vi.useRealTimers();
+    });
   });
 
   describe('isRemoteDataFresh', () => {
@@ -724,17 +704,17 @@ describe('modelRemoteService', () => {
       // Mock fetch 抛出网络错误
       mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
 
-      const fetchPromise = fetchRemoteData({ maxRetries: 0 }); // 禁用重试以加快测试
+      const fetchPromise = fetchRemoteData({ maxRetries: 0 }).catch(err => err); // 禁用重试以加快测试
 
-      await expect(fetchPromise).rejects.toThrow();
-
-      const error = await fetchPromise.catch(err => err);
+      const error = await fetchPromise;
       expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
       expect(error.message).toBe('网络请求失败');
     });
 
     it('应该将 JSON 解析失败分类为 NETWORK_ERROR', async () => {
+      vi.useFakeTimers();
+
       // Mock fetch 返回无效 JSON
       mockFetch.mockResolvedValue({
         ok: true,
@@ -753,15 +733,18 @@ describe('modelRemoteService', () => {
         text: vi.fn(),
       } as unknown as Response);
 
-      const fetchPromise = fetchRemoteData();
+      const fetchPromise = fetchRemoteData().catch(err => err);
 
-      await expect(fetchPromise).rejects.toThrow();
+      // 快进所有定时器（重试延迟）
+      await vi.runAllTimersAsync();
 
-      const error = await fetchPromise.catch(err => err);
+      const error = await fetchPromise;
       expect(error).toBeInstanceOf(RemoteDataError);
       // JSON解析错误当前被识别为NETWORK_ERROR（不是PARSE_ERROR）
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
       expect(error.message).toBe('网络请求失败');
+
+      vi.useRealTimers();
     });
   });
 });

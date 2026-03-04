@@ -79,9 +79,10 @@ const ChatPage: React.FC = () => {
   }, [dispatch, searchParams, chatList, loading, initializationError, hasCheckedRedirect, navigateToChat])
 
   return (
-    <div className="flex items-start justify-start w-full h-full overflow-hidden">
+    <div className="flex items-start justify-start w-full h-full overflow-hidden" data-testid="chat-page">
       {/* 可隐藏的侧边栏 */}
       <div
+        data-testid="chat-sidebar"
         className={`
           h-full overflow-hidden w-56 border-r border-gray-200 shrink-0
           transition-all duration-300 ease-in-out
@@ -92,6 +93,7 @@ const ChatPage: React.FC = () => {
       </div>
       {/* 主内容 */}
       <div
+        data-testid="chat-content"
         className={`
           h-full grow overflow-x-auto transition-all duration-300 ease-in-out
         `}

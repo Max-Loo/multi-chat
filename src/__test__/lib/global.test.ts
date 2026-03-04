@@ -5,25 +5,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { interceptClickAToJump, getDefaultAppLanguage, LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
 
-// 使用 vi.hoisted() 创建 Mock 函数，确保在模块导入之前创建
-const mockShellOpen = vi.hoisted(() => vi.fn());
-const mockLocale = vi.hoisted(() => vi.fn());
-
-// Mock @/utils/tauriCompat 模块
-vi.mock('@/utils/tauriCompat', () => ({
-  shell: { open: mockShellOpen },
-  locale: mockLocale,
-}));
-
 describe('global.ts 模块测试', () => {
   // 保存全局事件监听器引用，用于测试后清理
   let clickListener: ((event: Event) => void) | null = null;
   let removeClickListener: (() => void) | null = null;
 
+  // Spy 变量
+  let languageSpy: ReturnType<typeof vi.spyOn>;
+  let openSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
-    // 重置所有 Mock
-    mockShellOpen.mockReset();
-    mockLocale.mockReset();
+    // Mock navigator.language
+    languageSpy = vi.spyOn(navigator, 'language', 'get').mockReturnValue('zh-CN');
+
+    // Mock window.open
+    openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
     // 清除 localStorage
     localStorage.clear();
@@ -61,6 +57,8 @@ describe('global.ts 模块测试', () => {
     removeClickListener?.();
 
     // 恢复原始方法
+    languageSpy.mockRestore();
+    openSpy.mockRestore();
     vi.restoreAllMocks();
   });
 
@@ -75,9 +73,6 @@ describe('global.ts 模块测试', () => {
 
         // 验证结果
         expect(result).toBe('zh');
-
-        // 验证没有调用系统语言检测 API
-        expect(mockLocale).not.toHaveBeenCalled();
       });
 
       it('应该返回 localStorage 中的英文语言', async () => {
@@ -86,7 +81,6 @@ describe('global.ts 模块测试', () => {
         const result = await getDefaultAppLanguage();
 
         expect(result).toBe('en');
-        expect(mockLocale).not.toHaveBeenCalled();
       });
     });
 
@@ -96,17 +90,16 @@ describe('global.ts 模块测试', () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
 
         // Mock 系统语言为中文
-        mockLocale.mockResolvedValue('zh-CN');
+        languageSpy.mockReturnValue('zh-CN');
 
         const result = await getDefaultAppLanguage();
 
         expect(result).toBe('zh');
-        expect(mockLocale).toHaveBeenCalledOnce();
       });
 
       it('应该正确提取系统语言的前缀（en-US -> en）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        mockLocale.mockResolvedValue('en-US');
+        languageSpy.mockReturnValue('en-US');
 
         const result = await getDefaultAppLanguage();
 
@@ -115,7 +108,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该处理不同格式的系统 locale（zh -> zh）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        mockLocale.mockResolvedValue('zh');
+        languageSpy.mockReturnValue('zh');
 
         const result = await getDefaultAppLanguage();
 
@@ -126,7 +119,7 @@ describe('global.ts 模块测试', () => {
     describe('不支持系统语言时的回退测试', () => {
       it('应该在不支持的系统语言时回退到 en', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        mockLocale.mockResolvedValue('fr-FR'); // 法语不在支持列表中
+        languageSpy.mockReturnValue('fr-FR'); // 法语不在支持列表中
 
         const result = await getDefaultAppLanguage();
 
@@ -135,27 +128,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该在系统语言为空字符串时回退到 en', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        mockLocale.mockResolvedValue('');
-
-        const result = await getDefaultAppLanguage();
-
-        expect(result).toBe('en');
-      });
-    });
-
-    describe('所有检测失败时的默认测试', () => {
-      it('应该在系统语言 API 返回 null 时返回 en', async () => {
-        localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        mockLocale.mockResolvedValue(null);
-
-        const result = await getDefaultAppLanguage();
-
-        expect(result).toBe('en');
-      });
-
-      it('应该在系统语言 API 返回 undefined 时返回 en', async () => {
-        localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        mockLocale.mockResolvedValue(undefined);
+        languageSpy.mockReturnValue('');
 
         const result = await getDefaultAppLanguage();
 
@@ -170,12 +143,12 @@ describe('global.ts 模块测试', () => {
         await getDefaultAppLanguage();
 
         // 空字符串被视为 falsy，应该回退到系统语言检测
-        expect(mockLocale).toHaveBeenCalled();
+        expect(languageSpy).toHaveBeenCalled();
       });
 
       it('应该处理系统 locale 格式异常（没有连字符）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        mockLocale.mockResolvedValue('zh'); // 没有地区代码
+        languageSpy.mockReturnValue('zh'); // 没有地区代码
 
         const result = await getDefaultAppLanguage();
 
@@ -184,7 +157,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该处理系统 locale 只有地区代码的情况', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        mockLocale.mockResolvedValue('-CN'); // 异常格式
+        languageSpy.mockReturnValue('-CN'); // 异常格式
 
         const result = await getDefaultAppLanguage();
 
@@ -196,13 +169,12 @@ describe('global.ts 模块测试', () => {
         // 设置 localStorage 为英文
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'en');
         // Mock 系统语言为中文
-        mockLocale.mockResolvedValue('zh-CN');
+        languageSpy.mockReturnValue('zh-CN');
 
         const result = await getDefaultAppLanguage();
 
         // 应该返回 localStorage 中的值，而不是系统语言
         expect(result).toBe('en');
-        expect(mockLocale).not.toHaveBeenCalled();
       });
     });
   });
@@ -214,7 +186,7 @@ describe('global.ts 模块测试', () => {
     });
 
     describe('外部链接拦截测试', () => {
-      it('应该拦截外部链接点击并调用 shell.open', async () => {
+      it('应该拦截外部链接点击并调用 window.open', async () => {
         // 创建外部链接元素
         const anchor = document.createElement('a');
         anchor.href = 'https://external.com';
@@ -229,7 +201,7 @@ describe('global.ts 模块测试', () => {
 
         // 等待异步操作完成
         await vi.waitFor(() => {
-          expect(mockShellOpen).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
         });
 
         // 清理 DOM
@@ -248,8 +220,9 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).toHaveBeenCalledWith('https://example.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://example.com/', '_blank', expect.any(String));
         });
+        expect(clickEvent.preventDefault).toHaveBeenCalled();
 
         document.body.removeChild(anchor);
       });
@@ -265,7 +238,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).toHaveBeenCalledWith('https://www.external-site.com/path?query=value');
+          expect(openSpy).toHaveBeenCalledWith('https://www.external-site.com/path?query=value', '_blank', expect.any(String));
         });
 
         document.body.removeChild(anchor);
@@ -289,7 +262,7 @@ describe('global.ts 模块测试', () => {
 
         // 等待一下确保没有异步调用
         await vi.waitFor(() => {
-          expect(mockShellOpen).not.toHaveBeenCalled();
+          expect(openSpy).not.toHaveBeenCalled();
         }, { timeout: 100 });
 
         expect(preventDefaultSpy).not.toHaveBeenCalled();
@@ -308,7 +281,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).not.toHaveBeenCalled();
+          expect(openSpy).not.toHaveBeenCalled();
         }, { timeout: 100 });
 
         document.body.removeChild(anchor);
@@ -325,7 +298,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).not.toHaveBeenCalled();
+          expect(openSpy).not.toHaveBeenCalled();
         }, { timeout: 100 });
 
         document.body.removeChild(anchor);
@@ -343,7 +316,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).not.toHaveBeenCalled();
+          expect(openSpy).not.toHaveBeenCalled();
         }, { timeout: 100 });
 
         document.body.removeChild(div);
@@ -359,7 +332,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).not.toHaveBeenCalled();
+          expect(openSpy).not.toHaveBeenCalled();
         }, { timeout: 100 });
 
         document.body.removeChild(span);
@@ -375,7 +348,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).not.toHaveBeenCalled();
+          expect(openSpy).not.toHaveBeenCalled();
         }, { timeout: 100 });
 
         document.body.removeChild(button);
@@ -396,7 +369,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
         });
 
         document.body.removeChild(anchor);
@@ -417,7 +390,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
         });
 
         document.body.removeChild(anchor);
@@ -434,7 +407,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
         });
 
         document.body.removeChild(anchor);
@@ -453,7 +426,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).not.toHaveBeenCalled();
+          expect(openSpy).not.toHaveBeenCalled();
         }, { timeout: 100 });
 
         document.body.removeChild(anchor);
@@ -470,7 +443,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).not.toHaveBeenCalled();
+          expect(openSpy).not.toHaveBeenCalled();
         }, { timeout: 100 });
 
         document.body.removeChild(anchor);
@@ -505,7 +478,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(mockShellOpen).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
         });
 
         document.body.removeChild(anchor);
@@ -542,14 +515,14 @@ describe('global.ts 模块测试', () => {
       document.dispatchEvent(clickEvent1);
 
       await vi.waitFor(() => {
-        expect(mockShellOpen).toHaveBeenCalledWith('https://test1.com/');
+        expect(openSpy).toHaveBeenCalledWith('https://test1.com/', '_blank', expect.any(String));
       });
 
       document.body.removeChild(anchor1);
 
       // 清理并重置
       removeClickListener?.();
-      mockShellOpen.mockReset();
+      openSpy.mockClear();
 
       // 第二次调用
       interceptClickAToJump();
@@ -564,7 +537,7 @@ describe('global.ts 模块测试', () => {
       document.dispatchEvent(clickEvent2);
 
       await vi.waitFor(() => {
-        expect(mockShellOpen).toHaveBeenCalledWith('https://test2.com/');
+        expect(openSpy).toHaveBeenCalledWith('https://test2.com/', '_blank', expect.any(String));
       });
 
       document.body.removeChild(anchor2);

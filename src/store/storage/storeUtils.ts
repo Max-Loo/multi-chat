@@ -95,6 +95,7 @@ export const saveToStore = async <T>(
   successMessage?: string
 ): Promise<void> => {
   try {
+    await store.init();
     await store.set(key, data);
     await store.save();
     if (successMessage) {

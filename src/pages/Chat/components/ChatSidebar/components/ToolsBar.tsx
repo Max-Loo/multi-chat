@@ -95,6 +95,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
           variant="ghost"
           className="rounded-lg h-8 w-8 p-0"
           title={t($ => $.common.search)}
+          data-testid="search-button"
           onClick={() => setIsSearching(true)}
         >
           <Search size={16} />
@@ -102,6 +103,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
         <Button
           variant="ghost"
           className="rounded-lg ml-1 h-8 w-8 p-0"
+          data-testid="create-chat-button"
           onClick={handleCreateChat}
           title={t($ => $.chat.createChat)}
         >

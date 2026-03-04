@@ -20,6 +20,8 @@ const mockDispatch = vi.fn()
 const mockSetAppLanguage = vi.fn()
 vi.mock("@/hooks/redux", () => ({
   useAppDispatch: () => mockDispatch,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: 第三方库类型定义不完整
   useAppSelector: (selector: (state: any) => any) =>
     selector({
       appConfig: {
@@ -36,12 +38,16 @@ vi.mock("@/store/slices/appConfigSlices", () => ({
 // Mock react-i18next
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
     t: (callback: (t: any) => string) => callback({ common: { language: "语言" } }),
   }),
 }))
 
 // 简化 Mock UI 组件，但保留 onValueChange 回调执行
 vi.mock("@/components/ui/select", () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: 第三方库类型定义不完整
   Select: ({ value, onValueChange, children }: any) => (
     <div data-testid="select" data-value={value}>
       {children}
@@ -58,9 +64,15 @@ vi.mock("@/components/ui/select", () => ({
       </button>
     </div>
   ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: 第三方库类型定义不完整
   SelectTrigger: ({ children }: any) => <div data-testid="select-trigger">{children}</div>,
   SelectValue: () => <div data-testid="select-value">Language Value</div>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: 第三方库类型定义不完整
   SelectContent: ({ children }: any) => <div data-testid="select-content">{children}</div>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: 第三方库类型定义不完整
   SelectItem: ({ children, value }: any) => (
     <div data-testid={`option-${value}`} data-value={value}>
       {children}

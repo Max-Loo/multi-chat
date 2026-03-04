@@ -308,6 +308,8 @@ describe('Keyring 兼容层测试套件', () => {
 
         const tx = db.transaction('keys', 'readonly');
         const store = tx.objectStore('keys');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
         const record = await new Promise<any>((resolve, reject) => {
           const request = store.get([service, user]);
           request.addEventListener('success', () => resolve(request.result));
@@ -341,11 +343,15 @@ describe('Keyring 兼容层测试套件', () => {
         const tx = db.transaction('keys', 'readonly');
         const store = tx.objectStore('keys');
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
         const record1 = await new Promise<any>((resolve) => {
           const request = store.get(['service1', 'user1']);
           request.addEventListener('success', () => resolve(request.result));
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
         const record2 = await new Promise<any>((resolve) => {
           const request = store.get(['service2', 'user2']);
           request.addEventListener('success', () => resolve(request.result));
@@ -440,6 +446,8 @@ describe('Keyring 兼容层测试套件', () => {
 
         const tx = db.transaction('keys', 'readonly');
         const store = tx.objectStore('keys');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
         const record = await new Promise<any>((resolve, reject) => {
           const request = store.get([service, user]);
           request.addEventListener('success', () => resolve(request.result));
