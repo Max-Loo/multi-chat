@@ -14,10 +14,10 @@
     "windows": [
       {
         "title": "multi-chat",
-        "width": 1000,
-        "height": 675,
-        "minWidth": 1000,
-        "minHeight": 675
+        "width": 1280,
+        "height": 720,
+        "minWidth": 1280,
+        "minHeight": 720
       }
     ],
     "security": {
