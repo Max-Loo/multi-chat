@@ -35,6 +35,7 @@ const ChatButton = memo<ChatButtonProps>(({
 
   const {
     navigateToChat,
+    clearChatIdParam,
   } = useNavigateToChat()
 
   // 使用自定义 hooks 替代 antd 的 App.useApp()
@@ -62,16 +63,16 @@ const ChatButton = memo<ChatButtonProps>(({
 
   // 处理删除操作
   const handleDelete = () => {
-    const onOk = () => {
+    const onOk = async () => {
       try {
-        dispatch(deleteChat({
+        await dispatch(deleteChat({
           chat,
         }))
         toast.success(t($ => $.chat.deleteChatSuccess))
 
-        // 如果删除的是当前选中的聊天，清除 URL 查询参数
+        // 如果删除的是当前选中的聊天，清除 URL 中的 chatId 参数
         if (chat.id === selectedChatId) {
-          navigateToChat()
+          clearChatIdParam()
         }
       } catch {
         toast.error(t($ => $.chat.deleteChatFailed))
