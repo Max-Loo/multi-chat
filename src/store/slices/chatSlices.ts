@@ -3,7 +3,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { loadChatsFromJson } from "../storage";
 import { RootState } from "..";
 import { Model } from "@/types/model";
-import { streamChatCompletion } from "@/services/chatService";
+import { streamChatCompletion } from "@/services/chat";
 import { isNil, isNotNil } from "es-toolkit";
 import { createIdGenerator } from 'ai'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
@@ -371,13 +371,27 @@ const chatSlice = createSlice({
       )
       // 具体每个模型发送消息完成后，取消发送状态，回写数据留给 startSendChatMessage 去做
       .addCase(sendMessage.rejected, (state, action) => {
+        const {
+          message: errorMessage = '',
+          stack: errorStack = ''
+        } = action.error || {}
         const { chat, model } = action.meta.arg
         const currentChatModel = state.runningChat[chat.id]?.[model.id]
         currentChatModel.isSending = false
         // 记录错误信息
-        currentChatModel.errorMessage = action?.error?.message || ''
+        currentChatModel.errorMessage = errorMessage + errorStack
 
-        console.log('Request rejected', chat, model, action);
+        console.error('❌ 聊天消息发送失败:', {
+          chatId: chat.id,
+          chatName: chat.name,
+          modelId: model.id,
+          modelName: model.modelName,
+          modelKey: model.modelKey,
+          errorName: action.error?.name,
+          errorMessage: action?.error?.message,
+          errorStack: action.error?.stack,
+          fullAction: action,
+        });
 
       })
       // 总的启动发送消息（它会比 sendMessage 先 rejected），将对应 chat 剩余的所有数据回写到数组中

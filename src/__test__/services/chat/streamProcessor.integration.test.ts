@@ -1,0 +1,381 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { processStreamEvents } from '@/services/chat/streamProcessor';
+import { StandardMessage } from '@/types/chat';
+import * as metadataCollectorModule from '@/services/chat/metadataCollector';
+import type { StandardMessageRawResponse } from '@/types/chat';
+
+// 创建默认的 mock metadata（移到外部作用域）
+// 注意：这里返回的是转换后的 StandardMessageRawResponse 格式（timestamp 是 string）
+const createDefaultMetadata = (): StandardMessageRawResponse => ({
+  response: { id: 'test-id', modelId: 'deepseek-chat', timestamp: '2024-01-01T00:00:00.000Z' },
+  request: { body: '{}' },
+  usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+  finishReason: { reason: 'stop', rawReason: 'stop' },
+  warnings: [],
+  sources: undefined,
+  providerMetadata: {},
+  streamStats: { textDeltaCount: 0, reasoningDeltaCount: 0, duration: 0 },
+});
+
+// 创建 AI SDK 原始格式的 metadata（用于 mock StreamResult 的 then 方法）
+// 注意：这是 AI SDK 返回的格式，timestamp 是 Date 对象
+type MockAISDKMetadata = {
+  providerMetadata: Promise<Record<string, unknown>>;
+  warnings: Promise<Array<unknown>>;
+  sources: Promise<Array<unknown> | undefined>;
+  response: {
+    id: string;
+    modelId: string;
+    timestamp: Date;
+    headers?: Record<string, unknown>;
+  };
+  request: {
+    body: unknown;
+  };
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  finishReason?: string | null;
+  rawFinishReason?: string | null;
+};
+
+const createMockAISDKMetadata = (overrides: Partial<MockAISDKMetadata> = {}): MockAISDKMetadata => ({
+  providerMetadata: Promise.resolve({}),
+  warnings: Promise.resolve([]),
+  sources: Promise.resolve(undefined),
+  response: {
+    id: 'test-id',
+    modelId: 'deepseek-chat',
+    timestamp: new Date('2024-01-01T00:00:00.000Z'), // AI SDK 返回 Date 对象
+    headers: {},
+  },
+  request: {
+    body: '{}',
+  },
+  usage: {
+    inputTokens: 10,
+    outputTokens: 20,
+    totalTokens: 30,
+  },
+  finishReason: 'stop',
+  rawFinishReason: 'stop',
+  ...overrides,
+});
+
+describe('streamProcessor', () => {
+  let collectAllMetadataSpy: any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // 使用 spyOn 来 mock collectAllMetadata
+    collectAllMetadataSpy = vi.spyOn(metadataCollectorModule, 'collectAllMetadata');
+  });
+
+  afterEach(() => {
+    collectAllMetadataSpy.mockRestore();
+  });
+
+  // 创建 mock StreamResult - 正确实现 PromiseLike 和 AsyncIterable
+  // aiSDKMetadata 参数是可选的，用于指定 AI SDK 原始格式的 metadata
+  function createMockStreamResult(
+    events: Array<{ type: string; text?: string }>,
+    _metadata?: StandardMessageRawResponse,
+    aiSDKMetadata?: MockAISDKMetadata
+  ) {
+    const streamGen = (async function* () {
+      for (const event of events) {
+        yield event;
+      }
+    })();
+
+    // 模拟 AI SDK 的 PromiseLike 接口
+    // then 方法返回 AI SDK 原始格式（timestamp 是 Date 对象）
+    const mockResult = {
+      // eslint-disable-next-line unicorn/no-thenable
+      then: (resolve: (value: any) => unknown) =>
+        // 如果提供了 aiSDKMetadata，使用它；否则使用默认值
+        Promise.resolve(aiSDKMetadata ?? createMockAISDKMetadata()).then(resolve),
+      fullStream: streamGen,
+      [Symbol.asyncIterator]: () => streamGen[Symbol.asyncIterator](),
+    } as any;
+
+    return mockResult;
+  }
+
+  const defaultOptions = {
+    conversationId: 'test-conversation',
+    timestamp: 1234567890,
+    modelKey: 'deepseek-chat',
+    includeReasoningContent: true,
+    throttleInterval: 0, // 禁用节流以确保测试稳定性
+  };
+
+  describe('基本流式处理', () => {
+    it('应该处理简单的文本流（只有 text-delta）', async () => {
+      const events = [
+        { type: 'text-delta', text: 'Hello' },
+        { type: 'text-delta', text: ' World' },
+      ];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      // 应该有 3 条消息（2 个 text-delta + 1 个最终消息）
+      expect(messages.length).toBe(3);
+      
+      // 第一条消息
+      expect(messages[0].content).toBe('Hello');
+      expect(messages[0].reasoningContent).toBe('');
+      expect(messages[0].raw).toBeNull();
+
+      // 第二条消息
+      expect(messages[1].content).toBe('Hello World');
+      expect(messages[1].reasoningContent).toBe('');
+
+      // 最终消息
+      expect(messages[2].content).toBe('Hello World');
+      expect(messages[2].finishReason).toBe('stop');
+      expect(messages[2].raw).toEqual(mockMetadata);
+      expect(messages[2].usage).toEqual({ inputTokens: 10, outputTokens: 20 });
+    });
+
+    it('应该处理包含 reasoning 的流（text-delta + reasoning-delta）', async () => {
+      const events = [
+        { type: 'reasoning-delta', text: 'Thinking' },
+        { type: 'text-delta', text: 'Hello' },
+        { type: 'reasoning-delta', text: ' more' },
+        { type: 'text-delta', text: ' World' },
+      ];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      // 应该有 5 条消息
+      expect(messages.length).toBe(5);
+
+      // 检查 reasoning 内容累积
+      expect(messages[0].reasoningContent).toBe('Thinking');
+      expect(messages[1].reasoningContent).toBe('Thinking');
+      expect(messages[2].reasoningContent).toBe('Thinking more');
+      expect(messages[3].reasoningContent).toBe('Thinking more');
+
+      // 检查文本内容累积
+      expect(messages[1].content).toBe('Hello');
+      expect(messages[3].content).toBe('Hello World');
+    });
+
+    it('应该处理空流（无事件）', async () => {
+      const events: Array<{ type: string; text?: string }> = [];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      // 应该只有最终消息
+      expect(messages.length).toBe(1);
+      expect(messages[0].content).toBe('');
+      expect(messages[0].reasoningContent).toBe('');
+    });
+
+    it('应该处理混合事件流（text + reasoning + 其他）', async () => {
+      const events = [
+        { type: 'text-delta', text: 'Hello' },
+        { type: 'reasoning-delta', text: 'Thinking' },
+        { type: 'unknown-event', data: 'ignored' }, // 应该被忽略，但仍会 yield
+        { type: 'text-delta', text: ' World' },
+      ];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      // 应该有 5 条消息（每个事件都会 yield，包括 unknown-event）
+      expect(messages.length).toBe(5);
+      expect(messages[0].content).toBe('Hello');
+      expect(messages[1].content).toBe('Hello');
+      expect(messages[2].content).toBe('Hello');
+      expect(messages[3].content).toBe('Hello World');
+      expect(messages[4].content).toBe('Hello World');
+    });
+
+    it('应该在 includeReasoningContent 为 false 时忽略 reasoning-delta', async () => {
+      const events = [
+        { type: 'reasoning-delta', text: 'Thinking' },
+        { type: 'text-delta', text: 'Hello' },
+      ];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const options = { ...defaultOptions, includeReasoningContent: false };
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, options)) {
+        messages.push(message);
+      }
+
+      // reasoningContent 应该为空
+      expect(messages[0].reasoningContent).toBe('');
+      expect(messages[1].reasoningContent).toBe('');
+    });
+  });
+
+  describe('流式统计', () => {
+    it('应该正确计算 text-delta 和 reasoning-delta 的数量', async () => {
+      const events = [
+        { type: 'text-delta', text: 'A' },
+        { type: 'text-delta', text: 'B' },
+        { type: 'text-delta', text: 'C' },
+        { type: 'reasoning-delta', text: '1' },
+        { type: 'reasoning-delta', text: '2' },
+      ];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      const finalMessage = messages[messages.length - 1];
+      expect(finalMessage.raw?.streamStats?.textDeltaCount).toBe(3);
+      expect(finalMessage.raw?.streamStats?.reasoningDeltaCount).toBe(2);
+      expect(finalMessage.raw?.streamStats?.duration).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('元数据收集', () => {
+    it('应该在流式处理完成后调用 collectAllMetadata', async () => {
+      const events = [
+        { type: 'text-delta', text: 'Hello' },
+      ];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+
+      for await (const _ of processStreamEvents(mockResult, defaultOptions)) {
+        // 消费所有消息
+      }
+
+      expect(collectAllMetadataSpy).toHaveBeenCalledWith(mockResult);
+    });
+
+    it('应该在元数据收集失败时抛出错误', async () => {
+      const events = [
+        { type: 'text-delta', text: 'Hello' },
+      ];
+
+      collectAllMetadataSpy.mockRejectedValue(new Error('Metadata collection failed'));
+
+      const mockResult = createMockStreamResult(events, createDefaultMetadata());
+
+      let errorThrown = false;
+      try {
+        for await (const _ of processStreamEvents(mockResult, defaultOptions)) {
+          // 消费所有消息
+        }
+      } catch (error) {
+        errorThrown = true;
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe('Metadata collection failed');
+      }
+
+      expect(errorThrown).toBe(true);
+    });
+
+    it('应该在最终消息中包含完整的元数据', async () => {
+      const events = [{ type: 'text-delta', text: 'Hello' }];
+
+      const mockMetadata: StandardMessageRawResponse = {
+        response: { id: 'test-id', modelId: 'deepseek-chat', timestamp: '2024-01-01T00:00:00.000Z' },
+        request: { body: '{"message":"Hello"}' },
+        usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+        finishReason: { reason: 'stop', rawReason: 'stop' },
+        warnings: [{ code: 'test', message: 'Test warning' }],
+        sources: [{ sourceType: 'url', id: '1', url: 'https://example.com' }],
+        providerMetadata: { deepseek: { model: 'deepseek-chat' } },
+        streamStats: { textDeltaCount: 1, reasoningDeltaCount: 0, duration: 100 },
+      };
+
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      const finalMessage = messages[messages.length - 1];
+      expect(finalMessage.raw).toEqual(mockMetadata);
+      expect(finalMessage.usage).toEqual({ inputTokens: 10, outputTokens: 20 });
+      expect(finalMessage.finishReason).toBe('stop');
+    });
+  });
+
+  describe('消息格式', () => {
+    it('应该生成正确格式的 StandardMessage', async () => {
+      const events = [{ type: 'text-delta', text: 'Hello' }];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      // 检查所有消息的基本格式
+      messages.forEach(msg => {
+        expect(msg).toHaveProperty('id');
+        expect(msg).toHaveProperty('timestamp');
+        expect(msg).toHaveProperty('modelKey');
+        expect(msg).toHaveProperty('role');
+        expect(msg).toHaveProperty('content');
+        expect(msg).toHaveProperty('reasoningContent');
+        expect(msg).toHaveProperty('raw');
+      });
+
+      // 检查最终消息的额外属性
+      const finalMessage = messages[messages.length - 1];
+      expect(finalMessage.finishReason).toBe('stop');
+      expect(finalMessage.usage).toBeDefined();
+    });
+  });
+});

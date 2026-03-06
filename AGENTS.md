@@ -155,27 +155,9 @@ models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 
 ### 聊天服务层
 
-使用独立的聊天服务层 (`src/services/chatService.ts`) 统一处理供应商请求。
+使用模块化的聊天服务层统一处理供应商请求，支持流式响应和元数据收集。
 
-**架构**：
-
-```
-Redux Thunk → ChatService → Vercel AI SDK → 供应商 API
-```
-
-**核心功能**：
-
-1. **供应商特定 Provider**：使用 Vercel AI SDK 官方包（DeepSeek、Kimi、Zhipu）
-2. **流式请求**：`streamChatCompletion()` 使用 `streamText()`
-3. **响应转换**：转换为 `StandardMessage` 格式
-
-**消息格式**：Vercel AI SDK 标准 Part 数组格式
-
-- `system`: `{ content: '...' }`
-- `user`: `{ content: [{ type: 'text', text: '...' }] }`
-- `assistant`: `{ content: [{ type: 'text', text: '...' }, { type: 'reasoning', text: '...' }] }`
-
-详细实现：`src/services/chatService.ts`
+实现位置：`src/services/chat/`
 
 ### 跨平台兼容性
 
@@ -320,7 +302,7 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 | 功能需求         | 文件路径                             |
 | ---------------- | ------------------------------------ |
 | 应用初始化配置   | `src/config/initSteps.ts`            |
-| 聊天服务         | `src/services/chatService.ts`        |
+| 聊天服务         | `src/services/chat/`                 |
 | 远程模型数据获取 | `src/services/modelRemoteService.ts` |
 | 跨平台兼容层     | `src/utils/tauriCompat/index.ts`     |
 | 主密钥管理       | `src/store/keyring/masterKey.ts`     |
@@ -337,7 +319,7 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 └── src/utils/constants.ts       # 常量定义
 
 服务层
-├── src/services/chatService.ts  # 聊天服务
+├── src/services/chat/           # 聊天服务（模块化）
 └── src/services/modelRemoteService.ts  # 远程数据服务
 
 存储层

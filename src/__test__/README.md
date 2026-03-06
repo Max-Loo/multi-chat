@@ -1144,7 +1144,7 @@ Vitest 的 `vi.mock()` 无法完全拦截 Vercel AI SDK 的 HTTP 请求，因为
 **使用方法：**
 
 ```typescript
-import { streamChatCompletion } from '@/services/chatService';
+import { streamChatCompletion } from '@/services/chat';
 import { createMockStreamResult } from '@/__test__/helpers/mocks/aiSdk';
 
 // 1. 创建 mock 函数
@@ -1432,7 +1432,7 @@ const mockResult = createMockStreamResultWithMetadata({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { streamText } from 'ai';
 import { createMockStreamResult, StreamEvents } from '@/__test__/helpers/mocks/aiSdk';
-import { streamChatCompletion } from '@/services/chatService';
+import { streamChatCompletion } from '@/services/chat';
 
 describe('chatService', () => {
   beforeEach(() => {
