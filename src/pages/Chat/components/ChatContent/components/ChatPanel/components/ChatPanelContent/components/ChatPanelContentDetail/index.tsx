@@ -121,15 +121,17 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     }
   }, [handleScroll])
 
-  return <div
-    className={`
-      flex flex-col items-center text-base h-full overflow-y-auto
-      pt-2 pb-4 pl-3
-      ${isScrolling ? 'pr-0.5' : 'pr-3'}
-      ${scrollbarClassname}
-    `}
-    ref={scrollContainerRef}
-  >
+  return (
+    <>
+      <div
+        className={`
+          flex flex-col items-center text-base h-full overflow-y-auto
+          pt-2 pb-4 pl-3
+          ${isScrolling ? 'pr-0.5' : 'pr-3'}
+          ${scrollbarClassname}
+        `}
+        ref={scrollContainerRef}
+      >
     <DetailTitle chatModel={chatModel} />
     {/* 历史记录列表 */}
     {historyList.map(historyRecord => {
@@ -163,7 +165,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     {needsScrollbar && !isAtBottom && (
       <Button
         onClick={scrollToBottom}
-        className="absolute bottom-[110px] rounded-full h-10 w-10 bg-gray-900 text-white shadow-md hover:shadow-lg hover:bg-gray-800 transition-all"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full h-10 w-10 bg-gray-900 text-white shadow-md hover:shadow-lg hover:bg-gray-800 transition-all z-50"
         title={t($ => $.chat.scrollToBottom)}
         size="icon"
       >
@@ -181,7 +183,9 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
         </> : <ArrowDown />}
       </Button>
     )}
-  </div>
+      </div>
+    </>
+  )
 }
 
 
