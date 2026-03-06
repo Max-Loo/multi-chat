@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from 'react-i18next';
+import { ProviderLogo } from '@/components/ProviderLogo';
 
 /**
  * ProviderCardHeader 组件的属性
@@ -9,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 interface ProviderCardHeaderProps {
   /** 供应商名称 */
   providerName: string;
+  /** 供应商唯一标识 */
+  providerKey: string;
   /** 供应商状态 */
   status: 'available' | 'unavailable';
   /** 是否展开 */
@@ -20,17 +23,17 @@ interface ProviderCardHeaderProps {
  * 显示供应商名称、状态图标、展开/折叠图标
  */
 export const ProviderCardHeader = React.memo<ProviderCardHeaderProps>(
-  ({ providerName, status, isExpanded }) => {
+  ({ providerName, providerKey, status, isExpanded }) => {
     const { t } = useTranslation();
 
     return (
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
-            <span className="text-lg font-bold text-primary">
-              {providerName.charAt(0).toUpperCase()}
-            </span>
-          </div>
+          <ProviderLogo
+            providerKey={providerKey}
+            providerName={providerName}
+            size={40}
+          />
           <h3 className="font-semibold text-lg">{providerName}</h3>
           {status === 'available' ? (
             <Badge variant="outline" className="gap-1 text-green-600 border-green-600">

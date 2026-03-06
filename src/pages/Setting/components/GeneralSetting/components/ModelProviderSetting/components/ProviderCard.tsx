@@ -36,6 +36,7 @@ export const ProviderCard = React.memo<ProviderCardProps>(
         <div className="p-4 space-y-3">
           <ProviderCardHeader
             providerName={provider.providerName}
+            providerKey={provider.providerKey}
             status={status}
             isExpanded={isExpanded}
           />
