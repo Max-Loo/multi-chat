@@ -32,6 +32,8 @@ export default defineConfig(async () => ({
       "@": path.resolve(__dirname, "./src"),
       "@/test-helpers": path.resolve(__dirname, "./src/__test__/helpers/index.ts"),
       "@/test-helpers/*": path.resolve(__dirname, "./src/__test__/helpers/*"),
+      // 配置 highlight.js 别名，用于动态导入
+      "/@highlight.js": path.resolve(__dirname, "./node_modules/highlight.js"),
     },
   },
 
@@ -133,12 +135,36 @@ export default defineConfig(async () => ({
               return 'vendor-zod';
             }
 
-            // Markdown 和代码高亮库
-            if (id.includes('markdown-it') ||
-                id.includes('highlight.js') ||
-                id.includes('dompurify')) {
-              return 'vendor-markdown';
-            }
+             // Markdown 和代码高亮库
+             if (id.includes('markdown-it') ||
+                 id.includes('dompurify')) {
+               return 'vendor-markdown';
+             }
+
+             // Highlight.js 核心库
+             if (id.includes('highlight.js/lib/core')) {
+               return 'vendor-highlight-core';
+             }
+
+             // Highlight.js 预加载语言（15 种常见语言）
+             if (id.includes('highlight.js/lib/languages')) {
+               const preloadedLanguages = [
+                 'javascript', 'typescript', 'python', 'java', 'cpp',
+                 'xml', 'css', 'bash', 'json', 'markdown',
+                 'sql', 'go', 'rust', 'yaml', 'csharp'
+               ];
+               
+               const isPreloaded = preloadedLanguages.some(lang =>
+                 id.includes(`/languages/${lang}.js`)
+               );
+
+               if (isPreloaded) {
+                 return 'vendor-highlight-core';
+               }
+
+               // 其他语言包动态分割
+               return 'vendor-highlight-languages';
+             }
 
             // Ant Design X 组件库
             if (id.includes('@ant-design/x')) {

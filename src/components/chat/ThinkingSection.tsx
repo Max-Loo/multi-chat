@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { generateCleanHtml } from "@/utils/markdown";
 
@@ -41,6 +41,11 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(initiallyExpanded);
 
+  // 缓存推理内容的 HTML（避免重复生成导致重新渲染）
+  const contentHtml = useMemo(() => {
+    return generateCleanHtml(content);
+  }, [content]);
+
   return (
     <Card className="mb-2 bg-transparent border-none shadow-none">
       {/* 折叠按钮 */}
@@ -78,7 +83,7 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
           <div
             className="text-sm text-muted-foreground"
             dangerouslySetInnerHTML={{
-              __html: generateCleanHtml(content),
+              __html: contentHtml,
             }}
           />
         </div>
