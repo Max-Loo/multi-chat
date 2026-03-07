@@ -16,6 +16,7 @@ export const LOCAL_STORAGE_PREFIX = 'multi-chat-'
 export const SUPPORTED_LANGUAGE_LIST = [
   'zh',
   'en',
+  'fr',
 ]
 
 /**

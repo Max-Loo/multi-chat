@@ -1,0 +1,25 @@
+{
+  "generalSetting": "Paramètres généraux",
+  "modelProvider": {
+    "title": "Fournisseur de modèles",
+    "description": "Récupérer les dernières informations du fournisseur de modèles à partir du serveur distant",
+    "refreshButton": "Actualiser le fournisseur de modèles",
+    "refreshing": "Actualisation...",
+    "lastUpdateLabel": "Dernière mise à jour :",
+    "refreshSuccess": "Données du fournisseur de modèles mises à jour",
+    "refreshFailed": "Échec de l'actualisation",
+    "refreshFailedPrefix": "Échec de l'actualisation :",
+    "status": {
+      "available": "Disponible",
+      "unavailable": "Indisponible"
+    },
+    "modelCount": "{{count}} modèles",
+    "clickToViewDetails": "Cliquez pour voir les détails",
+    "searchPlaceholder": "Rechercher le nom ou l'ID du modèle...",
+    "searchResult": "Résultat : {{count}} modèles",
+    "totalModels": "{{count}} modèles",
+    "apiEndpoint": "Point de terminaison API :",
+    "providerId": "ID du fournisseur :",
+    "viewDocs": "Voir la documentation"
+  }
+}
