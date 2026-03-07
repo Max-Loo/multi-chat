@@ -29,6 +29,10 @@ vi.mock("@/pages/Setting/components/GeneralSetting/components/ModelProviderSetti
   default: () => <div data-testid="model-provider-setting">ModelProviderSetting</div>,
 }))
 
+vi.mock("@/pages/Setting/components/GeneralSetting/components/AutoNamingSetting", () => ({
+  default: () => <div data-testid="auto-naming-setting">AutoNamingSetting</div>,
+}))
+
 describe("GeneralSetting 组件", () => {
   beforeEach(() => {
     resetTestState()

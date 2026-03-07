@@ -3,12 +3,12 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { loadChatsFromJson } from "../storage";
 import { RootState } from "..";
 import { Model } from "@/types/model";
-import { streamChatCompletion } from "@/services/chat";
+import { streamChatCompletion, generateChatTitleService } from "@/services/chat";
 import { isNil, isNotNil } from "es-toolkit";
 import { createIdGenerator } from 'ai'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
 import { getCurrentTimestamp } from "@/utils/utils";
-import { selectIncludeReasoningContent } from "./appConfigSlices";
+import { selectIncludeReasoningContent, selectAutoNamingEnabled } from "./appConfigSlices";
 
 // 生成用户消息 ID 的工具函数（带前缀）
 const generateUserMessageId = createIdGenerator({ prefix: USER_MESSAGE_ID_PREFIX });
@@ -126,6 +126,49 @@ const sendMessage = createAsyncThunk<
 
 
 /**
+ * @description 异步 thunk：生成聊天标题
+ */
+export const generateChatName = createAsyncThunk<
+  { chatId: string; name: string } | null,
+  {
+    chat: Chat;
+    model: Model;
+    historyList: StandardMessage[];
+  },
+  { state: RootState }
+>(
+  'chat/generateName',
+  async({
+    chat,
+    model,
+    historyList,
+  }, { getState }) => {
+    try {
+      // 检查全局开关状态
+      const state = getState();
+      const autoNamingEnabled = selectAutoNamingEnabled(state);
+
+      if (!autoNamingEnabled) {
+        return null;
+      }
+
+      // 调用标题生成服务
+      const title = await generateChatTitleService(historyList, model);
+
+      return {
+        chatId: chat.id,
+        name: title,
+      };
+    } catch (error) {
+      // 静默处理错误，记录警告日志
+      console.warn('Failed to generate chat title:', error);
+      return null;
+    }
+  },
+)
+
+
+/**
  * @description 触发发送聊天消息
  */
 export const startSendChatMessage = createAsyncThunk<
@@ -230,9 +273,16 @@ const chatSlice = createSlice({
         chatList,
       } = state
 
+      // 验证：不允许空标题（包括空字符串和仅空白字符）
+      if (!name || name.trim() === '') {
+        return; // 静默拒绝，不更新状态
+      }
+
       const idx = chatList.findIndex(item => item.id === id)
       if (idx !== -1) {
         chatList[idx].name = name
+        // 标记为用户手动命名，后续不再触发自动命名
+        chatList[idx].isManuallyNamed = true
       }
     },
     // 删除聊天
@@ -369,6 +419,20 @@ const chatSlice = createSlice({
           delete state.runningChat[chat.id][model.id]
         },
       )
+      // 生成聊天标题成功
+      .addCase(generateChatName.fulfilled, (state, action) => {
+        if (action.payload === null) {
+          return; // 静默处理失败情况
+        }
+
+        const { chatId, name } = action.payload;
+        const chatIdx = state.chatList.findIndex(item => item.id === chatId);
+        if (chatIdx === -1) return;
+
+        // 更新聊天标题
+        state.chatList[chatIdx].name = name;
+        // 不设置 isManuallyNamed，保持为 false（允许手动覆盖）
+      })
       // 具体每个模型发送消息完成后，取消发送状态，回写数据留给 startSendChatMessage 去做
       .addCase(sendMessage.rejected, (state, action) => {
         const {

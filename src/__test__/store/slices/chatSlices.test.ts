@@ -90,7 +90,7 @@ describe('chatSlices', () => {
       reducer: {
         chat: chatReducer,
         models: modelReducer,
-        appConfig: (state = { includeReasoningContent: false, language: '' }) => state,
+        appConfig: (state = { includeReasoningContent: false, language: '', autoNamingEnabled: true }) => state,
       },
     });
   };
@@ -360,6 +360,98 @@ describe('chatSlices', () => {
 
       const state = store.getState().chat;
       expect(state.runningChat[chat.id]?.[model.id]?.history).toEqual(message);
+    });
+  });
+
+  describe('editChatName - 自动命名相关', () => {
+    it('应该在编辑聊天名称时设置 isManuallyNamed 为 true', () => {
+      const chat = createMockChat({ name: 'Old Name' });
+      store.dispatch(createChat({ chat }));
+
+      // 编辑聊天名称
+      store.dispatch({
+        type: 'chat/editChatName',
+        payload: { id: chat.id, name: 'New Name' },
+      });
+
+      const state = store.getState().chat;
+      expect(state.chatList[0].name).toBe('New Name');
+      expect(state.chatList[0].isManuallyNamed).toBe(true);
+    });
+
+    it('应该拒绝编辑为空名称（保持原有名称）', () => {
+      const chat = createMockChat({ name: 'Old Name' });
+      store.dispatch(createChat({ chat }));
+
+      // 尝试编辑为空名称（应该被拒绝）
+      store.dispatch({
+        type: 'chat/editChatName',
+        payload: { id: chat.id, name: '' },
+      });
+
+      const state = store.getState().chat;
+      // 名称应该保持不变
+      expect(state.chatList[0].name).toBe('Old Name');
+      // isManuallyNamed 应该保持 undefined（因为没有更新）
+      expect(state.chatList[0].isManuallyNamed).toBeUndefined();
+    });
+
+    it('应该拒绝编辑为仅空白字符的名称', () => {
+      const chat = createMockChat({ name: 'Old Name' });
+      store.dispatch(createChat({ chat }));
+
+      // 尝试编辑为仅空白字符（应该被拒绝）
+      store.dispatch({
+        type: 'chat/editChatName',
+        payload: { id: chat.id, name: '   ' },
+      });
+
+      const state = store.getState().chat;
+      // 名称应该保持不变
+      expect(state.chatList[0].name).toBe('Old Name');
+      // isManuallyNamed 应该保持 undefined
+      expect(state.chatList[0].isManuallyNamed).toBeUndefined();
+    });
+  });
+
+  describe('generateChatName - 自动标题生成', () => {
+    it('应该在成功生成标题时更新聊天名称', () => {
+      const chat = createMockChat({ name: undefined });
+      store.dispatch(createChat({ chat }));
+
+      // Dispatch fulfilled action with generated title
+      store.dispatch({
+        type: 'chat/generateName/fulfilled',
+        payload: { chatId: chat.id, name: 'Generated Title' },
+      });
+
+      const state = store.getState().chat;
+      expect(state.chatList[0].name).toBe('Generated Title');
+      expect(state.chatList[0].isManuallyNamed).toBeUndefined(); // 保持 undefined，允许手动覆盖
+    });
+
+    it('应该在失败时不更新聊天名称', () => {
+      const chat = createMockChat({ name: undefined });
+      store.dispatch(createChat({ chat }));
+
+      // Dispatch fulfilled action with null (失败情况)
+      store.dispatch({
+        type: 'chat/generateName/fulfilled',
+        payload: null,
+      });
+
+      const state = store.getState().chat;
+      expect(state.chatList[0].name).toBeUndefined();
+    });
+
+    it('应该在聊天不存在时不抛出错误', () => {
+      // Dispatch fulfilled action for non-existent chat
+      expect(() => {
+        store.dispatch({
+          type: 'chat/generateName/fulfilled',
+          payload: { chatId: 'non-existent-chat', name: 'Title' },
+        });
+      }).not.toThrow();
     });
   });
 

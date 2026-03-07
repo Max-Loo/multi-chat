@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/2/28 21:13:41
+// 生成时间: 2026/3/6 23:09:19
 
 interface Resources {
   translation: {
@@ -100,6 +100,10 @@ interface Resources {
     };
     setting: {
       generalSetting: string;
+      autoNaming: {
+        title: string;
+        description: string;
+      };
       modelProvider: {
         title: string;
         description: string;

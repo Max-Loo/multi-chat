@@ -52,6 +52,8 @@ vi.mock('@/lib/global', () => ({
 import { configureStore } from '@reduxjs/toolkit';
 import appConfigReducer, {
   initializeIncludeReasoningContent,
+  setAutoNamingEnabled,
+  selectAutoNamingEnabled,
 } from '@/store/slices/appConfigSlices';
 
 describe('appConfigSlices', () => {
@@ -82,6 +84,7 @@ describe('appConfigSlices', () => {
       expect(state).toEqual({
         language: '',
         includeReasoningContent: false,
+        autoNamingEnabled: true,
       });
     });
   });
@@ -166,4 +169,41 @@ describe('appConfigSlices', () => {
   // localStorage 持久化测试已被删除：已被集成测试覆盖
 
   // 配置状态全局同步测试已被删除：已被集成测试覆盖
+
+  describe('自动命名功能', () => {
+    it('初始值应该为 true', () => {
+      const state = store.getState().appConfig;
+      expect(state.autoNamingEnabled).toBe(true);
+    });
+
+    it('应该支持设置自动命名开关为 false', () => {
+      store.dispatch(setAutoNamingEnabled(false));
+
+      const state = store.getState().appConfig;
+      expect(state.autoNamingEnabled).toBe(false);
+    });
+
+    it('应该支持设置自动命名开关为 true', () => {
+      // 先设置为 false
+      store.dispatch(setAutoNamingEnabled(false));
+
+      // 再设置为 true
+      store.dispatch(setAutoNamingEnabled(true));
+
+      const state = store.getState().appConfig;
+      expect(state.autoNamingEnabled).toBe(true);
+    });
+
+    it('selectAutoNamingEnabled 应该返回正确的值', () => {
+      store.dispatch(setAutoNamingEnabled(false));
+
+      const result = selectAutoNamingEnabled(store.getState());
+      expect(result).toBe(false);
+
+      store.dispatch(setAutoNamingEnabled(true));
+
+      const result2 = selectAutoNamingEnabled(store.getState());
+      expect(result2).toBe(true);
+    });
+  });
 });

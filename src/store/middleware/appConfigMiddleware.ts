@@ -1,8 +1,8 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import { RootState } from "..";
-import { setAppLanguage, setIncludeReasoningContent } from "../slices/appConfigSlices";
+import { setAppLanguage, setIncludeReasoningContent, setAutoNamingEnabled } from "../slices/appConfigSlices";
 import { LOCAL_STORAGE_LANGUAGE_KEY } from "@/lib/global";
-import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY } from "@/utils/constants";
+import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
 import { changeAppLanguage } from "@/lib/i18n";
 
 export const saveDefaultAppLanguage = createListenerMiddleware<RootState>()
@@ -28,5 +28,18 @@ saveDefaultAppLanguage.startListening({
   effect: async (_, listenerApi) => {
     const includeReasoningContent = listenerApi.getState().appConfig.includeReasoningContent
     localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, String(includeReasoningContent))
+  },
+})
+
+/**
+ * 监听器：持久化自动命名功能开关状态到 localStorage
+ */
+saveDefaultAppLanguage.startListening({
+  matcher: isAnyOf(
+    setAutoNamingEnabled,
+  ),
+  effect: async (_, listenerApi) => {
+    const autoNamingEnabled = listenerApi.getState().appConfig.autoNamingEnabled
+    localStorage.setItem(LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY, String(autoNamingEnabled))
   },
 })

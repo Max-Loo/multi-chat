@@ -132,6 +132,7 @@ const ChatButton = memo<ChatButtonProps>(({
           variant="default"
           size="sm"
           onClick={onConfirmRename}
+          disabled={!newName.trim()}
           className="h-8 w-8 p-0 shrink-0"
         >
           <Check className="h-4 w-4" />

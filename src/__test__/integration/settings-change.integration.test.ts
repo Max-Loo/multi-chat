@@ -48,9 +48,13 @@ import {
 
   setIncludeReasoningContent,
 
+  setAutoNamingEnabled,
+
   initializeAppLanguage,
 
   initializeIncludeReasoningContent,
+
+  initializeAutoNamingEnabled,
 
 } from '@/store/slices/appConfigSlices';
 
@@ -60,7 +64,7 @@ import { getDefaultAppLanguage } from '@/lib/global';
 
 import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
 
-import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY } from '@/utils/constants';
+import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from '@/utils/constants';
 
 
 
@@ -542,7 +546,265 @@ describe('设置变更集成测试', () => {
 
   // ========================================
 
-  // 4.6 跨平台设置持久化一致性测试
+  // 4.6 自动命名开关流程测试
+
+  // ========================================
+
+  describe('自动命名开关流程测试', () => {
+
+    test('用户切换开关 → Redux 更新 → localStorage 持久化', async () => {
+
+      // Given: 初始状态为 true（默认值）
+
+      expect(testStore.getState().appConfig.autoNamingEnabled).toBe(true);
+
+
+
+      // When: 用户关闭开关
+
+      testStore.dispatch(setAutoNamingEnabled(false));
+
+
+
+      // Then: Redux store 更新
+
+      expect(testStore.getState().appConfig.autoNamingEnabled).toBe(false);
+
+
+
+      // Then: localStorage 持久化（由于 middleware 是异步的，需要等待）
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(localStorage.getItem(LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY)).toBe('false');
+
+    });
+
+
+
+    test('验证 setAutoNamingEnabled action 触发', () => {
+
+      // Given: 创建 spy
+
+      const spy = vi.spyOn(testStore, 'dispatch');
+
+
+
+      // When: 切换开关
+
+      testStore.dispatch(setAutoNamingEnabled(false));
+
+
+
+      // Then: dispatch 应被调用
+
+      expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+
+        type: 'appConfig/setAutoNamingEnabled',
+
+        payload: false,
+
+      }));
+
+
+
+      spy.mockRestore();
+
+    });
+
+
+
+    test('验证连续切换开关', () => {
+
+      // Given: 初始状态
+
+      const initialState = testStore.getState().appConfig.autoNamingEnabled;
+
+
+
+      // When: 连续切换开关
+
+      testStore.dispatch(setAutoNamingEnabled(!initialState));
+
+      testStore.dispatch(setAutoNamingEnabled(initialState));
+
+
+
+      // Then: 最终状态应与初始状态一致
+
+      expect(testStore.getState().appConfig.autoNamingEnabled).toBe(initialState);
+
+    });
+
+
+
+    test('验证开关状态与 Redux store 同步', () => {
+
+      // Given: 初始状态
+
+      const initialState = testStore.getState().appConfig.autoNamingEnabled;
+
+
+
+      // When: 切换开关
+
+      testStore.dispatch(setAutoNamingEnabled(!initialState));
+
+
+
+      // Then: Redux store 应立即更新
+
+      expect(testStore.getState().appConfig.autoNamingEnabled).toBe(!initialState);
+
+    });
+
+  });
+
+
+
+  // ========================================
+
+  // 4.7 自动命名开关持久化测试
+
+  // ========================================
+
+  describe('自动命名开关持久化测试', () => {
+
+    test('刷新页面后开关状态保持', async () => {
+
+      // Given: 保存开关状态到 localStorage
+
+      localStorage.setItem(LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY, 'true');
+
+
+
+      // When: 初始化应用（调用 initializeAutoNamingEnabled）
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: 第三方库类型定义不完整
+      await testStore.dispatch<any>(initializeAutoNamingEnabled());
+
+
+
+      // Then: 开关状态应从 localStorage 恢复
+
+      expect(testStore.getState().appConfig.autoNamingEnabled).toBe(true);
+
+    });
+
+
+
+    test('验证 localStorage 加载', async () => {
+
+      // Given: 保存开关状态到 localStorage（关闭状态）
+
+      localStorage.setItem(LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY, 'false');
+
+
+
+      // When: 创建新的 store 并初始化（模拟刷新页面）
+
+      const newStore = getTestStore();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: 第三方库类型定义不完整
+      await newStore.dispatch<any>(initializeAutoNamingEnabled());
+
+
+
+      // Then: 应从 localStorage 加载并恢复为 false
+
+      expect(newStore.getState().appConfig.autoNamingEnabled).toBe(false);
+
+    });
+
+
+
+    test('验证 Redux store 恢复', async () => {
+
+      // Given: 保存开关状态到 localStorage（关闭状态）
+
+      localStorage.setItem(LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY, 'false');
+
+
+
+      // When: 创建新的 store 并初始化（模拟刷新页面）
+
+      const newStore = getTestStore();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: 第三方库类型定义不完整
+      await newStore.dispatch<any>(initializeAutoNamingEnabled());
+
+
+
+      // Then: Redux store 应从 localStorage 恢复为 false
+
+      expect(newStore.getState().appConfig.autoNamingEnabled).toBe(false);
+
+    });
+
+
+
+    test('验证开关状态在不同浏览器会话间保持', () => {
+
+      // Given: 设置开关状态为关闭
+
+      testStore.dispatch(setAutoNamingEnabled(false));
+
+
+
+      // When: 模拟浏览器会话结束和重新开始（读取 localStorage）
+
+      const savedValue = localStorage.getItem(LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY);
+
+
+
+      // Then: 新会话应读取到保存的值
+
+      expect(savedValue).toBe('false');
+
+    });
+
+
+
+    test('验证完整的持久化流程：用户关闭开关 → 刷新页面 → 开关保持关闭', async () => {
+
+      // Given: 用户关闭开关
+
+      testStore.dispatch(setAutoNamingEnabled(false));
+
+
+
+      // 等待 middleware 持久化到 localStorage
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+
+
+      // When: 模拟刷新页面（创建新 store 并初始化）
+
+      const newStore = getTestStore();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: 第三方库类型定义不完整
+      await newStore.dispatch<any>(initializeAutoNamingEnabled());
+
+
+
+      // Then: 新 store 中的开关状态应为关闭（从 localStorage 恢复）
+
+      expect(newStore.getState().appConfig.autoNamingEnabled).toBe(false);
+
+    });
+
+  });
+
+
+
+  // ========================================
+
+  // 4.8 跨平台设置持久化一致性测试
 
   // ========================================
 

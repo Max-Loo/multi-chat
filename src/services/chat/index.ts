@@ -123,6 +123,7 @@ export async function* streamChatCompletion(
 // 工具函数导出（供测试使用）
 export { buildMessages } from '@/services/chat/messageTransformer';
 export { getProvider } from '@/services/chat/providerFactory';
+export { generateChatTitleService } from '@/services/chat/titleGenerator';
 
 // 类型导出
 export type { ChatServiceConfig, ChatRequestParams, AISDKDependencies } from '@/services/chat/types';

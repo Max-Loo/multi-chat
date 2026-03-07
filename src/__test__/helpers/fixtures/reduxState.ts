@@ -47,6 +47,7 @@ export const createMockAppConfigState = (
 ): AppConfigSliceState => ({
   language: 'zh',
   includeReasoningContent: false,
+  autoNamingEnabled: true,
   ...overrides,
 });
 
