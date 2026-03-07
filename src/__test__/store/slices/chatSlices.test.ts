@@ -47,11 +47,27 @@ vi.mock('@/services/chatService', () => ({
   streamChatCompletion: vi.fn(),
 }));
 
+// Mock providerLoader 模块
+const mockPreloadProviders = vi.fn<() => Promise<void>>(() => Promise.resolve());
+vi.mock('@/services/chat/providerLoader', () => ({
+  getProviderSDKLoader: () => ({
+    loadProvider: vi.fn().mockResolvedValue((config: any) => (modelId: string) => ({
+      modelId,
+      provider: 'mock-provider',
+      ...config,
+    })),
+    isProviderLoaded: vi.fn(),
+    getProviderState: vi.fn(),
+    preloadProviders: mockPreloadProviders,
+  }),
+}));
+
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer, {
   clearError,
   clearInitializationError,
   createChat,
+  setSelectedChatIdWithPreload,
 } from '@/store/slices/chatSlices';
 import modelReducer from '@/store/slices/modelSlice';
 
@@ -99,6 +115,7 @@ describe('chatSlices', () => {
     vi.clearAllMocks();
     // 重置 mock 返回默认值
     mockLoadChatsFromJson.mockResolvedValue([]);
+    mockPreloadProviders.mockClear();
     store = createTestStore();
   });
 
@@ -452,6 +469,36 @@ describe('chatSlices', () => {
           payload: { chatId: 'non-existent-chat', name: 'Title' },
         });
       }).not.toThrow();
+    });
+  });
+
+  describe('setSelectedChatIdWithPreload - 预加载机制', () => {
+    it('应该在新聊天（无模型）时跳过预加载', async () => {
+      const chat = createMockChat({
+        chatModelList: [], // 新聊天，没有模型
+      });
+
+      // 添加聊天到 store
+      store.dispatch(createChat({ chat }));
+
+      // 切换到新聊天
+      await store.dispatch(setSelectedChatIdWithPreload(chat.id));
+
+      // 验证 selectedChatId 被更新
+      expect(store.getState().chat.selectedChatId).toBe(chat.id);
+
+      // 验证 preloadProviders 未被调用（新聊天没有模型）
+      expect(mockPreloadProviders).not.toHaveBeenCalled();
+    });
+
+    it('应该在聊天不存在时跳过预加载', async () => {
+      const nonExistentChatId = 'non-existent-chat-id';
+
+      // 尝试切换到不存在的聊天
+      await store.dispatch(setSelectedChatIdWithPreload(nonExistentChatId));
+
+      // 验证 preloadProviders 未被调用（聊天不存在）
+      expect(mockPreloadProviders).not.toHaveBeenCalled();
     });
   });
 

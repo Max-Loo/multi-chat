@@ -4,7 +4,7 @@ import ChatContent from './components/ChatContent';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { useSearchParams } from 'react-router-dom';
 import { useNavigateToChat } from '@/hooks/useNavigateToPage';
-import { setSelectedChatId } from '@/store/slices/chatSlices';
+import { setSelectedChatIdWithPreload } from '@/store/slices/chatSlices';
 
 const ChatPage: React.FC = () => {
   const isSidebarCollapsed = useAppSelector(state => state.chatPage.isSidebarCollapsed)
@@ -57,8 +57,8 @@ const ChatPage: React.FC = () => {
     const chat = chatList.find(c => c.id === chatId)
 
     if (chat && !chat.isDeleted) {
-      // 聊天存在且未删除，正常设置选中的聊天 ID
-      dispatch(setSelectedChatId(chatId))
+      // 聊天存在且未删除，正常设置选中的聊天 ID 并预加载供应商 SDK
+      dispatch(setSelectedChatIdWithPreload(chatId))
     } else if (chat?.isDeleted || !chat) {
       // 聊天不存在（已删除或从未创建），清除 URL 中的 chatId 参数
       clearChatIdParam()

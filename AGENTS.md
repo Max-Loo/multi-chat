@@ -159,6 +159,18 @@ models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 
 实现位置：`src/services/chat/`
 
+### 按需加载机制
+
+使用通用 `ResourceLoader<T>` 类实现资源按需加载，减少初始 bundle 大小约 125KB（gzipped）。
+
+**关键模块**：
+- 通用资源加载器：`src/utils/resourceLoader.ts`
+- 供应商 SDK 加载器：`src/services/chat/providerLoader.ts`
+- 异步 Provider 获取：`src/services/chat/providerFactory.ts`
+- 预加载 Thunk：`src/store/slices/chatSlices.ts:134-184`
+
+**相关变更**：`openspec/changes/lazy-load-provider-sdk/`（包含详细设计决策、性能测试报告）
+
 ### 跨平台兼容性
 
 **设计原则**：

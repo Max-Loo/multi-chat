@@ -58,7 +58,7 @@ export async function generateChatTitleService(
 标题：`;
 
   // 3. 调用 generateText API
-  const provider = getProvider(model.providerKey, model.apiKey, model.apiAddress);
+  const provider = await getProvider(model.providerKey, model.apiKey, model.apiAddress);
   const { text } = await generateText({
     model: provider(model.modelKey),
     prompt,

@@ -85,8 +85,8 @@ export async function* streamChatCompletion(
     throttleInterval = 50, // 默认 50ms 节流
   } = params;
 
-  // 1. 获取供应商特定的 provider
-  const provider = getProvider(model.providerKey, model.apiKey, model.apiAddress);
+  // 1. 获取供应商特定的 provider（异步加载）
+  const provider = await getProvider(model.providerKey, model.apiKey, model.apiAddress);
   
   // 2. 构建消息
   const messages = buildMessages(historyList, message, includeReasoningContent);

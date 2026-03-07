@@ -9,6 +9,8 @@ import { createIdGenerator } from 'ai'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
 import { getCurrentTimestamp } from "@/utils/utils";
 import { selectIncludeReasoningContent, selectAutoNamingEnabled } from "./appConfigSlices";
+import { getProviderSDKLoader } from "@/services/chat/providerLoader";
+import { ModelProviderKeyEnum } from "@/utils/enums";
 
 // 生成用户消息 ID 的工具函数（带前缀）
 const generateUserMessageId = createIdGenerator({ prefix: USER_MESSAGE_ID_PREFIX });
@@ -122,6 +124,64 @@ const sendMessage = createAsyncThunk<
       }))
     }
   },
+)
+
+
+/**
+ * @description 异步 thunk：切换聊天并预加载供应商 SDK
+ * 根据聊天使用的模型预加载对应的供应商 SDK
+ */
+export const setSelectedChatIdWithPreload = createAsyncThunk<
+  { chatId: string | null },
+  string | null,
+  { state: RootState }
+>(
+  'chat/setSelectedChatIdWithPreload',
+  async (chatId, { getState }) => {
+    if (!chatId) {
+      return { chatId: null };
+    }
+
+    const state = getState();
+    const chat = state.chat.chatList.find(c => c.id === chatId);
+    
+    if (!chat) {
+      console.warn(`Chat ${chatId} not found for preload`);
+      return { chatId };
+    }
+
+    // 预加载聊天使用的供应商 SDK（优化手段，不阻塞聊天切换）
+    const { chatModelList = [] } = chat;
+    
+    // 新聊天（无模型）不预加载
+    if (chatModelList.length === 0) {
+      return { chatId };
+    }
+
+    try {
+      const providerSDKLoader = getProviderSDKLoader();
+      const { models } = state.models;
+      
+      // 提取聊天使用的所有 providerKey
+      const providerKeys = new Set<ModelProviderKeyEnum>();
+      for (const chatModel of chatModelList) {
+        const model = models.find(m => m.id === chatModel.modelId);
+        if (model) {
+          providerKeys.add(model.providerKey);
+        }
+      }
+
+      // 预加载对应的供应商 SDK
+      if (providerKeys.size > 0) {
+        await providerSDKLoader.preloadProviders(Array.from(providerKeys));
+      }
+    } catch (error) {
+      // 预加载失败不影响聊天切换，仅记录警告
+      console.warn('Failed to preload provider SDKs:', error);
+    }
+    
+    return { chatId };
+  }
 )
 
 
@@ -432,6 +492,10 @@ const chatSlice = createSlice({
         // 更新聊天标题
         state.chatList[chatIdx].name = name;
         // 不设置 isManuallyNamed，保持为 false（允许手动覆盖）
+      })
+      // 切换聊天并预加载供应商 SDK 成功
+      .addCase(setSelectedChatIdWithPreload.fulfilled, (state, action) => {
+        state.selectedChatId = action.payload.chatId;
       })
       // 具体每个模型发送消息完成后，取消发送状态，回写数据留给 startSendChatMessage 去做
       .addCase(sendMessage.rejected, (state, action) => {

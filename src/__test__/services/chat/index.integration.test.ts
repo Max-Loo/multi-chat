@@ -5,6 +5,23 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
 import type { StandardMessage } from '@/types/chat';
 import type { Model } from '@/types/model';
 
+// Mock providerLoader 模块
+vi.mock('@/services/chat/providerLoader', () => ({
+  getProviderSDKLoader: () => ({
+    loadProvider: vi.fn().mockResolvedValue((config: any) => {
+      // Mock 返回一个工厂函数
+      return (modelId: string) => ({
+        modelId,
+        provider: 'mock-provider',
+        ...config,
+      });
+    }),
+    isProviderLoaded: vi.fn(),
+    getProviderState: vi.fn(),
+    preloadProviders: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
 // ========================================
 // Mock Helpers
 // ========================================
@@ -454,8 +471,8 @@ describe('index - streamChatCompletion', () => {
       expect(messages[1].role).toBe('user');
     });
 
-    it('应该正确导出 getProvider 函数', () => {
-      const provider = getProvider(
+    it('应该正确导出 getProvider 函数', async () => {
+      const provider = await getProvider(
         ModelProviderKeyEnum.DEEPSEEK,
         'sk-test',
         'https://api.deepseek.com'
