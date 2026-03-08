@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.2.2] - 2026-03-08
 
+### 📝 文档变更
+
+- 添加 v0.2.2 版本变更日志
+- 补充历史版本变更记录（v0.0.1 - v0.2.1）
+
 ### ⚡ 性能优化
 
 - **模型供应商 SDK 按需加载**：实现通用资源加载器，减少初始 bundle 大小约 125KB（gzipped）
