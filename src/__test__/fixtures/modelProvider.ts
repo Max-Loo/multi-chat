@@ -4,7 +4,7 @@
  * 提供创建测试用 RemoteProviderData 对象的工厂函数，包含 Zod 运行时验证
  */
 
-import type { RemoteProviderData, ModelsDevApiResponse } from '@/services/modelRemoteService';
+import type { RemoteProviderData, ModelsDevApiResponse } from '@/services/modelRemote';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { z } from 'zod';
 

@@ -26,15 +26,15 @@ import {
   loadCachedProviderData,
   RemoteDataError,
   RemoteDataErrorType,
-} from '@/services/modelRemoteService';
-import { ALLOWED_MODEL_PROVIDERS } from '@/utils/constants';
+} from '@/services/modelRemote';
+import { ALLOWED_REMOTE_MODEL_PROVIDERS } from '@/services/modelRemote/config';
 import {
   createDeepSeekProvider,
   createMockRemoteProviders,
 } from '@/__test__/fixtures/modelProvider';
 
 // Mock 服务层依赖
-vi.mock('@/services/modelRemoteService', () => ({
+vi.mock('@/services/modelRemote', () => ({
   fetchRemoteData: vi.fn(),
   saveCachedProviderData: vi.fn(),
   loadCachedProviderData: vi.fn(),
@@ -182,7 +182,7 @@ describe('modelProviderSlice', () => {
 
       // 验证服务层被调用
       expect(mockFetchRemoteData).toHaveBeenCalledTimes(1);
-      expect(mockLoadCachedProviderData).toHaveBeenCalledWith(ALLOWED_MODEL_PROVIDERS);
+      expect(mockLoadCachedProviderData).toHaveBeenCalledWith(ALLOWED_REMOTE_MODEL_PROVIDERS);
     });
 
     it('应该在完全失败时（远程和缓存都失败）返回空数组', async () => {

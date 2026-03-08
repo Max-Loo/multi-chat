@@ -12,10 +12,10 @@ import {
   isRemoteDataFresh,
   RemoteDataError,
   RemoteDataErrorType,
-} from '@/services/modelRemoteService';
+} from '@/services/modelRemote';
 import { fetch } from '@/utils/tauriCompat/http';
 import { createLazyStore } from '@/utils/tauriCompat/store';
-import { ALLOWED_MODEL_PROVIDERS, NETWORK_CONFIG } from '@/utils/constants';
+import { ALLOWED_REMOTE_MODEL_PROVIDERS, REMOTE_MODEL_NETWORK_CONFIG } from '@/services/modelRemote/config';
 import {
   createDeepSeekApiResponse,
   createKimiApiResponse,
@@ -30,11 +30,11 @@ vi.mock('@/utils/tauriCompat/http');
 vi.mock('@/utils/tauriCompat/store');
 
 // Mock constants to control test environment
-vi.mock('@/utils/constants', async () => {
-  const actual = await vi.importActual('@/utils/constants');
+vi.mock('@/services/modelRemote/config', async () => {
+  const actual = await vi.importActual('@/services/modelRemote/config');
   return {
     ...actual,
-    ALLOWED_MODEL_PROVIDERS: ['deepseek', 'kimi', 'zhipu'],
+    ALLOWED_REMOTE_MODEL_PROVIDERS: ['deepseek', 'kimi', 'zhipu'],
   };
 });
 
@@ -105,7 +105,7 @@ describe('modelRemoteService', () => {
       // 验证过滤后的数据仅包含白名单供应商
       expect(result.filteredData).toHaveLength(2);
       expect(result.filteredData.every(p =>
-        ALLOWED_MODEL_PROVIDERS.includes(p.providerKey)
+        ALLOWED_REMOTE_MODEL_PROVIDERS.includes(p.providerKey)
       )).toBe(true);
 
       // 验证数据格式转换
@@ -125,7 +125,7 @@ describe('modelRemoteService', () => {
       // 验证 fetch 被调用一次
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
-        NETWORK_CONFIG.API_ENDPOINT,
+        REMOTE_MODEL_NETWORK_CONFIG.API_ENDPOINT,
         expect.objectContaining({ signal: expect.any(AbortSignal) })
       );
     });
@@ -416,7 +416,7 @@ describe('modelRemoteService', () => {
       // Mock Store.get 返回缓存数据
       mockStore.get.mockResolvedValue(mockCachedData);
 
-      const result = await loadCachedProviderData(ALLOWED_MODEL_PROVIDERS);
+      const result = await loadCachedProviderData(ALLOWED_REMOTE_MODEL_PROVIDERS);
 
       // 验证返回过滤后的数据（只有 deepseek，openai 不在白名单中）
       expect(result).toHaveLength(1);
@@ -431,10 +431,10 @@ describe('modelRemoteService', () => {
       mockStore.get.mockResolvedValue(null);
 
       await expect(
-        loadCachedProviderData(ALLOWED_MODEL_PROVIDERS)
+        loadCachedProviderData(ALLOWED_REMOTE_MODEL_PROVIDERS)
       ).rejects.toThrow('无可用缓存');
 
-      const error = await loadCachedProviderData(ALLOWED_MODEL_PROVIDERS).catch(err => err);
+      const error = await loadCachedProviderData(ALLOWED_REMOTE_MODEL_PROVIDERS).catch(err => err);
       expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NO_CACHE);
     });

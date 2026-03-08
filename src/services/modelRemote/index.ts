@@ -1,7 +1,7 @@
 import { fetch } from '@/utils/tauriCompat/http';
 import { createLazyStore } from '@/utils/tauriCompat/store';
 import type { StoreCompat } from '@/utils/tauriCompat';
-import { NETWORK_CONFIG, CACHE_CONFIG, ALLOWED_MODEL_PROVIDERS } from '@/utils/constants';
+import { REMOTE_MODEL_NETWORK_CONFIG, REMOTE_MODEL_CACHE_CONFIG, ALLOWED_REMOTE_MODEL_PROVIDERS } from './config';
 
 /**
  * models.dev API 响应的实际数据结构（键值对对象）
@@ -323,7 +323,7 @@ export const loadCachedProviderData = async (
 export const isRemoteDataFresh = (cachedTimestamp: string): boolean => {
   const cachedTime = new Date(cachedTimestamp).getTime();
   const now = Date.now();
-  return (now - cachedTime) < CACHE_CONFIG.EXPIRY_TIME_MS;
+  return (now - cachedTime) < REMOTE_MODEL_CACHE_CONFIG.EXPIRY_TIME_MS;
 };
 
 /**
@@ -341,8 +341,8 @@ export const fetchRemoteData = async (
   filteredData: RemoteProviderData[];
 }> => {
   const {
-    timeout = NETWORK_CONFIG.DEFAULT_TIMEOUT,
-    maxRetries = NETWORK_CONFIG.DEFAULT_MAX_RETRIES,
+    timeout = REMOTE_MODEL_NETWORK_CONFIG.DEFAULT_TIMEOUT,
+    maxRetries = REMOTE_MODEL_NETWORK_CONFIG.DEFAULT_MAX_RETRIES,
     signal,
   } = options;
 
@@ -353,7 +353,7 @@ export const fetchRemoteData = async (
     try {
       // 发起带超时的请求
       const response = await fetchWithTimeout(
-        NETWORK_CONFIG.API_ENDPOINT,
+        REMOTE_MODEL_NETWORK_CONFIG.API_ENDPOINT,
         timeout,
         signal
       );
@@ -383,7 +383,7 @@ export const fetchRemoteData = async (
       const apiData: ModelsDevApiResponse = await response.json();
       
       // 转换为内部格式
-      const filteredData = adaptApiResponseToInternalFormat(apiData, ALLOWED_MODEL_PROVIDERS);
+      const filteredData = adaptApiResponseToInternalFormat(apiData, ALLOWED_REMOTE_MODEL_PROVIDERS);
 
       // 返回完整响应和过滤后的数据
       return {
@@ -410,7 +410,7 @@ export const fetchRemoteData = async (
       }
 
       // 指数退避延迟
-      const delay = NETWORK_CONFIG.RETRY_DELAY_BASE * Math.pow(2, retryCount);
+      const delay = REMOTE_MODEL_NETWORK_CONFIG.RETRY_DELAY_BASE * Math.pow(2, retryCount);
       await sleep(delay);
     }
   }

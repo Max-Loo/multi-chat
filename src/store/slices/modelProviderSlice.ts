@@ -5,8 +5,8 @@ import {
   loadCachedProviderData,
   RemoteDataError,
   type RemoteProviderData,
-} from '@/services/modelRemoteService';
-import { ALLOWED_MODEL_PROVIDERS } from '@/utils/constants';
+} from '@/services/modelRemote';
+import { ALLOWED_REMOTE_MODEL_PROVIDERS } from '@/services/modelRemote/config';
 
 /**
  * Model Provider Slice 状态接口
@@ -54,7 +54,7 @@ export const initializeModelProvider = createAsyncThunk(
     } catch (error) {
       // 5. 降级到缓存（加载时过滤）
       try {
-        const cachedData = await loadCachedProviderData(ALLOWED_MODEL_PROVIDERS);
+        const cachedData = await loadCachedProviderData(ALLOWED_REMOTE_MODEL_PROVIDERS);
 
         // 返回错误信息和缓存数据以便在 UI 中显示（但应用仍可用）
         return rejectWithValue({

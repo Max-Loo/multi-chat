@@ -143,9 +143,9 @@ models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 
 **关键模块**：
 
-- 远程数据获取：`src/services/modelRemoteService.ts`
+- 远程数据获取：`src/services/modelRemote/index.ts`
 - Redux 状态管理：`src/store/slices/modelProviderSlice.ts`
-- 网络配置：`src/utils/constants.ts`
+- 网络和缓存配置：`src/services/modelRemote/config.ts`
 
 **缓存策略**：
 
@@ -389,7 +389,7 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 | ------------------ | ------------------------------------------ |
 | 应用初始化配置     | `src/config/initSteps.ts`                  |
 | 聊天服务         | `src/services/chat/`                       |
-| 远程模型数据获取   | `src/services/modelRemoteService.ts`       |
+| 远程模型数据获取   | `src/services/modelRemote/`                |
 | 跨平台兼容层       | `src/utils/tauriCompat/index.ts`           |
 | 主密钥管理         | `src/store/keyring/masterKey.ts`           |
 | 加密工具           | `src/utils/crypto.ts`                      |
@@ -410,7 +410,9 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 
 服务层
 ├── src/services/chat/           # 聊天服务（模块化）
-└── src/services/modelRemoteService.ts  # 远程数据服务
+└── src/services/modelRemote/    # 远程模型服务
+    ├── index.ts                 # 远程数据服务（模块入口）
+    └── config.ts                # 网络和缓存配置
 
 存储层
 ├── src/store/keyring/           # 主密钥管理
