@@ -1,7 +1,11 @@
-import { fetch } from '@/utils/tauriCompat/http';
-import { createLazyStore } from '@/utils/tauriCompat/store';
-import type { StoreCompat } from '@/utils/tauriCompat';
-import { NETWORK_CONFIG, CACHE_CONFIG, ALLOWED_MODEL_PROVIDERS } from '@/utils/constants';
+import { fetch } from "@/utils/tauriCompat/http";
+import { createLazyStore } from "@/utils/tauriCompat/store";
+import type { StoreCompat } from "@/utils/tauriCompat";
+import {
+  REMOTE_MODEL_NETWORK_CONFIG,
+  REMOTE_MODEL_CACHE_CONFIG,
+  ALLOWED_REMOTE_MODEL_PROVIDERS,
+} from "./config";
 
 /**
  * models.dev API 响应的实际数据结构（键值对对象）
@@ -78,17 +82,17 @@ export interface ModelDetail {
  */
 export enum RemoteDataErrorType {
   /** 网络超时 */
-  NETWORK_TIMEOUT = 'network_timeout',
+  NETWORK_TIMEOUT = "network_timeout",
   /** 服务器错误（4xx/5xx） */
-  SERVER_ERROR = 'server_error',
+  SERVER_ERROR = "server_error",
   /** JSON 解析失败 */
-  PARSE_ERROR = 'parse_error',
+  PARSE_ERROR = "parse_error",
   /** 无可用缓存 */
-  NO_CACHE = 'no_cache',
+  NO_CACHE = "no_cache",
   /** 请求被取消 */
-  ABORTED = 'aborted',
+  ABORTED = "aborted",
   /** 网络连接失败 */
-  NETWORK_ERROR = 'network_error',
+  NETWORK_ERROR = "network_error",
 }
 
 /**
@@ -99,10 +103,10 @@ export class RemoteDataError extends Error {
     public type: RemoteDataErrorType,
     message: string,
     public originalError?: unknown,
-    public statusCode?: number
+    public statusCode?: number,
   ) {
     super(message);
-    this.name = 'RemoteDataError';
+    this.name = "RemoteDataError";
   }
 }
 
@@ -131,7 +135,7 @@ export interface CachedModelData {
     /** 最后更新时间（ISO 8601 格式） */
     lastRemoteUpdate: string;
     /** 数据来源标记 */
-    source: 'remote' | 'fallback';
+    source: "remote" | "fallback";
   };
 }
 
@@ -153,7 +157,7 @@ const combineSignals = (signals: AbortSignal[]): AbortSignal => {
       controller.abort();
       break;
     }
-    signal.addEventListener('abort', () => controller.abort(), { once: true });
+    signal.addEventListener("abort", () => controller.abort(), { once: true });
   }
 
   return controller.signal;
@@ -170,7 +174,7 @@ const combineSignals = (signals: AbortSignal[]): AbortSignal => {
 const fetchWithTimeout = async (
   url: string,
   timeout: number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -190,7 +194,7 @@ const fetchWithTimeout = async (
       throw new RemoteDataError(
         RemoteDataErrorType.NETWORK_TIMEOUT,
         `请求超时（${timeout}ms）`,
-        error
+        error,
       );
     }
     throw error;
@@ -202,7 +206,7 @@ const fetchWithTimeout = async (
  * @param ms - 延迟时间（毫秒）
  */
 const sleep = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 /**
@@ -213,12 +217,16 @@ const sleep = (ms: number): Promise<void> => {
 const isRetryableError = (error: RemoteDataError): boolean => {
   // 网络超时可重试
   if (error.type === RemoteDataErrorType.NETWORK_TIMEOUT) return true;
-  
+
   // 网络错误可重试
   if (error.type === RemoteDataErrorType.NETWORK_ERROR) return true;
-  
+
   // 服务器错误（5xx）可重试
-  if (error.type === RemoteDataErrorType.SERVER_ERROR && error.statusCode && error.statusCode >= 500) {
+  if (
+    error.type === RemoteDataErrorType.SERVER_ERROR &&
+    error.statusCode &&
+    error.statusCode >= 500
+  ) {
     return true;
   }
 
@@ -238,7 +246,7 @@ const adaptApiResponseToInternalFormat = (
 ): RemoteProviderData[] => {
   // 将键值对对象转换为数组并过滤白名单
   const providerEntries = Object.entries(apiResponse);
-  
+
   return providerEntries
     .filter(([providerKey]) => allowedProviders.includes(providerKey))
     .map(([providerKey, providerData]) => {
@@ -262,7 +270,7 @@ const adaptApiResponseToInternalFormat = (
  * @returns Store 实例
  */
 const createCacheStore = (): StoreCompat => {
-  return createLazyStore('remote-cache.json');
+  return createLazyStore("remote-cache.json");
 };
 
 /**
@@ -270,7 +278,7 @@ const createCacheStore = (): StoreCompat => {
  * @param fullApiResponse - models.dev API 的完整响应（未过滤）
  */
 export const saveCachedProviderData = async (
-  fullApiResponse: ModelsDevApiResponse
+  fullApiResponse: ModelsDevApiResponse,
 ): Promise<void> => {
   const store = createCacheStore();
   await store.init();
@@ -279,7 +287,7 @@ export const saveCachedProviderData = async (
     apiResponse: fullApiResponse,
     metadata: {
       lastRemoteUpdate: new Date().toISOString(),
-      source: 'remote',
+      source: "remote",
     },
   };
 
@@ -294,7 +302,7 @@ export const saveCachedProviderData = async (
  * @throws {RemoteDataError} 缓存不存在时抛出
  */
 export const loadCachedProviderData = async (
-  allowedProviders: readonly string[]
+  allowedProviders: readonly string[],
 ): Promise<RemoteProviderData[]> => {
   const store = createCacheStore();
   await store.init();
@@ -302,17 +310,11 @@ export const loadCachedProviderData = async (
   const cached = await store.get<CachedModelData>(REMOTE_MODEL_CACHE_KEY);
 
   if (!cached) {
-    throw new RemoteDataError(
-      RemoteDataErrorType.NO_CACHE,
-      '无可用缓存'
-    );
+    throw new RemoteDataError(RemoteDataErrorType.NO_CACHE, "无可用缓存");
   }
 
   // 加载时过滤完整响应
-  return adaptApiResponseToInternalFormat(
-    cached.apiResponse,
-    allowedProviders
-  );
+  return adaptApiResponseToInternalFormat(cached.apiResponse, allowedProviders);
 };
 
 /**
@@ -323,7 +325,7 @@ export const loadCachedProviderData = async (
 export const isRemoteDataFresh = (cachedTimestamp: string): boolean => {
   const cachedTime = new Date(cachedTimestamp).getTime();
   const now = Date.now();
-  return (now - cachedTime) < CACHE_CONFIG.EXPIRY_TIME_MS;
+  return now - cachedTime < REMOTE_MODEL_CACHE_CONFIG.EXPIRY_TIME_MS;
 };
 
 /**
@@ -333,7 +335,7 @@ export const isRemoteDataFresh = (cachedTimestamp: string): boolean => {
  * @throws {RemoteDataError} 请求失败时抛出
  */
 export const fetchRemoteData = async (
-  options: FetchRemoteOptions = {}
+  options: FetchRemoteOptions = {},
 ): Promise<{
   /** 完整的 API 响应（用于缓存） */
   fullApiResponse: ModelsDevApiResponse;
@@ -341,8 +343,8 @@ export const fetchRemoteData = async (
   filteredData: RemoteProviderData[];
 }> => {
   const {
-    timeout = NETWORK_CONFIG.DEFAULT_TIMEOUT,
-    maxRetries = NETWORK_CONFIG.DEFAULT_MAX_RETRIES,
+    timeout = REMOTE_MODEL_NETWORK_CONFIG.DEFAULT_TIMEOUT,
+    maxRetries = REMOTE_MODEL_NETWORK_CONFIG.DEFAULT_MAX_RETRIES,
     signal,
   } = options;
 
@@ -353,9 +355,9 @@ export const fetchRemoteData = async (
     try {
       // 发起带超时的请求
       const response = await fetchWithTimeout(
-        NETWORK_CONFIG.API_ENDPOINT,
+        REMOTE_MODEL_NETWORK_CONFIG.API_ENDPOINT,
         timeout,
-        signal
+        signal,
       );
 
       // 检查 HTTP 状态码
@@ -366,7 +368,7 @@ export const fetchRemoteData = async (
             RemoteDataErrorType.SERVER_ERROR,
             `客户端错误: ${response.status} ${response.statusText}`,
             undefined,
-            response.status
+            response.status,
           );
         }
 
@@ -375,42 +377,45 @@ export const fetchRemoteData = async (
           RemoteDataErrorType.SERVER_ERROR,
           `服务器错误: ${response.status} ${response.statusText}`,
           undefined,
-          response.status
+          response.status,
         );
       }
 
       // 解析 JSON
       const apiData: ModelsDevApiResponse = await response.json();
-      
+
       // 转换为内部格式
-      const filteredData = adaptApiResponseToInternalFormat(apiData, ALLOWED_MODEL_PROVIDERS);
+      const filteredData = adaptApiResponseToInternalFormat(
+        apiData,
+        ALLOWED_REMOTE_MODEL_PROVIDERS,
+      );
 
       // 返回完整响应和过滤后的数据
       return {
         fullApiResponse: apiData,
         filteredData,
       };
-
     } catch (error) {
-      lastError = error instanceof RemoteDataError
-        ? error
-        : new RemoteDataError(
-            RemoteDataErrorType.NETWORK_ERROR,
-            '网络请求失败',
-            error
-          );
+      lastError =
+        error instanceof RemoteDataError
+          ? error
+          : new RemoteDataError(
+              RemoteDataErrorType.NETWORK_ERROR,
+              "网络请求失败",
+              error,
+            );
 
       // 检查是否应该重试
       const shouldRetry =
-        retryCount < maxRetries &&
-        isRetryableError(lastError);
+        retryCount < maxRetries && isRetryableError(lastError);
 
       if (!shouldRetry) {
         throw lastError;
       }
 
       // 指数退避延迟
-      const delay = NETWORK_CONFIG.RETRY_DELAY_BASE * Math.pow(2, retryCount);
+      const delay =
+        REMOTE_MODEL_NETWORK_CONFIG.RETRY_DELAY_BASE * Math.pow(2, retryCount);
       await sleep(delay);
     }
   }

@@ -61,6 +61,7 @@ const createTestStore = (providers?: any[]) => {
         loading: false,
         error: null,
         lastUpdate: null,
+        backgroundRefreshing: false,
       },
     },
   })
@@ -120,6 +121,7 @@ describe('ModelSidebar 组件测试', () => {
             loading: false,
             error: null,
             lastUpdate: null,
+            backgroundRefreshing: false,
           },
         },
       })

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { RemoteProviderData } from '@/services/modelRemoteService';
+import { RemoteProviderData } from '@/services/modelRemote';
 import { ProviderCardHeader } from './ProviderCardHeader';
 import { ProviderCardSummary } from './ProviderCardSummary';
 import { ProviderCardDetails } from './ProviderCardDetails';

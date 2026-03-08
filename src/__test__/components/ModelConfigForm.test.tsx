@@ -109,6 +109,7 @@ describe('ModelConfigForm', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -143,6 +144,7 @@ describe('ModelConfigForm', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -175,6 +177,7 @@ describe('ModelConfigForm', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -215,6 +218,7 @@ describe('ModelConfigForm', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -258,6 +262,7 @@ describe('ModelConfigForm', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -311,6 +316,7 @@ describe('ModelConfigForm', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -349,6 +355,7 @@ describe('ModelConfigForm', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -391,6 +398,7 @@ describe('ModelConfigForm', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -435,6 +443,7 @@ describe('ModelConfigForm', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProviderCard } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ProviderCard';
-import type { RemoteProviderData } from '@/services/modelRemoteService';
+import type { RemoteProviderData } from '@/services/modelRemote';
 
 /**
  * Mock react-i18next 模块

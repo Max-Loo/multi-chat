@@ -1,6 +1,6 @@
 import React from 'react';
 import Masonry from 'react-masonry-css';
-import type { RemoteProviderData } from '@/services/modelRemoteService';
+import type { RemoteProviderData } from '@/services/modelRemote';
 import { ProviderCard } from './ProviderCard';
 
 /**

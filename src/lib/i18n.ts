@@ -1,21 +1,7 @@
 import i18n, { Resource, TFunction } from "i18next";
 import { initReactI18next } from "react-i18next";
-import { getDefaultAppLanguage } from "./global";
-
-// 动态导入 toast（用于系统语言加载失败时的警告）
-let toastFunc: typeof import('sonner').toast | null = null;
-try {
-  // 动态导入 toast，避免阻塞 i18n 初始化
-  import('sonner').then(module => {
-    toastFunc = module.toast;
-  }).catch((error) => {
-    // Toast 库加载失败，降级到 console.warn
-    console.warn('[Toast] sonner 库加载失败，使用 console.warn 降级', error);
-  });
-} catch (error) {
-  // 忽略 toast 导入失败，不影响 i18n 初始化
-  console.warn('[Toast] 动态导入 sonner 失败', error);
-}
+import { getDefaultAppLanguage, getLanguageLabel } from "./global";
+import { toastQueue } from "./toast/toastQueue";
 
 // 英文资源"第一公民"策略（静态导入，同步打包）
 import enCommon from '../locales/en/common.json';
@@ -191,11 +177,37 @@ export const initI18n = async () => {
 
   initI18nPromise = (async () => {
     // 内部调用 getDefaultAppLanguage() 检测系统语言
-    let systemLang = 'en';  // 默认英文
+    let languageResult: Awaited<ReturnType<typeof getDefaultAppLanguage>> = { lang: 'en', migrated: false };  // 默认英文
     try {
-      systemLang = await getDefaultAppLanguage();
+      languageResult = await getDefaultAppLanguage();
     } catch (error) {
       console.warn('获取系统语言失败，使用英文', error);
+    }
+
+    // 显示 Toast 提示（根据迁移信息）
+    try {
+      if (languageResult.migrated && languageResult.from) {
+        // 迁移成功提示
+        toastQueue.enqueue({
+          type: 'info',
+          message: `检测到语言代码已更新为${getLanguageLabel(languageResult.lang)}（${languageResult.lang}）`
+        });
+      } else if (languageResult.fallbackReason === 'system-lang') {
+        // 降级到系统语言提示
+        toastQueue.enqueue({
+          type: 'info',
+          message: `已切换到系统语言：${getLanguageLabel(languageResult.lang)}`
+        });
+      } else if (languageResult.fallbackReason === 'default') {
+        // 降级到英文提示
+        toastQueue.enqueue({
+          type: 'warning',
+          message: `语言代码已失效，已切换到英文`
+        });
+      }
+    } catch (toastError) {
+      // Toast 显示失败，降级到 console.warn
+      console.warn('[Toast] 显示失败，使用 console.warn 降级', toastError);
     }
 
     // 准备初始资源对象（使用 Resource 类型）
@@ -208,18 +220,27 @@ export const initI18n = async () => {
     let actualLang = 'en';
 
     // 如果系统语言不是英文且在支持列表中，异步加载并自动切换
-    if (systemLang !== 'en') {
+    if (languageResult.lang !== 'en') {
       try {
         // 使用 loadLanguage() 而非 performLoad()，确保缓存机制一致
-        await loadLanguage(systemLang);
+        await loadLanguage(languageResult.lang);
         // 只有成功加载系统语言资源后，才使用系统语言
-        actualLang = systemLang;
+        actualLang = languageResult.lang;
+        
+        // 关键修复：将加载的资源添加到 initialResources 中
+        const loadedResources = languageResourcesCache.get(languageResult.lang);
+        if (loadedResources) {
+          initialResources[languageResult.lang] = { translation: loadedResources };
+        }
       } catch (error) {
         // 加载失败，保持英文，显示警告（非阻塞）
-        console.warn(`系统语言 ${systemLang} 加载失败，使用英文替代`, error);
+        console.warn(`系统语言 ${languageResult.lang} 加载失败，使用英文替代`, error);
         // 显示 Toast 警告（使用降级方案）
         try {
-          toastFunc?.warning?.(`系统语言加载失败，已使用英文替代`);
+          toastQueue.enqueue({
+            type: 'warning',
+            message: `系统语言加载失败，已使用英文替代`
+          });
         } catch {
           // Toast 显示失败，忽略（不影响初始化）
         }

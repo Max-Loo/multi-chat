@@ -3,13 +3,15 @@ import { setAppLanguage } from "@/store/slices/appConfigSlices";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
 import { useState } from 'react';
+import { changeAppLanguage } from "@/lib/i18n";
+import { toast } from "sonner";
+import { LANGUAGE_CONFIGS } from "@/utils/constants";
 
-// 语言选项配置
-const LANGUAGE_OPTIONS = [
-  { value: "zh", label: "🇨🇳 中文" },
-  { value: "en", label: "🇺🇸 English" },
-  { value: "fr", label: "🇫🇷 Français" },
-] as const;
+// 语言选项配置（从 LANGUAGE_CONFIGS 派生）
+const LANGUAGE_OPTIONS = LANGUAGE_CONFIGS.map(c => ({
+  value: c.code,
+  label: `${c.flag} ${c.label}`
+}));
 
 interface LanguageSettingProps {
   className?: string;
@@ -34,7 +36,19 @@ const LanguageSetting: React.FC<LanguageSettingProps> = ({
     setIsChanging(true);
 
     try {
-      dispatch(setAppLanguage(lang));
+      // 调用 i18n 的语言切换函数
+      const { success } = await changeAppLanguage(lang);
+      
+      if (success) {
+        // 切换成功，更新 Redux store（middleware 会自动持久化到 localStorage）
+        dispatch(setAppLanguage(lang));
+      } else {
+        // 切换失败，显示错误提示
+        toast.error(t($ => ($.setting as any).languageSwitchFailed));
+      }
+    } catch (error) {
+      console.error('Failed to change language:', error);
+      toast.error(t($ => ($.setting as any).languageSwitchFailed));
     } finally {
       // 在 try-finally 中恢复状态
       setTimeout(() => setIsChanging(false), 500);

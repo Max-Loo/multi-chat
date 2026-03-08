@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ModelDetail } from '@/services/modelRemoteService';
+import type { ModelDetail } from '@/services/modelRemote';
 import { Badge } from '@/components/ui/badge';
 
 /**

@@ -66,6 +66,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -98,6 +99,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -132,6 +134,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -161,6 +164,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -190,6 +194,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -212,6 +217,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -243,6 +249,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -275,6 +282,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -303,6 +311,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -329,6 +338,7 @@ describe('ModelProviderDisplay', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 

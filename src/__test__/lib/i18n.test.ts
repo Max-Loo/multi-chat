@@ -384,6 +384,9 @@ describe("i18n module", () => {
     });
 
     it("应该处理切换失败的情况", async () => {
+      // Mock console.error 以避免输出到测试结果
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
       // Mock i18n.changeLanguage 返回失败的 Promise
       mockI18nChangeLanguage.mockRejectedValueOnce(new Error("Change language failed"));
 
@@ -393,6 +396,8 @@ describe("i18n module", () => {
 
       // 验证返回失败状态
       expect(result).toEqual({ success: false });
+
+      consoleErrorSpy.mockRestore();
     });
 
     it("应该验证返回类型结构", async () => {

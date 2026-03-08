@@ -5,21 +5,32 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { interceptClickAToJump, getDefaultAppLanguage, LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
 
+// 获取 mock 函数的引用
+
 describe('global.ts 模块测试', () => {
   // 保存全局事件监听器引用，用于测试后清理
   let clickListener: ((event: Event) => void) | null = null;
   let removeClickListener: (() => void) | null = null;
 
   // Spy 变量
-  let languageSpy: ReturnType<typeof vi.spyOn>;
   let openSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    // Mock navigator.language
-    languageSpy = vi.spyOn(navigator, 'language', 'get').mockReturnValue('zh-CN');
+    // 清除所有 mocks
+    vi.clearAllMocks();
+    
+    // 清除 localStorage
+    localStorage.clear();
 
     // Mock window.open
     openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    // Mock navigator.language（locale 函数在 Web 环境中使用它）
+    Object.defineProperty(window.navigator, 'language', {
+      value: 'zh-CN',
+      writable: true,
+      configurable: true,
+    });
 
     // 清除 localStorage
     localStorage.clear();
@@ -57,14 +68,13 @@ describe('global.ts 模块测试', () => {
     removeClickListener?.();
 
     // 恢复原始方法
-    languageSpy.mockRestore();
     openSpy.mockRestore();
     vi.restoreAllMocks();
   });
 
   describe('getDefaultAppLanguage', () => {
-    describe('localStorage 优先级测试', () => {
-      it('应该返回 localStorage 中的语言（第一优先级）', async () => {
+    describe('有效缓存语言测试', () => {
+      it('应该直接返回有效的缓存语言', async () => {
         // 设置 localStorage 中的语言
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh');
 
@@ -72,7 +82,10 @@ describe('global.ts 模块测试', () => {
         const result = await getDefaultAppLanguage();
 
         // 验证结果
-        expect(result).toBe('zh');
+        expect(result.lang).toBe('zh');
+        expect(result.migrated).toBe(false);
+        expect(result.from).toBeUndefined();
+        expect(result.fallbackReason).toBeUndefined();
       });
 
       it('应该返回 localStorage 中的英文语言', async () => {
@@ -80,68 +93,215 @@ describe('global.ts 模块测试', () => {
 
         const result = await getDefaultAppLanguage();
 
-        expect(result).toBe('en');
+        expect(result.lang).toBe('en');
+        expect(result.migrated).toBe(false);
+      });
+
+      it('应该返回 localStorage 中的法语语言', async () => {
+        localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'fr');
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('fr');
+        expect(result.migrated).toBe(false);
+      });
+    });
+
+    describe('语言代码迁移测试', () => {
+      it('应该成功迁移 zh-CN 到 zh', async () => {
+        localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh-CN');
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('zh');
+        expect(result.migrated).toBe(true);
+        expect(result.from).toBe('zh-CN');
+        expect(result.fallbackReason).toBeUndefined();
+        // 验证 localStorage 已更新
+        expect(localStorage.getItem(LOCAL_STORAGE_LANGUAGE_KEY)).toBe('zh');
+      });
+
+      it('迁移成功后重复启动应该不再迁移', async () => {
+        // 第一次启动：迁移 zh-CN 到 zh
+        localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh-CN');
+        const result1 = await getDefaultAppLanguage();
+        expect(result1.migrated).toBe(true);
+        expect(localStorage.getItem(LOCAL_STORAGE_LANGUAGE_KEY)).toBe('zh');
+
+        // 第二次启动：直接使用迁移后的 zh
+        const result2 = await getDefaultAppLanguage();
+        expect(result2.lang).toBe('zh');
+        expect(result2.migrated).toBe(false);
+        expect(result2.from).toBeUndefined();
+      });
+    });
+
+    describe('无效缓存清理与降级测试', () => {
+      it('应该删除无效缓存并降级到系统语言', async () => {
+        localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'de'); // 德语不在支持列表中
+        Object.defineProperty(window.navigator, 'language', {
+          value: 'fr-FR',
+          writable: true,
+          configurable: true,
+        });
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('fr');
+        expect(result.migrated).toBe(false);
+        expect(result.fallbackReason).toBe('system-lang');
+        expect(localStorage.getItem(LOCAL_STORAGE_LANGUAGE_KEY)).toBeNull(); // 缓存已删除
+      });
+
+      it('应该删除无效缓存并降级到英文（系统语言不支持）', async () => {
+        localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'de'); // 德语不在支持列表中
+        Object.defineProperty(window.navigator, 'language', {
+          value: 'de-DE',
+          writable: true,
+          configurable: true,
+        }); // 系统语言也不在支持列表中
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('en');
+        expect(result.migrated).toBe(false);
+        expect(result.fallbackReason).toBe('default');
+        expect(localStorage.getItem(LOCAL_STORAGE_LANGUAGE_KEY)).toBeNull();
+      });
+
+      it('应该删除无效缓存并降级到英文（系统语言为空）', async () => {
+        localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'invalid');
+        Object.defineProperty(window.navigator, 'language', {
+          value: '',
+          writable: true,
+          configurable: true,
+        });
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('en');
+        expect(result.fallbackReason).toBe('default');
+      });
+    });
+
+    describe('带地区代码格式测试（不自动迁移）', () => {
+      it('缓存语言为 zh-CN 且无迁移规则时，不自动使用 zh', async () => {
+        // 注意：当前实现中有 zh-CN -> zh 的迁移规则
+        // 这个测试验证如果没有迁移规则时的行为
+        localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh-TW'); // 无迁移规则
+        Object.defineProperty(window.navigator, 'language', { value: 'en-US', writable: true, configurable: true });; // 系统语言为英语
+
+        const result = await getDefaultAppLanguage();
+
+        // 应该删除缓存并降级到系统语言
+        expect(result.lang).toBe('en');
+        expect(result.migrated).toBe(false);
+        expect(result.fallbackReason).toBe('system-lang');
+        expect(localStorage.getItem(LOCAL_STORAGE_LANGUAGE_KEY)).toBeNull();
       });
     });
 
     describe('系统语言检测测试', () => {
-      it('应该返回支持的系统语言前缀（第二优先级）', async () => {
-        // 确保 localStorage 中没有语言设置
+      it('应该返回支持的系统语言（无缓存时）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-
-        // Mock 系统语言为中文
-        languageSpy.mockReturnValue('zh-CN');
+        Object.defineProperty(window.navigator, 'language', { value: 'zh-CN', writable: true, configurable: true });;
 
         const result = await getDefaultAppLanguage();
 
-        expect(result).toBe('zh');
+        expect(result.lang).toBe('zh');
+        expect(result.migrated).toBe(false);
+        expect(result.fallbackReason).toBe('system-lang');
       });
 
       it('应该正确提取系统语言的前缀（en-US -> en）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        languageSpy.mockReturnValue('en-US');
+        Object.defineProperty(window.navigator, 'language', { value: 'en-US', writable: true, configurable: true });;
 
         const result = await getDefaultAppLanguage();
 
-        expect(result).toBe('en');
+        expect(result.lang).toBe('en');
+        expect(result.fallbackReason).toBe('system-lang');
       });
 
       it('应该处理不同格式的系统 locale（zh -> zh）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        languageSpy.mockReturnValue('zh');
+        Object.defineProperty(window.navigator, 'language', { value: 'zh', writable: true, configurable: true });;
 
         const result = await getDefaultAppLanguage();
 
-        expect(result).toBe('zh');
+        expect(result.lang).toBe('zh');
+        expect(result.fallbackReason).toBe('system-lang');
+      });
+
+      it('应该在不支持的系统语言时回退到 en', async () => {
+        localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
+        Object.defineProperty(window.navigator, 'language', { value: 'de-DE', writable: true, configurable: true });;
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('en');
+        expect(result.fallbackReason).toBe('default');
       });
     });
 
-    describe('不支持系统语言时的回退测试', () => {
-      it('应该在不支持的系统语言时回退到 en', async () => {
-        localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        languageSpy.mockReturnValue('de-DE'); // 德语不在支持列表中
+    describe('localStorage 错误处理测试', () => {
+      it('应该在 localStorage 读取失败时降级到系统语言', async () => {
+        // Mock localStorage.getItem 抛出异常
+        const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+          throw new Error('localStorage access denied');
+        });
+        Object.defineProperty(window.navigator, 'language', { value: 'fr-FR', writable: true, configurable: true });;
 
         const result = await getDefaultAppLanguage();
 
-        expect(result).toBe('en');
+        expect(result.lang).toBe('fr');
+        expect(result.fallbackReason).toBe('system-lang');
+
+        getItemSpy.mockRestore();
       });
 
-      it('应该在系统语言为法语时返回 fr', async () => {
-        localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        languageSpy.mockReturnValue('fr-FR'); // 法语在支持列表中
+      it('应该在 localStorage 写入失败时仅在内存中更新', async () => {
+        // 先设置 localStorage 的初始值
+        localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh-CN');
+        
+        // 保存原始的 setItem 方法
+        const originalSetItem = localStorage.setItem.bind(localStorage);
+        
+        // Mock localStorage.setItem，当写入 'zh' 时抛出异常（迁移目标）
+        const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
+          if (key === LOCAL_STORAGE_LANGUAGE_KEY && value === 'zh') {
+            throw new Error('localStorage write failed');
+          }
+          // 其他情况使用原始实现
+          return originalSetItem(key, value);
+        });
 
         const result = await getDefaultAppLanguage();
 
-        expect(result).toBe('fr');
+        // 应该仍然迁移成功（仅在内存中）
+        expect(result.lang).toBe('zh');
+        expect(result.migrated).toBe(true);
+        // localStorage 中的值应该还是旧的（写入失败）
+        expect(localStorage.getItem(LOCAL_STORAGE_LANGUAGE_KEY)).toBe('zh-CN');
+
+        setItemSpy.mockRestore();
       });
 
-      it('应该在系统语言为空字符串时回退到 en', async () => {
-        localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        languageSpy.mockReturnValue('');
+      it('应该在 localStorage 删除失败时继续正常执行', async () => {
+        localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'invalid');
+        
+        const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+          throw new Error('localStorage remove failed');
+        });
+        Object.defineProperty(window.navigator, 'language', { value: 'en-US', writable: true, configurable: true });;
 
         const result = await getDefaultAppLanguage();
 
-        expect(result).toBe('en');
+        // 应该降级到系统语言，即使删除失败
+        expect(result.lang).toBe('en');
+        expect(result.fallbackReason).toBe('system-lang');
+
+        removeItemSpy.mockRestore();
       });
     });
 
@@ -149,41 +309,31 @@ describe('global.ts 模块测试', () => {
       it('应该处理 localStorage 中的空值字符串', async () => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, '');
 
-        await getDefaultAppLanguage();
-
-        // 空字符串被视为 falsy，应该回退到系统语言检测
-        expect(languageSpy).toHaveBeenCalled();
-      });
-
-      it('应该处理系统 locale 格式异常（没有连字符）', async () => {
-        localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        languageSpy.mockReturnValue('zh'); // 没有地区代码
-
         const result = await getDefaultAppLanguage();
 
-        expect(result).toBe('zh');
-      });
-
-      it('应该处理系统 locale 只有地区代码的情况', async () => {
-        localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        languageSpy.mockReturnValue('-CN'); // 异常格式
-
-        const result = await getDefaultAppLanguage();
-
-        // split('-')[0] 会返回空字符串，不在支持列表中
-        expect(result).toBe('en');
+        // 空字符串被视为无效，应该回退到系统语言检测
+        expect(result.fallbackReason).toBeDefined();
       });
 
       it('localStorage 优先级应该高于系统语言', async () => {
-        // 设置 localStorage 为英文
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'en');
-        // Mock 系统语言为中文
-        languageSpy.mockReturnValue('zh-CN');
+        Object.defineProperty(window.navigator, 'language', { value: 'zh-CN', writable: true, configurable: true });;
 
         const result = await getDefaultAppLanguage();
 
-        // 应该返回 localStorage 中的值，而不是系统语言
-        expect(result).toBe('en');
+        expect(result.lang).toBe('en');
+        expect(result.migrated).toBe(false);
+      });
+
+      it('应该正确处理所有支持的语言', async () => {
+        const supportedLanguages = ['zh', 'en', 'fr'];
+        
+        for (const lang of supportedLanguages) {
+          localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, lang);
+          const result = await getDefaultAppLanguage();
+          expect(result.lang).toBe(lang);
+          expect(result.migrated).toBe(false);
+        }
       });
     });
   });

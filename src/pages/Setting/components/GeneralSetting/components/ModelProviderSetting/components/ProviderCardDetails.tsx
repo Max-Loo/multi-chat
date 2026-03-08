@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { RemoteProviderData } from '@/services/modelRemoteService';
+import { RemoteProviderData } from '@/services/modelRemote';
 import { ProviderMetadata } from './ProviderMetadata';
 import { ModelSearch } from './ModelSearch';
 import { ModelList } from './ModelList';
