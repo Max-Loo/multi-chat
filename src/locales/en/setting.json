@@ -4,6 +4,7 @@
     "title": "Auto Naming",
     "description": "Automatically generate titles for chats, enabled by default"
   },
+  "languageSwitchFailed": "Failed to switch language",
   "modelProvider": {
     "title": "Model Provider",
     "description": "Fetch the latest model provider information from remote server",

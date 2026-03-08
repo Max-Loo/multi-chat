@@ -24,7 +24,8 @@ export const initializeAppLanguage = createAsyncThunk(
   'appConfig/language/initialize',
   async () => {
     try {
-      return await getDefaultAppLanguage()
+      const result = await getDefaultAppLanguage()
+      return result.lang
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Fail to initialize language', { cause: error });
     }

@@ -205,6 +205,16 @@ models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 
 详细实现：`src/lib/i18n.ts`
 
+### 国际化缓存验证与迁移
+
+应用启动时验证缓存语言有效性，自动迁移旧语言代码并清理无效缓存。
+
+**四级降级策略**：缓存语言 → 迁移语言 → 系统语言 → 英文
+
+**关键实现**：`src/lib/global.ts` - `getDefaultAppLanguage()`, `src/utils/constants.ts` - `LANGUAGE_MIGRATION_MAP`
+
+**性能优化**：使用 `SUPPORTED_LANGUAGE_SET`（Set.has O(1)）替代 `Array.includes`（O(n)）
+
 ### 跨平台兼容性
 
 **设计原则**：

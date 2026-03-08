@@ -1,23 +1,34 @@
 /**
  * @description 本地生产用户聊天记录的id的时候会用到的前缀
  */
-export const USER_MESSAGE_ID_PREFIX = 'user_msg_'
-
+export const USER_MESSAGE_ID_PREFIX = "user_msg_";
 
 /**
  * 储存在本地存储前增加一个前缀，避免和其他键冲突
  */
-export const LOCAL_STORAGE_PREFIX = 'multi-chat-'
-
+export const LOCAL_STORAGE_PREFIX = "multi-chat-";
 
 /**
  * 当前应用支持的语言
  */
 export const SUPPORTED_LANGUAGE_LIST = [
-  'zh',
-  'en',
-  'fr',
-]
+  "zh",
+  "en",
+  "fr",
+];
+
+/**
+ * 支持的语言集合（用于 O(1) 查找）
+ */
+export const SUPPORTED_LANGUAGE_SET = new Set(SUPPORTED_LANGUAGE_LIST);
+
+/**
+ * 语言代码迁移映射表
+ * 用于处理应用升级后语言代码变更的自动迁移
+ */
+export const LANGUAGE_MIGRATION_MAP: Record<string, string> = {
+  "zh-CN": "zh",
+} as const;
 
 /**
  * 网络请求配置
@@ -64,3 +75,5 @@ export const LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY = LOCAL_STORAGE_PREFIX 
  * 本地存储键名：是否启用自动命名功能
  */
 export const LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY = LOCAL_STORAGE_PREFIX + 'auto-naming-enabled';
+export const LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY =
+  LOCAL_STORAGE_PREFIX + "include-reasoning-content";

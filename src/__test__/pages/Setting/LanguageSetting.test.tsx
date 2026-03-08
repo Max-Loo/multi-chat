@@ -15,9 +15,10 @@ import { render, screen, cleanup, fireEvent } from "@testing-library/react"
 import LanguageSetting from "@/pages/Setting/components/GeneralSetting/components/LanguageSetting"
 import { resetTestState } from "../../helpers/isolation"
 
-// Mock Redux hooks
+// 创建 mock 函数（在 vi.mock 之外定义）
 const mockDispatch = vi.fn()
 const mockSetAppLanguage = vi.fn()
+
 vi.mock("@/hooks/redux", () => ({
   useAppDispatch: () => mockDispatch,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,12 +36,36 @@ vi.mock("@/store/slices/appConfigSlices", () => ({
   setAppLanguage: (lang: string) => mockSetAppLanguage(lang),
 }))
 
+// Mock i18n functions - 在 factory 内部创建所有内容
+vi.mock("@/lib/i18n", () => {
+  const mockChangeAppLanguage = vi.fn().mockResolvedValue({ success: true })
+  return {
+    changeAppLanguage: mockChangeAppLanguage,
+    getLanguageLabel: (lang: string) => lang,
+    initI18n: vi.fn(),
+    getInitI18nPromise: vi.fn(),
+  }
+})
+
+// Mock sonner toast - 在 factory 内部创建
+vi.mock("sonner", () => ({
+  toast: {
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+  },
+}))
+
 // Mock react-i18next
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Reason: 第三方库类型定义不完整
-    t: (callback: (t: any) => string) => callback({ common: { language: "语言" } }),
+    t: (callback: (t: any) => string) => callback({
+      common: { language: "语言" },
+      setting: { languageSwitchFailed: "语言切换失败" },
+    }),
   }),
 }))
 
@@ -126,12 +151,15 @@ describe("LanguageSetting 组件", () => {
       expect(selectContent).toBeInTheDocument()
     })
 
-    it("选择语言后应该更新 Redux store", () => {
+    it("选择语言后应该更新 Redux store", async () => {
       render(<LanguageSetting />)
 
       // 点击触发器模拟语言切换
       const trigger = screen.getByTestId("toggle-language")
       fireEvent.click(trigger)
+
+      // 等待异步操作完成
+      await new Promise(resolve => setTimeout(resolve, 0))
 
       // 验证 dispatch 被调用
       expect(mockDispatch).toHaveBeenCalled()
