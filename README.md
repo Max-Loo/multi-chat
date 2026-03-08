@@ -13,6 +13,8 @@
 - 可为每个模型配置独立的 API 密钥和地址
 - 支持模型的启用/禁用管理
 - 模型配置信息本地安全存储
+- 🔌 **远程模型数据获取**：从 `models.dev API` 动态获取模型供应商定义，保持数据最新
+- ⚡ **性能优化**：供应商 SDK 按需加载，减少初始 bundle 大小约 125KB（gzipped）
 
 ### 💬 多模型同时对话
 
@@ -200,12 +202,17 @@ multi-chat/
 │   │   ├── Model/             # 模型管理页面
 │   │   └── Setting/           # 设置页面
 │   ├── hooks/                 # 自定义 Hooks
+│   ├── config/                # 配置文件
+│   │   └── initSteps.ts       # 初始化步骤配置
 │   ├── lib/                   # 核心库
 │   │   ├── i18n.ts            # 国际化配置
 │   │   └── global.ts          # 全局配置
 │   ├── locales/               # 国际化语言文件
 │   │   ├── en/                # 英文语言包
 │   │   └── zh/                # 中文语言包
+│   ├── services/              # 服务层
+│   │   ├── chat/              # 聊天服务（模块化）
+│   │   └── modelRemote/       # 远程模型服务
 │   ├── store/                 # Redux 状态管理
 │   │   ├── slices/            # Redux 切片
 │   │   ├── middleware/        # 中间件
@@ -248,9 +255,9 @@ multi-chat/
 ### 语言切换机制
 
 1. 优先级顺序：
-   - 本地存储的语言设置
-   - 系统语言（如果支持）
-   - 默认语言（英文）
+    - 本地存储的语言设置
+    - 系统语言（如果支持）
+    - 默认语言（英文）
 2. 语言设置存储在 `localStorage` 中，键名为 `multi-chat-language`
 3. 使用 `i18next` 和 `react-i18next` 实现国际化功能
 
@@ -259,6 +266,20 @@ multi-chat/
 - 迁移后显示提示信息，告知用户新的语言代码
 - 如果旧的语言代码不再支持，系统会自动清理缓存并降级到系统语言或英文
 - 语言设置在手动切换后会持久化到 localStorage，刷新后保持不变
+
+**按需加载与性能优化**：
+- ✅ **英文"第一公民"**：英文资源静态打包到主 bundle（~5 KB），确保离线可用
+- ✅ **按需加载**：启动时仅加载英文 + 系统语言，节省 33%-67% 初始加载量
+- ✅ **智能缓存**：缓存进行中的加载请求，避免快速切换时的竞态条件
+
+**自动持久化**：
+- ✅ 语言变更通过 Redux Middleware 自动同步到 localStorage
+- ✅ 静默降级：localStorage 写入失败时记录警告，不影响应用运行
+
+**消息队列机制**：
+- ✅ 初始化期间的语言切换提示暂存在队列中
+- ✅ Toaster 组件就绪后按顺序显示，每个消息间隔 500ms
+- ✅ 避免时序问题导致的提示丢失
 
 ### 添加新语言支持
 
@@ -295,6 +316,20 @@ multi-chat/
 2. 在 `src/lib/factory/` 中实现对应的服务商工厂类
 3. 在 `src/pages/Model/components/ModelSidebar.tsx` 中添加服务商选项
 
+### 代码规范
+
+- **导入路径**：始终使用 `@/` 别名导入，不使用相对路径
+  ```typescript
+  // 正确
+  import { Model } from "@/types/model";
+  
+  // 错误
+  import { Model } from "../../types/model";
+  ```
+- **代码注释**：函数、类型、变量上方添加中文注释
+- **设计原则**：遵循 SOLID、KISS、YAGNI、DRY 原则
+- **架构参考**：详细设计说明请查看 [AGENTS.md](./AGENTS.md)
+
 ### 数据持久化
 
 应用使用 @tauri-apps/plugin-store 插件进行数据持久化，数据存储位置：
@@ -313,7 +348,8 @@ multi-chat/
 - **算法**: AES-256-GCM（认证加密）
 - **密钥管理**:
   - 主密钥由 Web Crypto API 生成（256-bit 随机密钥）
-  - 主密钥存储在系统安全存储（macOS 钥匙串 / Windows DPAPI / Linux Secret Service）
+  - 桌面端：存储在系统安全存储（macOS 钥匙串 / Windows DPAPI / Linux Secret Service）
+  - Web 环境：使用 IndexedDB 加密存储（与桌面端系统钥匙串对应）
   - 使用 `tauri-plugin-keyring` 统一管理跨平台密钥存储
 - **加密格式**: `enc:base64(ciphertext + auth_tag + nonce)`
 - **仅支持桌面端**: 不支持移动端（iOS/Android）
