@@ -2,6 +2,7 @@
   "name": "multi-chat",
   "version": "0.2.3",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "tauri dev",
