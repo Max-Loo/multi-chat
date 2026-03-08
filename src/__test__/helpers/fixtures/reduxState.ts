@@ -70,6 +70,7 @@ export const createMockModelProviderState = (
   loading: false,
   error: null,
   lastUpdate: new Date().toISOString(),
+  backgroundRefreshing: false,
   ...overrides,
 });
 

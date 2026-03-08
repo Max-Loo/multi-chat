@@ -15,6 +15,7 @@ import { InitializationManager } from "@/lib/initialization";
 import { initSteps } from "@/config/initSteps";
 import { RouterProvider } from "react-router-dom";
 import router from '@/router';
+import { triggerSilentRefreshIfNeeded } from "@/store/slices/modelProviderSlice";
 
 const rootDom = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 
@@ -84,4 +85,7 @@ if (!result.success) {
 
   // 应用渲染后，处理安全性警告（现在可以使用 Toast）
   await handleSecurityWarning();
+
+  // 后台静默刷新 modelProvider 数据，保持数据新鲜度
+  triggerSilentRefreshIfNeeded(store);
 }
