@@ -311,17 +311,21 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 
 ### 按功能查找文件
 
-| 功能需求         | 文件路径                             |
-| ---------------- | ------------------------------------ |
-| 应用初始化配置   | `src/config/initSteps.ts`            |
-| 聊天服务         | `src/services/chat/`                 |
-| 远程模型数据获取 | `src/services/modelRemoteService.ts` |
-| 跨平台兼容层     | `src/utils/tauriCompat/index.ts`     |
-| 主密钥管理       | `src/store/keyring/masterKey.ts`     |
-| 加密工具         | `src/utils/crypto.ts`                |
-| 时间戳工具       | `src/utils/utils.ts`                 |
-| 国际化配置       | `src/lib/i18n.ts`                    |
-| 测试规范         | `src/__test__/README.md`             |
+| 功能需求           | 文件路径                                   |
+| ------------------ | ------------------------------------------ |
+| 应用初始化配置     | `src/config/initSteps.ts`                  |
+| 聊天服务         | `src/services/chat/`                       |
+| 远程模型数据获取   | `src/services/modelRemoteService.ts`       |
+| 跨平台兼容层       | `src/utils/tauriCompat/index.ts`           |
+| 主密钥管理         | `src/store/keyring/masterKey.ts`           |
+| 加密工具           | `src/utils/crypto.ts`                      |
+| 时间戳工具         | `src/utils/utils.ts`                       |
+| 国际化配置         | `src/lib/i18n.ts`                          |
+| 代码高亮管理       | `src/utils/highlightLanguageManager.ts`    |
+| 代码块 DOM 更新    | `src/utils/codeBlockUpdater.ts`            |
+| Highlight.js 语言包索引 | `src/utils/highlightLanguageIndex.ts` |
+| Markdown 渲染      | `src/utils/markdown.ts`                    |
+| 测试规范           | `src/__test__/README.md`                   |
 
 ### 按架构层次查找
 
@@ -345,6 +349,10 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 工具层
 ├── src/utils/crypto.ts          # 加密工具
 ├── src/utils/utils.ts           # 通用工具
+├── src/utils/highlightLanguageManager.ts  # Highlight.js 语言加载管理器
+├── src/utils/codeBlockUpdater.ts          # 代码块 DOM 更新工具
+├── src/utils/highlightLanguageIndex.ts    # Highlight.js 语言包索引
+├── src/utils/markdown.ts        # Markdown 渲染（集成代码高亮）
 └── src/lib/i18n.ts              # 国际化
 
 测试层

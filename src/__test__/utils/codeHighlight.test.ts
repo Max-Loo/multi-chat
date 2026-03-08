@@ -5,7 +5,58 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import hljs from 'highlight.js';
+import hljs from 'highlight.js/lib/core';
+
+// 预加载常用语言以供测试使用
+import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import python from 'highlight.js/lib/languages/python';
+import java from 'highlight.js/lib/languages/java';
+import cpp from 'highlight.js/lib/languages/cpp';
+import xml from 'highlight.js/lib/languages/xml';
+import css from 'highlight.js/lib/languages/css';
+import bash from 'highlight.js/lib/languages/bash';
+import json from 'highlight.js/lib/languages/json';
+import markdown from 'highlight.js/lib/languages/markdown';
+import sql from 'highlight.js/lib/languages/sql';
+import go from 'highlight.js/lib/languages/go';
+import rust from 'highlight.js/lib/languages/rust';
+import yaml from 'highlight.js/lib/languages/yaml';
+import csharp from 'highlight.js/lib/languages/csharp';
+import ruby from 'highlight.js/lib/languages/ruby';
+import php from 'highlight.js/lib/languages/php';
+import swift from 'highlight.js/lib/languages/swift';
+import kotlin from 'highlight.js/lib/languages/kotlin';
+import scss from 'highlight.js/lib/languages/scss';
+import powershell from 'highlight.js/lib/languages/powershell';
+import dockerfile from 'highlight.js/lib/languages/dockerfile';
+
+// 注册语言
+hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('typescript', typescript);
+hljs.registerLanguage('python', python);
+hljs.registerLanguage('java', java);
+hljs.registerLanguage('cpp', cpp);
+hljs.registerLanguage('xml', xml);
+hljs.registerLanguage('css', css);
+hljs.registerLanguage('bash', bash);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('markdown', markdown);
+hljs.registerLanguage('sql', sql);
+hljs.registerLanguage('go', go);
+hljs.registerLanguage('rust', rust);
+hljs.registerLanguage('yaml', yaml);
+hljs.registerLanguage('csharp', csharp);
+hljs.registerLanguage('ruby', ruby);
+hljs.registerLanguage('php', php);
+hljs.registerLanguage('swift', swift);
+hljs.registerLanguage('kotlin', kotlin);
+hljs.registerLanguage('scss', scss);
+hljs.registerLanguage('powershell', powershell);
+hljs.registerLanguage('dockerfile', dockerfile);
+
+// HTML 是 xml 的别名
+hljs.registerLanguage('html', xml);
 
 describe('4.15 代码高亮组件测试', () => {
   beforeEach(() => {
@@ -348,7 +399,7 @@ describe('4.15 代码高亮组件测试', () => {
     it('应该获取所有支持的语言列表', () => {
       const languages = hljs.listLanguages();
       expect(Array.isArray(languages)).toBe(true);
-      expect(languages.length).toBeGreaterThan(50);
+      expect(languages.length).toBeGreaterThan(20); // 我们注册了 23 种语言
       expect(languages).toContain('javascript');
       expect(languages).toContain('python');
     });
