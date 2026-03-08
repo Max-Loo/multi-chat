@@ -42,10 +42,10 @@ const ChatButton = memo<ChatButtonProps>(({
   const { modal } = useConfirm()
 
   // 点击聊天列表按钮
-  const onClickChat = (chat: Chat) => {
+  const onClickChat = (clickedChat: Chat) => {
     // 跳转到对应的聊天详情
     navigateToChat({
-      chatId: chat.id,
+      chatId: clickedChat.id,
     })
   }
 

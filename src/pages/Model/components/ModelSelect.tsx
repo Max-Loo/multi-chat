@@ -43,9 +43,9 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
   const { error } = useFormField()
 
   // 选中的值发生改变的回调
-  // @param value 选中的值
-  const onValueChange = (value: string): void => {
-    onChange(value)
+  // @param newValue 选中的值
+  const onValueChange = (newValue: string): void => {
+    onChange(newValue)
   }
 
   return (
