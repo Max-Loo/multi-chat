@@ -215,6 +215,36 @@ models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 
 **性能优化**：使用 `SUPPORTED_LANGUAGE_SET`（Set.has O(1)）替代 `Array.includes`（O(n)）
 
+### 国际化 Toast 消息队列
+
+使用消息队列机制管理初始化期间的语言切换提示，解决 `<Toaster />` 组件未挂载时的时序问题。
+
+**核心机制**：
+
+- **消息排队**：初始化期间的消息暂存在队列中，等待 Toaster 组件就绪后统一显示
+- **顺序显示**：消息按顺序显示，每个消息间隔 500ms，确保用户有时间阅读
+- **并发安全**：使用 `isFlushing` 标志防止并发 flush 调用，确保消息不会重叠显示
+
+**关键实现**：
+- **队列管理**：`src/lib/toastQueue.ts` - `ToastQueue` 类
+- **集成点**：`src/main.tsx` - `ToasterWrapper` 组件调用 `markReady()`
+- **消息发送**：`src/lib/i18n.ts` - 使用 `toastQueue.enqueue()` 替代直接调用 toast
+
+### 国际化自动持久化
+
+通过 Redux Middleware 自动监听语言变更并同步到 localStorage，消除手动持久化代码。
+
+**核心机制**：
+
+- **自动同步**：监听 `setAppLanguage` action，自动写入 localStorage
+- **类型安全**：使用 `action.payload` 类型检查，确保只存储字符串类型
+- **静默降级**：localStorage 写入失败时记录警告日志，不影响应用运行
+
+**关键实现**：
+- **Middleware**：`src/store/middleware/languagePersistence.ts` - `createLanguagePersistenceMiddleware()`
+- **匹配策略**：使用 `action.type.endsWith('/setAppLanguage')` 兼容 Redux Toolkit 环境前缀
+- **集成点**：`src/store/index.ts` - 在 `configureStore` 中集成 middleware
+
 ### 跨平台兼容性
 
 **设计原则**：

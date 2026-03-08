@@ -1,4 +1,4 @@
-import { LOCAL_STORAGE_PREFIX, LANGUAGE_MIGRATION_MAP, SUPPORTED_LANGUAGE_SET } from '@/utils/constants';
+import { LOCAL_STORAGE_PREFIX, LANGUAGE_MIGRATION_MAP, SUPPORTED_LANGUAGE_SET, SUPPORTED_LANGUAGE_MAP } from '@/utils/constants';
 import { locale, shell } from '@/utils/tauriCompat';
 
 /**
@@ -131,10 +131,19 @@ export const getDefaultAppLanguage = async (): Promise<LanguageResult> => {
       console.warn(`Error getting system locale: ${localeError}`)
     }
     
-    return { 
-      lang: 'en', 
-      migrated: false, 
-      fallbackReason: 'default' 
+    return {
+      lang: 'en',
+      migrated: false,
+      fallbackReason: 'default'
     }
   }
+}
+
+/**
+ * 获取语言的显示标签
+ * @param lang 语言代码
+ * @returns 语言的显示标签，如果语言代码不在支持列表中则返回原代码
+ */
+export const getLanguageLabel = (lang: string): string => {
+  return SUPPORTED_LANGUAGE_MAP.get(lang)?.label || lang;
 }

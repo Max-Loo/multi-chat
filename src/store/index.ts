@@ -7,6 +7,7 @@ import modelProviderReducer, { ModelProviderSliceState } from '@/store/slices/mo
 import { saveChatListMiddleware } from './middleware/chatMiddleware';
 import { saveModelsMiddleware } from './middleware/modelMiddleware';
 import { saveDefaultAppLanguage } from './middleware/appConfigMiddleware';
+import { createLanguagePersistenceMiddleware } from './middleware/languagePersistence';
 
 // 创建Redux store实例
 export const store = configureStore({
@@ -24,6 +25,7 @@ export const store = configureStore({
       .prepend(saveChatListMiddleware.middleware)
       .prepend(saveModelsMiddleware.middleware)
       .prepend(saveDefaultAppLanguage.middleware)
+      .concat(createLanguagePersistenceMiddleware())
   },
 });
 

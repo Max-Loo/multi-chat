@@ -9,12 +9,12 @@ import { FatalErrorScreen } from "./components/FatalErrorScreen";
 import { NoProvidersAvailable } from '@/components/NoProvidersAvailable';
 import { handleSecurityWarning } from "@/store/keyring/masterKey";
 import { ConfirmProvider } from "@/hooks/useConfirm";
-import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import { InitializationManager } from "@/lib/initialization";
 import { initSteps } from "@/config/initSteps";
 import { RouterProvider } from "react-router-dom";
 import router from '@/router';
+import { ToasterWrapper } from "@/lib/toast/ToasterWrapper";
 
 const rootDom = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 
@@ -32,13 +32,13 @@ const result = await manager.runInitialization({
   },
 });
 
-// 根据初始化结果渲染不同界面
+  // 根据初始化结果渲染不同界面
 if (!result.success) {
   // 初始化失败，显示致命错误屏幕
   rootDom.render(
     <React.StrictMode>
       <FatalErrorScreen errors={result.fatalErrors} />
-      <Toaster />
+      <ToasterWrapper />
     </React.StrictMode>
   );
 } else {
@@ -56,7 +56,7 @@ if (!result.success) {
     rootDom.render(
       <React.StrictMode>
         <NoProvidersAvailable />
-        <Toaster />
+        <ToasterWrapper />
       </React.StrictMode>
     );
   } else {
@@ -66,7 +66,7 @@ if (!result.success) {
         <Provider store={store}>
           <ConfirmProvider>
             <RouterProvider router={router} />
-            <Toaster />
+            <ToasterWrapper />
           </ConfirmProvider>
         </Provider>
       </React.StrictMode>

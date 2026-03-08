@@ -4,15 +4,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTranslation } from "react-i18next";
 import { useState } from 'react';
 import { changeAppLanguage } from "@/lib/i18n";
-import { LOCAL_STORAGE_LANGUAGE_KEY } from "@/lib/global";
 import { toast } from "sonner";
+import { LANGUAGE_CONFIGS } from "@/utils/constants";
 
-// 语言选项配置
-const LANGUAGE_OPTIONS = [
-  { value: "zh", label: "🇨🇳 中文" },
-  { value: "en", label: "🇺🇸 English" },
-  { value: "fr", label: "🇫🇷 Français" },
-] as const;
+// 语言选项配置（从 LANGUAGE_CONFIGS 派生）
+const LANGUAGE_OPTIONS = LANGUAGE_CONFIGS.map(c => ({
+  value: c.code,
+  label: `${c.flag} ${c.label}`
+}));
 
 interface LanguageSettingProps {
   className?: string;
@@ -41,13 +40,8 @@ const LanguageSetting: React.FC<LanguageSettingProps> = ({
       const { success } = await changeAppLanguage(lang);
       
       if (success) {
-        // 切换成功，更新 Redux store 和 localStorage
+        // 切换成功，更新 Redux store（middleware 会自动持久化到 localStorage）
         dispatch(setAppLanguage(lang));
-        try {
-          localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, lang);
-        } catch (error) {
-          console.warn('Failed to save language to localStorage:', error);
-        }
       } else {
         // 切换失败，显示错误提示
         toast.error(t($ => ($.setting as any).languageSwitchFailed));

@@ -1,4 +1,22 @@
 /**
+ * 语言配置接口
+ */
+export interface LanguageConfig {
+  code: string;
+  label: string;
+  flag?: string;
+}
+
+/**
+ * 语言配置数组（唯一数据源）
+ */
+export const LANGUAGE_CONFIGS: readonly LanguageConfig[] = [
+  { code: "zh", label: "中文", flag: "🇨🇳" },
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+] as const;
+
+/**
  * @description 本地生产用户聊天记录的id的时候会用到的前缀
  */
 export const USER_MESSAGE_ID_PREFIX = "user_msg_";
@@ -9,14 +27,30 @@ export const USER_MESSAGE_ID_PREFIX = "user_msg_";
 export const LOCAL_STORAGE_PREFIX = "multi-chat-";
 
 /**
- * 当前应用支持的语言
+ * 当前应用支持的语言（从 LANGUAGE_CONFIGS 派生）
  */
-export const SUPPORTED_LANGUAGE_LIST = ["zh", "en", "fr"];
+export const SUPPORTED_LANGUAGE_LIST = LANGUAGE_CONFIGS.map((c) => c.code);
 
 /**
  * 支持的语言集合（用于 O(1) 查找）
  */
 export const SUPPORTED_LANGUAGE_SET = new Set(SUPPORTED_LANGUAGE_LIST);
+
+/**
+ * 支持的语言映射表（用于 O(1) 查找语言配置）
+ */
+export const SUPPORTED_LANGUAGE_MAP = new Map(
+  LANGUAGE_CONFIGS.map((c) => [c.code, c]),
+);
+
+/**
+ * 根据语言代码获取语言配置
+ * @param code 语言代码
+ * @returns 语言配置对象，如果未找到则返回 undefined
+ */
+export function getLanguageConfig(code: string): LanguageConfig | undefined {
+  return SUPPORTED_LANGUAGE_MAP.get(code);
+}
 
 /**
  * 语言代码迁移映射表
