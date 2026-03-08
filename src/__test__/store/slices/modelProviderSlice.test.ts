@@ -13,28 +13,29 @@
  * - rejectWithValue 处理：验证错误包装逻辑
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { configureStore } from '@reduxjs/toolkit';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { configureStore } from "@reduxjs/toolkit";
 import modelProviderReducer, {
   initializeModelProvider,
   refreshModelProvider,
+  silentRefreshModelProvider,
   clearError,
-} from '@/store/slices/modelProviderSlice';
+} from "@/store/slices/modelProviderSlice";
 import {
   fetchRemoteData,
   saveCachedProviderData,
   loadCachedProviderData,
   RemoteDataError,
   RemoteDataErrorType,
-} from '@/services/modelRemote';
-import { ALLOWED_REMOTE_MODEL_PROVIDERS } from '@/services/modelRemote/config';
+} from "@/services/modelRemote";
+import { ALLOWED_REMOTE_MODEL_PROVIDERS } from "@/services/modelRemote/config";
 import {
   createDeepSeekProvider,
   createMockRemoteProviders,
-} from '@/__test__/fixtures/modelProvider';
+} from "@/__test__/fixtures/modelProvider";
 
 // Mock 服务层依赖
-vi.mock('@/services/modelRemote', () => ({
+vi.mock("@/services/modelRemote", () => ({
   fetchRemoteData: vi.fn(),
   saveCachedProviderData: vi.fn(),
   loadCachedProviderData: vi.fn(),
@@ -43,19 +44,19 @@ vi.mock('@/services/modelRemote', () => ({
       public type: string,
       message: string,
       public originalError?: unknown,
-      public statusCode?: number
+      public statusCode?: number,
     ) {
       super(message);
-      this.name = 'RemoteDataError';
+      this.name = "RemoteDataError";
     }
   },
   RemoteDataErrorType: {
-    NETWORK_TIMEOUT: 'network_timeout',
-    SERVER_ERROR: 'server_error',
-    PARSE_ERROR: 'parse_error',
-    NO_CACHE: 'no_cache',
-    ABORTED: 'aborted',
-    NETWORK_ERROR: 'network_error',
+    NETWORK_TIMEOUT: "network_timeout",
+    SERVER_ERROR: "server_error",
+    PARSE_ERROR: "parse_error",
+    NO_CACHE: "no_cache",
+    ABORTED: "aborted",
+    NETWORK_ERROR: "network_error",
   },
 }));
 
@@ -63,7 +64,7 @@ const mockFetchRemoteData = vi.mocked(fetchRemoteData);
 const mockSaveCachedProviderData = vi.mocked(saveCachedProviderData);
 const mockLoadCachedProviderData = vi.mocked(loadCachedProviderData);
 
-describe('modelProviderSlice', () => {
+describe("modelProviderSlice", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
@@ -80,24 +81,22 @@ describe('modelProviderSlice', () => {
   // Mock 数据
   const mockProviders = createMockRemoteProviders([
     createDeepSeekProvider({
-      models: [
-        { modelKey: 'deepseek-chat', modelName: 'DeepSeek Chat' },
-      ],
+      models: [{ modelKey: "deepseek-chat", modelName: "DeepSeek Chat" }],
     }),
   ]);
 
   const mockFullApiResponse = {
     deepseek: {
-      id: 'deepseek',
-      name: 'DeepSeek',
-      api: 'https://api.deepseek.com',
-      env: ['DEEPSEEK_API_KEY'],
-      npm: '@ai-sdk/deepseek',
-      doc: 'https://docs.deepseek.com',
+      id: "deepseek",
+      name: "DeepSeek",
+      api: "https://api.deepseek.com",
+      env: ["DEEPSEEK_API_KEY"],
+      npm: "@ai-sdk/deepseek",
+      doc: "https://docs.deepseek.com",
       models: {
-        'deepseek-chat': {
-          id: 'deepseek-chat',
-          name: 'DeepSeek Chat',
+        "deepseek-chat": {
+          id: "deepseek-chat",
+          name: "DeepSeek Chat",
         },
       },
     },
@@ -110,12 +109,12 @@ describe('modelProviderSlice', () => {
 
   // initialState 测试已被删除：基本的 Redux reducer 测试
 
-  describe('clearError', () => {
-    it('应该清除错误信息', () => {
+  describe("clearError", () => {
+    it("应该清除错误信息", () => {
       // 先设置一个错误状态
       store.dispatch({
-        type: 'modelProvider/initializeModelProvider/rejected',
-        payload: { error: 'Test error' },
+        type: "modelProvider/initializeModelProvider/rejected",
+        payload: { error: "Test error" },
       });
 
       // 清除错误
@@ -126,22 +125,49 @@ describe('modelProviderSlice', () => {
     });
   });
 
-  describe('initializeModelProvider', () => {
-    it('应该成功初始化并更新状态', async () => {
+  describe("initializeModelProvider", () => {
+    it("应该使用缓存快速启动（快速路径）", async () => {
+      // Mock loadCachedProviderData 成功返回缓存数据
+      mockLoadCachedProviderData.mockResolvedValue(mockProviders);
+
+      // Dispatch Thunk
+      const result = await store.dispatch(initializeModelProvider());
+
+      // 验证 Thunk fulfilled
+      expect(result.type).toBe("modelProvider/initialize/fulfilled");
+
+      // 验证状态转换
+      const state = store.getState().modelProvider;
+      expect(state.loading).toBe(false);
+      expect(state.providers).toEqual(mockProviders);
+      expect(state.error).toBe(null);
+      expect(state.lastUpdate).toBe(null); // 缓存数据，lastUpdate 为 null
+      expect(state.backgroundRefreshing).toBe(false);
+
+      // 验证服务层被调用
+      expect(mockLoadCachedProviderData).toHaveBeenCalledTimes(1);
+      expect(mockLoadCachedProviderData).toHaveBeenCalledWith(
+        ALLOWED_REMOTE_MODEL_PROVIDERS,
+      );
+      expect(mockFetchRemoteData).not.toHaveBeenCalled(); // 不应该调用远程请求
+    });
+
+    it("应该在缓存无效时降级到远程请求", async () => {
+      // Mock loadCachedProviderData 返回空数组（无效缓存）
+      mockLoadCachedProviderData.mockResolvedValue([]);
+
       // Mock fetchRemoteData 成功返回
       mockFetchRemoteData.mockResolvedValue({
         fullApiResponse: mockFullApiResponse,
         filteredData: mockProviders,
       });
-
-      // Mock saveCachedProviderData 成功
       mockSaveCachedProviderData.mockResolvedValue(undefined);
 
       // Dispatch Thunk
       const result = await store.dispatch(initializeModelProvider());
 
       // 验证 Thunk fulfilled
-      expect(result.type).toBe('modelProvider/initialize/fulfilled');
+      expect(result.type).toBe("modelProvider/initialize/fulfilled");
 
       // 验证状态转换
       const state = store.getState().modelProvider;
@@ -151,78 +177,79 @@ describe('modelProviderSlice', () => {
       expect(state.lastUpdate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
 
       // 验证服务层被调用
+      expect(mockLoadCachedProviderData).toHaveBeenCalledTimes(1);
       expect(mockFetchRemoteData).toHaveBeenCalledTimes(1);
-      expect(mockSaveCachedProviderData).toHaveBeenCalledWith(mockFullApiResponse);
+      expect(mockSaveCachedProviderData).toHaveBeenCalledWith(
+        mockFullApiResponse,
+      );
     });
 
-    it('应该在远程失败时降级到缓存', async () => {
-      // Mock fetchRemoteData 失败
-      mockFetchRemoteData.mockRejectedValue(
-        new RemoteDataError(
-          RemoteDataErrorType.NETWORK_ERROR,
-          '网络请求失败'
-        )
+    it("应该在无缓存时等待远程请求", async () => {
+      // Mock loadCachedProviderData 失败（无缓存）
+      mockLoadCachedProviderData.mockRejectedValue(
+        new RemoteDataError(RemoteDataErrorType.NO_CACHE, "无可用缓存"),
       );
 
-      // Mock loadCachedProviderData 成功返回缓存数据
-      mockLoadCachedProviderData.mockResolvedValue(mockProviders);
+      // Mock fetchRemoteData 成功返回
+      mockFetchRemoteData.mockResolvedValue({
+        fullApiResponse: mockFullApiResponse,
+        filteredData: mockProviders,
+      });
+      mockSaveCachedProviderData.mockResolvedValue(undefined);
 
       // Dispatch Thunk
       const result = await store.dispatch(initializeModelProvider());
 
-      // 验证 Thunk rejected (但使用了 rejectWithValue)
-      expect(result.type).toBe('modelProvider/initialize/rejected');
+      // 验证 Thunk fulfilled
+      expect(result.type).toBe("modelProvider/initialize/fulfilled");
 
-      // 验证状态转换（降级到缓存）
+      // 验证状态转换
       const state = store.getState().modelProvider;
       expect(state.loading).toBe(false);
-      expect(state.providers).toEqual(mockProviders); // 从缓存加载
-      expect(state.lastUpdate).toBe(null); // 缓存数据，lastUpdate 为 null
-      expect(state.error).toBe('网络请求失败'); // RemoteDataError 的 message
+      expect(state.providers).toEqual(mockProviders);
+      expect(state.error).toBe(null);
+      expect(state.lastUpdate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
 
       // 验证服务层被调用
+      expect(mockLoadCachedProviderData).toHaveBeenCalledTimes(1);
       expect(mockFetchRemoteData).toHaveBeenCalledTimes(1);
-      expect(mockLoadCachedProviderData).toHaveBeenCalledWith(ALLOWED_REMOTE_MODEL_PROVIDERS);
+      expect(mockSaveCachedProviderData).toHaveBeenCalledWith(
+        mockFullApiResponse,
+      );
     });
 
-    it('应该在完全失败时（远程和缓存都失败）返回空数组', async () => {
-      // Mock fetchRemoteData 失败
-      mockFetchRemoteData.mockRejectedValue(
-        new RemoteDataError(
-          RemoteDataErrorType.NETWORK_ERROR,
-          '网络请求失败'
-        )
-      );
-
+    it("应该在无缓存且远程失败时返回错误", async () => {
       // Mock loadCachedProviderData 失败（无缓存）
       mockLoadCachedProviderData.mockRejectedValue(
-        new RemoteDataError(
-          RemoteDataErrorType.NO_CACHE,
-          '无可用缓存'
-        )
+        new RemoteDataError(RemoteDataErrorType.NO_CACHE, "无可用缓存"),
+      );
+
+      // Mock fetchRemoteData 失败
+      mockFetchRemoteData.mockRejectedValue(
+        new RemoteDataError(RemoteDataErrorType.NETWORK_ERROR, "网络请求失败"),
       );
 
       // Dispatch Thunk
       const result = await store.dispatch(initializeModelProvider());
 
       // 验证 Thunk rejected
-      expect(result.type).toBe('modelProvider/initialize/rejected');
+      expect(result.type).toBe("modelProvider/initialize/rejected");
 
       // 验证状态转换（完全失败）
       const state = store.getState().modelProvider;
       expect(state.loading).toBe(false);
       expect(state.providers).toEqual([]); // 空数组
       expect(state.lastUpdate).toBe(null);
-      expect(state.error).toBe('无法获取模型供应商数据，请检查网络连接');
+      expect(state.error).toBe("无法获取模型供应商数据，请检查网络连接");
 
       // 验证服务层被调用
-      expect(mockFetchRemoteData).toHaveBeenCalledTimes(1);
       expect(mockLoadCachedProviderData).toHaveBeenCalledTimes(1);
+      expect(mockFetchRemoteData).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('refreshModelProvider', () => {
-    it('应该成功刷新并更新状态', async () => {
+  describe("refreshModelProvider", () => {
+    it("应该成功刷新并更新状态", async () => {
       // Mock fetchRemoteData 成功返回
       mockFetchRemoteData.mockResolvedValue({
         fullApiResponse: mockFullApiResponse,
@@ -236,7 +263,7 @@ describe('modelProviderSlice', () => {
       const result = await store.dispatch(refreshModelProvider());
 
       // 验证 Thunk fulfilled
-      expect(result.type).toBe('modelProvider/refresh/fulfilled');
+      expect(result.type).toBe("modelProvider/refresh/fulfilled");
 
       // 验证状态转换
       const state = store.getState().modelProvider;
@@ -249,9 +276,11 @@ describe('modelProviderSlice', () => {
       expect(mockFetchRemoteData).toHaveBeenCalledWith(
         expect.objectContaining({
           forceRefresh: true,
-        })
+        }),
       );
-      expect(mockSaveCachedProviderData).toHaveBeenCalledWith(mockFullApiResponse);
+      expect(mockSaveCachedProviderData).toHaveBeenCalledWith(
+        mockFullApiResponse,
+      );
     });
 
     // 刷新失败时保留原有数据测试已被删除：
@@ -266,32 +295,29 @@ describe('modelProviderSlice', () => {
     // - 测试 loading: true 内部状态，属于 Redux Toolkit 自动生成的行为
     // - 集成测试 app-loading.integration.test.ts 已覆盖加载指示器行为
 
-    it('应该正确处理 rejectWithValue', async () => {
+    it("应该正确处理 rejectWithValue", async () => {
       // Mock fetchRemoteData 失败
       mockFetchRemoteData.mockRejectedValue(
-        new RemoteDataError(
-          RemoteDataErrorType.NETWORK_ERROR,
-          '网络请求失败'
-        )
+        new RemoteDataError(RemoteDataErrorType.NETWORK_ERROR, "网络请求失败"),
       );
 
       // Dispatch Thunk
       const result = await store.dispatch(refreshModelProvider());
 
       // 验证 rejectWithValue 的 payload 被正确处理
-      expect(result.type).toBe('modelProvider/refresh/rejected');
+      expect(result.type).toBe("modelProvider/refresh/rejected");
 
       const state = store.getState().modelProvider;
-      expect(state.error).toBe('网络请求失败');
+      expect(state.error).toBe("网络请求失败");
     });
 
-    it('应该验证 Redux 状态不可变性', () => {
+    it("应该验证 Redux 状态不可变性", () => {
       const initialState = store.getState().modelProvider;
 
       // Dispatch action (设置一个 error 然后清除，确保 state 实际发生变化)
       store.dispatch({
-        type: 'modelProvider/initializeModelProvider/rejected',
-        payload: { error: 'test error' },
+        type: "modelProvider/initializeModelProvider/rejected",
+        payload: { error: "test error" },
       });
       store.dispatch(clearError());
 
@@ -302,6 +328,212 @@ describe('modelProviderSlice', () => {
       expect(initialState.error).toBeNull();
       expect(newState.error).toBeNull();
       // Immer 确保了不可变性，即使 state 对象本身可能是 frozen
+    });
+  });
+
+  describe("silentRefreshModelProvider", () => {
+    it("应该成功刷新并静默更新 store", async () => {
+      // 设置初始状态（有错误）
+      store.dispatch({
+        type: "modelProvider/initialize/rejected",
+        payload: {
+          error: "无法获取模型供应商数据，请检查网络连接",
+        },
+      });
+
+      const stateBefore = store.getState().modelProvider;
+
+      // Mock fetchRemoteData 成功返回
+      mockFetchRemoteData.mockResolvedValue({
+        fullApiResponse: mockFullApiResponse,
+        filteredData: mockProviders,
+      });
+      mockSaveCachedProviderData.mockResolvedValue(undefined);
+
+      // Dispatch Thunk
+      const result = await store.dispatch(silentRefreshModelProvider());
+
+      // 验证 Thunk fulfilled
+      expect(result.type).toBe("modelProvider/silentRefresh/fulfilled");
+
+      // 验证状态更新
+      const stateAfter = store.getState().modelProvider;
+      expect(stateAfter.backgroundRefreshing).toBe(false);
+      expect(stateAfter.providers).toEqual(mockProviders); // 更新为远程数据
+      expect(stateAfter.lastUpdate).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+      ); // 更新为当前时间
+      expect(stateAfter.error).toBe(null); // 清除旧的 error
+      expect(stateAfter.loading).toBe(stateBefore.loading); // loading 保持不变
+    });
+
+    it("应该在失败时保持所有状态不变（静默失败）", async () => {
+      // 先设置初始状态（有错误）
+      store.dispatch({
+        type: "modelProvider/initialize/rejected",
+        payload: {
+          error: "无法获取模型供应商数据，请检查网络连接",
+        },
+      });
+
+      const stateBefore = store.getState().modelProvider;
+
+      // Mock fetchRemoteData 失败
+      mockFetchRemoteData.mockRejectedValue(
+        new RemoteDataError(RemoteDataErrorType.NETWORK_ERROR, "网络请求失败"),
+      );
+
+      // Dispatch Thunk
+      const result = await store.dispatch(silentRefreshModelProvider());
+
+      // 验证 Thunk rejected
+      expect(result.type).toBe("modelProvider/silentRefresh/rejected");
+
+      // 验证状态不变
+      const stateAfter = store.getState().modelProvider;
+      expect(stateAfter.backgroundRefreshing).toBe(false);
+      expect(stateAfter.providers).toEqual(stateBefore.providers);
+      expect(stateAfter.lastUpdate).toEqual(stateBefore.lastUpdate);
+      expect(stateAfter.error).toEqual(stateBefore.error);
+      expect(stateAfter.loading).toEqual(stateBefore.loading);
+    });
+
+    it("应该在 loading 为 true 时正常执行（并发控制由调用方负责）", async () => {
+      // 设置 loading 为 true
+      store.dispatch({
+        type: "modelProvider/refresh/pending",
+      });
+
+      // Mock fetchRemoteData
+      mockFetchRemoteData.mockResolvedValue({
+        fullApiResponse: mockFullApiResponse,
+        filteredData: mockProviders,
+      });
+      mockSaveCachedProviderData.mockResolvedValue(undefined);
+
+      // Dispatch Thunk（现在不再在 Thunk 内部检查 loading）
+      const result = await store.dispatch(silentRefreshModelProvider());
+
+      // 验证 Thunk fulfilled（会正常执行）
+      expect(result.type).toBe("modelProvider/silentRefresh/fulfilled");
+
+      // 验证服务层被调用（并发控制由调用方在 dispatch 之前检查）
+      expect(mockFetchRemoteData).toHaveBeenCalledTimes(1);
+    });
+
+    it("应该在 backgroundRefreshing 为 true 时正常执行（并发控制由调用方负责）", async () => {
+      // 设置 backgroundRefreshing 为 true
+      store.dispatch({
+        type: "modelProvider/silentRefresh/pending",
+      });
+
+      // Mock fetchRemoteData
+      mockFetchRemoteData.mockResolvedValue({
+        fullApiResponse: mockFullApiResponse,
+        filteredData: mockProviders,
+      });
+      mockSaveCachedProviderData.mockResolvedValue(undefined);
+
+      // Dispatch Thunk（现在不再在 Thunk 内部检查 backgroundRefreshing）
+      const result = await store.dispatch(silentRefreshModelProvider());
+
+      // 验证 Thunk fulfilled（会正常执行）
+      expect(result.type).toBe("modelProvider/silentRefresh/fulfilled");
+
+      // 验证服务层被调用（并发控制由调用方在 dispatch 之前检查）
+      expect(mockFetchRemoteData).toHaveBeenCalledTimes(1);
+    });
+
+    it("应该在 pending 时设置 backgroundRefreshing 为 true", async () => {
+      // Mock fetchRemoteData 为延迟返回
+      const promise = new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            fullApiResponse: mockFullApiResponse,
+            filteredData: mockProviders,
+          });
+        }, 100);
+      });
+      mockFetchRemoteData.mockReturnValue(promise as any);
+      mockSaveCachedProviderData.mockResolvedValue(undefined);
+
+      // Dispatch Thunk（不等待）
+      const thunk = store.dispatch(silentRefreshModelProvider());
+
+      // 验证 backgroundRefreshing 被设置为 true
+      const state = store.getState().modelProvider;
+      expect(state.backgroundRefreshing).toBe(true);
+
+      // 等待完成
+      await thunk;
+
+      // 验证完成后被释放
+      const stateAfter = store.getState().modelProvider;
+      expect(stateAfter.backgroundRefreshing).toBe(false);
+    });
+
+    it("应该在 fulfilled 时释放 backgroundRefreshing 锁", async () => {
+      // 设置初始状态
+      store.dispatch({
+        type: "modelProvider/silentRefresh/pending",
+      });
+
+      // Mock fetchRemoteData 成功返回
+      mockFetchRemoteData.mockResolvedValue({
+        fullApiResponse: mockFullApiResponse,
+        filteredData: mockProviders,
+      });
+      mockSaveCachedProviderData.mockResolvedValue(undefined);
+
+      // Dispatch Thunk
+      await store.dispatch(silentRefreshModelProvider());
+
+      // 验证 backgroundRefreshing 被释放
+      const state = store.getState().modelProvider;
+      expect(state.backgroundRefreshing).toBe(false);
+    });
+
+    it("应该在 rejected 时释放 backgroundRefreshing 锁", async () => {
+      // 设置初始状态
+      store.dispatch({
+        type: "modelProvider/silentRefresh/pending",
+      });
+
+      // Mock fetchRemoteData 失败
+      mockFetchRemoteData.mockRejectedValue(
+        new RemoteDataError(RemoteDataErrorType.NETWORK_ERROR, "网络请求失败"),
+      );
+
+      // Dispatch Thunk
+      await store.dispatch(silentRefreshModelProvider());
+
+      // 验证 backgroundRefreshing 被释放
+      const state = store.getState().modelProvider;
+      expect(state.backgroundRefreshing).toBe(false);
+    });
+
+    it("应该在失败时不清除现有的 error", async () => {
+      // 先设置初始状态（有错误）
+      store.dispatch({
+        type: "modelProvider/initialize/rejected",
+        payload: {
+          error: "无法获取模型供应商数据，请检查网络连接",
+        },
+      });
+
+      const errorBefore = store.getState().modelProvider.error;
+
+      // Mock fetchRemoteData 失败
+      mockFetchRemoteData.mockRejectedValue(
+        new RemoteDataError(RemoteDataErrorType.NETWORK_ERROR, "网络请求失败"),
+      );
+
+      // Dispatch Thunk
+      await store.dispatch(silentRefreshModelProvider());
+
+      // 验证 error 保持不变
+      const state = store.getState().modelProvider;
+      expect(state.error).toEqual(errorBefore);
     });
   });
 });

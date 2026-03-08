@@ -2,21 +2,24 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { store } from "@/store";
-import './main.css'
+import "./main.css";
 import { interceptClickAToJump } from "./lib/global";
 import InitializationScreen from "./components/InitializationScreen";
 import { FatalErrorScreen } from "./components/FatalErrorScreen";
-import { NoProvidersAvailable } from '@/components/NoProvidersAvailable';
+import { NoProvidersAvailable } from "@/components/NoProvidersAvailable";
 import { handleSecurityWarning } from "@/store/keyring/masterKey";
 import { ConfirmProvider } from "@/hooks/useConfirm";
 import { toast } from "sonner";
 import { InitializationManager } from "@/lib/initialization";
 import { initSteps } from "@/config/initSteps";
 import { RouterProvider } from "react-router-dom";
-import router from '@/router';
+import router from "@/router";
 import { ToasterWrapper } from "@/lib/toast/ToasterWrapper";
+import { triggerSilentRefreshIfNeeded } from "@/store/slices/modelProviderSlice";
 
-const rootDom = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+const rootDom = ReactDOM.createRoot(
+  document.getElementById("root") as HTMLElement,
+);
 
 // 先预渲染初始化屏幕
 rootDom.render(<InitializationScreen />);
@@ -32,14 +35,14 @@ const result = await manager.runInitialization({
   },
 });
 
-  // 根据初始化结果渲染不同界面
+// 根据初始化结果渲染不同界面
 if (!result.success) {
   // 初始化失败，显示致命错误屏幕
   rootDom.render(
     <React.StrictMode>
       <FatalErrorScreen errors={result.fatalErrors} />
       <ToasterWrapper />
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 } else {
   // 初始化成功，检查 modelProvider 的致命错误
@@ -49,7 +52,7 @@ if (!result.success) {
   // 检查是否应该显示"无可用的模型供应商"错误提示
   const shouldShowNoProvidersError =
     !modelProviderLoading &&
-    modelProviderError === '无法获取模型供应商数据，请检查网络连接';
+    modelProviderError === "无法获取模型供应商数据，请检查网络连接";
 
   if (shouldShowNoProvidersError) {
     // 显示无可用模型供应商提示
@@ -57,7 +60,7 @@ if (!result.success) {
       <React.StrictMode>
         <NoProvidersAvailable />
         <ToasterWrapper />
-      </React.StrictMode>
+      </React.StrictMode>,
     );
   } else {
     // 正常渲染应用
@@ -69,7 +72,7 @@ if (!result.success) {
             <ToasterWrapper />
           </ConfirmProvider>
         </Provider>
-      </React.StrictMode>
+      </React.StrictMode>,
     );
   }
 
@@ -77,11 +80,16 @@ if (!result.success) {
   if (result.warnings.length > 0) {
     result.warnings.forEach((warning) => {
       toast.warning(warning.message, {
-        description: import.meta.env.DEV ? String(warning.originalError) : undefined,
+        description: import.meta.env.DEV
+          ? String(warning.originalError)
+          : undefined,
       });
     });
   }
 
   // 应用渲染后，处理安全性警告（现在可以使用 Toast）
   await handleSecurityWarning();
+
+  // 后台静默刷新 modelProvider 数据，保持数据新鲜度
+  triggerSilentRefreshIfNeeded(store);
 }

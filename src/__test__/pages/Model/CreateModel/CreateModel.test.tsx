@@ -153,6 +153,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -179,6 +180,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -203,6 +205,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -228,6 +231,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -251,6 +255,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -282,6 +287,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -305,6 +311,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -329,6 +336,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -355,6 +363,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -397,6 +406,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -421,6 +431,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -445,6 +456,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -469,6 +481,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -495,6 +508,7 @@ describe('CreateModel', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 

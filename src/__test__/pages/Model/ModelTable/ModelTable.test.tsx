@@ -152,6 +152,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -176,6 +177,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -199,6 +201,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -224,6 +227,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -249,6 +253,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -272,6 +277,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -296,6 +302,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -325,6 +332,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -353,6 +361,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -388,6 +397,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -412,6 +422,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -447,6 +458,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -479,6 +491,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -518,6 +531,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
@@ -559,6 +573,7 @@ describe('ModelTable', () => {
           loading: false,
           error: null,
           lastUpdate: null,
+          backgroundRefreshing: false,
         },
       });
 
