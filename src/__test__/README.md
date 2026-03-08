@@ -1828,6 +1828,42 @@ const message = {
 pnpm test:integration
 ```
 
+## 测试基础设施
+
+### fake-indexeddb 配置
+
+**版本**: `^6.2.5`（2026年3月从 5.0.2 升级）
+
+**配置位置**: `src/__test__/setup.ts`
+
+```typescript
+import 'fake-indexeddb/auto';
+```
+
+**核心特性**:
+- 使用 `DOMException` 错误类型（符合 IndexedDB 规范）
+- 二叉搜索树存储，multiEntry 索引插入性能提升 13 倍
+- autoIncrement 行为更严格（keyPath 为 undefined 时抛出错误）
+
+**注意事项**:
+- 错误类型从 `Error` 改为 `DOMException`，测试断言需相应调整
+- 频繁删除/重建 IndexedDB 可能导致超时，建议使用 `beforeAll` 模式
+- 需要 `close()` 方法正确关闭数据库连接（`StoreCompat` 接口已添加）
+
+**测试清理最佳实践**:
+```typescript
+// 避免：频繁使用 beforeEach 删除/重建数据库
+// 推荐：使用 beforeAll 进行一次性清理
+beforeAll(async () => {
+  await closeAllConnections();
+  await deleteDatabases();
+});
+
+afterAll(async () => {
+  await closeAllConnections();
+});
+```
+
 ## 常见问题排查指南
 
 ### Vercel AI SDK Mock 相关问题

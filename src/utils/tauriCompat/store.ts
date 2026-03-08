@@ -24,6 +24,7 @@ interface StoreCompat {
   delete: (key: string) => Promise<void>;
   keys: () => Promise<string[]>;
   save: () => Promise<void>;
+  close: () => void;
   isSupported: () => boolean;
 }
 
@@ -116,6 +117,13 @@ class TauriStoreCompat implements StoreCompat {
    */
   async save(): Promise<void> {
     await this.store.save();
+  }
+
+  /**
+   * 关闭 Store（Tauri 环境为空操作）
+   */
+  close(): void {
+    // Tauri Store 不需要显式关闭
   }
 
   /**
@@ -270,6 +278,17 @@ class WebStoreCompat implements StoreCompat {
   async save(): Promise<void> {
     // IndexedDB 自动持久化，无需手动保存
     return Promise.resolve();
+  }
+
+  /**
+   * 关闭数据库连接
+   * 用于测试环境清理
+   */
+  close(): void {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
   }
 
   /**

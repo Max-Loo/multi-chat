@@ -6,11 +6,38 @@ import type { Model } from "@/types/model";
 import { encryptField, decryptField } from "@/utils/crypto";
 import { getMasterKey } from "@/store/keyring/masterKey";
 import { createLazyStore, saveToStore, loadFromStore } from "./storeUtils";
+import type { StoreCompat } from "@/utils/tauriCompat";
 
 /**
- * 模型存储的 LazyStore 实例
+ * 模型存储的 LazyStore 实例（模块级单例）
  */
-const modelsStore = createLazyStore('models.json');
+let modelsStore: StoreCompat | null = null;
+
+/**
+ * 获取或创建 modelsStore 实例
+ * @returns StoreCompat 实例
+ */
+const getModelsStore = (): StoreCompat => {
+  if (!modelsStore) {
+    modelsStore = createLazyStore('models.json');
+  }
+  return modelsStore;
+};
+
+/**
+ * 重置 modelsStore 实例（用于测试）
+ * 在测试环境中调用此函数来关闭旧的 store 连接
+ */
+export const resetModelsStore = (): void => {
+  if (modelsStore) {
+    try {
+      modelsStore.close();
+    } catch {
+      // 忽略关闭错误（数据库可能已经不存在）
+    }
+    modelsStore = null;
+  }
+};
 
 /**
  * 加密模型中的敏感字段
@@ -79,7 +106,7 @@ export const saveModelsToJson = async (models: Model[]): Promise<void> => {
     models.map((model) => encryptModelSensitiveFields(model, masterKey))
   );
 
-  await saveToStore(modelsStore, 'models', encryptedModels, `保存 ${models.length} 个模型`);
+  await saveToStore(getModelsStore(), 'models', encryptedModels, `保存 ${models.length} 个模型`);
 };
 
 /**
@@ -88,7 +115,7 @@ export const saveModelsToJson = async (models: Model[]): Promise<void> => {
  * @returns 模型列表
  */
 export const loadModelsFromJson = async (): Promise<Model[]> => {
-  const storedModels = await loadFromStore<Model[]>(modelsStore, 'models', []);
+  const storedModels = await loadFromStore<Model[]>(getModelsStore(), 'models', []);
 
   if (storedModels.length === 0) {
     return [];

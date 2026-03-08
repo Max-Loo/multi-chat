@@ -51,7 +51,7 @@
 
 ### 当前文档状态
 
-- **总行数**：428 行（精简前 1316 行，减少 67%）
+- **总行数**：474 行（精简前 1316 行，减少 64%）
 - **文档参考章节**：提供关键文件路径索引
 
 ## 项目概述
@@ -173,77 +173,29 @@ models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 
 ### 国际化按需加载
 
-使用语言级按需加载策略，减少初始加载量并提升启动速度。
+英文资源静态打包（~5KB），其他语言按需异步加载。系统语言为英文时节省 67% 初始加载，其他语言节省 33%。
 
-**核心策略**：
+**降级策略**：加载失败时自动降级到英文并显示 Toast 提示。
 
-- **英文"第一公民"**：英文资源静态打包到主 bundle（~5 KB），确保离线可用
-- **按需加载其他语言**：启动时仅加载英文 + 系统语言（如果支持），节省 33%-67% 初始加载量
-- **智能缓存**：使用 `Map<string, Promise<void>>` 缓存进行中的加载请求，避免快速切换时的竞态条件
+实现：`src/lib/i18n.ts`
 
-**架构**：
+### 国际化缓存验证
 
-```
-应用启动
-├── 英文资源（静态加载，零延迟）
-├── 系统语言检测
-└── 系统语言（异步加载，自动切换）
-    └── 加载失败 → 降级到英文 + Toast 警告
-```
+启动时验证缓存语言有效性，自动迁移旧语言代码（四级降级：缓存 → 迁移 → 系统 → 英文）。使用 `Set.has()` 替代 `Array.includes()` 优化查询性能。
 
-**关键实现**：
+实现：`src/lib/global.ts`, `src/utils/constants.ts`
 
-- **资源加载**：`src/lib/i18n.ts` - `loadLanguage()` 函数
-- **缓存机制**：`loadedLanguages` Set + `loadingPromises` Map
-- **错误处理**：指数退避重试（2 次）+ Toast 反馈
-- **用户反馈**：`src/store/middleware/appConfigMiddleware.ts` - Toast 提示
+### 国际化 Toast 队列
 
-**性能优化**：
+使用消息队列管理初始化期间的语言切换提示，解决 Toaster 组件未挂载时的时序问题。消息间隔 500ms 顺序显示，避免重叠。
 
-- 系统语言为英文：从 15 KB → 5 KB（节省 67%）
-- 系统语言为其他：从 15 KB → 10 KB（节省 33%）
-
-详细实现：`src/lib/i18n.ts`
-
-### 国际化缓存验证与迁移
-
-应用启动时验证缓存语言有效性，自动迁移旧语言代码并清理无效缓存。
-
-**四级降级策略**：缓存语言 → 迁移语言 → 系统语言 → 英文
-
-**关键实现**：`src/lib/global.ts` - `getDefaultAppLanguage()`, `src/utils/constants.ts` - `LANGUAGE_MIGRATION_MAP`
-
-**性能优化**：使用 `SUPPORTED_LANGUAGE_SET`（Set.has O(1)）替代 `Array.includes`（O(n)）
-
-### 国际化 Toast 消息队列
-
-使用消息队列机制管理初始化期间的语言切换提示，解决 `<Toaster />` 组件未挂载时的时序问题。
-
-**核心机制**：
-
-- **消息排队**：初始化期间的消息暂存在队列中，等待 Toaster 组件就绪后统一显示
-- **顺序显示**：消息按顺序显示，每个消息间隔 500ms，确保用户有时间阅读
-- **并发安全**：使用 `isFlushing` 标志防止并发 flush 调用，确保消息不会重叠显示
-
-**关键实现**：
-- **队列管理**：`src/lib/toastQueue.ts` - `ToastQueue` 类
-- **集成点**：`src/main.tsx` - `ToasterWrapper` 组件调用 `markReady()`
-- **消息发送**：`src/lib/i18n.ts` - 使用 `toastQueue.enqueue()` 替代直接调用 toast
+实现：`src/lib/toastQueue.ts`, `src/main.tsx`
 
 ### 国际化自动持久化
 
-通过 Redux Middleware 自动监听语言变更并同步到 localStorage，消除手动持久化代码。
+Redux Middleware 自动监听 `setAppLanguage` action 并同步到 localStorage。写入失败时静默降级，不影响应用运行。
 
-**核心机制**：
-
-- **自动同步**：监听 `setAppLanguage` action，自动写入 localStorage
-- **类型安全**：使用 `action.payload` 类型检查，确保只存储字符串类型
-- **静默降级**：localStorage 写入失败时记录警告日志，不影响应用运行
-
-**关键实现**：
-- **Middleware**：`src/store/middleware/languagePersistence.ts` - `createLanguagePersistenceMiddleware()`
-- **匹配策略**：使用 `action.type.endsWith('/setAppLanguage')` 兼容 Redux Toolkit 环境前缀
-- **集成点**：`src/store/index.ts` - 在 `configureStore` 中集成 middleware
+实现：`src/store/middleware/languagePersistence.ts`
 
 ### 跨平台兼容性
 
