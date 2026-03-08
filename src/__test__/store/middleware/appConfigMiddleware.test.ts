@@ -5,6 +5,21 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock toast and i18n before importing middleware
+vi.mock('sonner', () => ({
+  toast: {
+    loading: vi.fn(() => 'loading-toast-id'),
+    success: vi.fn(),
+    error: vi.fn(),
+    dismiss: vi.fn(),
+  },
+}));
+
+vi.mock('@/lib/i18n', () => ({
+  changeAppLanguage: vi.fn(),
+}));
+
 import { configureStore } from '@reduxjs/toolkit';
 import { saveDefaultAppLanguage } from '@/store/middleware/appConfigMiddleware';
 import { setAppLanguage, setIncludeReasoningContent } from '@/store/slices/appConfigSlices';
@@ -16,13 +31,13 @@ import modelProviderReducer from '@/store/slices/modelProviderSlice';
 import { changeAppLanguage } from '@/lib/i18n';
 import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
 import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY } from '@/utils/constants';
-
-// Mock i18n
-vi.mock('@/lib/i18n', () => ({
-  changeAppLanguage: vi.fn().mockResolvedValue(undefined),
-}));
+import { toast } from 'sonner';
 
 const mockChangeAppLanguage = vi.mocked(changeAppLanguage);
+const mockToastLoading = vi.mocked(toast.loading);
+const mockToastSuccess = vi.mocked(toast.success);
+const mockToastError = vi.mocked(toast.error);
+const mockToastDismiss = vi.mocked(toast.dismiss);
 
 describe('appConfigMiddleware', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,6 +72,15 @@ describe('appConfigMiddleware', () => {
       length: 0,
       key: vi.fn(),
     } as unknown as Storage;
+
+    // 重置 toast mocks 并设置默认返回值
+    mockToastLoading.mockClear().mockReturnValue('loading-toast-id');
+    mockToastSuccess.mockClear();
+    mockToastError.mockClear();
+    mockToastDismiss.mockClear();
+
+    // 重置 changeAppLanguage mock 返回值
+    mockChangeAppLanguage.mockResolvedValue({ success: true });
   });
 
   describe('语言切换时的持久化和 i18n 更新', () => {
@@ -303,6 +327,115 @@ describe('appConfigMiddleware', () => {
 
       // 验证最终状态
       expect(store.getState().appConfig.includeReasoningContent).toBe(true);
+    });
+  });
+
+  describe('Toast 加载提示和错误处理', () => {
+    it('应该在语言切换时显示 loading Toast', async () => {
+      const lang = 'zh';
+      mockChangeAppLanguage.mockResolvedValue({ success: true });
+
+      store.dispatch(setAppLanguage(lang));
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证 loading Toast 被显示
+      expect(mockToastLoading).toHaveBeenCalledTimes(1);
+      expect(mockToastLoading).toHaveBeenCalledWith('切换语言中...');
+
+      // 验证 loading Toast 被 dismiss
+      expect(mockToastDismiss).toHaveBeenCalledTimes(1);
+      expect(mockToastDismiss).toHaveBeenCalledWith('loading-toast-id');
+
+      // 验证成功 Toast 被显示
+      expect(mockToastSuccess).toHaveBeenCalledTimes(1);
+      expect(mockToastSuccess).toHaveBeenCalledWith('语言切换成功');
+    });
+
+    it('应该在语言加载失败时显示错误 Toast', async () => {
+      const lang = 'fr';
+      mockChangeAppLanguage.mockResolvedValue({ success: false });
+
+      store.dispatch(setAppLanguage(lang));
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证 loading Toast 被显示
+      expect(mockToastLoading).toHaveBeenCalledTimes(1);
+
+      // 验证 loading Toast 被 dismiss
+      expect(mockToastDismiss).toHaveBeenCalledTimes(1);
+
+      // 验证错误 Toast 被显示
+      expect(mockToastError).toHaveBeenCalledTimes(1);
+      expect(mockToastError).toHaveBeenCalledWith(`语言切换失败: ${lang}`);
+    });
+
+    it('应该在 changeAppLanguage 抛出异常时显示通用错误 Toast', async () => {
+      const lang = 'zh';
+      mockChangeAppLanguage.mockRejectedValue(new Error('Network error'));
+
+      store.dispatch(setAppLanguage(lang));
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证 loading Toast 被显示
+      expect(mockToastLoading).toHaveBeenCalledTimes(1);
+
+      // 验证 loading Toast 被 dismiss
+      expect(mockToastDismiss).toHaveBeenCalledTimes(1);
+
+      // 验证通用错误 Toast 被显示
+      expect(mockToastError).toHaveBeenCalledTimes(1);
+      expect(mockToastError).toHaveBeenCalledWith('语言切换失败，请重试');
+    });
+
+    it('应该验证 changeAppLanguage 返回 { success: boolean } 类型', async () => {
+      const lang = 'zh';
+
+      // 测试成功情况
+      mockChangeAppLanguage.mockResolvedValue({ success: true });
+      store.dispatch(setAppLanguage(lang));
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockChangeAppLanguage).toHaveBeenCalledWith(lang);
+
+      // 测试失败情况
+      mockChangeAppLanguage.mockResolvedValue({ success: false });
+      store.dispatch(setAppLanguage('en'));
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(mockChangeAppLanguage).toHaveBeenCalledWith('en');
+    });
+
+    it('应该正确处理 Promise 异步', async () => {
+      const lang = 'zh';
+      let resolvePromise: (value: { success: boolean }) => void;
+
+      // 创建一个可控的 Promise
+      mockChangeAppLanguage.mockReturnValue(
+        new Promise((resolve) => {
+          resolvePromise = resolve;
+        })
+      );
+
+      store.dispatch(setAppLanguage(lang));
+
+      // 立即验证 loading Toast 已显示
+      expect(mockToastLoading).toHaveBeenCalledTimes(1);
+
+      // Promise 尚未完成，验证成功 Toast 尚未显示
+      expect(mockToastSuccess).not.toHaveBeenCalled();
+
+      // 解析 Promise
+      resolvePromise!({ success: true });
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证成功 Toast 已显示
+      expect(mockToastSuccess).toHaveBeenCalledTimes(1);
     });
   });
 });

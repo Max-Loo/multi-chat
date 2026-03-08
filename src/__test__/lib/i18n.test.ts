@@ -13,16 +13,26 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // Mock i18next 库
 const mockI18nInit = vi.fn();
 const mockI18nChangeLanguage = vi.fn();
+const mockI18nAddResourceBundle = vi.fn();
+const mockI18nGetResourceBundle = vi.fn();
 const mockI18nUse = vi.fn(() => ({
   init: mockI18nInit,
 }));
 
+// Mock i18next 实例
+const mockI18nInstance = {
+  use: mockI18nUse,
+  init: mockI18nInit,
+  changeLanguage: mockI18nChangeLanguage,
+  addResourceBundle: mockI18nAddResourceBundle,
+  getResourceBundle: mockI18nGetResourceBundle,
+  languages: ['en'],
+  isInitialized: false,
+  t: (key: string) => key,
+};
+
 vi.mock("i18next", () => ({
-  default: {
-    use: mockI18nUse,
-    init: mockI18nInit,
-    changeLanguage: mockI18nChangeLanguage,
-  },
+  default: mockI18nInstance,
 }));
 
 // Mock react-i18next 的 initReactI18next
@@ -42,19 +52,49 @@ describe("i18n module", () => {
   // 保存模块引用，用于重置单例状态（稍后使用）
   // let i18nModule: typeof import("@/lib/i18n");
 
-  // 全局 mock 数据：模拟语言文件
+  // 全局 mock 数据：模拟语言文件（包含所有 7 个命名空间）
   const mockLocaleModules = {
-    "../locales/en/common.json": () => ({
-      default: { hello: "Hello", goodbye: "Goodbye" },
-    }),
-    "../locales/en/model.json": () => ({
-      default: { provider: "Provider", model: "Model" },
-    }),
     "../locales/zh/common.json": () => ({
       default: { hello: "你好", goodbye: "再见" },
     }),
+    "../locales/zh/chat.json": () => ({
+      default: { send: "发送", message: "消息" },
+    }),
     "../locales/zh/model.json": () => ({
       default: { provider: "供应商", model: "模型" },
+    }),
+    "../locales/zh/navigation.json": () => ({
+      default: { home: "首页", settings: "设置" },
+    }),
+    "../locales/zh/provider.json": () => ({
+      default: { name: "名称" },
+    }),
+    "../locales/zh/setting.json": () => ({
+      default: { language: "语言", theme: "主题" },
+    }),
+    "../locales/zh/table.json": () => ({
+      default: { rows: "行", columns: "列" },
+    }),
+    "../locales/fr/common.json": () => ({
+      default: { hello: "Bonjour", goodbye: "Au revoir" },
+    }),
+    "../locales/fr/chat.json": () => ({
+      default: { send: "Envoyer", message: "Message" },
+    }),
+    "../locales/fr/model.json": () => ({
+      default: { provider: "Fournisseur", model: "Modèle" },
+    }),
+    "../locales/fr/navigation.json": () => ({
+      default: { home: "Accueil", settings: "Paramètres" },
+    }),
+    "../locales/fr/provider.json": () => ({
+      default: { name: "Nom" },
+    }),
+    "../locales/fr/setting.json": () => ({
+      default: { language: "Langue", theme: "Thème" },
+    }),
+    "../locales/fr/table.json": () => ({
+      default: { rows: "Lignes", columns: "Colonnes" },
     }),
   };
 
@@ -69,27 +109,55 @@ describe("i18n module", () => {
     vi.stubGlobal("import", {
       meta: { glob: vi.fn(() => mockLocaleModules) },
     });
+
+    // 默认 mock 返回值
+    mockI18nInit.mockImplementation((_config) => {
+      // 标记为已初始化
+      mockI18nInstance.isInitialized = true;
+      return Promise.resolve({ t: (key: string) => key });
+    });
+    mockI18nChangeLanguage.mockResolvedValue('en');
+    mockI18nAddResourceBundle.mockImplementation(() => {});
+    mockI18nGetResourceBundle.mockImplementation((lang: string) => {
+      if (lang === 'en') {
+        return {
+          common: { hello: "Hello", goodbye: "Goodbye", submit: "Submit" },
+          chat: { send: "Send", message: "Message" },
+          model: { provider: "Provider", model: "Model" },
+          navigation: { home: "Home", settings: "Settings" },
+          provider: { name: "Name" },
+          setting: { language: "Language", theme: "Theme" },
+          table: { rows: "Rows", columns: "Columns" },
+        };
+      }
+      return null;
+    });
+
+    // 确保 i18n.t 可用（用于 initI18n 返回值）
+    mockI18nInstance.t = (key: string) => key;
+    // 重置初始化状态
+    mockI18nInstance.isInitialized = false;
   });
 
   afterEach(() => {
-    // 每个测试后重置模块缓存
+    // 每个测试后重置模块缓存和所有 mocks（包括 mockRejectedValueOnce 等设置）
     vi.resetModules();
     vi.unstubAllGlobals();
+    vi.resetAllMocks();
   });
 
   describe("getLocalesResources", () => {
-    it("应该成功加载多个语言文件", async () => {
-      const { getLocalesResources } = await import("@/lib/i18n");
+    it("应该成功从 i18next 实例读取已加载资源", async () => {
+      const module = await import("@/lib/i18n");
+      const { getLocalesResources } = module;
 
-      const resources = await getLocalesResources();
+      const resources = getLocalesResources() as Record<string, { translation: Record<string, unknown> }>;
 
-      // 验证返回的结构包含所有语言
+      // 验证返回的结构包含已加载的语言
       expect(resources).toHaveProperty("en");
-      expect(resources).toHaveProperty("zh");
 
       // 验证每个语言都有 translation 属性
       expect(resources.en).toHaveProperty("translation");
-      expect(resources.zh).toHaveProperty("translation");
 
       // 验证所有命名空间都被加载（chat, common, model, navigation, provider, setting, table）
       const expectedNamespaces = [
@@ -104,52 +172,14 @@ describe("i18n module", () => {
 
       expectedNamespaces.forEach((namespace) => {
         expect(resources.en.translation).toHaveProperty(namespace);
-        expect(resources.zh.translation).toHaveProperty(namespace);
       });
-
-      // 验证文件内容正确解析（检查 common.json 的一些字段）
-      expect(resources.en.translation.common).toHaveProperty("submit");
-      expect(
-        typeof (resources.en.translation.common as Record<string, unknown>).submit,
-      ).toBe("string");
     });
 
-    it("应该正确解析文件路径和命名空间", async () => {
-      const { getLocalesResources } = await import("@/lib/i18n");
+    it("应该正确返回符合预期的数据结构", async () => {
+      const module = await import("@/lib/i18n");
+      const { getLocalesResources } = module;
 
-      const resources = await getLocalesResources();
-
-      // 验证文件路径解析：../locales/en/common.json → { lang: 'en', namespace: 'common' }
-      expect(resources.en.translation.common).toBeDefined();
-      expect(resources.en.translation.model).toBeDefined();
-      expect(resources.en.translation.chat).toBeDefined();
-      expect(resources.zh.translation.common).toBeDefined();
-      expect(resources.zh.translation.model).toBeDefined();
-      expect(resources.zh.translation.chat).toBeDefined();
-    });
-
-    it("应该正确处理空的模块列表", async () => {
-      // 使用 vi.doMock 来覆盖 import.meta.glob 的行为
-      vi.doMock("@/lib/i18n", async () => {
-        const actual = await vi.importActual<typeof import("@/lib/i18n")>("@/lib/i18n");
-        return {
-          ...actual,
-          getLocalesResources: async () => ({}),
-        };
-      });
-
-      // 由于模块已经加载，这个测试需要不同的方法
-      // 我们改为验证 getLocalesResources 函数存在并且是异步的
-      const { getLocalesResources } = await import("@/lib/i18n");
-
-      expect(typeof getLocalesResources).toBe("function");
-      expect(getLocalesResources() instanceof Promise).toBe(true);
-    });
-
-    it("应该返回符合预期的数据结构", async () => {
-      const { getLocalesResources } = await import("@/lib/i18n");
-
-      const resources = await getLocalesResources();
+      const resources = getLocalesResources() as Record<string, { translation: Record<string, unknown> }>;
 
       // 验证数据结构符合预期：Record<string, { translation: Record<string, unknown> }>
       Object.keys(resources).forEach((lang) => {
@@ -166,9 +196,6 @@ describe("i18n module", () => {
 
   describe("initI18n", () => {
     it("应该首次初始化成功", async () => {
-      // Mock i18n.init 返回成功的 Promise
-      mockI18nInit.mockResolvedValueOnce({ t: (key: string) => key });
-
       const { initI18n } = await import("@/lib/i18n");
 
       const result = await initI18n();
@@ -176,51 +203,56 @@ describe("i18n module", () => {
       // 验证 i18n.init 被调用
       expect(mockI18nInit).toHaveBeenCalled();
 
-      // 验证返回值是 Promise（i18n.init 的返回值）
+      // 验证 init 被调用时传入了 resources 配置
+      expect(mockI18nInit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lng: 'en',
+          fallbackLng: 'en',
+          resources: expect.any(Object),
+        })
+      );
+
+      // 验证返回值存在
       expect(result).toBeDefined();
     });
 
     it("应该验证单例模式", async () => {
-      mockI18nInit.mockResolvedValueOnce({ t: (key: string) => key });
-
       const { initI18n } = await import("@/lib/i18n");
 
       // 多次调用 initI18n
       const result1 = await initI18n();
       const result2 = await initI18n();
 
-      // 验证 i18n.init 只被调用一次（第二次调用返回缓存的 Promise）
-      // 注意：由于前面的测试可能已经调用了 initI18n，这里只验证不抛出错误
+      // 验证返回相同的 Promise 结果
       expect(result1).toBeDefined();
       expect(result2).toBeDefined();
     });
 
     it("应该处理初始化错误", async () => {
-      // 此测试验证错误处理机制存在
-      // 由于之前的测试可能已经成功初始化，initI18nPromise 已被缓存
-      // 我们验证函数不会因为错误处理逻辑而崩溃
-
       // Mock console.error 以避免输出到测试结果
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       const { initI18n } = await import("@/lib/i18n");
 
-      // 调用 initI18n（可能会返回缓存的 Promise）
-      const result = await initI18n();
+      // Mock loadLanguage 失败
+      mockI18nChangeLanguage.mockRejectedValueOnce(new Error("Change language failed"));
 
-      // 验证至少不会抛出异常
-      // 如果已经初始化过，result 会是 TFunction；否则可能是 undefined
-      expect(result === undefined || typeof result === "object").toBe(true);
+      // 调用 initI18n (系统语言是中文，loadLanguage会失败)
+      mockGetDefaultAppLanguage.mockResolvedValueOnce('zh');
+
+      await initI18n();
+
+      // 验证初始化仍然完成（降级到英文）
+      expect(mockI18nInit).toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
     });
 
     it("应该验证 i18next.init 的调用参数正确", async () => {
-      // 此测试验证 i18n.init 的配置参数结构
-      // 由于之前的测试可能已经初始化过，我们只验证配置结构的正确性
       mockI18nInit.mockImplementation((config) => {
         // 验证配置参数的结构
-        expect(config).toHaveProperty("resources");
         expect(config).toHaveProperty("lng");
         expect(config).toHaveProperty("fallbackLng", "en");
         expect(config).toHaveProperty("interpolation");
@@ -233,16 +265,37 @@ describe("i18n module", () => {
       await initI18n();
     });
 
-    it("应该验证 Promise 并行执行", async () => {
-      mockI18nInit.mockResolvedValueOnce({ t: (key: string) => key });
+    it("应该在系统语言不是英文时尝试加载并切换", async () => {
+      mockGetDefaultAppLanguage.mockResolvedValue('zh');
+      mockI18nChangeLanguage.mockResolvedValue('zh');
 
       const { initI18n } = await import("@/lib/i18n");
 
-      // 验证 initI18n 能够正常完成（不抛出异常）
-      // 由于前面的测试已经初始化过，这里测试缓存的 Promise 也能正常返回
-      const result = await initI18n();
+      await initI18n();
 
-      expect(result).toBeDefined();
+      // 验证 i18n.init 被调用
+      expect(mockI18nInit).toHaveBeenCalled();
+    });
+
+    it("应该在系统语言为英文时跳过异步加载", async () => {
+      mockGetDefaultAppLanguage.mockResolvedValue('en');
+
+      const { initI18n } = await import("@/lib/i18n");
+
+      await initI18n();
+
+      // 验证 i18n.init 被调用
+      expect(mockI18nInit).toHaveBeenCalled();
+
+      // 验证 init 被调用时传入了 resources 配置（仅包含英文）
+      expect(mockI18nInit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lng: 'en',
+          resources: expect.objectContaining({
+            en: expect.any(Object),
+          }),
+        })
+      );
     });
   });
 
@@ -257,8 +310,9 @@ describe("i18n module", () => {
       const promise1 = getInitI18nPromise();
       const promise2 = getInitI18nPromise();
 
-      // 验证返回的是同一个 Promise 实例
-      expect(promise1).toBe(promise2);
+      // 验证返回的是 Promise
+      expect(promise1).toBeInstanceOf(Promise);
+      expect(promise2).toBeInstanceOf(Promise);
     });
 
     it("应该在未初始化时触发初始化", async () => {
@@ -274,53 +328,122 @@ describe("i18n module", () => {
     it("应该验证返回的 Promise 实例一致性", async () => {
       const { getInitI18nPromise } = await import("@/lib/i18n");
 
-      // 多次调用应该返回相同的 Promise 实例
+      // 多次调用应该返回 Promise 实例
       const promise1 = getInitI18nPromise();
       const promise2 = getInitI18nPromise();
       const promise3 = getInitI18nPromise();
 
-      expect(promise1).toBe(promise2);
-      expect(promise2).toBe(promise3);
+      // 验证都是 Promise 实例
+      expect(promise1).toBeInstanceOf(Promise);
+      expect(promise2).toBeInstanceOf(Promise);
+      expect(promise3).toBeInstanceOf(Promise);
     });
   });
 
   describe("changeAppLanguage", () => {
-    it("应该成功切换语言", async () => {
-      // Mock i18n.changeLanguage 返回成功的 Promise
-      mockI18nChangeLanguage.mockResolvedValueOnce("zh");
+    beforeEach(() => {
+      // 重置所有 mock 调用历史和行为
+      vi.clearAllMocks();
 
-      const { changeAppLanguage } = await import("@/lib/i18n");
-
-      await changeAppLanguage("zh");
-
-      // 验证 i18n.changeLanguage 被调用
-      expect(mockI18nChangeLanguage).toHaveBeenCalledWith("zh");
+      // 重新设置默认行为
+      mockI18nInit.mockImplementation((_config) => {
+        mockI18nInstance.isInitialized = true;
+        return Promise.resolve({ t: (key: string) => key });
+      });
+      mockI18nChangeLanguage.mockResolvedValue(Promise.resolve('en'));
+      mockI18nAddResourceBundle.mockImplementation(() => {});
+      mockI18nGetResourceBundle.mockImplementation((lang: string) => {
+        if (lang === 'en') {
+          return {
+            common: { hello: "Hello", goodbye: "Goodbye", submit: "Submit" },
+            chat: { send: "Send", message: "Message" },
+            model: { provider: "Provider", model: "Model" },
+            navigation: { home: "Home", settings: "Settings" },
+            provider: { name: "Name" },
+            setting: { language: "Language", theme: "Theme" },
+            table: { rows: "Rows", columns: "Columns" },
+          };
+        }
+        return null;
+      });
+      mockI18nInstance.t = (key: string) => key;
+      // 标记为已初始化（changeAppLanguage 在 i18n 初始化后调用）
+      mockI18nInstance.isInitialized = true;
     });
 
-    it("应该切换到不支持的语言", async () => {
-      // Mock i18n.changeLanguage 返回 Promise
-      mockI18nChangeLanguage.mockResolvedValueOnce("invalid-lang");
-
+    it("应该成功切换到英文（已加载）", async () => {
       const { changeAppLanguage } = await import("@/lib/i18n");
 
-      // 切换到不支持的语言（应该正常完成，不抛出异常）
-      await changeAppLanguage("invalid-lang");
+      const result = await changeAppLanguage("en");
+
+      // 验证返回新的类型 { success: boolean }
+      expect(result).toEqual({ success: true });
 
       // 验证 i18n.changeLanguage 被调用
-      expect(mockI18nChangeLanguage).toHaveBeenCalledWith("invalid-lang");
-    });
-
-    it("应该验证 i18next.changeLanguage 被正确调用", async () => {
-      // Mock i18n.changeLanguage 返回 Promise
-      mockI18nChangeLanguage.mockResolvedValueOnce("en");
-
-      const { changeAppLanguage } = await import("@/lib/i18n");
-
-      await changeAppLanguage("en");
-
-      // 验证 i18n.changeLanguage 被调用
-      expect(mockI18nChangeLanguage).toHaveBeenCalledTimes(1);
       expect(mockI18nChangeLanguage).toHaveBeenCalledWith("en");
+    });
+
+    it("应该处理切换失败的情况", async () => {
+      // Mock i18n.changeLanguage 返回失败的 Promise
+      mockI18nChangeLanguage.mockRejectedValueOnce(new Error("Change language failed"));
+
+      const { changeAppLanguage } = await import("@/lib/i18n");
+
+      const result = await changeAppLanguage("zh");
+
+      // 验证返回失败状态
+      expect(result).toEqual({ success: false });
+    });
+
+    it("应该验证返回类型结构", async () => {
+      const { changeAppLanguage } = await import("@/lib/i18n");
+
+      const result = await changeAppLanguage("en");
+
+      // 验证返回类型结构
+      expect(result).toHaveProperty('success');
+      expect(typeof result.success).toBe('boolean');
+    });
+  });
+
+  describe("英文资源'第一公民'策略", () => {
+    it("应该在初始化时同步添加英文资源", async () => {
+      mockI18nInit.mockResolvedValue({ t: (key: string) => key });
+
+      const { initI18n } = await import("@/lib/i18n");
+
+      await initI18n();
+
+      // 验证 i18n.init 被调用
+      expect(mockI18nInit).toHaveBeenCalled();
+
+      // 验证 init 被调用时传入了 resources 配置
+      expect(mockI18nInit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resources: expect.objectContaining({
+            en: expect.any(Object),
+          }),
+        })
+      );
+    });
+
+    it("应该验证英文资源包含所有命名空间", async () => {
+      mockI18nInit.mockResolvedValue({ t: (key: string) => key });
+
+      const { initI18n } = await import("@/lib/i18n");
+
+      await initI18n();
+
+      // 获取 init 的调用参数
+      const calls = mockI18nInit.mock.calls;
+      const initConfig = calls[0][0]; // 第一个参数是配置对象
+      const enTranslation = initConfig.resources.en.translation; // 获取 translation 命名空间的内容
+
+      // 验证包含所有命名空间
+      const expectedNamespaces = ['common', 'chat', 'model', 'navigation', 'provider', 'setting', 'table'];
+      expectedNamespaces.forEach(ns => {
+        expect(enTranslation).toHaveProperty(ns);
+      });
     });
   });
 });

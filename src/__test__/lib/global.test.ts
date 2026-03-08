@@ -119,11 +119,20 @@ describe('global.ts 模块测试', () => {
     describe('不支持系统语言时的回退测试', () => {
       it('应该在不支持的系统语言时回退到 en', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        languageSpy.mockReturnValue('fr-FR'); // 法语不在支持列表中
+        languageSpy.mockReturnValue('de-DE'); // 德语不在支持列表中
 
         const result = await getDefaultAppLanguage();
 
         expect(result).toBe('en');
+      });
+
+      it('应该在系统语言为法语时返回 fr', async () => {
+        localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
+        languageSpy.mockReturnValue('fr-FR'); // 法语在支持列表中
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result).toBe('fr');
       });
 
       it('应该在系统语言为空字符串时回退到 en', async () => {

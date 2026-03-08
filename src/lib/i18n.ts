@@ -1,46 +1,178 @@
-import i18n, { TFunction } from "i18next";
+import i18n, { Resource, TFunction } from "i18next";
 import { initReactI18next } from "react-i18next";
 import { getDefaultAppLanguage } from "./global";
 
-/**
- * 异步加载所有语言资源文件
- * @returns {Promise<Record<string, { translation: Record<string, unknown> }>>} 组合后的语言资源对象
- */
-export const getLocalesResources = async (): Promise<Record<string, { translation: Record<string, unknown> }>> => {
-  // 使用 Vite 的 import.meta.glob 获取所有语言文件
-  const localeModules = import.meta.glob('../locales/**/*.json');
-  console.log('localeModules', localeModules);
+// 动态导入 toast（用于系统语言加载失败时的警告）
+let toastFunc: typeof import('sonner').toast | null = null;
+try {
+  // 动态导入 toast，避免阻塞 i18n 初始化
+  import('sonner').then(module => {
+    toastFunc = module.toast;
+  }).catch((error) => {
+    // Toast 库加载失败，降级到 console.warn
+    console.warn('[Toast] sonner 库加载失败，使用 console.warn 降级', error);
+  });
+} catch (error) {
+  // 忽略 toast 导入失败，不影响 i18n 初始化
+  console.warn('[Toast] 动态导入 sonner 失败', error);
+}
 
+// 英文资源"第一公民"策略（静态导入，同步打包）
+import enCommon from '../locales/en/common.json';
+import enChat from '../locales/en/chat.json';
+import enModel from '../locales/en/model.json';
+import enNavigation from '../locales/en/navigation.json';
+import enProvider from '../locales/en/provider.json';
+import enSetting from '../locales/en/setting.json';
+import enTable from '../locales/en/table.json';
+
+// 英文资源聚合对象
+const EN_RESOURCES: Record<string, unknown> = {
+  common: enCommon,
+  chat: enChat,
+  model: enModel,
+  navigation: enNavigation,
+  provider: enProvider,
+  setting: enSetting,
+  table: enTable,
+};
+
+// 使用 Set 和 Map 缓存语言加载状态
+const loadedLanguages = new Set<string>(['en']); // 英文预标记为已加载
+const loadingPromises = new Map<string, Promise<void>>();
+
+// 缓存已加载的语言资源对象（不包含 translation 包装）
+const languageResourcesCache = new Map<string, Record<string, unknown>>();
+languageResourcesCache.set('en', EN_RESOURCES);
+
+// Vite import.meta.glob 预先获取所有语言文件映射（排除英文，因为已静态加载）
+const allLocaleModules = import.meta.glob('../locales/!(en)/**/*.json');
+
+/**
+ * 加载指定语言的资源
+ * @param lang 语言代码（如 'zh', 'fr'）
+ * @param retries 重试次数（默认 2 次）
+ * @returns Promise<void>
+ */
+const loadLanguage = async (lang: string, retries = 2): Promise<void> => {
+  // 缓存检查逻辑
+  if (loadedLanguages.has(lang)) {
+    return; // 已加载，直接返回
+  }
+
+  // 检查是否正在加载（避免竞态条件）
+  if (loadingPromises.has(lang)) {
+    return loadingPromises.get(lang)!; // 复用进行中的 Promise
+  }
+
+  // 创建加载 Promise 并存储到 Map
+  const loadPromise = (async () => {
+    try {
+      const resources = await performLoad(lang, retries);
+      loadedLanguages.add(lang);
+      languageResourcesCache.set(lang, resources);
+
+      // 如果 i18n 已经初始化，动态添加资源
+      if (i18n.isInitialized) {
+        // 资源格式：{ lang: { translation: { namespace1: {...}, ... } } }
+        i18n.addResourceBundle(lang, 'translation', resources, true);
+      }
+    } finally {
+      loadingPromises.delete(lang);
+    }
+  })();
+
+  loadingPromises.set(lang, loadPromise);
+  return loadPromise;
+};
+
+/**
+ * 执行语言资源加载（内部函数，处理重试逻辑）
+ * @param lang 语言代码
+ * @param retries 重试次数
+ * @returns Promise<Record<string, unknown>> 返回聚合后的语言资源对象
+ */
+const performLoad = async (lang: string, retries: number): Promise<Record<string, unknown>> => {
+  // 英文资源已静态加载，直接返回空对象
+  if (lang === 'en') {
+    return EN_RESOURCES;
+  }
+
+  // 指数退避重试逻辑
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // 过滤出目标语言的文件（排除英文，因为已静态加载）
+      const langFiles = Object.keys(allLocaleModules).filter(path =>
+        path.match(new RegExp(`/locales/${lang}/[^/]+\\.json$`))
+      );
+
+      if (langFiles.length === 0) {
+        throw new Error(`Language ${lang} not found`);
+      }
+
+      // 并行加载所有命名空间
+      const resources = await Promise.all(
+        langFiles.map(async (filePath) => {
+          const module = await allLocaleModules[filePath]() as { default: Record<string, unknown> };
+          // 提取命名空间（文件名）
+          const namespaceMatch = filePath.match(/\/([^/]+)\.json$/);
+          if (!namespaceMatch) {
+            throw new Error(`Invalid file path: ${filePath}`);
+          }
+          const namespace = namespaceMatch[1];
+          return { namespace, resources: module.default };
+        })
+      );
+
+      // 聚合为 i18next 格式
+      const aggregatedResources = resources.reduce((acc, { namespace, resources }) => {
+        acc[namespace] = resources;
+        return acc;
+      }, {} as Record<string, unknown>);
+
+      // 成功加载后将语言代码添加到缓存（在 loadLanguage 中处理）
+      return aggregatedResources;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isNetworkError =
+        errorMessage.includes('fetch') ||
+        errorMessage.includes('network') ||
+        errorMessage.includes('timeout');
+
+      // 非网络错误或已达重试上限，直接失败
+      if (!isNetworkError || attempt === retries) {
+        throw error;
+      }
+
+      // 指数退避：第一次 1s，第二次 2s
+      const delay = Math.pow(2, attempt) * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  // 理论上不会执行到这里
+  throw new Error(`Failed to load language ${lang} after ${retries} retries`);
+};
+
+/**
+ * @deprecated 此函数已废弃，仅用于向后兼容
+ * 从 i18next 实例读取已加载的资源快照
+ * @returns {Record<string, { translation: Record<string, unknown> }>} 已加载的语言资源对象
+ */
+export const getLocalesResources = (): Record<string, { translation: Record<string, unknown> }> => {
+  // 从 i18next 实例读取已加载的资源（向后兼容）
   const resources: Record<string, { translation: Record<string, unknown> }> = {};
 
-  // 遍历所有模块
-  for (const filePath in localeModules) {
-    // 解析文件路径，提取语言代码和文件名
-    // filePath 格式: "../locales/en/common.json"
-    const pathParts = filePath.split('/');
-    const fileName = pathParts[pathParts.length - 1]; // "common.json"
-    const langCode = pathParts[pathParts.length - 2]; // "en"
-    const keyName = fileName.replace('.json', ''); // "common"
-
-    // 动态导入模块
-    const module = await localeModules[filePath]() as { default: Record<string, unknown> };
-
-    // Vite 导入 JSON 文件时，内容在 default 属性中
-    const parsedContent = module.default;
-
-    // 如果该语言还不存在，创建对象
-    if (!resources[langCode]) {
-      resources[langCode] = {
-        translation: {},
-      };
+  const languages = i18n.languages || [];
+  for (const lang of languages) {
+    const resource = i18n.getResourceBundle(lang, 'translation');
+    if (resource) {
+      resources[lang] = { translation: resource as Record<string, unknown> };
     }
-
-    // 添加到对应语言的 translation 中
-    resources[langCode].translation[keyName] = parsedContent;
   }
 
   return resources;
-}
+};
 
 type InitI18nPromise = Promise<TFunction<"translation", undefined>>
 
@@ -49,34 +181,67 @@ let initI18nPromise: InitI18nPromise | null = null;
 
 /**
  * 初始化 i18n 配置
+ * 不接受参数，内部检测系统语言并自动切换
  */
 export const initI18n = async () => {
+  // 实现单例模式
   if (initI18nPromise) {
-    return initI18nPromise
+    return initI18nPromise;
   }
 
-  const [
-    resources,
-    defaultLang,
-  ] = await Promise.all([
-    getLocalesResources(),
-    getDefaultAppLanguage(),
-  ])
-  console.log('Loaded resources:', resources, defaultLang);
+  initI18nPromise = (async () => {
+    // 内部调用 getDefaultAppLanguage() 检测系统语言
+    let systemLang = 'en';  // 默认英文
+    try {
+      systemLang = await getDefaultAppLanguage();
+    } catch (error) {
+      console.warn('获取系统语言失败，使用英文', error);
+    }
 
-  initI18nPromise = i18n
-    .use(initReactI18next) // passes i18n down to react-i18next
-    .init({
-      resources,
-      lng: defaultLang,
+    // 准备初始资源对象（使用 Resource 类型）
+    // 资源格式：{ lang: { translation: { namespace1: {...}, namespace2: {...} } } }
+    const initialResources: Resource = {
+      en: { translation: EN_RESOURCES },
+    };
+
+    // 实际使用的语言（默认英文，如果加载成功则使用系统语言）
+    let actualLang = 'en';
+
+    // 如果系统语言不是英文且在支持列表中，异步加载并自动切换
+    if (systemLang !== 'en') {
+      try {
+        // 使用 loadLanguage() 而非 performLoad()，确保缓存机制一致
+        await loadLanguage(systemLang);
+        // 只有成功加载系统语言资源后，才使用系统语言
+        actualLang = systemLang;
+      } catch (error) {
+        // 加载失败，保持英文，显示警告（非阻塞）
+        console.warn(`系统语言 ${systemLang} 加载失败，使用英文替代`, error);
+        // 显示 Toast 警告（使用降级方案）
+        try {
+          toastFunc?.warning?.(`系统语言加载失败，已使用英文替代`);
+        } catch {
+          // Toast 显示失败，忽略（不影响初始化）
+        }
+      }
+    }
+
+    // 初始化 i18next，使用 resources 配置
+    await i18n.use(initReactI18next).init({
+      lng: actualLang,
       fallbackLng: 'en',
+      resources: initialResources,
       interpolation: {
         escapeValue: false, // react already safes from xss
       },
     });
 
-  return initI18nPromise
-}
+    // 返回初始化 Promise
+    return i18n.t;
+  })();
+
+  return initI18nPromise;
+};
 
 /**
  * 获取初始化 i18n 的 Promise
@@ -91,10 +256,28 @@ export const getInitI18nPromise = () => {
 }
 
 /**
- * 改变 i18n 里面的语言配置
+ * 改变应用语言
+ * @param lang 语言代码
+ * @returns Promise<{ success: boolean }>
  */
-export const changeAppLanguage = async (lang: string) => {
+export const changeAppLanguage = async (lang: string): Promise<{ success: boolean }> => {
   console.log('changeAppLanguage', lang);
 
-  await i18n.changeLanguage(lang)
-}
+  try {
+    // 等待 i18n 初始化完成（防止在初始化期间调用）
+    await getInitI18nPromise();
+
+    // 在切换语言前调用 loadLanguage() 检查并加载目标语言
+    await loadLanguage(lang);
+
+    // 加载成功后切换语言
+    await i18n.changeLanguage(lang);
+
+    // 返回成功
+    return { success: true };
+  } catch (error) {
+    // 如果加载失败，记录错误并返回失败
+    console.error(`Failed to change language to ${lang}:`, error);
+    return { success: false };
+  }
+};
