@@ -1,5 +1,9 @@
 {
   "generalSetting": "General Setting",
+  "autoNaming": {
+    "title": "Auto Naming",
+    "description": "Automatically generate titles for chats, enabled by default"
+  },
   "modelProvider": {
     "title": "Model Provider",
     "description": "Fetch the latest model provider information from remote server",

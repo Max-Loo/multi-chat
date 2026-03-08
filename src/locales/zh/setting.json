@@ -1,5 +1,9 @@
 {
   "generalSetting": "常规设置",
+  "autoNaming": {
+    "title": "自动命名",
+    "description": "自动为聊天生成标题，默认开启"
+  },
   "modelProvider": {
     "title": "模型供应商",
     "description": "从远程服务器获取最新的模型供应商信息",

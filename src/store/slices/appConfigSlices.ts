@@ -1,17 +1,20 @@
 import { getDefaultAppLanguage } from "@/lib/global";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY } from "@/utils/constants";
+import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
 
 export interface AppConfigSliceState {
   // 当前应用的语言类型
   language: string;
   // 是否在历史消息中传输推理内容（默认 false）
   includeReasoningContent: boolean;
+  // 是否启用自动命名功能（默认 true）
+  autoNamingEnabled: boolean;
 }
 
 const initialState: AppConfigSliceState = {
   language: '',
   includeReasoningContent: false,
+  autoNamingEnabled: true,
 }
 
 /**
@@ -44,6 +47,23 @@ export const initializeIncludeReasoningContent = createAsyncThunk(
   },
 )
 
+/**
+ * 初始化自动命名功能开关状态
+ * @returns 从 localStorage 读取的开关状态，默认为 true
+ */
+export const initializeAutoNamingEnabled = createAsyncThunk(
+  'appConfig/autoNamingEnabled/initialize',
+  async () => {
+    try {
+      const storedValue = localStorage.getItem(LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY);
+      // 如果 localStorage 中没有值或值为 'false'，则返回 false，否则返回 true
+      return storedValue !== 'false';
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Fail to initialize autoNamingEnabled', { cause: error });
+    }
+  },
+)
+
 const appConfigSlice = createSlice({
   name: 'appConfig',
   initialState,
@@ -53,6 +73,9 @@ const appConfigSlice = createSlice({
     },
     setIncludeReasoningContent: (state, action: PayloadAction<boolean>) => {
       state.includeReasoningContent = action.payload
+    },
+    setAutoNamingEnabled: (state, action: PayloadAction<boolean>) => {
+      state.autoNamingEnabled = action.payload
     },
   },
   extraReducers: (builder) => {
@@ -65,6 +88,10 @@ const appConfigSlice = createSlice({
       .addCase(initializeIncludeReasoningContent.fulfilled, (state, action) => {
         state.includeReasoningContent = action.payload
       })
+      // 初始化自动命名功能开关状态
+      .addCase(initializeAutoNamingEnabled.fulfilled, (state, action) => {
+        state.autoNamingEnabled = action.payload
+      })
   },
 })
 
@@ -72,6 +99,7 @@ const appConfigSlice = createSlice({
 export const {
   setAppLanguage,
   setIncludeReasoningContent,
+  setAutoNamingEnabled,
 } = appConfigSlice.actions;
 
 /**
@@ -80,5 +108,12 @@ export const {
  * @returns 当前开关状态（true 表示开启，false 表示关闭）
  */
 export const selectIncludeReasoningContent = (state: { appConfig: AppConfigSliceState }) => state.appConfig.includeReasoningContent;
+
+/**
+ * 选择器：获取自动命名功能开关状态
+ * @param state Redux store 的 RootState
+ * @returns 当前开关状态（true 表示开启，false 表示关闭）
+ */
+export const selectAutoNamingEnabled = (state: { appConfig: AppConfigSliceState }) => state.appConfig.autoNamingEnabled;
 
 export default appConfigSlice.reducer;

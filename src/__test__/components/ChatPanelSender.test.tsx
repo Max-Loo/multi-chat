@@ -92,6 +92,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -118,6 +119,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -146,6 +148,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -174,6 +177,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -208,6 +212,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -240,6 +245,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -269,6 +275,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -301,6 +308,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -329,6 +337,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -378,6 +387,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -420,6 +430,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -456,6 +467,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -492,6 +504,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -516,6 +529,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -547,6 +561,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -582,6 +597,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -610,6 +626,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });
@@ -641,6 +658,7 @@ describe('ChatPanelSender', () => {
         },
         appConfig: {
           includeReasoningContent: false,
+          autoNamingEnabled: true,
           language: 'en',
         },
       });

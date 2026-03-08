@@ -3,12 +3,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { useNavigateToChat } from '@/hooks/useNavigateToPage';
 
-// Mock react-router-dom 的 useNavigate
+const mockSearchParams = new URLSearchParams();
+const mockSetSearchParams = vi.fn();
+
+// Mock react-router-dom 的 useNavigate 和 useSearchParams
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockedNavigate,
+    useSearchParams: () => [mockSearchParams, mockSetSearchParams],
   };
 });
 

@@ -24,17 +24,15 @@ const RunningChatBubble = memo<RunningChatBubbleProps>(({
   // 获取所有模型（用于查找 provider）
   const models = useAppSelector(state => state.models.models)
 
+  // 🔧 提取嵌套访问，避免 useMemo 依赖数组复杂表达式
+  const selectedChatId = selectedChat?.id
+  const modelId = chatModel.modelId
+  const chatData = selectedChatId ? runningChat[selectedChatId]?.[modelId] : undefined
+
   // 当前的某个聊天窗口
   const currentChatModel = useMemo(() => {
-    if (isNil(selectedChat)) {
-      return undefined
-    }
-    return runningChat[selectedChat.id]?.[chatModel.modelId]
-  }, [
-    runningChat,
-    selectedChat,
-    chatModel.modelId,
-  ])
+    return chatData
+  }, [chatData])
 
   if (isNil(currentChatModel) || !currentChatModel.isSending) {
     return null

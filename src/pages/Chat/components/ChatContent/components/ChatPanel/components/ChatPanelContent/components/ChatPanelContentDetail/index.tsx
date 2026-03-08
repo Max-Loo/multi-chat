@@ -39,8 +39,9 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
   } = useIsChatSending()
 
   // 组合起来的，进行循环渲染的列表
+  // 🔧 修复：直接返回原数组引用，避免每次 useMemo 都创建新数组导致无限循环
   const historyList = useMemo<StandardMessage[]>(() => {
-    return Array.isArray(chatModel.chatHistoryList) ? [...chatModel.chatHistoryList] : []
+    return Array.isArray(chatModel.chatHistoryList) ? chatModel.chatHistoryList : []
   }, [chatModel.chatHistoryList])
 
   // 引用滚动容器
@@ -59,6 +60,9 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
   // 状态：是否在底部
   const [isAtBottom, setIsAtBottom] = useState(true)
 
+  // 🔧 添加防抖标志，防止 ResizeObserver 导致的无限循环
+  const isCheckingScrollRef = useRef(false)
+
   /**
    * 滚动到列表底部
    */
@@ -71,17 +75,33 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
 
   // 检测是否需要滚动条以及是否在底部
   const checkScrollStatus = useCallback(() => {
+    // 🔧 防止递归调用
+    if (isCheckingScrollRef.current) {
+      return
+    }
+
     const container = scrollContainerRef.current
     if (!container) return
 
+    isCheckingScrollRef.current = true
+
     // 检测是否需要滚动条（内容高度大于容器高度）
     const hasScrollbar = container.scrollHeight > container.clientHeight
-    setNeedsScrollbar(hasScrollbar)
 
     // 检测是否在底部（允许10px的误差）
     const threshold = 24
     const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= threshold
-    setIsAtBottom(atBottom)
+
+    // 🔧 使用 requestAnimationFrame 避免在同一帧内多次更新状态
+    requestAnimationFrame(() => {
+      setNeedsScrollbar(hasScrollbar)
+      setIsAtBottom(atBottom)
+
+      // 🔧 延迟重置标志，确保状态更新完成
+      setTimeout(() => {
+        isCheckingScrollRef.current = false
+      }, 100)
+    })
   }, [])
 
   // 监听内容变化和滚动事件
@@ -121,15 +141,17 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     }
   }, [handleScroll])
 
-  return <div
-    className={`
-      flex flex-col items-center text-base h-full overflow-y-auto
-      pt-2 pb-4 pl-3
-      ${isScrolling ? 'pr-0.5' : 'pr-3'}
-      ${scrollbarClassname}
-    `}
-    ref={scrollContainerRef}
-  >
+  return (
+    <>
+      <div
+        className={`
+          flex flex-col items-center text-base h-full overflow-y-auto
+          pt-2 pb-4 pl-3
+          ${isScrolling ? 'pr-0.5' : 'pr-3'}
+          ${scrollbarClassname}
+        `}
+        ref={scrollContainerRef}
+      >
     <DetailTitle chatModel={chatModel} />
     {/* 历史记录列表 */}
     {historyList.map(historyRecord => {
@@ -163,7 +185,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
     {needsScrollbar && !isAtBottom && (
       <Button
         onClick={scrollToBottom}
-        className="absolute bottom-[110px] rounded-full h-10 w-10 bg-gray-900 text-white shadow-md hover:shadow-lg hover:bg-gray-800 transition-all"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full h-10 w-10 bg-gray-900 text-white shadow-md hover:shadow-lg hover:bg-gray-800 transition-all z-50"
         title={t($ => $.chat.scrollToBottom)}
         size="icon"
       >
@@ -181,7 +203,9 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
         </> : <ArrowDown />}
       </Button>
     )}
-  </div>
+      </div>
+    </>
+  )
 }
 
 

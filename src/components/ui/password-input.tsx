@@ -57,6 +57,8 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
             "text-muted-foreground hover:text-foreground",
             // 按钮尺寸调整（使用 h-8 w-8 以适应输入框高度 h-9）
             "h-8 w-8",
+            // 确保按钮始终在浏览器自带的密码显示按钮之上
+            "z-10",
             // 禁用状态样式（继承 input 的 disabled 状态）
             props.disabled && "cursor-not-allowed opacity-50"
           )}

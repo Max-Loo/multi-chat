@@ -43,7 +43,7 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
                   {row.map((chatModel, cellIdx) => (
                     <React.Fragment key={chatModel.modelId}>
                       <ResizablePanel defaultSize={100 / row.length}>
-                        <div className="h-full w-full">
+                        <div className="relative h-full w-full">
                           {/* 具体渲染的内容 */}
                           <ChatPanelContentDetail chatModel={chatModel} />
                         </div>
@@ -73,7 +73,7 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
             return <div
               key={chatModel.modelId}
               className={`
-                flex-1 min-w-0 border-b border-r border-gray-300
+                relative flex-1 min-w-0 border-b border-r border-gray-300
               `}
             >
               {/* 具体渲染的内容 */}

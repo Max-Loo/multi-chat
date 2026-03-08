@@ -44,6 +44,16 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     return isRunning && !content;
   }, [isRunning, content]);
 
+  // 缓存用户消息的 HTML（避免重复生成导致重新渲染）
+  const userContentHtml = useMemo(() => {
+    return generateCleanHtml(content);
+  }, [content]);
+
+  // 缓存 AI 助手消息的 HTML（避免重复生成导致重新渲染）
+  const assistantContentHtml = useMemo(() => {
+    return generateCleanHtml(content);
+  }, [content]);
+
   // 根据角色决定气泡样式和对齐方式
   switch (role) {
     // 用户对话气泡
@@ -54,7 +64,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
             <div
               className="p-4"
               dangerouslySetInnerHTML={{
-                __html: generateCleanHtml(content),
+                __html: userContentHtml,
               }}
             />
           </Card>
@@ -81,7 +91,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
                 <div
                   className="mt-2"
                   dangerouslySetInnerHTML={{
-                    __html: generateCleanHtml(content),
+                    __html: assistantContentHtml,
                   }}
                 />
               )}

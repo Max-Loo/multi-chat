@@ -10,7 +10,7 @@ import { initializeMasterKey } from '@/store/keyring/masterKey';
 import { store } from '@/store';
 import { initializeModels } from '@/store/slices/modelSlice';
 import { initializeChatList } from '@/store/slices/chatSlices';
-import { initializeAppLanguage, initializeIncludeReasoningContent } from '@/store/slices/appConfigSlices';
+import { initializeAppLanguage, initializeIncludeReasoningContent, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
 
 /**
@@ -98,6 +98,20 @@ export const initSteps: InitStep[] = [
     onError: (error) => ({
       severity: 'ignorable',
       message: '推理内容配置加载失败',
+      originalError: error,
+    }),
+  },
+  {
+    name: 'autoNamingEnabled',
+    critical: false,
+    execute: async (context) => {
+      const autoNamingEnabled = await store.dispatch(initializeAutoNamingEnabled()).unwrap();
+      context.setResult('autoNamingEnabled', autoNamingEnabled);
+      return autoNamingEnabled;
+    },
+    onError: (error) => ({
+      severity: 'ignorable',
+      message: '自动命名功能配置加载失败',
       originalError: error,
     }),
   },

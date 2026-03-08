@@ -16,6 +16,7 @@ export const LOCAL_STORAGE_PREFIX = 'multi-chat-'
 export const SUPPORTED_LANGUAGE_LIST = [
   'zh',
   'en',
+  'fr',
 ]
 
 /**
@@ -58,3 +59,8 @@ export const ALLOWED_MODEL_PROVIDERS: readonly string[] = [
  * 本地存储键名：是否在历史消息中传输推理内容
  */
 export const LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY = LOCAL_STORAGE_PREFIX + 'include-reasoning-content';
+
+/**
+ * 本地存储键名：是否启用自动命名功能
+ */
+export const LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY = LOCAL_STORAGE_PREFIX + 'auto-naming-enabled';

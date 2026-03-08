@@ -64,7 +64,7 @@ import type { StandardMessage } from '@/types/chat';
 
 import * as chatStorage from '@/store/storage/chatStorage';
 
-import * as chatService from '@/services/chatService';
+import * as chatService from '@/services/chat';
 
 
 

@@ -2,7 +2,8 @@
  * @description 跳转到聊天页面（带参数）
  */
 
-import { useNavigate, type NavigateOptions } from "react-router-dom"
+import { useNavigate, useSearchParams, type NavigateOptions } from "react-router-dom"
+import { clearUrlSearchParams } from "@/utils/urlUtils"
 
 interface NavigateToChatOptions extends NavigateOptions {
   chatId?: string;
@@ -10,6 +11,7 @@ interface NavigateToChatOptions extends NavigateOptions {
 
 export const useNavigateToChat = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const navigateToChat = ({
     chatId,
@@ -21,7 +23,16 @@ export const useNavigateToChat = () => {
     navigate(path, options)
   }
 
+  /**
+   * 清除 URL 中的 chatId 参数
+   */
+  const clearChatIdParam = () => {
+    const newParams = clearUrlSearchParams(['chatId'], searchParams)
+    setSearchParams(newParams)
+  }
+
   return {
     navigateToChat,
+    clearChatIdParam,
   }
 }

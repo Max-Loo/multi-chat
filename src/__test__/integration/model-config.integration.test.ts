@@ -93,12 +93,12 @@ function setupDefaultStreamMock() {
 }
 
 // Mock chatService 模块
-vi.mock('@/services/chatService', () => ({
+vi.mock('@/services/chat', () => ({
   streamChatCompletion: vi.fn((...args: unknown[]) => mockStreamChatCompletion(...args)),
   getProvider: vi.fn(),
 }));
 
-import { streamChatCompletion } from '@/services/chatService';
+import { streamChatCompletion } from '@/services/chat';
 
 // ========================================
 // 测试套件

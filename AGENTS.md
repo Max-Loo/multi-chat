@@ -155,27 +155,55 @@ models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 
 ### 聊天服务层
 
-使用独立的聊天服务层 (`src/services/chatService.ts`) 统一处理供应商请求。
+使用模块化的聊天服务层统一处理供应商请求，支持流式响应和元数据收集。
+
+实现位置：`src/services/chat/`
+
+### 按需加载机制
+
+使用通用 `ResourceLoader<T>` 类实现资源按需加载，减少初始 bundle 大小约 125KB（gzipped）。
+
+**关键模块**：
+- 通用资源加载器：`src/utils/resourceLoader.ts`
+- 供应商 SDK 加载器：`src/services/chat/providerLoader.ts`
+- 异步 Provider 获取：`src/services/chat/providerFactory.ts`
+- 预加载 Thunk：`src/store/slices/chatSlices.ts:134-184`
+
+**相关变更**：`openspec/changes/lazy-load-provider-sdk/`（包含详细设计决策、性能测试报告）
+
+### 国际化按需加载
+
+使用语言级按需加载策略，减少初始加载量并提升启动速度。
+
+**核心策略**：
+
+- **英文"第一公民"**：英文资源静态打包到主 bundle（~5 KB），确保离线可用
+- **按需加载其他语言**：启动时仅加载英文 + 系统语言（如果支持），节省 33%-67% 初始加载量
+- **智能缓存**：使用 `Map<string, Promise<void>>` 缓存进行中的加载请求，避免快速切换时的竞态条件
 
 **架构**：
 
 ```
-Redux Thunk → ChatService → Vercel AI SDK → 供应商 API
+应用启动
+├── 英文资源（静态加载，零延迟）
+├── 系统语言检测
+└── 系统语言（异步加载，自动切换）
+    └── 加载失败 → 降级到英文 + Toast 警告
 ```
 
-**核心功能**：
+**关键实现**：
 
-1. **供应商特定 Provider**：使用 Vercel AI SDK 官方包（DeepSeek、Kimi、Zhipu）
-2. **流式请求**：`streamChatCompletion()` 使用 `streamText()`
-3. **响应转换**：转换为 `StandardMessage` 格式
+- **资源加载**：`src/lib/i18n.ts` - `loadLanguage()` 函数
+- **缓存机制**：`loadedLanguages` Set + `loadingPromises` Map
+- **错误处理**：指数退避重试（2 次）+ Toast 反馈
+- **用户反馈**：`src/store/middleware/appConfigMiddleware.ts` - Toast 提示
 
-**消息格式**：Vercel AI SDK 标准 Part 数组格式
+**性能优化**：
 
-- `system`: `{ content: '...' }`
-- `user`: `{ content: [{ type: 'text', text: '...' }] }`
-- `assistant`: `{ content: [{ type: 'text', text: '...' }, { type: 'reasoning', text: '...' }] }`
+- 系统语言为英文：从 15 KB → 5 KB（节省 67%）
+- 系统语言为其他：从 15 KB → 10 KB（节省 33%）
 
-详细实现：`src/services/chatService.ts`
+详细实现：`src/lib/i18n.ts`
 
 ### 跨平台兼容性
 
@@ -317,17 +345,21 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 
 ### 按功能查找文件
 
-| 功能需求         | 文件路径                             |
-| ---------------- | ------------------------------------ |
-| 应用初始化配置   | `src/config/initSteps.ts`            |
-| 聊天服务         | `src/services/chatService.ts`        |
-| 远程模型数据获取 | `src/services/modelRemoteService.ts` |
-| 跨平台兼容层     | `src/utils/tauriCompat/index.ts`     |
-| 主密钥管理       | `src/store/keyring/masterKey.ts`     |
-| 加密工具         | `src/utils/crypto.ts`                |
-| 时间戳工具       | `src/utils/utils.ts`                 |
-| 国际化配置       | `src/lib/i18n.ts`                    |
-| 测试规范         | `src/__test__/README.md`             |
+| 功能需求           | 文件路径                                   |
+| ------------------ | ------------------------------------------ |
+| 应用初始化配置     | `src/config/initSteps.ts`                  |
+| 聊天服务         | `src/services/chat/`                       |
+| 远程模型数据获取   | `src/services/modelRemoteService.ts`       |
+| 跨平台兼容层       | `src/utils/tauriCompat/index.ts`           |
+| 主密钥管理         | `src/store/keyring/masterKey.ts`           |
+| 加密工具           | `src/utils/crypto.ts`                      |
+| 时间戳工具         | `src/utils/utils.ts`                       |
+| 国际化配置         | `src/lib/i18n.ts`                          |
+| 代码高亮管理       | `src/utils/highlightLanguageManager.ts`    |
+| 代码块 DOM 更新    | `src/utils/codeBlockUpdater.ts`            |
+| Highlight.js 语言包索引 | `src/utils/highlightLanguageIndex.ts` |
+| Markdown 渲染      | `src/utils/markdown.ts`                    |
+| 测试规范           | `src/__test__/README.md`                   |
 
 ### 按架构层次查找
 
@@ -337,7 +369,7 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 └── src/utils/constants.ts       # 常量定义
 
 服务层
-├── src/services/chatService.ts  # 聊天服务
+├── src/services/chat/           # 聊天服务（模块化）
 └── src/services/modelRemoteService.ts  # 远程数据服务
 
 存储层
@@ -351,6 +383,10 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 工具层
 ├── src/utils/crypto.ts          # 加密工具
 ├── src/utils/utils.ts           # 通用工具
+├── src/utils/highlightLanguageManager.ts  # Highlight.js 语言加载管理器
+├── src/utils/codeBlockUpdater.ts          # 代码块 DOM 更新工具
+├── src/utils/highlightLanguageIndex.ts    # Highlight.js 语言包索引
+├── src/utils/markdown.ts        # Markdown 渲染（集成代码高亮）
 └── src/lib/i18n.ts              # 国际化
 
 测试层

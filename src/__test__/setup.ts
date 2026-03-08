@@ -163,6 +163,14 @@ function createDefaultMockStreamResult() {
 vi.mock('ai', () => ({
   // 提供默认的 mock 实现，返回一个有效的流式结果
   streamText: vi.fn().mockImplementation(() => createDefaultMockStreamResult()),
+  // 添加 generateText 的 mock（用于 titleGenerator 测试）
+  // 默认返回一个有效的生成结果，避免真实 API 调用
+  generateText: vi.fn().mockResolvedValue({
+    text: 'mock generated text',
+    usage: { promptTokens: 10, completionTokens: 5 },
+    finishReason: 'stop',
+    warnings: [],
+  }),
   generateId: vi.fn(() => 'mock-generated-id'),
   // 添加 createIdGenerator 的 mock（用于 fixtures）
   createIdGenerator: vi.fn(() => vi.fn(() => 'mock-id-with-prefix')),
@@ -188,6 +196,14 @@ vi.mock('@ai-sdk/deepseek', () => ({
       // 添加一个 dummy 的 doStream 方法
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       doStream: vi.fn().mockResolvedValue({ stream: [] as any }),
+      // 添加 doGenerate 方法以支持 generateText
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      doGenerate: vi.fn().mockResolvedValue({
+        text: 'mock generated text',
+        usage: { promptTokens: 10, completionTokens: 5 },
+        finishReason: 'stop',
+        warnings: [],
+      }),
     }));
   }),
 }));
@@ -208,6 +224,13 @@ vi.mock('@ai-sdk/moonshotai', () => ({
       defaultMaxTokens: 4096,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       doStream: vi.fn().mockResolvedValue({ stream: [] as any }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      doGenerate: vi.fn().mockResolvedValue({
+        text: 'mock generated text',
+        usage: { promptTokens: 10, completionTokens: 5 },
+        finishReason: 'stop',
+        warnings: [],
+      }),
     }));
   }),
 }));
@@ -228,6 +251,13 @@ vi.mock('zhipu-ai-provider', () => ({
       defaultMaxTokens: 4096,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       doStream: vi.fn().mockResolvedValue({ stream: [] as any }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      doGenerate: vi.fn().mockResolvedValue({
+        text: 'mock generated text',
+        usage: { promptTokens: 10, completionTokens: 5 },
+        finishReason: 'stop',
+        warnings: [],
+      }),
     }));
   }),
 }));

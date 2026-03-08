@@ -13,6 +13,8 @@ export interface Chat {
   chatModelList?: ChatModel[];
   // 标识是否已经删除，不执行真删除
   isDeleted?: boolean;
+  // 标识用户是否手动命名过（手动命名后不再触发自动命名）
+  isManuallyNamed?: boolean;
 }
 
 // 聊天角色枚举值

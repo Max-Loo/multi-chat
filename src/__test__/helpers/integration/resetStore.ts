@@ -5,6 +5,7 @@ import chatPageReducer from '@/store/slices/chatPageSlices'
 import appConfigReducer from '@/store/slices/appConfigSlices'
 import modelProviderReducer from '@/store/slices/modelProviderSlice'
 import { saveDefaultAppLanguage } from '@/store/middleware/appConfigMiddleware'
+import { saveChatListMiddleware } from '@/store/middleware/chatMiddleware'
 import type { RootState } from '@/store'
 
 /**
@@ -32,7 +33,9 @@ export function getTestStore(): EnhancedStore<RootState> {
         getDefaultMiddleware({
           immutableCheck: false,
           serializableCheck: false,
-        }).prepend(saveDefaultAppLanguage.middleware),
+        })
+          .prepend(saveDefaultAppLanguage.middleware)
+          .concat(saveChatListMiddleware.middleware),
     })
   }
   return testStore

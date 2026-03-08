@@ -41,9 +41,11 @@ vi.mock('react-router-dom', async () => {
  * Mock useNavigateToChat hook (internal navigation hook)
  */
 const mockNavigateToChat = vi.fn();
+const mockClearChatIdParam = vi.fn();
 vi.mock('@/hooks/useNavigateToPage', () => ({
   useNavigateToChat: () => ({
     navigateToChat: mockNavigateToChat,
+    clearChatIdParam: mockClearChatIdParam,
   }),
 }));
 
@@ -112,7 +114,7 @@ describe('ChatPage 行为测试', () => {
     });
 
     await waitFor(() => {
-      expect(mockNavigateToChat).toHaveBeenCalledWith({ replace: true });
+      expect(mockClearChatIdParam).toHaveBeenCalledWith();
     });
   });
 
@@ -168,7 +170,7 @@ describe('ChatPage 行为测试', () => {
     });
 
     await waitFor(() => {
-      expect(mockNavigateToChat).toHaveBeenCalledWith({ replace: true });
+      expect(mockClearChatIdParam).toHaveBeenCalledWith();
     });
   });
 
@@ -218,7 +220,7 @@ describe('ChatPage 行为测试', () => {
 
     await waitFor(() => {
       // 加载完成后应执行检查并重定向（因为列表为空）
-      expect(mockNavigateToChat).toHaveBeenCalledWith({ replace: true });
+      expect(mockClearChatIdParam).toHaveBeenCalledWith();
     });
   });
 

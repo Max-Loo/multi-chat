@@ -47,11 +47,27 @@ vi.mock('@/services/chatService', () => ({
   streamChatCompletion: vi.fn(),
 }));
 
+// Mock providerLoader 模块
+const mockPreloadProviders = vi.fn<() => Promise<void>>(() => Promise.resolve());
+vi.mock('@/services/chat/providerLoader', () => ({
+  getProviderSDKLoader: () => ({
+    loadProvider: vi.fn().mockResolvedValue((config: any) => (modelId: string) => ({
+      modelId,
+      provider: 'mock-provider',
+      ...config,
+    })),
+    isProviderLoaded: vi.fn(),
+    getProviderState: vi.fn(),
+    preloadProviders: mockPreloadProviders,
+  }),
+}));
+
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer, {
   clearError,
   clearInitializationError,
   createChat,
+  setSelectedChatIdWithPreload,
 } from '@/store/slices/chatSlices';
 import modelReducer from '@/store/slices/modelSlice';
 
@@ -90,7 +106,7 @@ describe('chatSlices', () => {
       reducer: {
         chat: chatReducer,
         models: modelReducer,
-        appConfig: (state = { includeReasoningContent: false, language: '' }) => state,
+        appConfig: (state = { includeReasoningContent: false, language: '', autoNamingEnabled: true }) => state,
       },
     });
   };
@@ -99,6 +115,7 @@ describe('chatSlices', () => {
     vi.clearAllMocks();
     // 重置 mock 返回默认值
     mockLoadChatsFromJson.mockResolvedValue([]);
+    mockPreloadProviders.mockClear();
     store = createTestStore();
   });
 
@@ -360,6 +377,128 @@ describe('chatSlices', () => {
 
       const state = store.getState().chat;
       expect(state.runningChat[chat.id]?.[model.id]?.history).toEqual(message);
+    });
+  });
+
+  describe('editChatName - 自动命名相关', () => {
+    it('应该在编辑聊天名称时设置 isManuallyNamed 为 true', () => {
+      const chat = createMockChat({ name: 'Old Name' });
+      store.dispatch(createChat({ chat }));
+
+      // 编辑聊天名称
+      store.dispatch({
+        type: 'chat/editChatName',
+        payload: { id: chat.id, name: 'New Name' },
+      });
+
+      const state = store.getState().chat;
+      expect(state.chatList[0].name).toBe('New Name');
+      expect(state.chatList[0].isManuallyNamed).toBe(true);
+    });
+
+    it('应该拒绝编辑为空名称（保持原有名称）', () => {
+      const chat = createMockChat({ name: 'Old Name' });
+      store.dispatch(createChat({ chat }));
+
+      // 尝试编辑为空名称（应该被拒绝）
+      store.dispatch({
+        type: 'chat/editChatName',
+        payload: { id: chat.id, name: '' },
+      });
+
+      const state = store.getState().chat;
+      // 名称应该保持不变
+      expect(state.chatList[0].name).toBe('Old Name');
+      // isManuallyNamed 应该保持 undefined（因为没有更新）
+      expect(state.chatList[0].isManuallyNamed).toBeUndefined();
+    });
+
+    it('应该拒绝编辑为仅空白字符的名称', () => {
+      const chat = createMockChat({ name: 'Old Name' });
+      store.dispatch(createChat({ chat }));
+
+      // 尝试编辑为仅空白字符（应该被拒绝）
+      store.dispatch({
+        type: 'chat/editChatName',
+        payload: { id: chat.id, name: '   ' },
+      });
+
+      const state = store.getState().chat;
+      // 名称应该保持不变
+      expect(state.chatList[0].name).toBe('Old Name');
+      // isManuallyNamed 应该保持 undefined
+      expect(state.chatList[0].isManuallyNamed).toBeUndefined();
+    });
+  });
+
+  describe('generateChatName - 自动标题生成', () => {
+    it('应该在成功生成标题时更新聊天名称', () => {
+      const chat = createMockChat({ name: undefined });
+      store.dispatch(createChat({ chat }));
+
+      // Dispatch fulfilled action with generated title
+      store.dispatch({
+        type: 'chat/generateName/fulfilled',
+        payload: { chatId: chat.id, name: 'Generated Title' },
+      });
+
+      const state = store.getState().chat;
+      expect(state.chatList[0].name).toBe('Generated Title');
+      expect(state.chatList[0].isManuallyNamed).toBeUndefined(); // 保持 undefined，允许手动覆盖
+    });
+
+    it('应该在失败时不更新聊天名称', () => {
+      const chat = createMockChat({ name: undefined });
+      store.dispatch(createChat({ chat }));
+
+      // Dispatch fulfilled action with null (失败情况)
+      store.dispatch({
+        type: 'chat/generateName/fulfilled',
+        payload: null,
+      });
+
+      const state = store.getState().chat;
+      expect(state.chatList[0].name).toBeUndefined();
+    });
+
+    it('应该在聊天不存在时不抛出错误', () => {
+      // Dispatch fulfilled action for non-existent chat
+      expect(() => {
+        store.dispatch({
+          type: 'chat/generateName/fulfilled',
+          payload: { chatId: 'non-existent-chat', name: 'Title' },
+        });
+      }).not.toThrow();
+    });
+  });
+
+  describe('setSelectedChatIdWithPreload - 预加载机制', () => {
+    it('应该在新聊天（无模型）时跳过预加载', async () => {
+      const chat = createMockChat({
+        chatModelList: [], // 新聊天，没有模型
+      });
+
+      // 添加聊天到 store
+      store.dispatch(createChat({ chat }));
+
+      // 切换到新聊天
+      await store.dispatch(setSelectedChatIdWithPreload(chat.id));
+
+      // 验证 selectedChatId 被更新
+      expect(store.getState().chat.selectedChatId).toBe(chat.id);
+
+      // 验证 preloadProviders 未被调用（新聊天没有模型）
+      expect(mockPreloadProviders).not.toHaveBeenCalled();
+    });
+
+    it('应该在聊天不存在时跳过预加载', async () => {
+      const nonExistentChatId = 'non-existent-chat-id';
+
+      // 尝试切换到不存在的聊天
+      await store.dispatch(setSelectedChatIdWithPreload(nonExistentChatId));
+
+      // 验证 preloadProviders 未被调用（聊天不存在）
+      expect(mockPreloadProviders).not.toHaveBeenCalled();
     });
   });
 

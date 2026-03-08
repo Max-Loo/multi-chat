@@ -1,0 +1,10 @@
+{
+  "nickname": "Surnom",
+  "modelProvider": "Fournisseur de modèles",
+  "modelName": "Nom du modèle",
+  "lastUpdateTime": "Dernière mise à jour",
+  "createTime": "Date de création",
+  "operation": "Opération",
+  "emptyData": "Aucune donnée disponible",
+  "loading": "Chargement..."
+}
