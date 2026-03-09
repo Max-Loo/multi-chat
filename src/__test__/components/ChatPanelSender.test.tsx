@@ -52,7 +52,7 @@ const createTestStore = (state: Partial<RootState>) => {
   return configureStore({
     reducer: {
       chat: chatReducer,
-      appConfig: (state = { includeReasoningContent: false, language: 'en' }) => state,
+      appConfig: (configState = { includeReasoningContent: false, language: 'en' }) => configState,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Reason: Redux Toolkit 严格类型系统限制
     } as any,

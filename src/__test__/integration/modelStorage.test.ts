@@ -1,63 +1,67 @@
 /**
  * modelStorage.ts 集成测试
- * 测试模型数据的加密存储和加载功能
- *
+ * 测试模型数据的加密存储和解密加载功能
+ * 
  * 使用真实实现：
  * - fake-indexeddb 模拟 Tauri store
  * - 真实的 Web Crypto API 加密/解密
  * - 真实的 masterKey 管理（IndexedDB + AES-256-GCM）
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Model } from '@/types/model';
-import {
-  saveModelsToJson,
-  loadModelsFromJson,
-} from '@/store/storage/modelStorage';
+import { saveModelsToJson, loadModelsFromJson } from '@/store/storage/modelStorage';
 import { storeMasterKey, getMasterKey } from '@/store/keyring/masterKey';
 import { WebKeyringCompat } from '@/utils/tauriCompat/keyring';
 import { createMockModel } from '@/__test__/fixtures/models';
 
-// 导入 fake-indexeddb（必须在其他导入之前）
-import 'fake-indexeddb/auto';
+// fake-indexeddb/auto 已在 setup.ts 中全局导入
 
 describe('modelStorage (Integration Test)', () => {
   // WebKeyringCompat 实例用于清理
   let keyringCompat: WebKeyringCompat;
 
-  beforeAll(async () => {
-    // 清理 IndexedDB 和 localStorage
+  beforeEach(async () => {
+    // 关闭之前的连接
+    if (keyringCompat) {
+      keyringCompat.close();
+    }
+
+    // 清理 IndexedDB（multi-chat-store 和 multi-chat-keyring）
+    // 等待数据库删除完成，避免竞争条件
     await Promise.all([
-      new Promise<void>((resolve) => {
-        const req = indexedDB.deleteDatabase('multi-chat-store');
-        req.addEventListener('success', () => resolve());
-        req.addEventListener('blocked', () => resolve());
-        req.addEventListener('error', () => resolve());
+      new Promise<void>((resolve, reject) => {
+        const request = indexedDB.deleteDatabase('multi-chat-store');
+        request.addEventListener('success', () => resolve());
+        request.addEventListener('error', () => reject(request.error));
       }),
-      new Promise<void>((resolve) => {
-        const req = indexedDB.deleteDatabase('multi-chat-keyring');
-        req.addEventListener('success', () => resolve());
-        req.addEventListener('blocked', () => resolve());
-        req.addEventListener('error', () => resolve());
+      new Promise<void>((resolve, reject) => {
+        const request = indexedDB.deleteDatabase('multi-chat-keyring');
+        request.addEventListener('success', () => resolve());
+        request.addEventListener('error', () => reject(request.error));
       }),
     ]);
 
-    // 清理 localStorage
+    // 清理 localStorage（keyring 种子）
     localStorage.clear();
 
-    // 创建 keyring 实例
+    // 等待一小段时间确保清理完成
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // 创建新的 keyring 实例
     keyringCompat = new WebKeyringCompat();
 
-    // 初始化 masterKey
+    // 初始化并生成 masterKey
     const masterKey = await getMasterKey();
     if (!masterKey) {
-      const newKey = Array.from({ length: 32 }, () =>
+      // 生成新的 masterKey
+      const newKey = Array.from({ length: 32 }, () => 
         Math.floor(Math.random() * 256).toString(16).padStart(2, '0')
       ).join('');
       await storeMasterKey(newKey);
     }
   });
 
-  afterAll(() => {
+  afterEach(() => {
     // 关闭 keyring 连接
     if (keyringCompat) {
       keyringCompat.close();

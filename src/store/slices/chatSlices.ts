@@ -255,7 +255,7 @@ export const startSendChatMessage = createAsyncThunk<
     } = chat
 
     await Promise.all(chatModelList.map((chatModel) => {
-      const model = models.find(model => model.id === chatModel.modelId)
+      const model = models.find(m => m.id === chatModel.modelId)
       // 只有当模型没有被删除，且已经启用的时候，才会进行发送
       if (isNotNil(model) && !model.isDeleted && model.isEnable) {
         return dispatch(sendMessage({
