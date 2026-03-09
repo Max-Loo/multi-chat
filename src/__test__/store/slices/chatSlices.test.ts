@@ -106,7 +106,7 @@ describe('chatSlices', () => {
       reducer: {
         chat: chatReducer,
         models: modelReducer,
-        appConfig: (state = { includeReasoningContent: false, language: '', autoNamingEnabled: true }) => state,
+        appConfig: (state = { transmitHistoryReasoning: false, language: '', autoNamingEnabled: true }) => state,
       },
     });
   };

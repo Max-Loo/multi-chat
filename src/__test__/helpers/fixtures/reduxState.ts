@@ -38,7 +38,7 @@ export const createMockChatPageState = (
  * ```ts
  * const state = createMockAppConfigState({
  *   language: 'en',
- *   includeReasoningContent: true
+ *   transmitHistoryReasoning: true
  * });
  * ```
  */
@@ -46,7 +46,7 @@ export const createMockAppConfigState = (
   overrides?: Partial<AppConfigSliceState>
 ): AppConfigSliceState => ({
   language: 'zh',
-  includeReasoningContent: false,
+  transmitHistoryReasoning: false,
   autoNamingEnabled: true,
   ...overrides,
 });

@@ -133,7 +133,7 @@ describe('Redux Hooks', () => {
 
       expect(result.current).toBeDefined();
       expect(result.current.language).toBe('');
-      expect(result.current.includeReasoningContent).toBe(false);
+      expect(result.current.transmitHistoryReasoning).toBe(false);
     });
 
     it('应支持复杂的选择器逻辑', () => {

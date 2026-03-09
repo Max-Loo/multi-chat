@@ -1,11 +1,14 @@
-# Reasoning Content Propagation Spec
+# Reasoning Content Propagation Spec - Delta
 
-推理内容传播能力的详细规格说明。
+修复推理内容渲染问题并重命名参数的增量规格。
 
-## ADDED Requirements
+## RENAMED Requirements
 
 ### Requirement: 在历史消息中包含推理内容
-系统 SHALL 在构建发送给模型的历史消息时，根据用户设置的开关状态，将助手的推理内容（`reasoningContent`）包含在消息中。
+参数名变更：`includeReasoningContent` → `transmitHistoryReasoning`
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
 
 #### Scenario: 按钮选中时包含推理内容
 - **WHEN** 用户选中了"传输推理内容"按钮
@@ -29,7 +32,10 @@
 - **AND** 消息格式保持不变
 
 ### Requirement: 保持消息格式向后兼容
-系统 SHALL 确保修改后的消息格式与所有模型供应商（DeepSeek、Moonshot、Zhipu）的 API 兼容，不破坏现有功能。
+无行为变更，仅参数名更新。
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
 
 #### Scenario: DeepSeek 供应商兼容性
 - **WHEN** 发送包含推理内容的消息到 DeepSeek API
@@ -47,7 +53,10 @@
 - **AND** 不抛出格式错误或验证错误
 
 ### Requirement: 推理内容格式标准化
-系统 SHALL 使用 Vercel AI SDK 的原生 `reasoning` part 类型标记推理内容，确保模型能够正确理解和区分推理与最终回复。
+无行为变更。
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
 
 #### Scenario: 使用标准 reasoning part 类型
 - **WHEN** 格式化推理内容
@@ -61,7 +70,10 @@
 - **AND** 不对推理内容进行转义或修改
 
 ### Requirement: 空推理内容的优雅处理
-系统 SHALL 优雅处理各种空值情况（空字符串、null、undefined），避免添加无意义的标签。
+无行为变更。
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
 
 #### Scenario: 空字符串推理内容
 - **WHEN** `reasoningContent` 为空字符串 `""`
@@ -74,7 +86,10 @@
 - **AND** 消息保持原始格式
 
 ### Requirement: 提供用户控制的切换按钮
-系统 SHALL 在聊天界面提供切换按钮控件，允许用户控制是否传输历史推理内容。
+无行为变更，仅内部变量名更新。
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
 
 #### Scenario: 切换按钮可见性
 - **WHEN** 用户在聊天页面
@@ -103,7 +118,10 @@
 - **AND** 无需刷新页面或重新开始对话
 
 ### Requirement: 按钮状态传递到服务层
-系统 SHALL 将 UI 按钮状态通过参数传递到聊天服务层，控制消息构建行为。
+参数名变更：`includeReasoningContent` → `transmitHistoryReasoning`
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
 
 #### Scenario: 选中状态传递
 - **WHEN** 用户选中按钮并发送消息
@@ -114,6 +132,8 @@
 - **WHEN** 用户取消选中按钮并发送消息
 - **THEN** `streamChatCompletion` 函数接收 `transmitHistoryReasoning: false`
 - **AND** `buildMessages` 函数据此不添加推理内容
+
+## ADDED Requirements
 
 ### Requirement: 无条件保存推理内容
 系统 SHALL 无条件保存 API 返回的推理内容（`reasoning-delta` 事件），无论用户是否选择传输历史推理内容。

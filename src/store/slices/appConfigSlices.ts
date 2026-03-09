@@ -1,19 +1,19 @@
 import { getDefaultAppLanguage } from "@/lib/global";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
+import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
 
 export interface AppConfigSliceState {
   // 当前应用的语言类型
   language: string;
   // 是否在历史消息中传输推理内容（默认 false）
-  includeReasoningContent: boolean;
+  transmitHistoryReasoning: boolean;
   // 是否启用自动命名功能（默认 true）
   autoNamingEnabled: boolean;
 }
 
 const initialState: AppConfigSliceState = {
   language: '',
-  includeReasoningContent: false,
+  transmitHistoryReasoning: false,
   autoNamingEnabled: true,
 }
 
@@ -36,14 +36,14 @@ export const initializeAppLanguage = createAsyncThunk(
  * 初始化是否传输推理内容的开关状态
  * @returns 从 localStorage 读取的开关状态，默认为 false
  */
-export const initializeIncludeReasoningContent = createAsyncThunk(
-  'appConfig/includeReasoningContent/initialize',
+export const initializeTransmitHistoryReasoning = createAsyncThunk(
+  'appConfig/transmitHistoryReasoning/initialize',
   async () => {
     try {
-      const storedValue = localStorage.getItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY);
+      const storedValue = localStorage.getItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY);
       return storedValue === 'true';
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Fail to initialize includeReasoningContent', { cause: error });
+      throw new Error(error instanceof Error ? error.message : 'Fail to initialize transmitHistoryReasoning', { cause: error });
     }
   },
 )
@@ -72,8 +72,8 @@ const appConfigSlice = createSlice({
     setAppLanguage: (state, action: PayloadAction<string>) => {
       state.language = action.payload
     },
-    setIncludeReasoningContent: (state, action: PayloadAction<boolean>) => {
-      state.includeReasoningContent = action.payload
+    setTransmitHistoryReasoning: (state, action: PayloadAction<boolean>) => {
+      state.transmitHistoryReasoning = action.payload
     },
     setAutoNamingEnabled: (state, action: PayloadAction<boolean>) => {
       state.autoNamingEnabled = action.payload
@@ -86,8 +86,8 @@ const appConfigSlice = createSlice({
         state.language = action.payload
       })
       // 初始化是否传输推理内容的开关状态
-      .addCase(initializeIncludeReasoningContent.fulfilled, (state, action) => {
-        state.includeReasoningContent = action.payload
+      .addCase(initializeTransmitHistoryReasoning.fulfilled, (state, action) => {
+        state.transmitHistoryReasoning = action.payload
       })
       // 初始化自动命名功能开关状态
       .addCase(initializeAutoNamingEnabled.fulfilled, (state, action) => {
@@ -99,7 +99,7 @@ const appConfigSlice = createSlice({
 
 export const {
   setAppLanguage,
-  setIncludeReasoningContent,
+  setTransmitHistoryReasoning,
   setAutoNamingEnabled,
 } = appConfigSlice.actions;
 
@@ -108,7 +108,7 @@ export const {
  * @param state Redux store 的 RootState
  * @returns 当前开关状态（true 表示开启，false 表示关闭）
  */
-export const selectIncludeReasoningContent = (state: { appConfig: AppConfigSliceState }) => state.appConfig.includeReasoningContent;
+export const selectTransmitHistoryReasoning = (state: { appConfig: AppConfigSliceState }) => state.appConfig.transmitHistoryReasoning;
 
 /**
  * 选择器：获取自动命名功能开关状态

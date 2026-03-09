@@ -22,7 +22,7 @@ vi.mock('@/lib/i18n', () => ({
 
 import { configureStore } from '@reduxjs/toolkit';
 import { saveDefaultAppLanguage } from '@/store/middleware/appConfigMiddleware';
-import { setAppLanguage, setIncludeReasoningContent } from '@/store/slices/appConfigSlices';
+import { setAppLanguage, setTransmitHistoryReasoning } from '@/store/slices/appConfigSlices';
 import appConfigReducer from '@/store/slices/appConfigSlices';
 import modelReducer from '@/store/slices/modelSlice';
 import chatReducer from '@/store/slices/chatSlices';
@@ -30,7 +30,7 @@ import chatPageReducer from '@/store/slices/chatPageSlices';
 import modelProviderReducer from '@/store/slices/modelProviderSlice';
 import { changeAppLanguage } from '@/lib/i18n';
 import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
-import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY } from '@/utils/constants';
+import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY } from '@/utils/constants';
 import { toast } from 'sonner';
 
 const mockChangeAppLanguage = vi.mocked(changeAppLanguage);
@@ -153,7 +153,7 @@ describe('appConfigMiddleware', () => {
   describe('推理内容配置的持久化', () => {
     it('应该将推理内容配置持久化到 localStorage 当启用时', async () => {
       const includeReasoning = true;
-      store.dispatch(setIncludeReasoningContent(includeReasoning));
+      store.dispatch(setTransmitHistoryReasoning(includeReasoning));
 
       // 等待异步 effect 完成
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -161,17 +161,17 @@ describe('appConfigMiddleware', () => {
       // 验证 localStorage.setItem 被调用
       expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY,
+        LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY,
         String(includeReasoning)
       );
 
       // 验证 state 被更新
-      expect(store.getState().appConfig.includeReasoningContent).toBe(includeReasoning);
+      expect(store.getState().appConfig.transmitHistoryReasoning).toBe(includeReasoning);
     });
 
     it('应该将推理内容配置持久化到 localStorage 当禁用时', async () => {
       const includeReasoning = false;
-      store.dispatch(setIncludeReasoningContent(includeReasoning));
+      store.dispatch(setTransmitHistoryReasoning(includeReasoning));
 
       // 等待异步 effect 完成
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -179,12 +179,12 @@ describe('appConfigMiddleware', () => {
       // 验证 localStorage.setItem 被调用
       expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY,
+        LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY,
         String(includeReasoning)
       );
 
       // 验证 state 被更新
-      expect(store.getState().appConfig.includeReasoningContent).toBe(includeReasoning);
+      expect(store.getState().appConfig.transmitHistoryReasoning).toBe(includeReasoning);
     });
   });
 
@@ -206,16 +206,16 @@ describe('appConfigMiddleware', () => {
       expect(mockChangeAppLanguage).toHaveBeenCalledWith(lang);
     });
 
-    it('应该在 setIncludeReasoningContent action 触发时执行持久化但不调用 i18n 更新', async () => {
+    it('应该在 setTransmitHistoryReasoning action 触发时执行持久化但不调用 i18n 更新', async () => {
       const includeReasoning = true;
-      store.dispatch(setIncludeReasoningContent(includeReasoning));
+      store.dispatch(setTransmitHistoryReasoning(includeReasoning));
 
       // 等待异步 effect 完成
       await new Promise(resolve => setTimeout(resolve, 0));
 
       // 验证监听器执行了持久化逻辑
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY,
+        LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY,
         String(includeReasoning)
       );
 
@@ -262,7 +262,7 @@ describe('appConfigMiddleware', () => {
 
       // Dispatch 多个 action
       store.dispatch(setAppLanguage('zh'));
-      store.dispatch(setIncludeReasoningContent(true));
+      store.dispatch(setTransmitHistoryReasoning(true));
       store.dispatch(setAppLanguage('en'));
 
       // 等待异步 effect 完成
@@ -270,7 +270,7 @@ describe('appConfigMiddleware', () => {
 
       // 验证所有 action 都被处理
       expect(store.getState().appConfig.language).toBe('en');
-      expect(store.getState().appConfig.includeReasoningContent).toBe(true);
+      expect(store.getState().appConfig.transmitHistoryReasoning).toBe(true);
 
       // 验证副作用被执行了多次（每个 action）
       expect(global.localStorage.setItem).toHaveBeenCalledTimes(3);
@@ -315,9 +315,9 @@ describe('appConfigMiddleware', () => {
 
     it('应该正确处理连续的推理内容切换', async () => {
       // 连续 dispatch 多个推理内容切换
-      store.dispatch(setIncludeReasoningContent(true));
-      store.dispatch(setIncludeReasoningContent(false));
-      store.dispatch(setIncludeReasoningContent(true));
+      store.dispatch(setTransmitHistoryReasoning(true));
+      store.dispatch(setTransmitHistoryReasoning(false));
+      store.dispatch(setTransmitHistoryReasoning(true));
 
       // 等待异步 effect 完成
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -326,7 +326,7 @@ describe('appConfigMiddleware', () => {
       expect(global.localStorage.setItem).toHaveBeenCalledTimes(3);
 
       // 验证最终状态
-      expect(store.getState().appConfig.includeReasoningContent).toBe(true);
+      expect(store.getState().appConfig.transmitHistoryReasoning).toBe(true);
     });
   });
 

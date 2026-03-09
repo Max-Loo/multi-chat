@@ -43,7 +43,7 @@ export async function* processStreamEvents(
   options: ProcessStreamOptions
 ): AsyncIterable<StandardMessage> {
   const stream = result.fullStream;
-  const { conversationId, timestamp, modelKey, includeReasoningContent, throttleInterval = 50 } = options;
+  const { conversationId, timestamp, modelKey, throttleInterval = 50 } = options;
 
   let content = '';
   let reasoningContent = '';
@@ -69,10 +69,8 @@ export async function* processStreamEvents(
         textDeltaCount++;
         break;
       case 'reasoning-delta':
-        if (includeReasoningContent) {
-          reasoningContent += streamPart.text ?? '';
-          reasoningDeltaCount++;
-        }
+        reasoningContent += streamPart.text ?? '';
+        reasoningDeltaCount++;
         break;
       default:
         // 忽略其他事件类型
