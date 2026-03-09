@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.2.4] - 2026-03-10
+
+### ✨ 新功能
+
+- **国际化翻译完整性检查**：新增自动化工具验证所有支持语言的翻译文件具有相同的键值结构，确保不存在遗漏的翻译
+- **法语翻译完善**：补充法语翻译内容（`fr/setting.json`）
+- **添加 LICENSE**：添加 MIT 许可证
+- **README 更新**：完善项目文档和使用说明
+
+### 🐛 Bug 修复
+
+- **修复 reasoning content 缺失的问题**：确保推理内容正确传播和显示
+- **修复翻译检查工具的依赖问题**：确保检查脚本正确运行
+
+### ⚡ 性能优化
+
+- **升级 fake-indexeddb**：从 5.x 升级到 6.x，提升测试环境性能
+- **升级 lucide-react**：升级图标库到最新版本，获取最新的图标和修复
+- **批量更新依赖**：更新生产依赖和开发依赖到最新稳定版本
+- **集成翻译检查到 pre-commit hook**：在提交前自动验证翻译完整性
+
+### 🧪 测试增强
+
+- **新增模型存储集成测试**：为模型存储功能添加完整的集成测试（`modelStorage.integration.test.ts`）
+- **新增 IndexedDB 测试**：为 IndexedDB 兼容层添加测试（`test-indexeddb.test.ts`）
+- **新增 Keyring 测试**：为 Keyring 功能添加测试（`test-keyring.test.ts`）
+- **测试文档完善**：更新测试 README，补充测试策略说明
+
+### 🔧 重构
+
+- **优化 fake-indexeddb 升级**：重构 IndexedDB mock 实现，提升测试可靠性
+- **分离测试工具文件**：将测试专用工具提取到独立文件（`test-indexeddb.test.ts`、`test-keyring.test.ts`）
+
+---
+
 ## [0.2.3] - 2026-03-08
 
 ### ✨ 新功能
