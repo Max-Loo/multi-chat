@@ -10,7 +10,7 @@ import { initializeMasterKey } from '@/store/keyring/masterKey';
 import { store } from '@/store';
 import { initializeModels } from '@/store/slices/modelSlice';
 import { initializeChatList } from '@/store/slices/chatSlices';
-import { initializeAppLanguage, initializeIncludeReasoningContent, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
+import { initializeAppLanguage, initializeTransmitHistoryReasoning, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
 
 /**
@@ -88,12 +88,12 @@ export const initSteps: InitStep[] = [
     }),
   },
   {
-    name: 'includeReasoningContent',
+    name: 'transmitHistoryReasoning',
     critical: false,
     execute: async (context) => {
-      const includeReasoningContent = await store.dispatch(initializeIncludeReasoningContent()).unwrap();
-      context.setResult('includeReasoningContent', includeReasoningContent);
-      return includeReasoningContent;
+      const transmitHistoryReasoning = await store.dispatch(initializeTransmitHistoryReasoning()).unwrap();
+      context.setResult('transmitHistoryReasoning', transmitHistoryReasoning);
+      return transmitHistoryReasoning;
     },
     onError: (error) => ({
       severity: 'ignorable',

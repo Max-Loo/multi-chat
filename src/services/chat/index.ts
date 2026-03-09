@@ -81,7 +81,7 @@ export async function* streamChatCompletion(
     historyList,
     message,
     conversationId = generateIdFn(),
-    includeReasoningContent = false,
+    transmitHistoryReasoning = false,
     throttleInterval = 50, // 默认 50ms 节流
   } = params;
 
@@ -89,7 +89,7 @@ export async function* streamChatCompletion(
   const provider = await getProvider(model.providerKey, model.apiKey, model.apiAddress);
   
   // 2. 构建消息
-  const messages = buildMessages(historyList, message, includeReasoningContent);
+  const messages = buildMessages(historyList, message, transmitHistoryReasoning);
 
   // 3. 调用 AI SDK
   const result = streamTextFn({
@@ -104,7 +104,6 @@ export async function* streamChatCompletion(
       conversationId,
       timestamp: getCurrentTimestamp(),
       modelKey: model.modelKey,
-      includeReasoningContent,
       throttleInterval,
     });
   } catch (error) {

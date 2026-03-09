@@ -26,8 +26,8 @@ vi.mock('react-i18next', () => ({
             sendMessage: '发送消息',
             stopSending: '停止发送',
             typeMessage: '输入消息...',
-            includeReasoningContent: '包含推理内容',
-            includeReasoningContentHint: '是否在聊天历史中传输推理内容',
+            transmitHistoryReasoning: '包含推理内容',
+            transmitHistoryReasoningHint: '是否在聊天历史中传输推理内容',
           },
           common: {
             cancel: '取消',
@@ -38,8 +38,8 @@ vi.mock('react-i18next', () => ({
         'chat.sendMessage': '发送消息',
         'chat.stopSending': '停止发送',
         'chat.typeMessage': '输入消息...',
-        'chat.includeReasoningContent': '包含推理内容',
-        'chat.includeReasoningContentHint': '是否在聊天历史中传输推理内容',
+        'chat.transmitHistoryReasoning': '包含推理内容',
+        'chat.transmitHistoryReasoningHint': '是否在聊天历史中传输推理内容',
         'common.cancel': '取消',
       };
       return translations[keyOrFn] || keyOrFn;
@@ -52,7 +52,7 @@ const createTestStore = (state: Partial<RootState>) => {
   return configureStore({
     reducer: {
       chat: chatReducer,
-      appConfig: (state = { includeReasoningContent: false, language: 'en' }) => state,
+      appConfig: (state = { transmitHistoryReasoning: false, language: 'en' }) => state,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Reason: Redux Toolkit 严格类型系统限制
     } as any,
@@ -91,7 +91,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -118,7 +118,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -147,7 +147,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -176,7 +176,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -211,7 +211,7 @@ describe('ChatPanelSender', () => {
           },
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -244,7 +244,7 @@ describe('ChatPanelSender', () => {
           },
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -274,7 +274,7 @@ describe('ChatPanelSender', () => {
           },
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -307,7 +307,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -336,7 +336,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -386,7 +386,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -429,7 +429,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -466,7 +466,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -503,7 +503,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -528,7 +528,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -560,7 +560,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -596,7 +596,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -625,7 +625,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },
@@ -657,7 +657,7 @@ describe('ChatPanelSender', () => {
           runningChat: {},
         },
         appConfig: {
-          includeReasoningContent: false,
+          transmitHistoryReasoning: false,
           autoNamingEnabled: true,
           language: 'en',
         },

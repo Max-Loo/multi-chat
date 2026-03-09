@@ -1,8 +1,8 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import { RootState } from "..";
-import { setAppLanguage, setIncludeReasoningContent, setAutoNamingEnabled } from "../slices/appConfigSlices";
+import { setAppLanguage, setTransmitHistoryReasoning, setAutoNamingEnabled } from "../slices/appConfigSlices";
 import { LOCAL_STORAGE_LANGUAGE_KEY } from "@/lib/global";
-import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
+import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
 import { changeAppLanguage } from "@/lib/i18n";
 import { toast } from 'sonner';
 
@@ -48,11 +48,11 @@ saveDefaultAppLanguage.startListening({
  */
 saveDefaultAppLanguage.startListening({
   matcher: isAnyOf(
-    setIncludeReasoningContent,
+    setTransmitHistoryReasoning,
   ),
   effect: async (_, listenerApi) => {
-    const includeReasoningContent = listenerApi.getState().appConfig.includeReasoningContent
-    localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, String(includeReasoningContent))
+    const transmitHistoryReasoning = listenerApi.getState().appConfig.transmitHistoryReasoning
+    localStorage.setItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, String(transmitHistoryReasoning))
   },
 })
 

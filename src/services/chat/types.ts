@@ -42,7 +42,7 @@ export interface ChatRequestParams {
   /** 对话唯一标识（可选，不传则自动生成） */
   conversationId?: string;
   /** 是否在历史消息中传输推理内容（默认 false） */
-  includeReasoningContent?: boolean;
+  transmitHistoryReasoning?: boolean;
   /** 节流间隔（毫秒），用于限制 Redux store 更新频率，默认 50ms，0 表示不节流（仅用于测试） */
   throttleInterval?: number;
 }
@@ -100,8 +100,6 @@ export interface ProcessStreamOptions {
   timestamp: number;
   /** 模型标识符 */
   modelKey: string;
-  /** 是否包含推理内容 */
-  includeReasoningContent: boolean;
   /** 节流间隔（毫秒），用于限制 Redux store 更新频率，0 表示不节流（仅用于测试） */
   throttleInterval?: number;
 }

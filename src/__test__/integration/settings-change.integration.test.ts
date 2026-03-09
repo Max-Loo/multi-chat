@@ -46,13 +46,13 @@ import {
 
   setAppLanguage,
 
-  setIncludeReasoningContent,
+  setTransmitHistoryReasoning,
 
   setAutoNamingEnabled,
 
   initializeAppLanguage,
 
-  initializeIncludeReasoningContent,
+  initializeTransmitHistoryReasoning,
 
   initializeAutoNamingEnabled,
 
@@ -64,7 +64,7 @@ import { getDefaultAppLanguage } from '@/lib/global';
 
 import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
 
-import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from '@/utils/constants';
+import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from '@/utils/constants';
 
 
 
@@ -334,19 +334,19 @@ describe('设置变更集成测试', () => {
 
       // Given: 初始状态为 false
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(false);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(false);
 
       
 
       // When: 用户打开开关
 
-      testStore.dispatch(setIncludeReasoningContent(true));
+      testStore.dispatch(setTransmitHistoryReasoning(true));
 
       
 
       // Then: Redux store 更新
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(true);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(true);
 
       
 
@@ -354,13 +354,13 @@ describe('设置变更集成测试', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect(localStorage.getItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY)).toBe('true');
+      expect(localStorage.getItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY)).toBe('true');
 
     });
 
 
 
-    test('验证 setIncludeReasoningContent action 触发', () => {
+    test('验证 setTransmitHistoryReasoning action 触发', () => {
 
       // Given: 创建 spy
 
@@ -370,7 +370,7 @@ describe('设置变更集成测试', () => {
 
       // When: 切换开关
 
-      testStore.dispatch(setIncludeReasoningContent(true));
+      testStore.dispatch(setTransmitHistoryReasoning(true));
 
       
 
@@ -378,7 +378,7 @@ describe('设置变更集成测试', () => {
 
       expect(spy).toHaveBeenCalledWith(expect.objectContaining({
 
-        type: 'appConfig/setIncludeReasoningContent',
+        type: 'appConfig/setTransmitHistoryReasoning',
 
         payload: true,
 
@@ -396,7 +396,7 @@ describe('设置变更集成测试', () => {
 
       // When: 切换开关
 
-      testStore.dispatch(setIncludeReasoningContent(true));
+      testStore.dispatch(setTransmitHistoryReasoning(true));
 
       
 
@@ -404,7 +404,7 @@ describe('设置变更集成测试', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect(localStorage.getItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY)).toBe('true');
+      expect(localStorage.getItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY)).toBe('true');
 
     });
 
@@ -414,7 +414,7 @@ describe('设置变更集成测试', () => {
 
       // Given: 设置开关
 
-      testStore.dispatch(setIncludeReasoningContent(true));
+      testStore.dispatch(setTransmitHistoryReasoning(true));
 
       
 
@@ -426,7 +426,7 @@ describe('设置变更集成测试', () => {
 
       // Then: 设置应正确保存
 
-      expect(state.appConfig.includeReasoningContent).toBe(true);
+      expect(state.appConfig.transmitHistoryReasoning).toBe(true);
 
     });
 
@@ -448,7 +448,7 @@ describe('设置变更集成测试', () => {
 
       // Given: 保存开关状态到 localStorage
 
-      localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, 'true');
+      localStorage.setItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, 'true');
 
       
 
@@ -456,13 +456,13 @@ describe('设置变更集成测试', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 第三方库类型定义不完整
-      await testStore.dispatch<any>(initializeIncludeReasoningContent());
+      await testStore.dispatch<any>(initializeTransmitHistoryReasoning());
 
       
 
       // Then: 开关状态应恢复
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(true);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(true);
 
     });
 
@@ -472,7 +472,7 @@ describe('设置变更集成测试', () => {
 
       // Given: 保存开关状态到 localStorage
 
-      localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, 'true');
+      localStorage.setItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, 'true');
 
       
 
@@ -480,13 +480,13 @@ describe('设置变更集成测试', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 第三方库类型定义不完整
-      await testStore.dispatch<any>(initializeIncludeReasoningContent());
+      await testStore.dispatch<any>(initializeTransmitHistoryReasoning());
 
       
 
       // Then: 应从 localStorage 加载
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(true);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(true);
 
     });
 
@@ -496,7 +496,7 @@ describe('设置变更集成测试', () => {
 
       // Given: 保存开关状态到 localStorage
 
-      localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, 'false');
+      localStorage.setItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, 'false');
 
       
 
@@ -504,13 +504,13 @@ describe('设置变更集成测试', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 第三方库类型定义不完整
-      await testStore.dispatch<any>(initializeIncludeReasoningContent());
+      await testStore.dispatch<any>(initializeTransmitHistoryReasoning());
 
       
 
       // Then: Redux store 应恢复
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(false);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(false);
 
     });
 
@@ -520,7 +520,7 @@ describe('设置变更集成测试', () => {
 
       // Given: 保存开关状态到 localStorage
 
-      localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, 'true');
+      localStorage.setItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, 'true');
 
       
 
@@ -528,7 +528,7 @@ describe('设置变更集成测试', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 第三方库类型定义不完整
-      await testStore.dispatch<any>(initializeIncludeReasoningContent());
+      await testStore.dispatch<any>(initializeTransmitHistoryReasoning());
 
       
 
@@ -536,7 +536,7 @@ describe('设置变更集成测试', () => {
 
       const state = testStore.getState();
 
-      expect(state.appConfig.includeReasoningContent).toBe(true);
+      expect(state.appConfig.transmitHistoryReasoning).toBe(true);
 
     });
 
@@ -930,7 +930,7 @@ describe('设置变更集成测试', () => {
 
       localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh');
 
-      localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, 'true');
+      localStorage.setItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, 'true');
 
       
 
@@ -944,7 +944,7 @@ describe('设置变更集成测试', () => {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         // Reason: 第三方库类型定义不完整
-        testStore.dispatch<any>(initializeIncludeReasoningContent()),
+        testStore.dispatch<any>(initializeTransmitHistoryReasoning()),
 
       ]);
 
@@ -954,7 +954,7 @@ describe('设置变更集成测试', () => {
 
       expect(testStore.getState().appConfig.language).toBe('zh');
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(true);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(true);
 
     });
 
@@ -972,13 +972,13 @@ describe('设置变更集成测试', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 第三方库类型定义不完整
-      await testStore.dispatch<any>(initializeIncludeReasoningContent());
+      await testStore.dispatch<any>(initializeTransmitHistoryReasoning());
 
       
 
       // Then: 应使用默认值
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(false);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(false);
 
     });
 
@@ -988,7 +988,7 @@ describe('设置变更集成测试', () => {
 
       // Given: 保存错误的格式
 
-      localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, 'invalid');
+      localStorage.setItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, 'invalid');
 
       
 
@@ -996,13 +996,13 @@ describe('设置变更集成测试', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 第三方库类型定义不完整
-      await testStore.dispatch<any>(initializeIncludeReasoningContent());
+      await testStore.dispatch<any>(initializeTransmitHistoryReasoning());
 
       
 
       // Then: 应降级处理
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(false);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(false);
 
     });
 
@@ -1014,7 +1014,7 @@ describe('设置变更集成测试', () => {
 
       localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh');
 
-      localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, 'true');
+      localStorage.setItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, 'true');
 
       
 
@@ -1032,7 +1032,7 @@ describe('设置变更集成测试', () => {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         // Reason: 第三方库类型定义不完整
-        testStore.dispatch<any>(initializeIncludeReasoningContent()),
+        testStore.dispatch<any>(initializeTransmitHistoryReasoning()),
 
       ]);
 
@@ -1100,7 +1100,7 @@ describe('设置变更集成测试', () => {
 
       // When: 切换推理内容开关
 
-      testStore.dispatch(setIncludeReasoningContent(true));
+      testStore.dispatch(setTransmitHistoryReasoning(true));
 
       
 
@@ -1120,7 +1120,7 @@ describe('设置变更集成测试', () => {
 
       localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh');
 
-      localStorage.setItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY, 'true');
+      localStorage.setItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, 'true');
 
       
 
@@ -1136,7 +1136,7 @@ describe('设置变更集成测试', () => {
 
       expect(testStore.getState().appConfig.language).toBe('en');
 
-      expect(localStorage.getItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY)).toBe('true');
+      expect(localStorage.getItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY)).toBe('true');
 
     });
 
@@ -1200,7 +1200,7 @@ describe('设置变更集成测试', () => {
 
       expect(testStore.getState().appConfig.language).toBe('');
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(false);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(false);
 
       
 
@@ -1208,7 +1208,7 @@ describe('设置变更集成测试', () => {
 
       testStore.dispatch(setAppLanguage('zh'));
 
-      testStore.dispatch(setIncludeReasoningContent(true));
+      testStore.dispatch(setTransmitHistoryReasoning(true));
 
       
 
@@ -1216,7 +1216,7 @@ describe('设置变更集成测试', () => {
 
       expect(testStore.getState().appConfig.language).toBe('zh');
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(true);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(true);
 
       
 
@@ -1224,7 +1224,7 @@ describe('设置变更集成测试', () => {
 
       expect(localStorage.getItem(LOCAL_STORAGE_LANGUAGE_KEY)).toBe('zh');
 
-      expect(localStorage.getItem(LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY)).toBe('true');
+      expect(localStorage.getItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY)).toBe('true');
 
     });
 
@@ -1238,7 +1238,7 @@ describe('设置变更集成测试', () => {
 
         setAppLanguage('zh'),
 
-        setIncludeReasoningContent(true),
+        setTransmitHistoryReasoning(true),
 
       ];
 
@@ -1258,7 +1258,7 @@ describe('设置变更集成测试', () => {
 
       expect(testStore.getState().appConfig.language).toBe('zh');
 
-      expect(testStore.getState().appConfig.includeReasoningContent).toBe(true);
+      expect(testStore.getState().appConfig.transmitHistoryReasoning).toBe(true);
 
     });
 
@@ -1276,7 +1276,7 @@ describe('设置变更集成测试', () => {
       // Reason: 测试错误处理，需要构造无效输入
       testStore.dispatch = ((action: any) => {
 
-        if (action.type?.includes('setAppLanguage') || action.type?.includes('setIncludeReasoningContent')) {
+        if (action.type?.includes('setAppLanguage') || action.type?.includes('setTransmitHistoryReasoning')) {
 
           executionOrder.push(action.type);
 
@@ -1292,7 +1292,7 @@ describe('设置变更集成测试', () => {
 
       testStore.dispatch(setAppLanguage('zh'));
 
-      testStore.dispatch(setIncludeReasoningContent(true));
+      testStore.dispatch(setTransmitHistoryReasoning(true));
 
       
 
@@ -1302,7 +1302,7 @@ describe('设置变更集成测试', () => {
 
         'appConfig/setAppLanguage',
 
-        'appConfig/setIncludeReasoningContent',
+        'appConfig/setTransmitHistoryReasoning',
 
       ]);
 

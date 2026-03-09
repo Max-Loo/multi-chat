@@ -16,7 +16,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY } from '@/utils/constants';
+import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY } from '@/utils/constants';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -51,7 +51,7 @@ vi.mock('@/lib/global', () => ({
 
 import { configureStore } from '@reduxjs/toolkit';
 import appConfigReducer, {
-  initializeIncludeReasoningContent,
+  initializeTransmitHistoryReasoning,
   setAutoNamingEnabled,
   selectAutoNamingEnabled,
 } from '@/store/slices/appConfigSlices';
@@ -83,7 +83,7 @@ describe('appConfigSlices', () => {
       const state = store.getState().appConfig;
       expect(state).toEqual({
         language: '',
-        includeReasoningContent: false,
+        transmitHistoryReasoning: false,
         autoNamingEnabled: true,
       });
     });
@@ -94,47 +94,47 @@ describe('appConfigSlices', () => {
   // - 这些测试验证 Redux Toolkit 自动生成的状态转换，属于内部实现
   // - 集成测试 settings-change.integration.test.ts 已覆盖语言设置行为
 
-  describe('initializeIncludeReasoningContent', () => {
+  describe('initializeTransmitHistoryReasoning', () => {
     it('应该在 localStorage 存储值为 true 时返回 true', async () => {
       localStorageMock.getItem.mockReturnValue('true');
 
       // Dispatch Thunk
-      const result = await store.dispatch(initializeIncludeReasoningContent());
+      const result = await store.dispatch(initializeTransmitHistoryReasoning());
 
       // 验证 Thunk fulfilled
-      expect(result.type).toBe('appConfig/includeReasoningContent/initialize/fulfilled');
+      expect(result.type).toBe('appConfig/transmitHistoryReasoning/initialize/fulfilled');
 
       // 验证状态转换
       const state = store.getState().appConfig;
-      expect(state.includeReasoningContent).toBe(true);
+      expect(state.transmitHistoryReasoning).toBe(true);
     });
 
     it('应该在 localStorage 存储值为 false 时返回 false', async () => {
       localStorageMock.getItem.mockReturnValue('false');
 
       // Dispatch Thunk
-      const result = await store.dispatch(initializeIncludeReasoningContent());
+      const result = await store.dispatch(initializeTransmitHistoryReasoning());
 
       // 验证 Thunk fulfilled
-      expect(result.type).toBe('appConfig/includeReasoningContent/initialize/fulfilled');
+      expect(result.type).toBe('appConfig/transmitHistoryReasoning/initialize/fulfilled');
 
       // 验证状态转换
       const state = store.getState().appConfig;
-      expect(state.includeReasoningContent).toBe(false);
+      expect(state.transmitHistoryReasoning).toBe(false);
     });
 
     it('应该在 localStorage 中无值时返回 false（默认值）', async () => {
       localStorageMock.getItem.mockReturnValue(null);
 
       // Dispatch Thunk
-      const result = await store.dispatch(initializeIncludeReasoningContent());
+      const result = await store.dispatch(initializeTransmitHistoryReasoning());
 
       // 验证 Thunk fulfilled
-      expect(result.type).toBe('appConfig/includeReasoningContent/initialize/fulfilled');
+      expect(result.type).toBe('appConfig/transmitHistoryReasoning/initialize/fulfilled');
 
       // 验证状态转换
       const state = store.getState().appConfig;
-      expect(state.includeReasoningContent).toBe(false);
+      expect(state.transmitHistoryReasoning).toBe(false);
     });
 
     it('应该在 rejected 时传播错误', async () => {
@@ -143,19 +143,19 @@ describe('appConfigSlices', () => {
       });
 
       // Dispatch Thunk
-      const result = await store.dispatch(initializeIncludeReasoningContent());
+      const result = await store.dispatch(initializeTransmitHistoryReasoning());
 
       // 验证 Thunk rejected
-      expect(result.type).toBe('appConfig/includeReasoningContent/initialize/rejected');
+      expect(result.type).toBe('appConfig/transmitHistoryReasoning/initialize/rejected');
     });
 
     it('应该使用正确的 localStorage 键', async () => {
       localStorageMock.getItem.mockReturnValue('true');
 
-      await store.dispatch(initializeIncludeReasoningContent());
+      await store.dispatch(initializeTransmitHistoryReasoning());
 
       expect(localStorageMock.getItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_INCLUDE_REASONING_CONTENT_KEY
+        LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY
       );
     });
   });
