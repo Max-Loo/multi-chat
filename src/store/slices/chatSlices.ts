@@ -8,7 +8,7 @@ import { isNil, isNotNil } from "es-toolkit";
 import { createIdGenerator } from 'ai'
 import { USER_MESSAGE_ID_PREFIX } from "@/utils/constants";
 import { getCurrentTimestamp } from "@/utils/utils";
-import { selectIncludeReasoningContent, selectAutoNamingEnabled } from "./appConfigSlices";
+import { selectTransmitHistoryReasoning, selectAutoNamingEnabled } from "./appConfigSlices";
 import { getProviderSDKLoader } from "@/services/chat/providerLoader";
 import { ModelProviderKeyEnum } from "@/utils/enums";
 
@@ -97,7 +97,7 @@ const sendMessage = createAsyncThunk<
 
     // 获取是否传输推理内容的开关状态
     const state = getState() as RootState;
-    const includeReasoningContent = selectIncludeReasoningContent(state);
+    const transmitHistoryReasoning = selectTransmitHistoryReasoning(state);
 
     // 使用 ChatService 发起流式聊天请求
     const fetchResponse = streamChatCompletion(
@@ -105,7 +105,7 @@ const sendMessage = createAsyncThunk<
         model,
         historyList,
         message,
-        includeReasoningContent,
+        transmitHistoryReasoning,
       },
       { signal },
     )
@@ -255,7 +255,7 @@ export const startSendChatMessage = createAsyncThunk<
     } = chat
 
     await Promise.all(chatModelList.map((chatModel) => {
-      const model = models.find(model => model.id === chatModel.modelId)
+      const model = models.find(m => m.id === chatModel.modelId)
       // 只有当模型没有被删除，且已经启用的时候，才会进行发送
       if (isNotNil(model) && !model.isDeleted && model.isEnable) {
         return dispatch(sendMessage({

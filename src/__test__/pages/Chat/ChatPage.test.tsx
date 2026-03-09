@@ -57,7 +57,7 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 // Reason: 测试错误处理，需要构造无效输入
 const mockT = (key: string | ((s: any) => string)): string => {
   if (typeof key === 'function') {
-    return key({ common: { search: '搜索', hideSidebar: '隐藏侧边栏', createChat: '创建聊天' }, chat: { sendMessage: '发送消息', stopSending: '停止发送', includeReasoningContentHint: '包含推理内容提示', showSidebar: '显示侧边栏', scrollToBottom: '滚动到底部' }, model: {} });
+    return key({ common: { search: '搜索', hideSidebar: '隐藏侧边栏', createChat: '创建聊天' }, chat: { sendMessage: '发送消息', stopSending: '停止发送', transmitHistoryReasoningHint: '包含推理内容提示', showSidebar: '显示侧边栏', scrollToBottom: '滚动到底部' }, model: {} });
   }
   return key;
 };

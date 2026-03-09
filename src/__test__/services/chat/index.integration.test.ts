@@ -419,14 +419,14 @@ describe('index - streamChatCompletion', () => {
       expect(streamTextCall.abortSignal).toBe(abortController.signal);
     });
 
-    it('应该传递 includeReasoningContent 参数', async () => {
+    it('应该传递 transmitHistoryReasoning 参数', async () => {
       // Arrange
       const model = createTestModel();
       const params = {
         model,
         historyList: [],
         message: 'Hello',
-        includeReasoningContent: true,
+        transmitHistoryReasoning: true,
       };
 
       const events = [

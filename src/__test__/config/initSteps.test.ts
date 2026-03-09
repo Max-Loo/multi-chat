@@ -127,7 +127,7 @@ describe('initSteps 配置验证', () => {
     });
 
     it('应该数组长度为 8', () => {
-      // i18n、masterKey、models、chatList、appLanguage、includeReasoningContent、autoNamingEnabled、modelProvider
+      // i18n、masterKey、models、chatList、appLanguage、transmitHistoryReasoning、autoNamingEnabled、modelProvider
       expect(initSteps.length).toBe(8);
     });
 
@@ -138,7 +138,7 @@ describe('initSteps 配置验证', () => {
         'models',
         'chatList',
         'appLanguage',
-        'includeReasoningContent',
+        'transmitHistoryReasoning',
         'autoNamingEnabled',
         'modelProvider',
       ];
@@ -163,7 +163,7 @@ describe('initSteps 配置验证', () => {
     });
 
     it('应该无依赖步骤在第一批次并行执行', () => {
-      // i18n、masterKey、chatList、includeReasoningContent、modelProvider 没有依赖
+      // i18n、masterKey、chatList、transmitHistoryReasoning、modelProvider 没有依赖
       const noDepSteps = initSteps.filter(
         (step) => !step.dependencies || step.dependencies.length === 0
       );

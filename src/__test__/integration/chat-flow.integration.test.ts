@@ -1000,7 +1000,7 @@ describe.skip('聊天流程集成测试', () => {
 
     test('请求推理内容时正确渲染和持久化', async () => {
 
-      // Given: 创建测试模型和聊天，设置 includeReasoningContent 为 true
+      // Given: 创建测试模型和聊天，设置 transmitHistoryReasoning 为 true
 
       const testModel = createTestModel();
 
@@ -1106,7 +1106,7 @@ describe.skip('聊天流程集成测试', () => {
 
     test('不请求推理内容时不传输推理内容', async () => {
 
-      // Given: 创建测试模型和聊天，设置 includeReasoningContent 为 false
+      // Given: 创建测试模型和聊天，设置 transmitHistoryReasoning 为 false
 
       const testModel = createTestModel();
 

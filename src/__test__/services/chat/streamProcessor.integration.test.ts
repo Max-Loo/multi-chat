@@ -108,7 +108,6 @@ describe('streamProcessor', () => {
     conversationId: 'test-conversation',
     timestamp: 1234567890,
     modelKey: 'deepseek-chat',
-    includeReasoningContent: true,
     throttleInterval: 0, // 禁用节流以确保测试稳定性
   };
 
@@ -226,7 +225,7 @@ describe('streamProcessor', () => {
       expect(messages[4].content).toBe('Hello World');
     });
 
-    it('应该在 includeReasoningContent 为 false 时忽略 reasoning-delta', async () => {
+    it('应该无条件保存 reasoning-delta 事件', async () => {
       const events = [
         { type: 'reasoning-delta', text: 'Thinking' },
         { type: 'text-delta', text: 'Hello' },
@@ -236,16 +235,15 @@ describe('streamProcessor', () => {
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
       const mockResult = createMockStreamResult(events, mockMetadata);
-      const options = { ...defaultOptions, includeReasoningContent: false };
       const messages: StandardMessage[] = [];
 
-      for await (const message of processStreamEvents(mockResult, options)) {
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
         messages.push(message);
       }
 
-      // reasoningContent 应该为空
-      expect(messages[0].reasoningContent).toBe('');
-      expect(messages[1].reasoningContent).toBe('');
+      // reasoningContent 应该被保存
+      expect(messages[0].reasoningContent).toBe('Thinking');
+      expect(messages[1].reasoningContent).toBe('Thinking');
     });
   });
 

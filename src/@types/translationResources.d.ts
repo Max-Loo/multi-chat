@@ -34,8 +34,8 @@ interface Resources {
       maxPerRow: string;
       itemsUnit: string;
       typeMessage: string;
-      includeReasoningContent: string;
-      includeReasoningContentHint: string;
+      transmitHistoryReasoning: string;
+      transmitHistoryReasoningHint: string;
     };
     common: {
       submit: string;

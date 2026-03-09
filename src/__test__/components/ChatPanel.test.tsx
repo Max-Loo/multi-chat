@@ -158,7 +158,7 @@ const createTestStore = (state: Partial<RootState>) => {
 
         language: 'en',
 
-        includeReasoningContent: false,
+        transmitHistoryReasoning: false,
 
       },
 

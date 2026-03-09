@@ -6,7 +6,7 @@ import { ChatRoleEnum } from '@/types/chat';
  * 构建消息列表
  * @param historyList 历史聊天记录
  * @param message 最新的用户消息
- * @param includeReasoningContent 是否包含推理内容
+ * @param transmitHistoryReasoning 是否在历史消息中传输推理内容
  * @returns ai-sdk 格式的消息列表
  * @example
  * ```typescript
@@ -17,7 +17,7 @@ import { ChatRoleEnum } from '@/types/chat';
 export function buildMessages(
   historyList: StandardMessage[],
   message: string,
-  includeReasoningContent: boolean = false
+  transmitHistoryReasoning: boolean = false
 ): ModelMessage[] {
   return [
     ...historyList.map(history => {
@@ -47,7 +47,7 @@ export function buildMessages(
 
         // 当开关开启且存在非空推理内容时，添加独立的 reasoning part
         if (
-          includeReasoningContent &&
+          transmitHistoryReasoning &&
           history.reasoningContent &&
           typeof history.reasoningContent === 'string' &&
           history.reasoningContent.trim().length > 0

@@ -107,10 +107,57 @@
 
 #### Scenario: 选中状态传递
 - **WHEN** 用户选中按钮并发送消息
-- **THEN** `streamChatCompletion` 函数接收 `includeReasoningContent: true`
+- **THEN** `streamChatCompletion` 函数接收 `transmitHistoryReasoning: true`
 - **AND** `buildMessages` 函数据此添加推理内容
 
 #### Scenario: 未选中状态传递
 - **WHEN** 用户取消选中按钮并发送消息
-- **THEN** `streamChatCompletion` 函数接收 `includeReasoningContent: false`
+- **THEN** `streamChatCompletion` 函数接收 `transmitHistoryReasoning: false`
 - **AND** `buildMessages` 函数据此不添加推理内容
+
+### Requirement: 无条件保存推理内容
+系统 SHALL 无条件保存 API 返回的推理内容（`reasoning-delta` 事件），无论用户是否选择传输历史推理内容。
+
+#### Scenario: 传输历史推理开启时保存推理内容
+- **WHEN** 用户选中"传输推理内容"按钮
+- **AND** API 返回 `reasoning-delta` 事件
+- **THEN** 系统保存推理内容到 `reasoningContent` 字段
+- **AND** 推理内容在 UI 中通过 `ThinkingSection` 组件显示
+
+#### Scenario: 传输历史推理关闭时仍保存推理内容
+- **WHEN** 用户取消选中"传输推理内容"按钮
+- **AND** API 返回 `reasoning-delta` 事件
+- **THEN** 系统仍保存推理内容到 `reasoningContent` 字段
+- **AND** 推理内容在 UI 中通过 `ThinkingSection` 组件显示
+- **AND** 历史消息中的推理内容不发送给 API
+
+#### Scenario: 推理内容在流式响应中累积
+- **WHEN** API 返回多个 `reasoning-delta` 事件
+- **THEN** 系统累积所有推理内容到 `reasoningContent` 字段
+- **AND** 每次累积都会更新 Redux store
+- **AND** UI 实时显示推理进度
+
+#### Scenario: 推理内容在流式结束后完整保存
+- **WHEN** 流式响应结束
+- **THEN** 系统将完整的 `reasoningContent` 保存到聊天历史记录
+- **AND** 推理内容持久化到本地存储
+
+### Requirement: 推理内容参数语义分离
+系统 SHALL 确保请求侧和响应侧的参数语义完全独立，避免混淆。
+
+#### Scenario: 请求侧参数控制历史消息传输
+- **WHEN** 构建 API 请求
+- **THEN** `transmitHistoryReasoning` 参数控制是否在历史消息中包含推理内容
+- **AND** 此参数不影响当前对话的推理内容保存
+
+#### Scenario: 响应侧无条件保存推理内容
+- **WHEN** 处理 API 响应
+- **THEN** 系统无条件保存 `reasoning-delta` 事件
+- **AND** 不受 `transmitHistoryReasoning` 参数影响
+- **AND** 确保所有推理内容都能在 UI 中显示
+
+#### Scenario: 参数名称清晰表达语义
+- **WHEN** 开发者查看代码
+- **THEN** `transmitHistoryReasoning` 参数名清晰表达"传输历史推理内容"
+- **AND** 不会与"保存当前推理内容"混淆
+- **AND** 减少未来出现类似 bug 的风险

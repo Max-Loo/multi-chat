@@ -1,0 +1,183 @@
+# Reasoning Content Propagation Spec - Delta
+
+修复推理内容渲染问题并重命名参数的增量规格。
+
+## RENAMED Requirements
+
+### Requirement: 在历史消息中包含推理内容
+参数名变更：`includeReasoningContent` → `transmitHistoryReasoning`
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
+
+#### Scenario: 按钮选中时包含推理内容
+- **WHEN** 用户选中了"传输推理内容"按钮
+- **AND** 历史消息中包含 `role: 'assistant'` 且 `reasoningContent` 非空
+- **THEN** 系统将 `reasoningContent` 作为独立的 `reasoning` part 添加到消息的 `content` 数组中
+- **AND** 消息格式为：`{ role: 'assistant', content: [{ type: 'text', text: '...' }, { type: 'reasoning', text: '...' }] }`
+
+#### Scenario: 按钮未选中时不包含推理内容
+- **WHEN** 用户取消选中"传输推理内容"按钮
+- **THEN** 系统不添加任何推理内容到消息中
+- **AND** 消息格式保持原始状态
+
+#### Scenario: 不包含推理内容的助手消息
+- **WHEN** 历史消息中包含 `role: 'assistant'` 但 `reasoningContent` 为空或未定义
+- **THEN** 系统仅发送原始 `content`，不添加任何推理内容标签
+- **AND** 消息格式保持不变
+
+#### Scenario: 用户消息不添加推理内容
+- **WHEN** 历史消息中包含 `role: 'user'` 或 `role: 'system'`
+- **THEN** 系统不检查或添加 `reasoningContent`
+- **AND** 消息格式保持不变
+
+### Requirement: 保持消息格式向后兼容
+无行为变更，仅参数名更新。
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
+
+#### Scenario: DeepSeek 供应商兼容性
+- **WHEN** 发送包含推理内容的消息到 DeepSeek API
+- **THEN** API 成功处理消息并返回响应
+- **AND** 不抛出格式错误或验证错误
+
+#### Scenario: Moonshot 供应商兼容性
+- **WHEN** 发送包含推理内容的消息到 Moonshot API
+- **THEN** API 成功处理消息并返回响应
+- **AND** 不抛出格式错误或验证错误
+
+#### Scenario: Zhipu 供应商兼容性
+- **WHEN** 发送包含推理内容的消息到 Zhipu API
+- **THEN** API 成功处理消息并返回响应
+- **AND** 不抛出格式错误或验证错误
+
+### Requirement: 推理内容格式标准化
+无行为变更。
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
+
+#### Scenario: 使用标准 reasoning part 类型
+- **WHEN** 格式化推理内容
+- **THEN** 使用 AI SDK 的 `{ type: 'reasoning', text: '...' }` 格式
+- **AND** reasoning part 作为 content 数组中的独立元素
+- **AND** 推理内容本身保留原始格式（包括换行和缩进）
+
+#### Scenario: 多段推理内容的处理
+- **WHEN** 推理内容包含多个段落或结构
+- **THEN** 保持内容的原始格式
+- **AND** 不对推理内容进行转义或修改
+
+### Requirement: 空推理内容的优雅处理
+无行为变更。
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
+
+#### Scenario: 空字符串推理内容
+- **WHEN** `reasoningContent` 为空字符串 `""`
+- **THEN** 系统不添加 `<reasoning>` 标签到消息中
+- **AND** 消息保持原始格式
+
+#### Scenario: null 或 undefined 推理内容
+- **WHEN** `reasoningContent` 为 `null` 或 `undefined`
+- **THEN** 系统不添加 `<reasoning>` 标签到消息中
+- **AND** 消息保持原始格式
+
+### Requirement: 提供用户控制的切换按钮
+无行为变更，仅内部变量名更新。
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
+
+#### Scenario: 切换按钮可见性
+- **WHEN** 用户在聊天页面
+- **THEN** 系统显示"传输推理内容"切换按钮
+- **AND** 按钮位置显眼且易于访问
+- **AND** 按钮采用描边样式（outline variant），现代扁平化设计
+- **AND** 未选中状态：浅灰色边框（`border-gray-300`），中等灰色文字（`text-gray-500`），纯白色背景（`bg-white`）
+- **AND** 选中状态：蓝色边框（`border-blue-500`），蓝色文字（`text-blue-500`），浅蓝色背景（`bg-blue-50`）
+- **AND** 悬停状态：
+  - 未选中时：边框变深（`hover:border-gray-400`），文字变深（`hover:text-gray-700`）
+  - 选中时：背景稍深（`hover:bg-blue-100`）
+
+#### Scenario: 切换按钮默认状态
+- **WHEN** 用户首次使用应用或清除本地存储后
+- **THEN** 按钮默认为未选中状态
+- **AND** 不传输历史推理内容
+
+#### Scenario: 切换按钮状态持久化
+- **WHEN** 用户点击切换按钮
+- **THEN** 系统将新状态保存到本地存储
+- **AND** 下次打开应用时恢复上次的状态
+
+#### Scenario: 切换按钮状态实时生效
+- **WHEN** 用户点击切换按钮
+- **THEN** 系统立即在下一次消息请求中应用新状态
+- **AND** 无需刷新页面或重新开始对话
+
+### Requirement: 按钮状态传递到服务层
+参数名变更：`includeReasoningContent` → `transmitHistoryReasoning`
+
+**FROM**: `includeReasoningContent`
+**TO**: `transmitHistoryReasoning`
+
+#### Scenario: 选中状态传递
+- **WHEN** 用户选中按钮并发送消息
+- **THEN** `streamChatCompletion` 函数接收 `transmitHistoryReasoning: true`
+- **AND** `buildMessages` 函数据此添加推理内容
+
+#### Scenario: 未选中状态传递
+- **WHEN** 用户取消选中按钮并发送消息
+- **THEN** `streamChatCompletion` 函数接收 `transmitHistoryReasoning: false`
+- **AND** `buildMessages` 函数据此不添加推理内容
+
+## ADDED Requirements
+
+### Requirement: 无条件保存推理内容
+系统 SHALL 无条件保存 API 返回的推理内容（`reasoning-delta` 事件），无论用户是否选择传输历史推理内容。
+
+#### Scenario: 传输历史推理开启时保存推理内容
+- **WHEN** 用户选中"传输推理内容"按钮
+- **AND** API 返回 `reasoning-delta` 事件
+- **THEN** 系统保存推理内容到 `reasoningContent` 字段
+- **AND** 推理内容在 UI 中通过 `ThinkingSection` 组件显示
+
+#### Scenario: 传输历史推理关闭时仍保存推理内容
+- **WHEN** 用户取消选中"传输推理内容"按钮
+- **AND** API 返回 `reasoning-delta` 事件
+- **THEN** 系统仍保存推理内容到 `reasoningContent` 字段
+- **AND** 推理内容在 UI 中通过 `ThinkingSection` 组件显示
+- **AND** 历史消息中的推理内容不发送给 API
+
+#### Scenario: 推理内容在流式响应中累积
+- **WHEN** API 返回多个 `reasoning-delta` 事件
+- **THEN** 系统累积所有推理内容到 `reasoningContent` 字段
+- **AND** 每次累积都会更新 Redux store
+- **AND** UI 实时显示推理进度
+
+#### Scenario: 推理内容在流式结束后完整保存
+- **WHEN** 流式响应结束
+- **THEN** 系统将完整的 `reasoningContent` 保存到聊天历史记录
+- **AND** 推理内容持久化到本地存储
+
+### Requirement: 推理内容参数语义分离
+系统 SHALL 确保请求侧和响应侧的参数语义完全独立，避免混淆。
+
+#### Scenario: 请求侧参数控制历史消息传输
+- **WHEN** 构建 API 请求
+- **THEN** `transmitHistoryReasoning` 参数控制是否在历史消息中包含推理内容
+- **AND** 此参数不影响当前对话的推理内容保存
+
+#### Scenario: 响应侧无条件保存推理内容
+- **WHEN** 处理 API 响应
+- **THEN** 系统无条件保存 `reasoning-delta` 事件
+- **AND** 不受 `transmitHistoryReasoning` 参数影响
+- **AND** 确保所有推理内容都能在 UI 中显示
+
+#### Scenario: 参数名称清晰表达语义
+- **WHEN** 开发者查看代码
+- **THEN** `transmitHistoryReasoning` 参数名清晰表达"传输历史推理内容"
+- **AND** 不会与"保存当前推理内容"混淆
+- **AND** 减少未来出现类似 bug 的风险

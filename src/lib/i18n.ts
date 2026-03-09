@@ -111,8 +111,8 @@ const performLoad = async (lang: string, retries: number): Promise<Record<string
       );
 
       // 聚合为 i18next 格式
-      const aggregatedResources = resources.reduce((acc, { namespace, resources }) => {
-        acc[namespace] = resources;
+      const aggregatedResources = resources.reduce((acc, { namespace, resources: namespaceResources }) => {
+        acc[namespace] = namespaceResources;
         return acc;
       }, {} as Record<string, unknown>);
 
