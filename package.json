@@ -11,6 +11,8 @@
     "web:build": "tsc && vite build",
     "deploy:gh-pages": "pnpm web:build && gh-pages -d dist",
     "lint": "oxlint",
+    "lint:i18n": "node scripts/check-i18n.js",
+    "validate": "npm run lint && npm run lint:i18n",
     "preview": "vite preview",
     "tauri": "tauri",
     "update-version": "node scripts/update-version.js",

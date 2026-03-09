@@ -245,6 +245,40 @@ models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 - **匹配策略**：使用 `action.type.endsWith('/setAppLanguage')` 兼容 Redux Toolkit 环境前缀
 - **集成点**：`src/store/index.ts` - 在 `configureStore` 中集成 middleware
 
+### 国际化翻译完整性检查
+
+使用自动化工具验证所有支持语言的翻译文件具有相同的键值结构，确保不存在遗漏的翻译。
+
+**核心功能**：
+
+- **自动检测**：以英文为基准语言，比较其他语言的翻译文件
+- **深度检查**：支持嵌套键值的递归比较（如 `autoNaming.title`）
+- **清晰报告**：生成详细的差异报告，指出缺失的键值和位置
+- **集成验证**：通过 npm scripts 集成到开发工作流
+
+**使用方法**：
+
+```bash
+# 检查翻译完整性
+npm run lint:i18n
+
+# 显示详细信息
+npm run lint:i18n -- --verbose
+
+# 运行完整验证（包括 lint 和 i18n）
+npm run validate
+```
+
+**关键实现**：
+- **检查工具**：`scripts/check-i18n.js` - Node.js 脚本
+- **集成点**：`package.json` - `lint:i18n` 和 `validate` scripts
+- **文档**：`scripts/README.md` - 工具使用说明
+
+**退出码**：
+- `0`：所有翻译完整，无缺失
+- `1`：发现缺失的翻译键值
+- `2`：文件读取错误或其他问题
+
 ### 跨平台兼容性
 
 **设计原则**：

@@ -9,3 +9,15 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "✅ Lint 检查通过"
+
+echo "🔍 Running i18n translation check..."
+pnpm lint:i18n
+
+# 检查 i18n 是否通过
+if [ $? -ne 0 ]; then
+  echo "❌ 国际化翻译检查失败，请修复缺失的翻译后再提交"
+  echo "💡 提示: 运行 'pnpm lint:i18n' 或 'pnpm lint:i18n -- --verbose' 查看详细信息"
+  exit 1
+fi
+
+echo "✅ 国际化翻译检查通过"

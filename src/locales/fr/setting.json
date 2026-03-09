@@ -1,5 +1,10 @@
 {
   "generalSetting": "Paramètres généraux",
+  "autoNaming": {
+    "title": "Attribution automatique d'un nom",
+    "description": "Générer automatiquement des titres pour les chats, activé par défaut"
+  },
+  "languageSwitchFailed": "Échec du changement de langue",
   "modelProvider": {
     "title": "Fournisseur de modèles",
     "description": "Récupérer les dernières informations du fournisseur de modèles à partir du serveur distant",
