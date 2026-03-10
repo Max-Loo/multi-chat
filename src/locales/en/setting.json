@@ -1,4 +1,6 @@
 {
+  "title": "Settings",
+  "openMenu": "Open Menu",
   "generalSetting": "General Setting",
   "autoNaming": {
     "title": "Auto Naming",

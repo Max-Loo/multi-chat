@@ -26,6 +26,8 @@ import chatReducer from '@/store/slices/chatSlices';
 
 import chatPageReducer from '@/store/slices/chatPageSlices';
 
+import { BrowserRouter } from 'react-router-dom';
+
 
 
 // Mock react-i18next
@@ -171,13 +173,17 @@ const createTestStore = (chat?: Chat, isSidebarCollapsed = false) => {
 
 
 const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-
+ 
   return ({ children }: { children: React.ReactNode }) => (
-
-    <Provider store={store}>{children}</Provider>
-
+ 
+    <Provider store={store}>
+      <BrowserRouter>
+        {children}
+      </BrowserRouter>
+    </Provider>
+ 
   );
-
+ 
 };
 
 

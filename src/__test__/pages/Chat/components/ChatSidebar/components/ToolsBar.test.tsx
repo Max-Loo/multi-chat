@@ -16,13 +16,17 @@ import ToolsBar from '@/pages/Chat/components/ChatSidebar/components/ToolsBar';
 
 import { resetTestState } from '@/__test__/helpers/isolation';
 
-
-
-/**
-
- * Mock react-i18next
-
- */
+vi.mock('@/hooks/useResponsive', () => ({
+  useResponsive: () => ({
+    layoutMode: 'desktop',
+    width: 1280,
+    height: 800,
+    isMobile: false,
+    isCompact: false,
+    isCompressed: false,
+    isDesktop: true,
+  }),
+}));
 
 vi.mock('react-i18next', () => ({
 

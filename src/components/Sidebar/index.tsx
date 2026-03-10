@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Bot, Settings } from 'lucide-react';
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useCurrentSelectedChat } from '@/hooks/useCurrentSelectedChat';
 import { isNotNil } from 'es-toolkit';
 import { useNavigateToChat } from '@/hooks/useNavigateToPage';
 import { useTranslation } from 'react-i18next';
+import { NAVIGATION_ITEMS } from '@/config/navigation';
 
 interface SidebarProps {
   className?: string;
@@ -21,7 +21,7 @@ interface NavigationItem {
   baseClassName: string;
   activeClassName: string;
   inactiveClassName: string;
-};
+}
 
 const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   const { t } = useTranslation();
@@ -34,36 +34,20 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   } = useNavigateToChat()
 
   const navigationItems = useMemo<NavigationItem[]>(() => {
-    return [
-      {
-        id: 'chat',
-        name: t($ => $.navigation.chat),
-        icon: <MessageSquare size={24} />,
-        path: '/chat',
-        // 预构建类，因为 tailwindcss 不支持动态类名
-        baseClassName: `text-blue-400!`,
-        activeClassName: `bg-blue-100! text-blue-500!`,
-        inactiveClassName: `hover:text-blue-500! hover:bg-blue-100!`,
-      },
-      {
-        id: 'model',
-        name: t($ => $.navigation.model),
-        icon: <Bot size={24} />,
-        path: '/model',
-        baseClassName: `text-emerald-400!`,
-        activeClassName: `bg-emerald-100! text-emerald-500!`,
-        inactiveClassName: `hover:text-emerald-500! hover:bg-emerald-100!`,
-      },
-      {
-        id: 'setting',
-        name: t($ => $.navigation.setting),
-        icon: <Settings size={24} />,
-        path: '/setting',
-        baseClassName: `text-violet-400!`,
-        activeClassName: `bg-violet-100! text-violet-500!`,
-        inactiveClassName: `hover:text-violet-500! hover:bg-violet-100!`,
-      },
-    ]
+    return NAVIGATION_ITEMS.map((item) => {
+      // 配置中的图标已经是渲染好的 React 元素
+      const icon = item.icon as ReactNode;
+
+      return {
+        id: item.id,
+        name: t(item.i18nKey as any),
+        icon,
+        path: item.path,
+        baseClassName: item.theme.base,
+        activeClassName: item.theme.active,
+        inactiveClassName: item.theme.inactive,
+      };
+    });
   }, [t]);
 
   const handleNavigation = (item: NavigationItem) => {

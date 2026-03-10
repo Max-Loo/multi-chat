@@ -25,6 +25,7 @@ describe('chatPageSlices', () => {
   const initialState: ChatPageSliceState = {
     isSidebarCollapsed: false,
     isShowChatPage: false,
+    isDrawerOpen: false,
   };
 
   // 侧边栏折叠状态变更测试已被删除：基本的 Redux reducer 测试
@@ -37,15 +38,17 @@ describe('chatPageSlices', () => {
       expect(state).toEqual({
         isSidebarCollapsed: false,
         isShowChatPage: false,
+        isDrawerOpen: false,
       });
     });
 
     it('不应包含未定义的字段', () => {
       const state = chatPageReducer(undefined, { type: 'unknown' });
       const keys = Object.keys(state);
-      expect(keys).toHaveLength(2);
+      expect(keys).toHaveLength(3);
       expect(keys).toContain('isSidebarCollapsed');
       expect(keys).toContain('isShowChatPage');
+      expect(keys).toContain('isDrawerOpen');
     });
   });
 
@@ -97,6 +100,7 @@ describe('chatPageSlices', () => {
       expect(state).toEqual({
         isSidebarCollapsed: false,
         isShowChatPage: false,
+        isDrawerOpen: false,
       });
     });
 

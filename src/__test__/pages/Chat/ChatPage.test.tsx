@@ -57,7 +57,12 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 // Reason: 测试错误处理，需要构造无效输入
 const mockT = (key: string | ((s: any) => string)): string => {
   if (typeof key === 'function') {
-    return key({ common: { search: '搜索', hideSidebar: '隐藏侧边栏', createChat: '创建聊天' }, chat: { sendMessage: '发送消息', stopSending: '停止发送', includeReasoningContentHint: '包含推理内容提示', showSidebar: '显示侧边栏', scrollToBottom: '滚动到底部' }, model: {} });
+    return key({
+      common: { search: '搜索', hideSidebar: '隐藏侧边栏', createChat: '创建聊天' },
+      chat: { sendMessage: '发送消息', stopSending: '停止发送', includeReasoningContentHint: '包含推理内容提示', showSidebar: '显示侧边栏', scrollToBottom: '滚动到底部' },
+      model: {},
+      table: { nickname: '昵称', modelProvider: '模型供应商', modelName: '模型名称', lastUpdateTime: '最后更新时间' },
+    });
   }
   return key;
 };
@@ -277,6 +282,7 @@ describe('ChatPage 行为测试', () => {
       chatPage: {
         isSidebarCollapsed: false,
         isShowChatPage: false,
+        isDrawerOpen: false,
       },
     });
 
@@ -302,6 +308,7 @@ describe('ChatPage 行为测试', () => {
       chatPage: {
         isSidebarCollapsed: true,
         isShowChatPage: false,
+        isDrawerOpen: false,
       },
     });
 
@@ -315,7 +322,9 @@ describe('ChatPage 行为测试', () => {
     await waitFor(() => {
       const sidebar = container.querySelector('[data-testid="chat-sidebar"]');
       expect(sidebar).toBeInTheDocument();
-      expect(sidebar).toHaveClass('-ml-56');
+      // 默认测试环境为紧凑模式（1024px），使用 w-48 和 -ml-48
+      expect(sidebar).toHaveClass('-ml-48');
+      expect(sidebar).toHaveClass('w-48');
     });
   });
 

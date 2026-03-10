@@ -1,4 +1,6 @@
 {
+  "title": "Paramètres",
+  "openMenu": "Ouvrir le menu",
   "generalSetting": "Paramètres généraux",
   "autoNaming": {
     "title": "Attribution automatique d'un nom",

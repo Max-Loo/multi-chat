@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react"
 import { useCurrentSelectedChat } from "@/hooks/useCurrentSelectedChat"
 import { isNil } from "es-toolkit"
-import { useTranslation } from "react-i18next"
+import ChatPlaceholder from "./components/ChatPlaceholder"
 import ModelSelectSkeleton from "./components/ModelSelectSkeleton"
 import ChatPanelSkeleton from "./components/ChatPanel/components/ChatPanelSkeleton"
 
@@ -13,13 +13,10 @@ const ChatPanel = lazy(() => import("./components/ChatPanel"))
  */
 const ChatContent: React.FC = () => {
   const selectedChat = useCurrentSelectedChat()
-  const { t } = useTranslation()
 
   // 默认占位内容
   if (isNil(selectedChat)) {
-    return (<div className="flex items-center justify-center w-full h-full text-4xl">
-      {t($ => $.chat.selectChatToStart)}
-    </div>)
+    return <ChatPlaceholder />
   }
 
   // 还没有给这个「聊天」配置过模型的状态

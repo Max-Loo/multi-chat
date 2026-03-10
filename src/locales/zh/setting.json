@@ -1,4 +1,6 @@
 {
+  "title": "设置",
+  "openMenu": "打开菜单",
   "generalSetting": "常规设置",
   "autoNaming": {
     "title": "自动命名",

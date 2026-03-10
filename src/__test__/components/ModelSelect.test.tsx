@@ -34,6 +34,7 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
 
 
 
+
 // Mock react-i18next
 
 vi.mock('react-i18next', () => ({
@@ -268,7 +269,11 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
 
   return function({ children }: { children: React.ReactNode }) {
 
-    return <Provider store={store}>{children}</Provider>;
+    return (
+      <Provider store={store}>
+          {children}
+      </Provider>
+    );
 
   };
 

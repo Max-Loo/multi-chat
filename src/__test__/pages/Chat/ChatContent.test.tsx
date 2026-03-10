@@ -71,9 +71,9 @@ function createTestStore(preloadedState?: any) {
 function renderChatContent(store: any) {
   return render(
     <Provider store={store}>
-      <BrowserRouter>
-        <ChatContent />
-      </BrowserRouter>
+        <BrowserRouter>
+          <ChatContent />
+        </BrowserRouter>
     </Provider>
   );
 }

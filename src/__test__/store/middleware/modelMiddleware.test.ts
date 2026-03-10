@@ -18,6 +18,8 @@ import chatReducer from '@/store/slices/chatSlices';
 import chatPageReducer from '@/store/slices/chatPageSlices';
 import appConfigReducer from '@/store/slices/appConfigSlices';
 import modelProviderReducer from '@/store/slices/modelProviderSlice';
+import settingPageReducer from '@/store/slices/settingPageSlices';
+import modelPageReducer from '@/store/slices/modelPageSlices';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
 // Mock 存储层
@@ -41,6 +43,8 @@ describe('modelMiddleware', () => {
         chatPage: chatPageReducer,
         appConfig: appConfigReducer,
         modelProvider: modelProviderReducer,
+        settingPage: settingPageReducer,
+        modelPage: modelPageReducer,
       },
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().prepend(saveModelsMiddleware.middleware),

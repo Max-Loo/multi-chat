@@ -1,8 +1,35 @@
 import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
 import SettingPage from '@/pages/Setting/index';
 import { resetTestState } from '@/__test__/helpers/isolation';
+import chatPageReducer from '@/store/slices/chatPageSlices';
+import settingPageReducer from '@/store/slices/settingPageSlices';
+
+/**
+ * 创建测试用的 Redux store
+ */
+function createTestStore() {
+  return configureStore({
+    reducer: {
+      chatPage: chatPageReducer,
+      settingPage: settingPageReducer,
+    },
+  });
+}
+
+/**
+ * 渲染 SettingPage 组件的辅助函数
+ */
+function renderSettingPage(ui: React.ReactElement) {
+  return render(
+    <Provider store={createTestStore()}>
+        <MemoryRouter>{ui}</MemoryRouter>
+    </Provider>
+  );
+}
 
 /**
  * Mock SettingSidebar component
@@ -69,21 +96,13 @@ describe('SettingPage Component', () => {
    */
   describe('渲染测试', () => {
     it('应该正确渲染侧边栏和内容区', () => {
-      render(
-        <MemoryRouter>
-          <SettingPage />
-        </MemoryRouter>
-      );
+      renderSettingPage(<SettingPage />);
 
       expect(screen.getByTestId('setting-sidebar')).toBeInTheDocument();
     });
 
     it('应该包含正确的布局结构', () => {
-      const { container } = render(
-        <MemoryRouter>
-          <SettingPage />
-        </MemoryRouter>
-      );
+      const { container } = renderSettingPage(<SettingPage />);
 
       expect(container.firstChild).toBeInTheDocument();
       expect(container.firstChild).toHaveClass('flex');
@@ -95,21 +114,13 @@ describe('SettingPage Component', () => {
    */
   describe('路由测试', () => {
     it('应该支持侧边栏导航功能', () => {
-      render(
-        <MemoryRouter initialEntries={['/setting']}>
-          <SettingPage />
-        </MemoryRouter>
-      );
+      renderSettingPage(<SettingPage />);
 
       expect(screen.getByTestId('setting-sidebar')).toBeInTheDocument();
     });
 
     it('应该在内容区显示嵌套路由内容', () => {
-      render(
-        <MemoryRouter initialEntries={['/setting']}>
-          <SettingPage />
-        </MemoryRouter>
-      );
+      renderSettingPage(<SettingPage />);
 
       expect(screen.getByTestId('setting-sidebar')).toBeInTheDocument();
     });

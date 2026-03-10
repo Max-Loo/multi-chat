@@ -48,7 +48,13 @@ vi.mock('react-i18next', () => ({
         };
         return keyOrSelector(mockResources);
       }
-      return keyOrSelector;
+      // 支持字符串键（用于新的配置化导航）
+      const keyMap: Record<string, string> = {
+        'navigation.chat': '聊天',
+        'navigation.model': '模型',
+        'navigation.setting': '设置',
+      };
+      return keyMap[keyOrSelector] || keyOrSelector;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Reason: 测试错误处理，需要构造无效输入
     }) as any,

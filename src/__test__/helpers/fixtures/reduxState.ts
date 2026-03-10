@@ -8,6 +8,8 @@ import type { RootState } from '@/store';
 import type { ChatPageSliceState } from '@/store/slices/chatPageSlices';
 import type { AppConfigSliceState } from '@/store/slices/appConfigSlices';
 import type { ModelProviderSliceState } from '@/store/slices/modelProviderSlice';
+import type { SettingPageSliceState } from '@/store/slices/settingPageSlices';
+import type { ModelPageSliceState } from '@/store/slices/modelPageSlices';
 import { createMockRemoteProviders } from './modelProvider';
 
 /**
@@ -27,6 +29,7 @@ export const createMockChatPageState = (
 ): ChatPageSliceState => ({
   isSidebarCollapsed: false,
   isShowChatPage: false,
+  isDrawerOpen: false,
   ...overrides,
 });
 
@@ -75,6 +78,42 @@ export const createMockModelProviderState = (
 });
 
 /**
+ * 创建 Mock SettingPageState
+ * @param overrides 要覆盖的字段
+ * @returns SettingPageSliceState 对象
+ * @example
+ * ```ts
+ * const state = createMockSettingPageState({
+ *   isDrawerOpen: true
+ * });
+ * ```
+ */
+export const createMockSettingPageState = (
+  overrides?: Partial<SettingPageSliceState>
+): SettingPageSliceState => ({
+  isDrawerOpen: false,
+  ...overrides,
+});
+
+/**
+ * 创建 Mock ModelPageState
+ * @param overrides 要覆盖的字段
+ * @returns ModelPageSliceState 对象
+ * @example
+ * ```ts
+ * const state = createMockModelPageState({
+ *   isDrawerOpen: true
+ * });
+ * ```
+ */
+export const createMockModelPageState = (
+  overrides?: Partial<ModelPageSliceState>
+): ModelPageSliceState => ({
+  isDrawerOpen: false,
+  ...overrides,
+});
+
+/**
  * 创建完整的 Mock RootState
  * @param overrides 要覆盖的字段
  * @returns RootState 对象
@@ -103,6 +142,8 @@ export const createMockRootState = (
   chatPage: createMockChatPageState(),
   appConfig: createMockAppConfigState(),
   modelProvider: createMockModelProviderState(),
+  settingPage: createMockSettingPageState(),
+  modelPage: createMockModelPageState(),
   model: {
     models: [],
     activeModelId: null,
