@@ -1,5 +1,12 @@
 {
   "chat": "Chat",
   "model": "Modèle",
-  "setting": "Paramètres"
+  "setting": "Paramètres",
+  "mobileDrawer": {
+    "title": "Barre latérale",
+    "description": "Barre latérale",
+    "ariaDescription": "Contenu du tiroir"
+  },
+  "openChatList": "Ouvrir la liste des chats",
+  "createChat": "Nouveau chat"
 }

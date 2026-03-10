@@ -28,6 +28,8 @@ import modelReducer from '@/store/slices/modelSlice';
 import chatReducer from '@/store/slices/chatSlices';
 import chatPageReducer from '@/store/slices/chatPageSlices';
 import modelProviderReducer from '@/store/slices/modelProviderSlice';
+import settingPageReducer from '@/store/slices/settingPageSlices';
+import modelPageReducer from '@/store/slices/modelPageSlices';
 import { changeAppLanguage } from '@/lib/i18n';
 import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
 import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY } from '@/utils/constants';
@@ -53,6 +55,8 @@ describe('appConfigMiddleware', () => {
         chatPage: chatPageReducer,
         appConfig: appConfigReducer,
         modelProvider: modelProviderReducer,
+        settingPage: settingPageReducer,
+        modelPage: modelPageReducer,
       },
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().prepend(saveDefaultAppLanguage.middleware),

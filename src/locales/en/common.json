@@ -21,5 +21,6 @@
   "initializationWarning": "Initialization Warning",
   "initializationWarningMessage": "Some features may be limited",
   "showErrorDetails": "Show Error Details",
-  "hideErrorDetails": "Hide Error Details"
+  "hideErrorDetails": "Hide Error Details",
+  "loading": "Loading"
 }

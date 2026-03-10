@@ -4,6 +4,73 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.0] - 2026-03-10
+
+### ✨ 新功能
+
+- **响应式布局系统**：实现完整的响应式布局系统，支持桌面端和移动端无缝切换
+  - 新增底部导航栏组件（`BottomNav`）
+  - 新增移动端抽屉组件（`MobileDrawer`）
+  - 新增 `useResponsive` Hook（响应式状态管理）
+  - 新增 `useMediaQuery` Hook（媒体查询，150ms 节流）
+  - 响应式聊天按钮（移动端浮动按钮，桌面端侧边栏按钮）
+  - 响应式顶部栏（移动端简化显示，桌面端完整显示）
+  - 自适应侧边栏（根据屏幕尺寸自动调整布局）
+- **导航配置统一**：统一导航配置管理，集中管理所有页面导航项
+- **UI 文本国际化扩展**：扩展导航和通用组件的国际化支持，更新 3 种语言翻译资源
+- **新增模型页面返回按钮**：在移动端新增模型页面添加返回按钮，提升导航体验
+
+### 🧪 测试增强
+
+- **新增组件测试**：
+  - 底部导航栏测试（`BottomNav.test.tsx`）
+  - 移动端抽屉测试（`MobileDrawer.test.tsx`）
+  - 聊天侧边栏测试（`ChatSidebar.test.tsx`）
+  - 聊天按钮测试（`ChatButton.test.tsx`）
+- **新增 Hook 测试**：
+  - `useMediaQuery` Hook 测试
+  - `useResponsive` Hook 测试
+- **新增集成测试**：
+  - 底部导航栏集成测试
+  - 抽屉状态集成测试
+  - 响应式布局切换集成测试
+- **测试工具增强**：新增 Redux State 测试工具（`fixtures/reduxState.ts`）
+- **测试覆盖率提升**：大幅提升响应式布局相关组件和 Hook 的测试覆盖率
+
+### 📝 文档变更
+
+- **AGENTS.md 精简重构**：将 AGENTS.md 从 447 行精简到 150 行（减少 66%），详细内容迁移到子文档
+- **文档结构优化**：建立清晰的文档层级结构
+  - `docs/design/` - 设计文档（架构、流程、决策）
+  - `docs/conventions/` - 项目约定（最佳实践、规范）
+  - `docs/reference/` - 参考文档（外部教程、指南）
+- **新增设计文档**：
+  - 应用启动初始化流程（`initialization.md`）
+  - 远程模型数据获取（`model-remote.md`）
+  - 聊天服务层架构（`chat-service.md`）
+  - 按需加载机制（`lazy-loading.md`）
+  - 国际化系统（`i18n-system.md`）
+  - 跨平台兼容层（`cross-platform.md`）
+- **新增约定文档**：
+  - 时间戳工具函数约定（`timestamps.md`）
+  - Tauri 命令添加指南（`tauri-commands.md`）
+- **文档索引完善**：更新 `docs/README.md` 作为完整文档索引
+- **AGENTS.md 更新**：新增响应式布局系统相关文件路径索引
+- **OpenSpec 变更记录**：新增 4 个 OpenSpec 变更目录，包含完整的设计文档、规格说明和任务清单
+  - `docs-structure` - 文档结构优化
+  - `i18n-ui-text` - UI 文本国际化
+  - `mobile-header-back-button` - 移动端头部返回按钮
+  - `responsive-layout-system` - 响应式布局系统
+  - `unify-navigation-config` - 统一导航配置
+
+### 🔧 重构
+
+- **页面结构优化**：重构聊天页、模型页、设置页的布局结构，统一使用响应式组件
+- **样式优化**：重构 `main.css`，优化全局样式和响应式断点
+- **状态管理优化**：新增页面级 Redux Slices（`chatPageSlices`、`modelPageSlices`、`settingPageSlices`）
+
+---
+
 ## [0.2.4] - 2026-03-10
 
 ### ✨ 新功能

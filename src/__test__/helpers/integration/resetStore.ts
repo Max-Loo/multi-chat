@@ -4,6 +4,8 @@ import chatReducer from '@/store/slices/chatSlices'
 import chatPageReducer from '@/store/slices/chatPageSlices'
 import appConfigReducer from '@/store/slices/appConfigSlices'
 import modelProviderReducer from '@/store/slices/modelProviderSlice'
+import settingPageReducer from '@/store/slices/settingPageSlices'
+import modelPageReducer from '@/store/slices/modelPageSlices'
 import { saveDefaultAppLanguage } from '@/store/middleware/appConfigMiddleware'
 import { saveChatListMiddleware } from '@/store/middleware/chatMiddleware'
 import type { RootState } from '@/store'
@@ -28,6 +30,8 @@ export function getTestStore(): EnhancedStore<RootState> {
         chatPage: chatPageReducer,
         appConfig: appConfigReducer,
         modelProvider: modelProviderReducer,
+        settingPage: settingPageReducer,
+        modelPage: modelPageReducer,
       },
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

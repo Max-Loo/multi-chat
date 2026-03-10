@@ -3,6 +3,7 @@ import { ChatRoleEnum } from "@/types/chat";
 import { useMemo } from "react";
 import { ThinkingSection } from "./ThinkingSection";
 import { generateCleanHtml } from "@/utils/markdown";
+import { useTranslation } from "react-i18next"
 
 /**
  * 模型供应商信息接口
@@ -39,6 +40,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   isRunning = false,
   provider,
 }) => {
+  const { t } = useTranslation()
   // 推理内容的加载状态
   const thinkingLoading = useMemo(() => {
     return isRunning && !content;
@@ -80,7 +82,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
               {/* 推理内容区域 */}
               {reasoningContent && (
                 <ThinkingSection
-                  title={thinkingLoading ? "思考中" : "思考完成"}
+                  title={thinkingLoading ? t(($) => $.chat.thinking) : t(($) => $.chat.thinkingComplete)}
                   content={reasoningContent}
                   loading={thinkingLoading}
                   provider={provider}

@@ -27,8 +27,25 @@ vi.mock('react-i18next', () => ({
     t: ((keyOrSelector: string | ((resources: any) => string)) => {
       if (typeof keyOrSelector === 'function') {
         const mockResources = {
+          common: { loading: '加载中' },
           chat: {
             selectChatToStart: '选择一个聊天开始对话',
+            createChat: '创建聊天',
+          },
+          navigation: {
+            chat: '聊天',
+            model: '模型',
+            setting: '设置',
+            openChatList: '打开聊天列表',
+            createChat: '新建聊天',
+            mobileDrawer: {
+              title: '侧边栏',
+              description: '侧边栏',
+              ariaDescription: '抽屉内容',
+            },
+          },
+          model: {
+            openProviderList: '打开模型供应商列表',
           },
         };
         return keyOrSelector(mockResources);
@@ -71,9 +88,9 @@ function createTestStore(preloadedState?: any) {
 function renderChatContent(store: any) {
   return render(
     <Provider store={store}>
-      <BrowserRouter>
-        <ChatContent />
-      </BrowserRouter>
+        <BrowserRouter>
+          <ChatContent />
+        </BrowserRouter>
     </Provider>
   );
 }

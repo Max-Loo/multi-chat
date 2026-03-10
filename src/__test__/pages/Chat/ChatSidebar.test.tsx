@@ -6,7 +6,24 @@ import { configureStore } from '@reduxjs/toolkit';
 import chatReducer from '@/store/slices/chatSlices';
 import chatPageReducer from '@/store/slices/chatPageSlices';
 import ChatSidebar from '@/pages/Chat/components/ChatSidebar';
+
 import { resetTestState } from '@/__test__/helpers/isolation';
+
+// Mock useResponsive hook（可配置）
+const mockUseResponsive = vi.fn(() => ({
+  layoutMode: 'desktop',
+  width: 1280,
+  height: 800,
+  isMobile: false,
+  isCompact: false,
+  isCompressed: false,
+  isDesktop: true,
+}));
+
+vi.mock('@/context/ResponsiveContext', () => ({
+  useResponsive: () => mockUseResponsive(),
+  ResponsiveProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
 
 /**
  * Mock useAdaptiveScrollbar hook because it requires window event listeners that are difficult to set up in tests
@@ -335,6 +352,182 @@ describe('ChatSidebar Component', () => {
 
       const chatNames = screen.getAllByTestId('chat-name');
       expect(chatNames.length).toBeGreaterThan(0);
+    });
+  });
+
+  /**
+   * 测试响应式布局模式
+   */
+  describe('响应式布局模式', () => {
+    beforeEach(() => {
+      // 每个测试前重置为默认的桌面模式
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'desktop',
+        width: 1280,
+        height: 800,
+        isMobile: false,
+        isCompact: false,
+        isCompressed: false,
+        isDesktop: true,
+      });
+    });
+
+    it('桌面模式：应该正确渲染', () => {
+      const store = createTestStore(createInitialState());
+      const { container } = renderChatSidebar(store);
+
+      // ChatSidebar 使用 w-full 而不是 w-56（宽度由父组件 ChatPage 控制）
+      const sidebarDiv = container.querySelector('.w-full');
+      expect(sidebarDiv).toBeInTheDocument();
+    });
+
+    it('紧凑模式：应该正确渲染', () => {
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'compact',
+        width: 800,
+        height: 600,
+        isMobile: false,
+        isCompact: true,
+        isCompressed: false,
+        isDesktop: false,
+      });
+
+      const store = createTestStore(createInitialState());
+      const { container } = renderChatSidebar(store);
+
+      const sidebarDiv = container.querySelector('.w-full');
+      expect(sidebarDiv).toBeInTheDocument();
+    });
+
+    it('压缩模式：应该正确渲染', () => {
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'compressed',
+        width: 1100,
+        height: 700,
+        isMobile: false,
+        isCompact: false,
+        isCompressed: true,
+        isDesktop: false,
+      });
+
+      const store = createTestStore(createInitialState());
+      const { container } = renderChatSidebar(store);
+
+      const sidebarDiv = container.querySelector('.w-full');
+      expect(sidebarDiv).toBeInTheDocument();
+    });
+
+    it('移动模式：应该正确渲染', () => {
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'mobile',
+        width: 390,
+        height: 844,
+        isMobile: true,
+        isCompact: false,
+        isCompressed: false,
+        isDesktop: false,
+      });
+
+      const store = createTestStore(createInitialState());
+      const { container } = renderChatSidebar(store);
+
+      // 移动模式使用正常宽度
+      const sidebarDiv = container.querySelector('.w-full');
+      expect(sidebarDiv).toBeInTheDocument();
+    });
+
+    it('layoutMode 变化时应该正确调整', () => {
+      const store = createTestStore(createInitialState());
+
+      // 桌面模式
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'desktop',
+        width: 1280,
+        height: 800,
+        isMobile: false,
+        isCompact: false,
+        isCompressed: false,
+        isDesktop: true,
+      });
+
+      const { rerender } = renderChatSidebar(store);
+      expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();
+
+      // 切换到紧凑模式
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'compact',
+        width: 800,
+        height: 600,
+        isMobile: false,
+        isCompact: true,
+        isCompressed: false,
+        isDesktop: false,
+      });
+
+      rerender(
+        <Provider store={store}>
+          <BrowserRouter>
+            <ChatSidebar />
+          </BrowserRouter>
+        </Provider>
+      );
+
+      expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();
+    });
+
+    it('所有模式下都应该正确渲染聊天按钮', () => {
+      const modes = [
+        {
+          layoutMode: 'desktop',
+          width: 1280,
+          height: 800,
+          isMobile: false,
+          isCompact: false,
+          isCompressed: false,
+          isDesktop: true,
+        },
+        {
+          layoutMode: 'compact',
+          width: 800,
+          height: 600,
+          isMobile: false,
+          isCompact: true,
+          isCompressed: false,
+          isDesktop: false,
+        },
+        {
+          layoutMode: 'compressed',
+          width: 1100,
+          height: 700,
+          isMobile: false,
+          isCompact: false,
+          isCompressed: true,
+          isDesktop: false,
+        },
+        {
+          layoutMode: 'mobile',
+          width: 390,
+          height: 844,
+          isMobile: true,
+          isCompact: false,
+          isCompressed: false,
+          isDesktop: false,
+        },
+      ];
+
+      const store = createTestStore(createInitialState());
+
+      modes.forEach((mode) => {
+        mockUseResponsive.mockReturnValue(mode);
+
+        const { unmount } = renderChatSidebar(store);
+
+        // 验证聊天按钮在所有模式下都存在
+        expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();
+        expect(screen.getByTestId('chat-button-chat-2')).toBeInTheDocument();
+
+        unmount();
+      });
     });
   });
 });

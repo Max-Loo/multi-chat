@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/3/6 23:09:19
+// 生成时间: 2026/3/10 17:24:36
 
 interface Resources {
   translation: {
@@ -61,8 +61,11 @@ interface Resources {
       initializationWarningMessage: string;
       showErrorDetails: string;
       hideErrorDetails: string;
+      loading: string;
     };
     model: {
+      title: string;
+      openMenu: string;
       addModel: string;
       modelProvider: string;
       searchModel: string;
@@ -89,21 +92,32 @@ interface Resources {
       fixErrorReload: string;
       noModelData: string;
       confirmDeleteDescription: string;
+      openProviderList: string;
     };
     navigation: {
       chat: string;
       model: string;
       setting: string;
+      mobileDrawer: {
+        title: string;
+        description: string;
+        ariaDescription: string;
+      };
+      openChatList: string;
+      createChat: string;
     };
     provider: {
 
     };
     setting: {
+      title: string;
+      openMenu: string;
       generalSetting: string;
       autoNaming: {
         title: string;
         description: string;
       };
+      languageSwitchFailed: string;
       modelProvider: {
         title: string;
         description: string;

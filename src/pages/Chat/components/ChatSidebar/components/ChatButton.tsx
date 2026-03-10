@@ -16,9 +16,9 @@ import { memo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from 'sonner'
 import { useConfirm } from "@/hooks/useConfirm"
+import { useResponsive } from "@/hooks/useResponsive"
 
 interface ChatButtonProps {
-  // 当前选中要进行操作的聊天
   chat: Chat
 }
 
@@ -30,6 +30,10 @@ const ChatButton = memo<ChatButtonProps>(({
 }) => {
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
+
+  const { layoutMode } = useResponsive()
+  // Desktop 和 Mobile 模式使用正常尺寸
+  const isNormalSize = layoutMode === 'desktop' || layoutMode === 'mobile'
 
   const selectedChatId = useAppSelector((state) => state.chat.selectedChatId)
 
@@ -153,24 +157,46 @@ const ChatButton = memo<ChatButtonProps>(({
   return (
     <div
       data-testid={`chat-button-${chat.id}`}
-      className={`w-full py-2 px-1 flex justify-between rounded-none cursor-pointer
+      className={`w-full flex justify-between rounded-none cursor-pointer
+        ${
+          isNormalSize
+            ? 'py-2 px-1'
+            : 'py-1.5 px-1'
+        }
         ${chat.id === selectedChatId ? 'bg-primary/20' : 'hover:bg-accent'}
         ${isRenaming && 'pl-1 pr-1'}
       `}
       onClick={() => onClickChat(chat)}
     >
-      <span data-testid="chat-name" className="pl-2 text-sm flex items-center">{chat.name || t($ => $.chat.unnamed)}</span>
+      <span
+        data-testid="chat-name"
+        className={`pl-2 flex items-center ${
+          isNormalSize
+            ? 'text-sm'
+            : 'text-xs'
+        }`}
+      >
+        {chat.name || t($ => $.chat.unnamed)}
+      </span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 p-0"
+            className={`p-0 ${
+              isNormalSize
+                ? 'h-8 w-8'
+                : 'h-7 w-7'
+            }`}
             onClick={(e) => {
               e.stopPropagation()
             }}
           >
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal className={`${
+              isNormalSize
+                ? 'h-4 w-4'
+                : 'h-3.5 w-3.5'
+            }`} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -197,7 +223,6 @@ const ChatButton = memo<ChatButtonProps>(({
     </div>
   )
 }, (prevProps, nextProps) => {
-  // 因为按钮只展示模型的昵称，所以当其没有发生变化的时候，就不需要重新渲染
   const {
     id,
     name,
@@ -207,7 +232,10 @@ const ChatButton = memo<ChatButtonProps>(({
     name: nextName,
   } = nextProps.chat
 
-  return id === nextId && name === nextName
+  return (
+    id === nextId &&
+    name === nextName
+  )
 })
 
 
