@@ -1,4 +1,6 @@
 {
+  "title": "Add Model",
+  "openMenu": "Open Menu",
   "addModel": "Add Model",
   "modelProvider": "Model Provider",
   "searchModel": "Search Model",
@@ -24,5 +26,6 @@
   "searchPlaceholder": "Search by nickname or remark",
   "fixErrorReload": "Please fix errors and reload data",
   "noModelData": "No model data yet, click 「Add Model」 to create the first model",
-  "confirmDeleteDescription": "Sure to delete the model 「{{nickname}}」?"
+  "confirmDeleteDescription": "Sure to delete the model 「{{nickname}}」?",
+  "openProviderList": "Open model provider list"
 }

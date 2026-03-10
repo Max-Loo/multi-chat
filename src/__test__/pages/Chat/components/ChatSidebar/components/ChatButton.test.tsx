@@ -18,7 +18,21 @@ import { resetTestState } from '@/__test__/helpers/isolation';
 
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 
+// Mock useResponsive from useResponsive hook
+vi.mock('@/hooks/useResponsive', () => ({
+  useResponsive: vi.fn(() => ({
+    layoutMode: 'desktop',
+    width: 1280,
+    height: 800,
+    isMobile: false,
+    isCompact: false,
+    isCompressed: false,
+    isDesktop: true,
+  })),
+}));
 
+import * as useResponsiveModule from '@/hooks/useResponsive';
+const mockUseResponsive = vi.mocked(useResponsiveModule.useResponsive);
 
 /**
 
@@ -700,6 +714,177 @@ describe('ChatButton Component', () => {
 
     });
 
+  });
+
+  /**
+   * 测试响应式布局模式
+   */
+  describe('响应式布局模式', () => {
+    it('桌面模式（desktop）：正常字体（text-sm）和图标（h-8 w-8）', () => {
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'desktop',
+        width: 1280,
+        height: 800,
+        isMobile: false,
+        isCompact: false,
+        isCompressed: false,
+        isDesktop: true,
+      });
+
+      const chat = createMockChat({ name: '测试聊天' });
+      const { container } = renderChatButton(chat);
+
+      // 检查按钮容器的 padding
+      const buttonDiv = container.querySelector('.py-2.px-1');
+      expect(buttonDiv).toBeInTheDocument();
+
+      // 检查字体大小
+      const chatName = screen.getByTestId('chat-name');
+      expect(chatName).toHaveClass('text-sm');
+
+      // 检查图标大小
+      const menuButton = container.querySelector('button[class*="p-0"]');
+      expect(menuButton).toHaveClass('h-8', 'w-8');
+    });
+
+    it('紧凑模式（compact）：缩小字体（text-xs）和图标（h-7 w-7）', () => {
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'compact',
+        width: 800,
+        height: 600,
+        isMobile: false,
+        isCompact: true,
+        isCompressed: false,
+        isDesktop: false,
+      });
+
+      const chat = createMockChat({ name: '测试聊天' });
+      const { container } = renderChatButton(chat);
+
+      // 检查按钮容器的 padding（压缩模式）
+      const buttonDiv = container.querySelector('div[class*="py-1.5"]');
+      expect(buttonDiv).toBeInTheDocument();
+
+      // 检查字体大小
+      const chatName = screen.getByTestId('chat-name');
+      expect(chatName).toHaveClass('text-xs');
+
+      // 检查图标大小
+      const menuButton = container.querySelector('button[class*="p-0"]');
+      expect(menuButton).toHaveClass('h-7', 'w-7');
+    });
+
+    it('压缩模式（compressed）：与 compact 相同', () => {
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'compressed',
+        width: 1100,
+        height: 700,
+        isMobile: false,
+        isCompact: false,
+        isCompressed: true,
+        isDesktop: false,
+      });
+
+      const chat = createMockChat({ name: '测试聊天' });
+      const { container } = renderChatButton(chat);
+
+      // 与 compact 模式相同的样式
+      const buttonDiv = container.querySelector('div[class*="py-1.5"]');
+      expect(buttonDiv).toBeInTheDocument();
+
+      const chatName = screen.getByTestId('chat-name');
+      expect(chatName).toHaveClass('text-xs');
+
+      const menuButton = container.querySelector('button[class*="p-0"]');
+      expect(menuButton).toHaveClass('h-7', 'w-7');
+    });
+
+    it('移动模式（mobile）：在抽屉中正常显示（与 desktop 相同）', () => {
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'mobile',
+        width: 390,
+        height: 844,
+        isMobile: true,
+        isCompact: false,
+        isCompressed: false,
+        isDesktop: false,
+      });
+
+      const chat = createMockChat({ name: '测试聊天' });
+      const { container } = renderChatButton(chat);
+
+      // 与 desktop 模式相同的样式
+      const buttonDiv = container.querySelector('.py-2.px-1');
+      expect(buttonDiv).toBeInTheDocument();
+
+      const chatName = screen.getByTestId('chat-name');
+      expect(chatName).toHaveClass('text-sm');
+
+      const menuButton = container.querySelector('button[class*="p-0"]');
+      expect(menuButton).toHaveClass('h-8', 'w-8');
+    });
+
+    it('所有模式下重命名和删除功能都正常工作', () => {
+      // 测试 desktop 模式
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'desktop',
+        width: 1280,
+        height: 800,
+        isMobile: false,
+        isCompact: false,
+        isCompressed: false,
+        isDesktop: true,
+      });
+
+      const chat = createMockChat({ name: '测试聊天' });
+      const { container } = renderChatButton(chat);
+
+      // 验证下拉菜单存在
+      const menuButton = container.querySelector('button[aria-haspopup="menu"]');
+      expect(menuButton).toBeInTheDocument();
+
+      // 测试 mobile 模式
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'mobile',
+        width: 390,
+        height: 844,
+        isMobile: true,
+        isCompact: false,
+        isCompressed: false,
+        isDesktop: false,
+      });
+
+      const { container: mobileContainer } = renderChatButton(chat);
+
+      // mobile 模式下拉菜单也应该存在
+      const mobileMenuButton = mobileContainer.querySelector('button[aria-haspopup="menu"]');
+      expect(mobileMenuButton).toBeInTheDocument();
+    });
+
+    it('移动模式下点击「更多」按钮弹出选项（无长按事件）', () => {
+      mockUseResponsive.mockReturnValue({
+        layoutMode: 'mobile',
+        width: 390,
+        height: 844,
+        isMobile: true,
+        isCompact: false,
+        isCompressed: false,
+        isDesktop: false,
+      });
+
+      const chat = createMockChat({ name: '测试聊天' });
+      const { container } = renderChatButton(chat);
+
+      // 点击「更多」按钮应该弹出选项
+      const menuButton = container.querySelector('button[aria-haspopup="menu"]');
+      expect(menuButton).toBeInTheDocument();
+
+      if (menuButton) {
+        // 点击按钮不应触发导航（因为有 stopPropagation）
+        fireEvent.click(menuButton);
+        expect(mockNavigateToChat).not.toHaveBeenCalled();
+      }
+    });
   });
 
 });

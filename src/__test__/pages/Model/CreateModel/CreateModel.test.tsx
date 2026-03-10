@@ -13,6 +13,7 @@ import { MemoryRouter } from 'react-router-dom';
 import CreateModel from '@/pages/Model/CreateModel';
 import modelReducer from '@/store/slices/modelSlice';
 import modelProviderReducer from '@/store/slices/modelProviderSlice';
+import modelPageReducer from '@/store/slices/modelPageSlices';
 import type { RootState } from '@/store';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
@@ -98,6 +99,7 @@ const createTestStore = (state: Partial<RootState>) => {
     reducer: {
       models: modelReducer,
       modelProvider: modelProviderReducer,
+      modelPage: modelPageReducer,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Reason: Redux Toolkit 严格类型系统限制
     } as any,
@@ -111,7 +113,7 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
   return function({ children }: { children: React.ReactNode }) {
     return (
       <Provider store={store}>
-        <MemoryRouter initialEntries={['/model/add']}>{children}</MemoryRouter>
+          <MemoryRouter initialEntries={['/model/add']}>{children}</MemoryRouter>
       </Provider>
     );
   };
@@ -155,6 +157,9 @@ describe('CreateModel', () => {
           lastUpdate: null,
           backgroundRefreshing: false,
         },
+        modelPage: {
+          isDrawerOpen: false,
+        },
       });
 
       const wrapper = createWrapper(store);
@@ -182,6 +187,9 @@ describe('CreateModel', () => {
           lastUpdate: null,
           backgroundRefreshing: false,
         },
+        modelPage: {
+          isDrawerOpen: false,
+        },
       });
 
       const wrapper = createWrapper(store);
@@ -206,6 +214,9 @@ describe('CreateModel', () => {
           error: null,
           lastUpdate: null,
           backgroundRefreshing: false,
+        },
+        modelPage: {
+          isDrawerOpen: false,
         },
       });
 
@@ -233,6 +244,9 @@ describe('CreateModel', () => {
           lastUpdate: null,
           backgroundRefreshing: false,
         },
+        modelPage: {
+          isDrawerOpen: false,
+        },
       });
 
       const wrapper = createWrapper(store);
@@ -256,6 +270,9 @@ describe('CreateModel', () => {
           error: null,
           lastUpdate: null,
           backgroundRefreshing: false,
+        },
+        modelPage: {
+          isDrawerOpen: false,
         },
       });
 
@@ -289,6 +306,9 @@ describe('CreateModel', () => {
           lastUpdate: null,
           backgroundRefreshing: false,
         },
+        modelPage: {
+          isDrawerOpen: false,
+        },
       });
 
       const wrapper = createWrapper(store);
@@ -312,6 +332,9 @@ describe('CreateModel', () => {
           error: null,
           lastUpdate: null,
           backgroundRefreshing: false,
+        },
+        modelPage: {
+          isDrawerOpen: false,
         },
       });
 
@@ -337,6 +360,9 @@ describe('CreateModel', () => {
           error: null,
           lastUpdate: null,
           backgroundRefreshing: false,
+        },
+        modelPage: {
+          isDrawerOpen: false,
         },
       });
 
@@ -364,6 +390,9 @@ describe('CreateModel', () => {
           error: null,
           lastUpdate: null,
           backgroundRefreshing: false,
+        },
+        modelPage: {
+          isDrawerOpen: false,
         },
       });
 
@@ -408,6 +437,9 @@ describe('CreateModel', () => {
           lastUpdate: null,
           backgroundRefreshing: false,
         },
+        modelPage: {
+          isDrawerOpen: false,
+        },
       });
 
       const wrapper = createWrapper(store);
@@ -432,6 +464,9 @@ describe('CreateModel', () => {
           error: null,
           lastUpdate: null,
           backgroundRefreshing: false,
+        },
+        modelPage: {
+          isDrawerOpen: false,
         },
       });
 
@@ -458,6 +493,9 @@ describe('CreateModel', () => {
           lastUpdate: null,
           backgroundRefreshing: false,
         },
+        modelPage: {
+          isDrawerOpen: false,
+        },
       });
 
       const wrapper = createWrapper(store);
@@ -482,6 +520,9 @@ describe('CreateModel', () => {
           error: null,
           lastUpdate: null,
           backgroundRefreshing: false,
+        },
+        modelPage: {
+          isDrawerOpen: false,
         },
       });
 
@@ -509,6 +550,9 @@ describe('CreateModel', () => {
           error: null,
           lastUpdate: null,
           backgroundRefreshing: false,
+        },
+        modelPage: {
+          isDrawerOpen: false,
         },
       });
 

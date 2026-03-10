@@ -386,6 +386,9 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 | Highlight.js 语言包索引 | `src/utils/highlightLanguageIndex.ts` |
 | Markdown 渲染      | `src/utils/markdown.ts`                    |
 | 测试规范           | `src/__test__/README.md`                   |
+| 响应式布局系统     | `src/hooks/useResponsive.ts` + `src/hooks/useMediaQuery.ts` |
+| 移动端抽屉组件     | `src/components/MobileDrawer/index.tsx`    |
+| 底部导航栏         | `src/components/BottomNav/index.tsx`       |
 
 ### 按架构层次查找
 
@@ -404,6 +407,12 @@ const timestampMs = getCurrentTimestampMs(); // 毫秒级
 ├── src/store/keyring/           # 主密钥管理
 ├── src/store/slices/            # Redux 状态管理
 └── src/store/storage/           # 数据持久化
+
+响应式层
+├── src/hooks/useResponsive.ts         # 响应式状态管理（Hook-based）
+├── src/hooks/useMediaQuery.ts         # 媒体查询 Hook（150ms 节流）
+├── src/components/MobileDrawer/       # 移动端抽屉组件
+└── src/components/BottomNav/          # 底部导航栏组件
 
 兼容层
 └── src/utils/tauriCompat/       # 跨平台兼容

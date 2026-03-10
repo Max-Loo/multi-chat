@@ -921,51 +921,28 @@ describe('ChatPanelContent', () => {
 
 
     it('应该正确设置容器样式类', () => {
-
       const chatModelList = [
-
         createMockChatModel('model-1'),
-
       ];
 
-
-
       const store = createTestStore(chatModelList);
-
       const wrapper = createWrapper(store);
 
-
-
       const { container } = render(
-
         <ChatPanelContent
-
           columnCount={2}
-
           isSplitter={false}
-
         />,
-
         { wrapper }
-
       );
 
-
-
-      // 验证绝对定位容器
-
-      const absContainer = container.querySelector('.absolute.top-0.left-0.w-full.h-screen');
-
+      // 验证绝对定位容器（使用 h-full 而不是 h-screen）
+      const absContainer = container.querySelector('.absolute.top-0.left-0.w-full.h-full');
       expect(absContainer).toBeInTheDocument();
 
-
-
       // 验证内边距
-
       expect(absContainer).toHaveClass('pt-12');
-
       expect(absContainer).toHaveClass('pb-24');
-
     });
 
   });

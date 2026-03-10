@@ -35,6 +35,9 @@ import type { RootState } from '@/store';
 import { createMockChatWithModels } from '@/__test__/helpers/mocks/chatSidebar';
 
 
+import { BrowserRouter } from 'react-router-dom';
+
+
 
 // 每个测试后清理 DOM
 
@@ -173,13 +176,19 @@ const createTestStore = (state: Partial<RootState>) => {
 
 
 const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-
+ 
   return function({ children }: { children: React.ReactNode }) {
-
-    return <Provider store={store}>{children}</Provider>;
-
+ 
+    return (
+      <Provider store={store}>
+        <BrowserRouter>
+          {children}
+        </BrowserRouter>
+      </Provider>
+    );
+ 
   };
-
+ 
 };
 
 

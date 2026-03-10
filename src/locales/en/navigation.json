@@ -1,5 +1,12 @@
 {
   "chat": "Chat",
   "model": "Model",
-  "setting": "Setting"
+  "setting": "Setting",
+  "mobileDrawer": {
+    "title": "Sidebar",
+    "description": "Sidebar",
+    "ariaDescription": "Drawer content"
+  },
+  "openChatList": "Open chat list",
+  "createChat": "New chat"
 }

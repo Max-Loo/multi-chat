@@ -77,7 +77,7 @@ const createWrapper = (store: any) => {
   return function({ children }: { children: React.ReactNode }) {
     return (
       <Provider store={store}>
-        <MemoryRouter>{children}</MemoryRouter>
+          <MemoryRouter>{children}</MemoryRouter>
       </Provider>
     )
   }

@@ -21,5 +21,6 @@
   "initializationWarning": "Avertissement d'initialisation",
   "initializationWarningMessage": "Certaines fonctionnalités peuvent être limitées",
   "showErrorDetails": "Afficher les détails de l'erreur",
-  "hideErrorDetails": "Masquer les détails de l'erreur"
+  "hideErrorDetails": "Masquer les détails de l'erreur",
+  "loading": "Chargement"
 }
