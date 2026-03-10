@@ -144,7 +144,7 @@ const ModelSelect: React.FC = () => {
               variant="ghost"
               className="rounded mr-2 h-8 w-8 p-0"
               onClick={openDrawer}
-              aria-label="打开模型供应商列表"
+              aria-label={t(($) => $.model.openProviderList)}
             >
               <Menu className="h-5 w-5" />
             </Button>

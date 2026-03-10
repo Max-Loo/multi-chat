@@ -58,9 +58,10 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 const mockT = (key: string | ((s: any) => string)): string => {
   if (typeof key === 'function') {
     return key({
-      common: { search: '搜索', hideSidebar: '隐藏侧边栏', createChat: '创建聊天' },
-      chat: { sendMessage: '发送消息', stopSending: '停止发送', includeReasoningContentHint: '包含推理内容提示', showSidebar: '显示侧边栏', scrollToBottom: '滚动到底部' },
-      model: {},
+      common: { search: '搜索', hideSidebar: '隐藏侧边栏', createChat: '创建聊天', loading: '加载中' },
+      chat: { sendMessage: '发送消息', stopSending: '停止发送', includeReasoningContentHint: '包含推理内容提示', showSidebar: '显示侧边栏', scrollToBottom: '滚动到底部', thinking: '思考中...', thinkingComplete: '思考完毕', createChat: '创建聊天', selectChatToStart: '选择聊天开聊！' },
+      model: { openProviderList: '打开模型供应商列表' },
+      navigation: { chat: '聊天', model: '模型', setting: '设置', mobileDrawer: { title: '侧边栏', description: '侧边栏', ariaDescription: '抽屉内容' }, openChatList: '打开聊天列表', createChat: '新建聊天' },
       table: { nickname: '昵称', modelProvider: '模型供应商', modelName: '模型名称', lastUpdateTime: '最后更新时间' },
     });
   }

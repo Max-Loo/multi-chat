@@ -26,5 +26,6 @@
   "searchPlaceholder": "搜索昵称或备注",
   "fixErrorReload": "请修复错误后重新加载数据",
   "noModelData": "暂无模型数据，点击「添加模型」创建第一个模型",
-  "confirmDeleteDescription": "确定要删除模型 「{{nickname}}」 吗？"
+  "confirmDeleteDescription": "确定要删除模型 「{{nickname}}」 吗？",
+  "openProviderList": "打开模型供应商列表"
 }

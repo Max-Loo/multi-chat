@@ -1,6 +1,6 @@
 /**
  * ChatBubble UI 组件测试
- * 
+ *
  * 测试新实现的聊天气泡组件的各种场景
  */
 
@@ -8,6 +8,36 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatRoleEnum } from '@/types/chat';
+
+// Mock react-i18next
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
+    t: ((keyOrSelector: string | ((resources: any) => string)) => {
+      if (typeof keyOrSelector === 'function') {
+        const mockResources = {
+          chat: {
+            thinking: '思考中......',
+            thinkingComplete: '思考完毕',
+          },
+        };
+        return keyOrSelector(mockResources);
+      }
+      return keyOrSelector;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 测试错误处理，需要构造无效输入
+    }) as any,
+    i18n: {
+      language: 'zh',
+      changeLanguage: vi.fn(),
+    },
+  }),
+  initReactI18next: {
+    type: '3rdParty',
+    init: vi.fn(),
+  },
+}));
 
 // Mock highlight.js
 vi.mock('highlight.js', () => ({
@@ -155,12 +185,12 @@ describe('ChatBubble UI 组件', () => {
       );
 
       // 检查标题（推理内容默认折叠，只显示标题）
-      expect(container.textContent).toContain('思考完成');
+      expect(container.textContent).toContain('思考完毕');
       // 检查正式回复
       expect(container.textContent).toContain('Final answer');
     });
 
-    it('应该显示"思考完成"标题（非运行状态）', () => {
+    it('应该显示"思考完毕"标题（非运行状态）', () => {
       const { container } = render(
         <ChatBubble 
           role={ChatRoleEnum.ASSISTANT} 
@@ -170,10 +200,10 @@ describe('ChatBubble UI 组件', () => {
         />
       );
       
-      expect(container.textContent).toContain('思考完成');
+      expect(container.textContent).toContain('思考完毕');
     });
 
-    it('应该显示"思考中"标题（运行状态）', () => {
+    it('应该显示"思考中......"标题（运行状态）', () => {
       const { container } = render(
         <ChatBubble 
           role={ChatRoleEnum.ASSISTANT} 
@@ -183,7 +213,7 @@ describe('ChatBubble UI 组件', () => {
         />
       );
       
-      expect(container.textContent).toContain('思考中');
+      expect(container.textContent).toContain('思考中...');
     });
 
     it('应该处理只有推理内容没有正式内容的消息', () => {
@@ -197,7 +227,7 @@ describe('ChatBubble UI 组件', () => {
       );
 
       // 检查标题（推理内容默认折叠，只显示标题）
-      expect(container.textContent).toContain('思考中');
+      expect(container.textContent).toContain('思考中...');
     });
   });
 
@@ -332,7 +362,7 @@ describe('ChatBubble UI 组件', () => {
         />
       );
       
-      expect(container.textContent).toContain('思考中');
+      expect(container.textContent).toContain('思考中...');
       
       rerender(
         <ChatBubble 
@@ -343,7 +373,7 @@ describe('ChatBubble UI 组件', () => {
         />
       );
       
-      expect(container.textContent).toContain('思考完成');
+      expect(container.textContent).toContain('思考完毕');
     });
   });
 });

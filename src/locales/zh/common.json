@@ -21,5 +21,6 @@
   "initializationWarning": "初始化警告",
   "initializationWarningMessage": "部分功能可能受限",
   "showErrorDetails": "显示错误详情",
-  "hideErrorDetails": "隐藏错误详情"
+  "hideErrorDetails": "隐藏错误详情",
+  "loading": "加载中"
 }

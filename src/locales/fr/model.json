@@ -26,5 +26,6 @@
   "searchPlaceholder": "Rechercher par surnom ou remarque",
   "fixErrorReload": "Veuillez corriger les erreurs et recharger les données",
   "noModelData": "Aucune donnée de modèle pour le moment, cliquez sur 「Ajouter un modèle」 pour créer le premier modèle",
-  "confirmDeleteDescription": "Êtes-vous sûr de vouloir supprimer le modèle 「{{nickname}}」 ?"
+  "confirmDeleteDescription": "Êtes-vous sûr de vouloir supprimer le modèle 「{{nickname}}」 ?",
+  "openProviderList": "Ouvrir la liste des fournisseurs de modèles"
 }

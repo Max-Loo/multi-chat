@@ -27,7 +27,7 @@ const ChatPlaceholder: React.FC = () => {
           variant="ghost"
           className="absolute top-4 left-4 rounded h-8 w-8 p-0"
           onClick={openDrawer}
-          aria-label="打开聊天列表"
+          aria-label={t(($) => $.navigation.openChatList)}
         >
           <Menu className="h-5 w-5" />
         </Button>
@@ -37,7 +37,7 @@ const ChatPlaceholder: React.FC = () => {
         className="absolute top-4 right-4 rounded h-8 w-8 p-0"
         onClick={createNewChat}
         title={t(($) => $.chat.createChat)}
-        aria-label="新增聊天"
+        aria-label={t(($) => $.navigation.createChat)}
       >
         <Plus size={16} />
       </Button>

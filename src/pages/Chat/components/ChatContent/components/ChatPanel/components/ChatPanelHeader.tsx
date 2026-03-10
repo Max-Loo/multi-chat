@@ -68,7 +68,7 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
             variant="ghost"
             className="rounded mr-2 h-8 w-8 p-0"
             onClick={openDrawer}
-            aria-label="打开聊天列表"
+            aria-label={t(($) => $.navigation.openChatList)}
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -133,7 +133,7 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
             className="rounded h-7 w-7 p-0"
             onClick={createNewChat}
             title={t(($) => $.chat.createChat)}
-            aria-label="新增聊天"
+            aria-label={t(($) => $.navigation.createChat)}
           >
             <Plus size={15} />
           </Button>

@@ -8,6 +8,39 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { MobileDrawer } from '@/components/MobileDrawer';
 
+// Mock react-i18next
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 第三方库类型定义不完整
+    t: ((keyOrSelector: string | ((resources: any) => string)) => {
+      if (typeof keyOrSelector === 'function') {
+        const mockResources = {
+          navigation: {
+            mobileDrawer: {
+              title: '侧边栏',
+              description: '侧边栏',
+              ariaDescription: '抽屉内容',
+            },
+          },
+        };
+        return keyOrSelector(mockResources);
+      }
+      return keyOrSelector;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 测试错误处理，需要构造无效输入
+    }) as any,
+    i18n: {
+      language: 'zh',
+      changeLanguage: vi.fn(),
+    },
+  }),
+  initReactI18next: {
+    type: '3rdParty',
+    init: vi.fn(),
+  },
+}));
+
 // Mock shadcn/ui Sheet 组件
 vi.mock('@/components/ui/sheet', () => ({
   Sheet: ({ open, children }: any) => (
