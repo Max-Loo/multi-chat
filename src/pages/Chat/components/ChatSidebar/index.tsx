@@ -41,10 +41,7 @@ const ChatSidebar: React.FC = () => {
       className="relative flex flex-col items-center justify-start w-full h-full"
     >
       <div className="w-full h-12 p-2 border-b border-gray-100">
-        <ToolsBar
-          filterText={filterText}
-          onFilterChange={setFilterText}
-        />
+        <ToolsBar filterText={filterText} onFilterChange={setFilterText} />
       </div>
       <div
         className={`pb-2 overflow-y-auto w-full
@@ -53,9 +50,7 @@ const ChatSidebar: React.FC = () => {
       >
         {!chatListLoading ? (
           filteredChatList.map((chat) => {
-            return (
-              <ChatButton chat={chat} key={chat.id} />
-            );
+            return <ChatButton chat={chat} key={chat.id} />;
           })
         ) : (
           <div className="w-full p-2 space-y-2">
