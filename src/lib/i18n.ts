@@ -4,13 +4,13 @@ import { getDefaultAppLanguage, getLanguageLabel } from "./global";
 import { toastQueue } from "./toast/toastQueue";
 
 // 英文资源"第一公民"策略（静态导入，同步打包）
-import enCommon from '../locales/en/common.json';
-import enChat from '../locales/en/chat.json';
-import enModel from '../locales/en/model.json';
-import enNavigation from '../locales/en/navigation.json';
-import enProvider from '../locales/en/provider.json';
-import enSetting from '../locales/en/setting.json';
-import enTable from '../locales/en/table.json';
+import enCommon from "../locales/en/common.json";
+import enChat from "../locales/en/chat.json";
+import enModel from "../locales/en/model.json";
+import enNavigation from "../locales/en/navigation.json";
+import enProvider from "../locales/en/provider.json";
+import enSetting from "../locales/en/setting.json";
+import enTable from "../locales/en/table.json";
 
 // 英文资源聚合对象
 const EN_RESOURCES: Record<string, unknown> = {
@@ -24,15 +24,15 @@ const EN_RESOURCES: Record<string, unknown> = {
 };
 
 // 使用 Set 和 Map 缓存语言加载状态
-const loadedLanguages = new Set<string>(['en']); // 英文预标记为已加载
+const loadedLanguages = new Set<string>(["en"]); // 英文预标记为已加载
 const loadingPromises = new Map<string, Promise<void>>();
 
 // 缓存已加载的语言资源对象（不包含 translation 包装）
 const languageResourcesCache = new Map<string, Record<string, unknown>>();
-languageResourcesCache.set('en', EN_RESOURCES);
+languageResourcesCache.set("en", EN_RESOURCES);
 
 // Vite import.meta.glob 预先获取所有语言文件映射（排除英文，因为已静态加载）
-const allLocaleModules = import.meta.glob('../locales/!(en)/**/*.json');
+const allLocaleModules = import.meta.glob("../locales/!(en)/**/*.json");
 
 /**
  * 加载指定语言的资源
@@ -61,7 +61,7 @@ const loadLanguage = async (lang: string, retries = 2): Promise<void> => {
       // 如果 i18n 已经初始化，动态添加资源
       if (i18n.isInitialized) {
         // 资源格式：{ lang: { translation: { namespace1: {...}, ... } } }
-        i18n.addResourceBundle(lang, 'translation', resources, true);
+        i18n.addResourceBundle(lang, "translation", resources, true);
       }
     } finally {
       loadingPromises.delete(lang);
@@ -78,9 +78,12 @@ const loadLanguage = async (lang: string, retries = 2): Promise<void> => {
  * @param retries 重试次数
  * @returns Promise<Record<string, unknown>> 返回聚合后的语言资源对象
  */
-const performLoad = async (lang: string, retries: number): Promise<Record<string, unknown>> => {
+const performLoad = async (
+  lang: string,
+  retries: number,
+): Promise<Record<string, unknown>> => {
   // 英文资源已静态加载，直接返回空对象
-  if (lang === 'en') {
+  if (lang === "en") {
     return EN_RESOURCES;
   }
 
@@ -88,8 +91,8 @@ const performLoad = async (lang: string, retries: number): Promise<Record<string
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       // 过滤出目标语言的文件（排除英文，因为已静态加载）
-      const langFiles = Object.keys(allLocaleModules).filter(path =>
-        path.match(new RegExp(`/locales/${lang}/[^/]+\\.json$`))
+      const langFiles = Object.keys(allLocaleModules).filter((path) =>
+        path.match(new RegExp(`/locales/${lang}/[^/]+\\.json$`)),
       );
 
       if (langFiles.length === 0) {
@@ -99,7 +102,9 @@ const performLoad = async (lang: string, retries: number): Promise<Record<string
       // 并行加载所有命名空间
       const resources = await Promise.all(
         langFiles.map(async (filePath) => {
-          const module = await allLocaleModules[filePath]() as { default: Record<string, unknown> };
+          const module = (await allLocaleModules[filePath]()) as {
+            default: Record<string, unknown>;
+          };
           // 提取命名空间（文件名）
           const namespaceMatch = filePath.match(/\/([^/]+)\.json$/);
           if (!namespaceMatch) {
@@ -107,23 +112,27 @@ const performLoad = async (lang: string, retries: number): Promise<Record<string
           }
           const namespace = namespaceMatch[1];
           return { namespace, resources: module.default };
-        })
+        }),
       );
 
       // 聚合为 i18next 格式
-      const aggregatedResources = resources.reduce((acc, { namespace, resources: namespaceResources }) => {
-        acc[namespace] = namespaceResources;
-        return acc;
-      }, {} as Record<string, unknown>);
+      const aggregatedResources = resources.reduce(
+        (acc, { namespace, resources: namespaceResources }) => {
+          acc[namespace] = namespaceResources;
+          return acc;
+        },
+        {} as Record<string, unknown>,
+      );
 
       // 成功加载后将语言代码添加到缓存（在 loadLanguage 中处理）
       return aggregatedResources;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const isNetworkError =
-        errorMessage.includes('fetch') ||
-        errorMessage.includes('network') ||
-        errorMessage.includes('timeout');
+        errorMessage.includes("fetch") ||
+        errorMessage.includes("network") ||
+        errorMessage.includes("timeout");
 
       // 非网络错误或已达重试上限，直接失败
       if (!isNetworkError || attempt === retries) {
@@ -132,7 +141,7 @@ const performLoad = async (lang: string, retries: number): Promise<Record<string
 
       // 指数退避：第一次 1s，第二次 2s
       const delay = Math.pow(2, attempt) * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -145,13 +154,17 @@ const performLoad = async (lang: string, retries: number): Promise<Record<string
  * 从 i18next 实例读取已加载的资源快照
  * @returns {Record<string, { translation: Record<string, unknown> }>} 已加载的语言资源对象
  */
-export const getLocalesResources = (): Record<string, { translation: Record<string, unknown> }> => {
+export const getLocalesResources = (): Record<
+  string,
+  { translation: Record<string, unknown> }
+> => {
   // 从 i18next 实例读取已加载的资源（向后兼容）
-  const resources: Record<string, { translation: Record<string, unknown> }> = {};
+  const resources: Record<string, { translation: Record<string, unknown> }> =
+    {};
 
   const languages = i18n.languages || [];
   for (const lang of languages) {
-    const resource = i18n.getResourceBundle(lang, 'translation');
+    const resource = i18n.getResourceBundle(lang, "translation");
     if (resource) {
       resources[lang] = { translation: resource as Record<string, unknown> };
     }
@@ -160,10 +173,18 @@ export const getLocalesResources = (): Record<string, { translation: Record<stri
   return resources;
 };
 
-type InitI18nPromise = Promise<TFunction<"translation", undefined>>
+type InitI18nPromise = Promise<TFunction<"translation", undefined>>;
 
 // 初始化 i18n 的 Promise
 let initI18nPromise: InitI18nPromise | null = null;
+
+/**
+ * 重置 i18n 初始化单例（仅用于测试）
+ * @internal
+ */
+export const resetInitI18nForTest = () => {
+  initI18nPromise = null;
+};
 
 /**
  * 初始化 i18n 配置
@@ -177,28 +198,38 @@ export const initI18n = async () => {
 
   initI18nPromise = (async () => {
     // 内部调用 getDefaultAppLanguage() 检测系统语言
-    let languageResult: Awaited<ReturnType<typeof getDefaultAppLanguage>> = { lang: 'en', migrated: false };  // 默认英文
+    let languageResult: Awaited<ReturnType<typeof getDefaultAppLanguage>> = {
+      lang: "en",
+      migrated: false,
+    }; // 默认英文
     try {
       languageResult = await getDefaultAppLanguage();
     } catch (error) {
-      console.warn('Failed to get system language, using English', error);
+      console.warn("Failed to get system language, using English", error);
     }
 
     // 显示 Toast 提示（根据迁移信息）
     try {
       if (languageResult.migrated && languageResult.from) {
         // 迁移成功提示
-        toastQueue.info(`Language code updated to ${getLanguageLabel(languageResult.lang)} (${languageResult.lang})`);
-      } else if (languageResult.fallbackReason === 'system-lang') {
+        toastQueue.info(
+          `Language code updated to ${getLanguageLabel(languageResult.lang)} (${languageResult.lang})`,
+        );
+      } else if (languageResult.fallbackReason === "system-lang") {
         // 降级到系统语言提示
-        toastQueue.info(`Switched to system language: ${getLanguageLabel(languageResult.lang)}`);
-      } else if (languageResult.fallbackReason === 'default') {
+        toastQueue.info(
+          `Switched to system language: ${getLanguageLabel(languageResult.lang)}`,
+        );
+      } else if (languageResult.fallbackReason === "default") {
         // 降级到英文提示
         toastQueue.warning(`Language code invalid, switched to English`);
       }
     } catch (toastError) {
       // Toast 显示失败，降级到 console.warn
-      console.warn('[Toast] Failed to display, falling back to console.warn', toastError);
+      console.warn(
+        "[Toast] Failed to display, falling back to console.warn",
+        toastError,
+      );
     }
 
     // 准备初始资源对象（使用 Resource 类型）
@@ -208,27 +239,34 @@ export const initI18n = async () => {
     };
 
     // 实际使用的语言（默认英文，如果加载成功则使用系统语言）
-    let actualLang = 'en';
+    let actualLang = "en";
 
     // 如果系统语言不是英文且在支持列表中，异步加载并自动切换
-    if (languageResult.lang !== 'en') {
+    if (languageResult.lang !== "en") {
       try {
         // 使用 loadLanguage() 而非 performLoad()，确保缓存机制一致
         await loadLanguage(languageResult.lang);
         // 只有成功加载系统语言资源后，才使用系统语言
         actualLang = languageResult.lang;
-        
+
         // 关键修复：将加载的资源添加到 initialResources 中
         const loadedResources = languageResourcesCache.get(languageResult.lang);
         if (loadedResources) {
-          initialResources[languageResult.lang] = { translation: loadedResources };
+          initialResources[languageResult.lang] = {
+            translation: loadedResources,
+          };
         }
       } catch (error) {
         // 加载失败，保持英文，显示警告（非阻塞）
-        console.warn(`System language ${languageResult.lang} failed to load, using English instead`, error);
+        console.warn(
+          `System language ${languageResult.lang} failed to load, using English instead`,
+          error,
+        );
         // 显示 Toast 警告（使用降级方案）
         try {
-          toastQueue.warning(`System language failed to load, using English instead`);
+          toastQueue.warning(
+            `System language failed to load, using English instead`,
+          );
         } catch {
           // Toast 显示失败，忽略（不影响初始化）
         }
@@ -238,7 +276,7 @@ export const initI18n = async () => {
     // 初始化 i18next，使用 resources 配置
     await i18n.use(initReactI18next).init({
       lng: actualLang,
-      fallbackLng: 'en',
+      fallbackLng: "en",
       resources: initialResources,
       interpolation: {
         escapeValue: false, // react already safes from xss
@@ -258,19 +296,21 @@ export const initI18n = async () => {
  */
 export const getInitI18nPromise = () => {
   if (initI18nPromise) {
-    return initI18nPromise
+    return initI18nPromise;
   }
 
-  return initI18n()
-}
+  return initI18n();
+};
 
 /**
  * 改变应用语言
  * @param lang 语言代码
  * @returns Promise<{ success: boolean }>
  */
-export const changeAppLanguage = async (lang: string): Promise<{ success: boolean }> => {
-  console.log('changeAppLanguage', lang);
+export const changeAppLanguage = async (
+  lang: string,
+): Promise<{ success: boolean }> => {
+  console.log("changeAppLanguage", lang);
 
   try {
     // 等待 i18n 初始化完成（防止在初始化期间调用）

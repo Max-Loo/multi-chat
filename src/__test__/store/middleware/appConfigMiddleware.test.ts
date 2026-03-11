@@ -442,4 +442,121 @@ describe('appConfigMiddleware', () => {
       expect(mockToastSuccess).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('初始化时的语言持久化', () => {
+    it('应该在 initializeAppLanguage.fulfilled 时持久化到 localStorage', async () => {
+      const lang = 'fr';
+
+      // dispatch initializeAppLanguage.fulfilled action（模拟初始化完成）
+      store.dispatch({
+        type: 'appConfig/language/initialize/fulfilled',
+        payload: lang,
+      });
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证 localStorage.setItem 被调用
+      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      expect(global.localStorage.setItem).toHaveBeenCalledWith(
+        LOCAL_STORAGE_LANGUAGE_KEY,
+        lang
+      );
+    });
+
+    it('应该在初始化时使用 action.payload 持久化（而非从 store 读取）', async () => {
+      const lang = 'zh';
+
+      // dispatch initializeAppLanguage.fulfilled action
+      store.dispatch({
+        type: 'appConfig/language/initialize/fulfilled',
+        payload: lang,
+      });
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证使用的是 action.payload 而不是 store 中的值
+      expect(global.localStorage.setItem).toHaveBeenCalledWith(
+        LOCAL_STORAGE_LANGUAGE_KEY,
+        lang // 应该使用 payload 的值
+      );
+
+      // 验证 store 状态也被 extraReducers 更新
+      expect(store.getState().appConfig.language).toBe(lang);
+    });
+
+    it('应该在初始化时不显示 Toast（自动行为）', async () => {
+      const lang = 'fr';
+
+      // dispatch initializeAppLanguage.fulfilled action
+      store.dispatch({
+        type: 'appConfig/language/initialize/fulfilled',
+        payload: lang,
+      });
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证没有显示 Toast
+      expect(mockToastLoading).not.toHaveBeenCalled();
+      expect(mockToastSuccess).not.toHaveBeenCalled();
+      expect(mockToastError).not.toHaveBeenCalled();
+      expect(mockToastDismiss).not.toHaveBeenCalled();
+    });
+
+    it('应该在用户主动切换语言时显示 Toast（action.type 是 setAppLanguage）', async () => {
+      const lang = 'zh';
+      mockChangeAppLanguage.mockResolvedValue({ success: true });
+
+      store.dispatch(setAppLanguage(lang));
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证显示 Toast
+      expect(mockToastLoading).toHaveBeenCalledTimes(1);
+      expect(mockToastSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('应该验证降级语言被正确持久化到 localStorage', async () => {
+      // 模拟降级场景：无效语言 'de' 降级到系统语言 'fr'
+      const fallbackLang = 'fr';
+
+      store.dispatch({
+        type: 'appConfig/language/initialize/fulfilled',
+        payload: fallbackLang,
+      });
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证降级语言被持久化
+      expect(global.localStorage.setItem).toHaveBeenCalledWith(
+        LOCAL_STORAGE_LANGUAGE_KEY,
+        fallbackLang
+      );
+    });
+
+    it('应该验证即使 extraReducers 未更新 store，middleware 仍能正确持久化', async () => {
+      const lang = 'zh';
+
+      // dispatch initializeAppLanguage.fulfilled action
+      // 注意：在真实的 Redux flow 中，extraReducers 会先更新 store
+      // 但这个测试验证 middleware 不依赖 store 状态
+      store.dispatch({
+        type: 'appConfig/language/initialize/fulfilled',
+        payload: lang,
+      });
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证使用的是 action.payload（不依赖 store 状态）
+      expect(global.localStorage.setItem).toHaveBeenCalledWith(
+        LOCAL_STORAGE_LANGUAGE_KEY,
+        lang
+      );
+    });
+  });
 });

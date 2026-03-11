@@ -163,9 +163,35 @@ toastQueue.markReady();
 
 ### Redux Middleware
 
-监听 `setAppLanguage` action，自动同步到 localStorage：
+监听语言变更 actions，自动同步到 localStorage：
 
 ```typescript
+// 方案 1：使用 Listener Middleware（推荐）
+import { createListenerMiddleware, isAnyOf } from '@reduxjs/toolkit';
+
+saveDefaultAppLanguage.startListening({
+  matcher: isAnyOf(
+    setAppLanguage,                      // 用户主动切换语言
+    initializeAppLanguage.fulfilled,     // 初始化时语言降级
+  ),
+  effect: async (action, listenerApi) => {
+    // 根据 action 类型选择数据源，确保持久化的值准确可靠
+    // - initializeAppLanguage.fulfilled: 使用 action.payload（直接来自 thunk 返回值，更可靠）
+    // - setAppLanguage: 使用 store 中的值（可能有其他中间件或 reducer 修改）
+    const langToPersist = action.type.endsWith('/fulfilled')
+      ? (action.payload as string)
+      : listenerApi.getState().appConfig.language;
+
+    localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, langToPersist);
+
+    // 只在用户主动切换时显示 Toast（初始化降级不显示）
+    if (action.type === 'appConfig/setAppLanguage') {
+      // 显示 Toast 提示...
+    }
+  },
+});
+
+// 方案 2：使用普通 Middleware
 export const createLanguagePersistenceMiddleware = (): Middleware => {
   return (_store) => (next) => (action: any) => {
     const result = next(action);
@@ -175,7 +201,6 @@ export const createLanguagePersistenceMiddleware = (): Middleware => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, action.payload);
       } catch (error) {
         console.warn('[LanguagePersistence] 持久化失败:', error);
-        // 静默降级，不影响应用运行
       }
     }
 
@@ -184,13 +209,22 @@ export const createLanguagePersistenceMiddleware = (): Middleware => {
 };
 ```
 
+### 两个 Actions 的区别
+
+| Action Type | 触发时机 | 是否显示 Toast | 使用场景 |
+|------------|---------|---------------|----------|
+| `initializeAppLanguage.fulfilled` | 应用初始化时 | ❌ 否 | 语言降级、缓存迁移 |
+| `setAppLanguage` | 用户主动切换 | ✅ 是 | 用户在设置中切换语言 |
+
 ### 静默降级
 
 写入失败时不抛出错误，确保应用继续运行。
 
 ### 实现位置
 
-**位置**：`src/store/middleware/languagePersistence.ts`
+**位置**：
+- **主 middleware**：`src/store/middleware/appConfigMiddleware.ts`（推荐）
+- **备用 middleware**：`src/store/middleware/languagePersistence.ts`
 
 ## 5. 翻译完整性检查
 
@@ -247,7 +281,7 @@ npm run validate
 - **按需加载**：`src/lib/i18n.ts`
 - **缓存验证**：`src/lib/global.ts`, `src/utils/constants.ts`
 - **Toast 队列**：`src/lib/toast/toastQueue.ts`
-- **自动持久化**：`src/store/middleware/languagePersistence.ts`
+- **自动持久化**：`src/store/middleware/appConfigMiddleware.ts`, `src/store/middleware/languagePersistence.ts`
 - **翻译完整性检查**：`scripts/check-i18n.js`
 - **翻译文件**：`src/locales/{lang}/`
 

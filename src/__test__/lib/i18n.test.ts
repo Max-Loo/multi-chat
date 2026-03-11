@@ -41,10 +41,26 @@ vi.mock("react-i18next", () => ({
   initReactI18next: mockInitReactI18next,
 }));
 
-// Mock ../lib/global 中的 getDefaultAppLanguage 函数
+// Mock ../lib/global 中的函数
 const mockGetDefaultAppLanguage = vi.fn();
+const mockGetLanguageLabel = vi.fn((lang: string) => lang);
 vi.mock("../lib/global", () => ({
   getDefaultAppLanguage: mockGetDefaultAppLanguage,
+  getLanguageLabel: mockGetLanguageLabel,
+  LOCAL_STORAGE_LANGUAGE_KEY: 'multi-chat:language',
+}));
+
+// Mock toastQueue - 返回 Promise 以匹配实际 API
+const mockToastQueue = {
+  info: vi.fn(() => Promise.resolve('mock-id')),
+  warning: vi.fn(() => Promise.resolve('mock-id')),
+  error: vi.fn(() => Promise.resolve('mock-id')),
+  loading: vi.fn(() => Promise.resolve('mock-id')),
+  dismiss: vi.fn(),
+};
+
+vi.mock("../../lib/toast/toastQueue", () => ({
+  toastQueue: mockToastQueue,
 }));
 
 // 动态导入被测试模块（在 mock 之后）
@@ -296,6 +312,89 @@ describe("i18n module", () => {
           }),
         })
       );
+    });
+
+    describe("语言降级持久化", () => {
+      describe("核心功能", () => {
+        it("应该在降级到系统语言时成功初始化", async () => {
+          // Mock 降级到系统语言
+          mockGetDefaultAppLanguage.mockResolvedValue({
+            lang: 'fr',
+            migrated: false,
+            fallbackReason: 'system-lang',
+          });
+
+          // 重新导入模块以应用新的 mock
+          const { initI18n, resetInitI18nForTest } = await import("@/lib/i18n");
+
+          // 重置单例以允许重新初始化
+          resetInitI18nForTest();
+
+          await initI18n();
+
+          // 验证 i18n.init 被调用
+          expect(mockI18nInit).toHaveBeenCalled();
+        });
+
+        it("应该在降级到默认英语时成功初始化", async () => {
+          // Mock 降级到默认英语
+          mockGetDefaultAppLanguage.mockResolvedValue({
+            lang: 'en',
+            migrated: false,
+            fallbackReason: 'default',
+          });
+
+          // 重新导入模块以应用新的 mock
+          const { initI18n, resetInitI18nForTest } = await import("@/lib/i18n");
+
+          // 重置单例以允许重新初始化
+          resetInitI18nForTest();
+
+          await initI18n();
+
+          // 验证 i18n.init 被调用
+          expect(mockI18nInit).toHaveBeenCalled();
+        });
+
+        it("应该在语言迁移成功时成功初始化", async () => {
+          // Mock 语言迁移成功
+          mockGetDefaultAppLanguage.mockResolvedValue({
+            lang: 'zh',
+            migrated: true,
+            from: 'zh-CN',
+          });
+
+          // 重新导入模块以应用新的 mock
+          const { initI18n, resetInitI18nForTest } = await import("@/lib/i18n");
+
+          // 重置单例以允许重新初始化
+          resetInitI18nForTest();
+
+          await initI18n();
+
+          // 验证 i18n.init 被调用
+          expect(mockI18nInit).toHaveBeenCalled();
+        });
+
+        it("应该在语言有效缓存时成功初始化", async () => {
+          // Mock 使用有效的缓存语言
+          mockGetDefaultAppLanguage.mockResolvedValue({
+            lang: 'fr',
+            migrated: false,
+          });
+
+          // 重新导入模块以应用新的 mock
+          const { initI18n, resetInitI18nForTest } = await import("@/lib/i18n");
+
+          // 重置单例以允许重新初始化
+          resetInitI18nForTest();
+
+          await initI18n();
+
+          // 验证 i18n.init 被调用
+          expect(mockI18nInit).toHaveBeenCalled();
+        });
+      });
     });
   });
 

@@ -1,6 +1,6 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import { RootState } from "..";
-import { setAppLanguage, setTransmitHistoryReasoning, setAutoNamingEnabled } from "../slices/appConfigSlices";
+import { setAppLanguage, setTransmitHistoryReasoning, setAutoNamingEnabled, initializeAppLanguage } from "../slices/appConfigSlices";
 import { LOCAL_STORAGE_LANGUAGE_KEY } from "@/lib/global";
 import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
 import { changeAppLanguage } from "@/lib/i18n";
@@ -11,34 +11,42 @@ export const saveDefaultAppLanguage = createListenerMiddleware<RootState>()
 saveDefaultAppLanguage.startListening({
   matcher: isAnyOf(
     setAppLanguage,
+    initializeAppLanguage.fulfilled,
   ),
-  effect: async (_, listenerApi) => {
-    const currentLang = listenerApi.getState().appConfig.language
-    localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, currentLang)
+  effect: async (action, listenerApi) => {
+    // 根据 action 类型选择数据源，确保持久化的值准确可靠
+    // - initializeAppLanguage.fulfilled: 使用 action.payload（直接来自 thunk 返回值，更可靠）
+    // - setAppLanguage: 使用 store 中的值（可能有其他中间件或 reducer 修改）
+    const isInitializeFulfilled = initializeAppLanguage.fulfilled.match(action);
+    const langToPersist = isInitializeFulfilled
+      ? action.payload as string
+      : listenerApi.getState().appConfig.language;
 
-    // 显示 loading Toast
-    const loadingToast = await toastQueue.loading('切换语言中...');
-
+    // 持久化到 localStorage
     try {
-      // 调用 changeAppLanguage() 并处理返回的 Promise
-      const result = await changeAppLanguage(currentLang);
-
-      // 先 dismiss loading Toast
-      toastQueue.dismiss(loadingToast);
-
-      // 根据返回结果显示不同的 Toast
-      if (result.success) {
-        toastQueue.success('语言切换成功');
-      } else {
-        toastQueue.error(`语言切换失败: ${currentLang}`);
-      }
+      localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, langToPersist);
     } catch (error) {
-      // dismiss loading Toast
-      toastQueue.dismiss(loadingToast);
+      console.warn('[LanguagePersistence] 持久化失败:', error);
+    }
 
-      // 记录错误并显示错误 Toast
-      console.error('Language change error:', error);
-      toastQueue.error('语言切换失败，请重试');
+    // 只在用户主动切换语言时显示 Toast（初始化时不显示）
+    if (action.type === 'appConfig/setAppLanguage') {
+      const loadingToast = await toastQueue.loading('切换语言中...');
+
+      try {
+        const result = await changeAppLanguage(langToPersist);
+        toastQueue.dismiss(loadingToast);
+
+        if (result.success) {
+          toastQueue.success('语言切换成功');
+        } else {
+          toastQueue.error(`语言切换失败: ${langToPersist}`);
+        }
+      } catch (error) {
+        toastQueue.dismiss(loadingToast);
+        console.error('Language change error:', error);
+        toastQueue.error('语言切换失败，请重试');
+      }
     }
   },
 })
