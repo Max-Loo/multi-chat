@@ -1,0 +1,17 @@
+{
+  "initialization": {
+    "i18nFailed": "无法初始化国际化配置",
+    "masterKeyFailed": "无法初始化主密钥",
+    "modelsFailed": "模型数据加载失败",
+    "chatListFailed": "聊天列表加载失败",
+    "appLanguageFailed": "应用语言配置加载失败",
+    "transmitHistoryReasoningFailed": "推理内容配置加载失败",
+    "autoNamingEnabledFailed": "自动命名功能配置加载失败",
+    "modelProviderFailed": "模型供应商数据加载失败"
+  },
+  "appConfig": {
+    "failToInitializeLanguage": "无法初始化语言设置",
+    "failToInitializeTransmitHistoryReasoning": "无法初始化推理内容传输设置",
+    "failToInitializeAutoNamingEnabled": "无法初始化自动命名设置"
+  }
+}

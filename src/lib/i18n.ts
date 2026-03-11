@@ -11,6 +11,7 @@ import enNavigation from "../locales/en/navigation.json";
 import enProvider from "../locales/en/provider.json";
 import enSetting from "../locales/en/setting.json";
 import enTable from "../locales/en/table.json";
+import enError from "../locales/en/error.json";
 
 // 英文资源聚合对象
 const EN_RESOURCES: Record<string, unknown> = {
@@ -21,6 +22,7 @@ const EN_RESOURCES: Record<string, unknown> = {
   provider: enProvider,
   setting: enSetting,
   table: enTable,
+  error: enError,
 };
 
 // 使用 Set 和 Map 缓存语言加载状态
@@ -330,3 +332,48 @@ export const changeAppLanguage = async (
     return { success: false };
   }
 };
+
+/**
+ * 安全地获取翻译文本（用于非 React 环境）
+ *
+ * 特性：
+ * - 处理 i18n 未初始化的情况
+ * - 翻译不存在时使用降级文本
+ * - 支持嵌套键值（如 'error.initialization.i18nFailed'）
+ * - 参数验证：防御 null/undefined
+ * - 类型安全：确保始终返回字符串
+ *
+ * @param key 翻译键（支持点号分隔的嵌套键，如 'error.initialization.i18nFailed'）
+ * @param fallback 降级文本（i18n 未就绪或翻译不存在时使用，至少返回空字符串）
+ * @returns 翻译后的文本，始终返回非空字符串
+ */
+export const tSafely = (key: string, fallback: string): string => {
+  // 参数验证：防御 null/undefined
+  const safeKey = key ?? '';
+  const safeFallback = (fallback ?? '') || '';  // 确保至少返回空字符串
+
+  if (i18n.isInitialized && safeKey) {
+    try {
+      const translated = String((i18n as any).t(safeKey));
+      // 翻译不存在、等于键本身、为空字符串、或包含 i18next 错误消息时使用降级
+      if (
+        translated === safeKey ||
+        !translated ||
+        translated.includes('returned an object instead of string') ||
+        translated.includes('returned an object')
+      ) {
+        return safeFallback;
+      }
+      return translated;
+    } catch (error) {
+      // 记录异常但不中断流程
+      console.warn('[tSafely] Translation failed for key:', safeKey, error);
+      return safeFallback;
+    }
+  }
+
+  return safeFallback;
+};
+
+// TypeScript 类型导出（供其他模块导入）
+export type SafeTranslator = typeof tSafely;

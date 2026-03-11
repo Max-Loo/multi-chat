@@ -10,18 +10,29 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock i18next 库
-const mockI18nInit = vi.fn();
-const mockI18nChangeLanguage = vi.fn();
-const mockI18nAddResourceBundle = vi.fn();
-const mockI18nGetResourceBundle = vi.fn();
-const mockI18nUse = vi.fn(() => ({
-  init: mockI18nInit,
-}));
+// 定义 mock 实例的类型
+type MockI18nInstance = {
+  use: ReturnType<typeof vi.fn>;
+  init: ReturnType<typeof vi.fn>;
+  changeLanguage: ReturnType<typeof vi.fn>;
+  addResourceBundle: ReturnType<typeof vi.fn>;
+  getResourceBundle: ReturnType<typeof vi.fn>;
+  languages: string[];
+  isInitialized: boolean;
+  t: (key: string) => string;
+};
 
-// Mock i18next 实例
-const mockI18nInstance = {
-  use: mockI18nUse,
+// 使用 vi.hoisted 确保变量在 mock 工厂函数执行前就被定义
+const mockI18nInit = vi.hoisted(() => vi.fn());
+const mockI18nChangeLanguage = vi.hoisted(() => vi.fn());
+const mockI18nAddResourceBundle = vi.hoisted(() => vi.fn());
+const mockI18nGetResourceBundle = vi.hoisted(() => vi.fn());
+const mockInitReactI18next = vi.hoisted(() => vi.fn());
+const mockGetDefaultAppLanguage = vi.hoisted(() => vi.fn());
+const mockGetLanguageLabel = vi.hoisted(() => vi.fn((lang: string) => lang));
+
+const mockI18nInstance: MockI18nInstance = vi.hoisted(() => ({
+  use: vi.fn(() => ({ init: mockI18nInit })),
   init: mockI18nInit,
   changeLanguage: mockI18nChangeLanguage,
   addResourceBundle: mockI18nAddResourceBundle,
@@ -29,36 +40,34 @@ const mockI18nInstance = {
   languages: ['en'],
   isInitialized: false,
   t: (key: string) => key,
-};
+}));
 
+const mockToastQueue = vi.hoisted(() => ({
+  info: vi.fn(() => Promise.resolve('mock-id')),
+  warning: vi.fn(() => Promise.resolve('mock-id')),
+  error: vi.fn(() => Promise.resolve('mock-id')),
+  loading: vi.fn(() => Promise.resolve('mock-id')),
+  dismiss: vi.fn(),
+}));
+
+// Mock i18next
 vi.mock("i18next", () => ({
   default: mockI18nInstance,
 }));
 
 // Mock react-i18next 的 initReactI18next
-const mockInitReactI18next = vi.fn();
 vi.mock("react-i18next", () => ({
   initReactI18next: mockInitReactI18next,
 }));
 
 // Mock ../lib/global 中的函数
-const mockGetDefaultAppLanguage = vi.fn();
-const mockGetLanguageLabel = vi.fn((lang: string) => lang);
 vi.mock("../lib/global", () => ({
   getDefaultAppLanguage: mockGetDefaultAppLanguage,
   getLanguageLabel: mockGetLanguageLabel,
   LOCAL_STORAGE_LANGUAGE_KEY: 'multi-chat:language',
 }));
 
-// Mock toastQueue - 返回 Promise 以匹配实际 API
-const mockToastQueue = {
-  info: vi.fn(() => Promise.resolve('mock-id')),
-  warning: vi.fn(() => Promise.resolve('mock-id')),
-  error: vi.fn(() => Promise.resolve('mock-id')),
-  loading: vi.fn(() => Promise.resolve('mock-id')),
-  dismiss: vi.fn(),
-};
-
+// Mock toastQueue
 vi.mock("../../lib/toast/toastQueue", () => ({
   toastQueue: mockToastQueue,
 }));
@@ -116,7 +125,14 @@ describe("i18n module", () => {
 
   beforeEach(() => {
     // 每个测试前设置独立的测试数据
-    vi.clearAllMocks();
+    // 注意：不使用 vi.clearAllMocks()，因为它会清除 getResourceBundle 的 mock 实现
+    // 而是手动清除需要重置的特定 mock
+    mockI18nInit.mockClear();
+    mockI18nChangeLanguage.mockClear();
+    mockI18nAddResourceBundle.mockClear();
+    mockI18nGetResourceBundle.mockClear();
+    mockGetDefaultAppLanguage.mockClear();
+    mockInitReactI18next.mockClear();
 
     // 设置默认语言 mock 返回值
     mockGetDefaultAppLanguage.mockResolvedValue("en");
@@ -134,8 +150,8 @@ describe("i18n module", () => {
     });
     mockI18nChangeLanguage.mockResolvedValue('en');
     mockI18nAddResourceBundle.mockImplementation(() => {});
-    mockI18nGetResourceBundle.mockImplementation((lang: string) => {
-      if (lang === 'en') {
+    mockI18nGetResourceBundle.mockImplementation((lang: string, namespace: string) => {
+      if (lang === 'en' && namespace === 'translation') {
         return {
           common: { hello: "Hello", goodbye: "Goodbye", submit: "Submit" },
           chat: { send: "Send", message: "Message" },
@@ -144,6 +160,7 @@ describe("i18n module", () => {
           provider: { name: "Name" },
           setting: { language: "Language", theme: "Theme" },
           table: { rows: "Rows", columns: "Columns" },
+          error: { notFound: "Not Found" },
         };
       }
       return null;
@@ -151,8 +168,9 @@ describe("i18n module", () => {
 
     // 确保 i18n.t 可用（用于 initI18n 返回值）
     mockI18nInstance.t = (key: string) => key;
-    // 重置初始化状态
+    // 重置初始化状态和语言列表
     mockI18nInstance.isInitialized = false;
+    mockI18nInstance.languages = ['en'];
   });
 
   afterEach(() => {
@@ -165,7 +183,10 @@ describe("i18n module", () => {
   describe("getLocalesResources", () => {
     it("应该成功从 i18next 实例读取已加载资源", async () => {
       const module = await import("@/lib/i18n");
-      const { getLocalesResources } = module;
+      const { getLocalesResources, initI18n } = module;
+
+      // 先初始化 i18n（getLocalesResources 依赖 i18n 实例状态）
+      await initI18n();
 
       const resources = getLocalesResources() as Record<string, { translation: Record<string, unknown> }>;
 
@@ -175,7 +196,7 @@ describe("i18n module", () => {
       // 验证每个语言都有 translation 属性
       expect(resources.en).toHaveProperty("translation");
 
-      // 验证所有命名空间都被加载（chat, common, model, navigation, provider, setting, table）
+      // 验证所有命名空间都被加载
       const expectedNamespaces = [
         "chat",
         "common",
@@ -184,6 +205,7 @@ describe("i18n module", () => {
         "provider",
         "setting",
         "table",
+        "error",
       ];
 
       expectedNamespaces.forEach((namespace) => {
@@ -449,7 +471,7 @@ describe("i18n module", () => {
         mockI18nInstance.isInitialized = true;
         return Promise.resolve({ t: (key: string) => key });
       });
-      mockI18nChangeLanguage.mockResolvedValue(Promise.resolve('en'));
+      mockI18nChangeLanguage.mockResolvedValue('en');
       mockI18nAddResourceBundle.mockImplementation(() => {});
       mockI18nGetResourceBundle.mockImplementation((lang: string) => {
         if (lang === 'en') {
@@ -461,6 +483,7 @@ describe("i18n module", () => {
             provider: { name: "Name" },
             setting: { language: "Language", theme: "Theme" },
             table: { rows: "Rows", columns: "Columns" },
+            error: { notFound: "Not Found" },
           };
         }
         return null;
@@ -544,7 +567,7 @@ describe("i18n module", () => {
       const enTranslation = initConfig.resources.en.translation; // 获取 translation 命名空间的内容
 
       // 验证包含所有命名空间
-      const expectedNamespaces = ['common', 'chat', 'model', 'navigation', 'provider', 'setting', 'table'];
+      const expectedNamespaces = ['common', 'chat', 'model', 'navigation', 'provider', 'setting', 'table', 'error'];
       expectedNamespaces.forEach(ns => {
         expect(enTranslation).toHaveProperty(ns);
       });

@@ -1,0 +1,17 @@
+{
+  "initialization": {
+    "i18nFailed": "Failed to initialize internationalization",
+    "masterKeyFailed": "Failed to initialize master key",
+    "modelsFailed": "Failed to load model data",
+    "chatListFailed": "Failed to load chat list",
+    "appLanguageFailed": "Failed to load application language configuration",
+    "transmitHistoryReasoningFailed": "Failed to load transmit history reasoning configuration",
+    "autoNamingEnabledFailed": "Failed to load auto naming configuration",
+    "modelProviderFailed": "Failed to load model provider data"
+  },
+  "appConfig": {
+    "failToInitializeLanguage": "Failed to initialize language",
+    "failToInitializeTransmitHistoryReasoning": "Failed to initialize transmit history reasoning",
+    "failToInitializeAutoNamingEnabled": "Failed to initialize auto naming"
+  }
+}

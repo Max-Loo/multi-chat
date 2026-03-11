@@ -1,4 +1,5 @@
 import { getDefaultAppLanguage } from "@/lib/global";
+import { tSafely } from "@/lib/i18n";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
 
@@ -27,7 +28,10 @@ export const initializeAppLanguage = createAsyncThunk(
       const result = await getDefaultAppLanguage()
       return result.lang
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Fail to initialize language', { cause: error });
+      throw new Error(
+        tSafely('error.appConfig.failToInitializeLanguage', 'Failed to initialize language'),
+        { cause: error }
+      );
     }
   },
 )
@@ -43,7 +47,10 @@ export const initializeTransmitHistoryReasoning = createAsyncThunk(
       const storedValue = localStorage.getItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY);
       return storedValue === 'true';
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Fail to initialize transmitHistoryReasoning', { cause: error });
+      throw new Error(
+        tSafely('error.appConfig.failToInitializeTransmitHistoryReasoning', 'Failed to initialize transmit history reasoning'),
+        { cause: error }
+      );
     }
   },
 )
@@ -60,7 +67,10 @@ export const initializeAutoNamingEnabled = createAsyncThunk(
       // 如果 localStorage 中没有值或值为 'false'，则返回 false，否则返回 true
       return storedValue !== 'false';
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Fail to initialize autoNamingEnabled', { cause: error });
+      throw new Error(
+        tSafely('error.appConfig.failToInitializeAutoNamingEnabled', 'Failed to initialize auto naming'),
+        { cause: error }
+      );
     }
   },
 )

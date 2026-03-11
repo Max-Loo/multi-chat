@@ -1,0 +1,17 @@
+{
+  "initialization": {
+    "i18nFailed": "Échec de l'initialisation de l'internationalisation",
+    "masterKeyFailed": "Échec de l'initialisation de la clé principale",
+    "modelsFailed": "Échec du chargement des données du modèle",
+    "chatListFailed": "Échec du chargement de la liste des discussions",
+    "appLanguageFailed": "Échec du chargement de la configuration de la langue de l'application",
+    "transmitHistoryReasoningFailed": "Échec du chargement de la configuration de la transmission du raisonnement",
+    "autoNamingEnabledFailed": "Échec du chargement de la configuration de la dénomination automatique",
+    "modelProviderFailed": "Échec du chargement des données du fournisseur de modèles"
+  },
+  "appConfig": {
+    "failToInitializeLanguage": "Échec de l'initialisation de la langue",
+    "failToInitializeTransmitHistoryReasoning": "Échec de l'initialisation de la transmission du raisonnement",
+    "failToInitializeAutoNamingEnabled": "Échec de l'initialisation de la dénomination automatique"
+  }
+}

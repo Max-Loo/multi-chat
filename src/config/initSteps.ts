@@ -5,13 +5,16 @@
  */
 
 import type { InitStep } from '@/lib/initialization';
-import { initI18n } from '@/lib/i18n';
+import { initI18n, tSafely } from '@/lib/i18n';
 import { initializeMasterKey } from '@/store/keyring/masterKey';
 import { store } from '@/store';
 import { initializeModels } from '@/store/slices/modelSlice';
 import { initializeChatList } from '@/store/slices/chatSlices';
 import { initializeAppLanguage, initializeTransmitHistoryReasoning, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
+
+// i18n 初始化失败的错误消息（使用英文常量，因为此时 i18n 肯定未就绪）
+const I18N_INIT_FAILED = 'Failed to initialize internationalization';
 
 /**
  * 初始化步骤列表
@@ -25,7 +28,7 @@ export const initSteps: InitStep[] = [
     },
     onError: (error) => ({
       severity: 'fatal',
-      message: '无法初始化国际化配置',
+      message: I18N_INIT_FAILED,
       originalError: error,
     }),
   },
@@ -39,7 +42,7 @@ export const initSteps: InitStep[] = [
     },
     onError: (error) => ({
       severity: 'fatal',
-      message: '无法初始化主密钥',
+      message: tSafely('error.initialization.masterKeyFailed', 'Failed to initialize master key'),
       originalError: error,
     }),
   },
@@ -54,7 +57,7 @@ export const initSteps: InitStep[] = [
     },
     onError: (error) => ({
       severity: 'warning',
-      message: '模型数据加载失败',
+      message: tSafely('error.initialization.modelsFailed', 'Failed to load model data'),
       originalError: error,
     }),
   },
@@ -68,7 +71,7 @@ export const initSteps: InitStep[] = [
     },
     onError: (error) => ({
       severity: 'warning',
-      message: '聊天列表加载失败',
+      message: tSafely('error.initialization.chatListFailed', 'Failed to load chat list'),
       originalError: error,
     }),
   },
@@ -83,7 +86,7 @@ export const initSteps: InitStep[] = [
     },
     onError: (error) => ({
       severity: 'warning',
-      message: '应用语言配置加载失败',
+      message: tSafely('error.initialization.appLanguageFailed', 'Failed to load application language configuration'),
       originalError: error,
     }),
   },
@@ -97,7 +100,7 @@ export const initSteps: InitStep[] = [
     },
     onError: (error) => ({
       severity: 'ignorable',
-      message: '推理内容配置加载失败',
+      message: tSafely('error.initialization.transmitHistoryReasoningFailed', 'Failed to load transmit history reasoning configuration'),
       originalError: error,
     }),
   },
@@ -111,7 +114,7 @@ export const initSteps: InitStep[] = [
     },
     onError: (error) => ({
       severity: 'ignorable',
-      message: '自动命名功能配置加载失败',
+      message: tSafely('error.initialization.autoNamingEnabledFailed', 'Failed to load auto naming configuration'),
       originalError: error,
     }),
   },
@@ -125,7 +128,7 @@ export const initSteps: InitStep[] = [
     },
     onError: (error) => ({
       severity: 'warning',
-      message: '模型供应商数据加载失败',
+      message: tSafely('error.initialization.modelProviderFailed', 'Failed to load model provider data'),
       originalError: error,
     }),
   },
