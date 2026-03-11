@@ -181,24 +181,24 @@ export const initI18n = async () => {
     try {
       languageResult = await getDefaultAppLanguage();
     } catch (error) {
-      console.warn('获取系统语言失败，使用英文', error);
+      console.warn('Failed to get system language, using English', error);
     }
 
     // 显示 Toast 提示（根据迁移信息）
     try {
       if (languageResult.migrated && languageResult.from) {
         // 迁移成功提示
-        toastQueue.info(`检测到语言代码已更新为${getLanguageLabel(languageResult.lang)}（${languageResult.lang}）`);
+        toastQueue.info(`Language code updated to ${getLanguageLabel(languageResult.lang)} (${languageResult.lang})`);
       } else if (languageResult.fallbackReason === 'system-lang') {
         // 降级到系统语言提示
-        toastQueue.info(`已切换到系统语言：${getLanguageLabel(languageResult.lang)}`);
+        toastQueue.info(`Switched to system language: ${getLanguageLabel(languageResult.lang)}`);
       } else if (languageResult.fallbackReason === 'default') {
         // 降级到英文提示
-        toastQueue.warning(`语言代码已失效，已切换到英文`);
+        toastQueue.warning(`Language code invalid, switched to English`);
       }
     } catch (toastError) {
       // Toast 显示失败，降级到 console.warn
-      console.warn('[Toast] 显示失败，使用 console.warn 降级', toastError);
+      console.warn('[Toast] Failed to display, falling back to console.warn', toastError);
     }
 
     // 准备初始资源对象（使用 Resource 类型）
@@ -225,10 +225,10 @@ export const initI18n = async () => {
         }
       } catch (error) {
         // 加载失败，保持英文，显示警告（非阻塞）
-        console.warn(`系统语言 ${languageResult.lang} 加载失败，使用英文替代`, error);
+        console.warn(`System language ${languageResult.lang} failed to load, using English instead`, error);
         // 显示 Toast 警告（使用降级方案）
         try {
-          toastQueue.warning(`系统语言加载失败，已使用英文替代`);
+          toastQueue.warning(`System language failed to load, using English instead`);
         } catch {
           // Toast 显示失败，忽略（不影响初始化）
         }
