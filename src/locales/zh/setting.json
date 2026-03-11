@@ -2,6 +2,7 @@
   "title": "设置",
   "openMenu": "打开菜单",
   "generalSetting": "常规设置",
+  "toastTest": "Toast 测试",
   "autoNaming": {
     "title": "自动命名",
     "description": "自动为聊天生成标题，默认开启"

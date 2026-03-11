@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { memo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from 'sonner'
+import { toastQueue } from '@/lib/toast'
 import { useConfirm } from "@/hooks/useConfirm"
 import { useResponsive } from "@/hooks/useResponsive"
 
@@ -72,14 +72,14 @@ const ChatButton = memo<ChatButtonProps>(({
         await dispatch(deleteChat({
           chat,
         }))
-        toast.success(t($ => $.chat.deleteChatSuccess))
+        toastQueue.success(t($ => $.chat.deleteChatSuccess))
 
         // 如果删除的是当前选中的聊天，清除 URL 中的 chatId 参数
         if (chat.id === selectedChatId) {
           clearChatIdParam()
         }
       } catch {
-        toast.error(t($ => $.chat.deleteChatFailed))
+        toastQueue.error(t($ => $.chat.deleteChatFailed))
       }
     }
 
@@ -110,10 +110,10 @@ const ChatButton = memo<ChatButtonProps>(({
         name: newName,
       }))
 
-      toast.success(t($ => $.chat.editChatSuccess))
+      toastQueue.success(t($ => $.chat.editChatSuccess))
       onCancelRename()
     } catch {
-      toast.error(t($ => $.chat.editChatFailed))
+      toastQueue.error(t($ => $.chat.editChatFailed))
     }
   }
 

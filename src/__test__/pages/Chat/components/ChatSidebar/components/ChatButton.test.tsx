@@ -154,21 +154,21 @@ vi.mock('@/hooks/useConfirm', () => ({
 
 }));
 
-
-
 /**
 
- * Mock sonner toast
+ * Mock toastQueue
+
+ 
 
  */
 
-vi.mock('sonner', () => ({
+vi.mock('@/lib/toast', () => ({
 
-  toast: {
+  toastQueue: {
 
-    success: vi.fn(),
+    success: vi.fn(async () => 'toast-id'),
 
-    error: vi.fn(),
+    error: vi.fn(async () => 'toast-id'),
 
   },
 

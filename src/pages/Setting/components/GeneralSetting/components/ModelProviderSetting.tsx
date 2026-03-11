@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { refreshModelProvider } from '@/store/slices/modelProviderSlice';
 import { RootState, AppDispatch } from '@/store';
-import { toast } from 'sonner';
+import { toastQueue } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { ProviderHeader } from './ModelProviderSetting/components/ProviderHeader';
 import { ProviderGrid } from './ModelProviderSetting/components/ProviderGrid';
@@ -36,11 +36,11 @@ const ModelProviderSetting: React.FC = () => {
     dispatch(refreshModelProvider())
       .unwrap()
       .then(() => {
-        toast.success(t($ => $.setting.modelProvider.refreshSuccess));
+        toastQueue.success(t($ => $.setting.modelProvider.refreshSuccess));
       })
       .catch((err: unknown) => {
         const errorMessage = err instanceof Error ? err.message : t($ => $.setting.modelProvider.refreshFailed);
-        toast.error(errorMessage);
+        toastQueue.error(errorMessage);
       })
       .finally(() => {
         setAbortController(null);

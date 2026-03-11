@@ -6,12 +6,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock toast and i18n before importing middleware
-vi.mock('sonner', () => ({
-  toast: {
-    loading: vi.fn(() => 'loading-toast-id'),
-    success: vi.fn(),
-    error: vi.fn(),
+// Mock toastQueue and i18n before importing middleware
+vi.mock('@/lib/toast', () => ({
+  toastQueue: {
+    loading: vi.fn(async () => 'loading-toast-id'),
+    success: vi.fn(async () => 'toast-id'),
+    error: vi.fn(async () => 'toast-id'),
     dismiss: vi.fn(),
   },
 }));
@@ -33,13 +33,13 @@ import modelPageReducer from '@/store/slices/modelPageSlices';
 import { changeAppLanguage } from '@/lib/i18n';
 import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
 import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY } from '@/utils/constants';
-import { toast } from 'sonner';
+import { toastQueue } from '@/lib/toast';
 
 const mockChangeAppLanguage = vi.mocked(changeAppLanguage);
-const mockToastLoading = vi.mocked(toast.loading);
-const mockToastSuccess = vi.mocked(toast.success);
-const mockToastError = vi.mocked(toast.error);
-const mockToastDismiss = vi.mocked(toast.dismiss);
+const mockToastLoading = vi.mocked(toastQueue.loading);
+const mockToastSuccess = vi.mocked(toastQueue.success);
+const mockToastError = vi.mocked(toastQueue.error);
+const mockToastDismiss = vi.mocked(toastQueue.dismiss);
 
 describe('appConfigMiddleware', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,7 +78,7 @@ describe('appConfigMiddleware', () => {
     } as unknown as Storage;
 
     // 重置 toast mocks 并设置默认返回值
-    mockToastLoading.mockClear().mockReturnValue('loading-toast-id');
+    (mockToastLoading as any).mockClear().mockResolvedValue('loading-toast-id');
     mockToastSuccess.mockClear();
     mockToastError.mockClear();
     mockToastDismiss.mockClear();

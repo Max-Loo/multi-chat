@@ -8,7 +8,7 @@ import FilterInput from "@/components/FilterInput";
 import EditModelModal from "./components/EditModelModal";
 import { useBasicModelTable } from "@/hooks/useBasicModelTable";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toastQueue } from '@/lib/toast';
 import {
   Popover,
   PopoverTrigger,
@@ -35,10 +35,10 @@ const ModelTable: React.FC = () => {
     (model: Model): void => {
       try {
         dispatch(deleteModel({ model }));
-        toast.success(t(($) => $.model.deleteModelSuccess));
+        toastQueue.success(t(($) => $.model.deleteModelSuccess));
         setDeleteConfirmOpen(false);
       } catch {
-        toast.error(t(($) => $.model.deleteModelFailed));
+        toastQueue.error(t(($) => $.model.deleteModelFailed));
       }
     },
     [dispatch, t],

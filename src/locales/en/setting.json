@@ -2,6 +2,7 @@
   "title": "Settings",
   "openMenu": "Open Menu",
   "generalSetting": "General Setting",
+  "toastTest": "Toast Test",
   "autoNaming": {
     "title": "Auto Naming",
     "description": "Automatically generate titles for chats, enabled by default"

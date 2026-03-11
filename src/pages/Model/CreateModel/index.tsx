@@ -11,7 +11,7 @@ import { setIsDrawerOpen } from "@/store/slices/modelPageSlices";
 import { useResponsive } from "@/hooks/useResponsive";
 import { MobileDrawer } from "@/components/MobileDrawer";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toastQueue } from '@/lib/toast';
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
 
 /**
@@ -49,11 +49,11 @@ const CreateModel: React.FC = () => {
         }),
       );
 
-      toast.success(t(($) => $.model.addModelSuccess));
+      toastQueue.success(t(($) => $.model.addModelSuccess));
       // 返回到列表页面
       navigate("/model/table");
     } catch {
-      toast.error(t(($) => $.model.addModelFailed));
+      toastQueue.error(t(($) => $.model.addModelFailed));
     }
   };
 

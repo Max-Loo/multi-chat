@@ -9,7 +9,7 @@ import { FatalErrorScreen } from "./components/FatalErrorScreen";
 import { NoProvidersAvailable } from "@/components/NoProvidersAvailable";
 import { handleSecurityWarning } from "@/store/keyring/masterKey";
 import { ConfirmProvider } from "@/hooks/useConfirm";
-import { toast } from "sonner";
+import { toastQueue } from "@/lib/toast";
 import { InitializationManager } from "@/lib/initialization";
 import { initSteps } from "@/config/initSteps";
 import { RouterProvider } from "react-router-dom";
@@ -79,7 +79,11 @@ if (!result.success) {
   // 显示警告错误 Toast
   if (result.warnings.length > 0) {
     result.warnings.forEach((warning) => {
-      toast.warning(warning.message, {
+      // 在开发环境下显示详细错误信息，生产环境下只显示简化消息
+      // 原因：1) 生产环境中向普通用户展示原始错误可能造成困惑
+      //      2) 错误对象可能包含敏感的系统信息或堆栈跟踪
+      //      3) 开发者需要详细错误信息来调试问题
+      toastQueue.warning(warning.message, {
         description: import.meta.env.DEV
           ? String(warning.originalError)
           : undefined,

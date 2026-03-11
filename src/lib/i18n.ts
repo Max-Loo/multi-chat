@@ -188,22 +188,13 @@ export const initI18n = async () => {
     try {
       if (languageResult.migrated && languageResult.from) {
         // 迁移成功提示
-        toastQueue.enqueue({
-          type: 'info',
-          message: `检测到语言代码已更新为${getLanguageLabel(languageResult.lang)}（${languageResult.lang}）`
-        });
+        toastQueue.info(`检测到语言代码已更新为${getLanguageLabel(languageResult.lang)}（${languageResult.lang}）`);
       } else if (languageResult.fallbackReason === 'system-lang') {
         // 降级到系统语言提示
-        toastQueue.enqueue({
-          type: 'info',
-          message: `已切换到系统语言：${getLanguageLabel(languageResult.lang)}`
-        });
+        toastQueue.info(`已切换到系统语言：${getLanguageLabel(languageResult.lang)}`);
       } else if (languageResult.fallbackReason === 'default') {
         // 降级到英文提示
-        toastQueue.enqueue({
-          type: 'warning',
-          message: `语言代码已失效，已切换到英文`
-        });
+        toastQueue.warning(`语言代码已失效，已切换到英文`);
       }
     } catch (toastError) {
       // Toast 显示失败，降级到 console.warn
@@ -237,10 +228,7 @@ export const initI18n = async () => {
         console.warn(`系统语言 ${languageResult.lang} 加载失败，使用英文替代`, error);
         // 显示 Toast 警告（使用降级方案）
         try {
-          toastQueue.enqueue({
-            type: 'warning',
-            message: `系统语言加载失败，已使用英文替代`
-          });
+          toastQueue.warning(`系统语言加载失败，已使用英文替代`);
         } catch {
           // Toast 显示失败，忽略（不影响初始化）
         }

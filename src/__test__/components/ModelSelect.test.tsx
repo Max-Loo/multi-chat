@@ -117,17 +117,17 @@ vi.mock('react-i18next', () => ({
 
 
 
-// Mock toast
+// Mock toastQueue
 
-vi.mock('sonner', () => ({
+vi.mock('@/lib/toast', () => ({
 
-  toast: {
+  toastQueue: {
 
-    info: vi.fn(),
+    info: vi.fn(async () => 'toast-id'),
 
-    success: vi.fn(),
+    success: vi.fn(async () => 'toast-id'),
 
-    error: vi.fn(),
+    error: vi.fn(async () => 'toast-id'),
 
   },
 

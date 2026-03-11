@@ -2,6 +2,7 @@
   "title": "Paramètres",
   "openMenu": "Ouvrir le menu",
   "generalSetting": "Paramètres généraux",
+  "toastTest": "Toast Test",
   "autoNaming": {
     "title": "Attribution automatique d'un nom",
     "description": "Générer automatiquement des titres pour les chats, activé par défaut"

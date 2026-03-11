@@ -6,7 +6,7 @@ import { EditableModel, Model } from "@/types/model"
 import { useAppDispatch } from "@/hooks/redux"
 import { editModel } from "@/store/slices/modelSlice"
 import { useTranslation } from "react-i18next"
-import { toast } from 'sonner'
+import { toastQueue } from '@/lib/toast'
 import { isBoolean } from "es-toolkit"
 
 interface EditModelModalProps {
@@ -46,9 +46,9 @@ const EditModelModal: React.FC<EditModelModalProps> = ({
       dispatch(editModel({
         model,
       }))
-      toast.success(t($ => $.model.editModelSuccess))
+      toastQueue.success(t($ => $.model.editModelSuccess))
     } catch {
-      toast.error(t($ => $.model.editModelFailed))
+      toastQueue.error(t($ => $.model.editModelFailed))
     }
 
     // 让父组件关闭弹窗
