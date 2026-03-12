@@ -29,4 +29,5 @@ target
 
 # test
 coverage/*
-#e2e/test-results/*
+e2e/test-results/*
+e2e/report/*
