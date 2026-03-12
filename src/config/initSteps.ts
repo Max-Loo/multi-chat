@@ -12,6 +12,7 @@ import { initializeModels } from '@/store/slices/modelSlice';
 import { initializeChatList } from '@/store/slices/chatSlices';
 import { initializeAppLanguage, initializeTransmitHistoryReasoning, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
+import { isTauri } from '@/utils/tauriCompat';
 
 // i18n 初始化失败的错误消息（使用英文常量，因为此时 i18n 肯定未就绪）
 const I18N_INIT_FAILED = 'Failed to initialize internationalization';
@@ -34,14 +35,17 @@ export const initSteps: InitStep[] = [
   },
   {
     name: 'masterKey',
-    critical: true,
+    // Web 环境下 masterKey 初始化可能失败（IndexedDB 限制），降级为非关键步骤
+    // 这样 i18n 等其他功能仍然可以正常测试和使用
+    critical: isTauri(),
     execute: async (context) => {
       const key = await initializeMasterKey();
       context.setResult('masterKey', key);
       return key;
     },
     onError: (error) => ({
-      severity: 'fatal',
+      // Web 环境下降级为 warning，Tauri 环境下仍为 fatal
+      severity: isTauri() ? 'fatal' : 'warning',
       message: tSafely('error.initialization.masterKeyFailed', 'Failed to initialize master key'),
       originalError: error,
     }),

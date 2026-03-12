@@ -25,7 +25,8 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest -c vitest.integration.config.ts",
     "test:integration:run": "vitest run -c vitest.integration.config.ts",
-    "test:all": "pnpm test:run && pnpm test:integration:run"
+    "test:e2e": "pnpm exec playwright test",
+    "test:all": "pnpm test:run && pnpm test:integration:run && pnpm exec playwright test"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.24",
@@ -73,6 +74,7 @@
     "zhipu-ai-provider": "^0.2.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.1",
     "@tauri-apps/cli": "^2.10.1",
     "@testing-library/jest-dom": "^6.9.1",

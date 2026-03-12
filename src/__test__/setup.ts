@@ -82,16 +82,17 @@ vi.mock('@/utils/tauriCompat/store', () => ({
 }));
 
 // Mock env 模块
+const mockIsTauri = vi.fn(() => false); // 默认返回 false
 vi.mock('@/utils/tauriCompat/env', () => ({
-  isTauri: vi.fn(() => false), // 默认返回 false
+  isTauri: mockIsTauri,
 }));
 
 // Mock @/utils/tauriCompat（不 mock keyring 模块，使用真实实现）
 // 注意：这里不 mock getPassword 和 setPassword，让它们使用 keyring.ts 中的真实实现
 // 在测试中使用 vi.spyOn(keyringCompat, 'method') 来 mock 实例方法
 vi.mock('@/utils/tauriCompat', () => ({
-  // env 相关 - 使用 Mock 函数（从上面的 mock 导入）
-  get isTauri() { return require('@/utils/tauriCompat/env').isTauri; },
+  // env 相关 - 直接使用 Mock 函数
+  isTauri: mockIsTauri,
   // 其他模块 - 使用 Mock 函数
   Command: {
     create: vi.fn(),

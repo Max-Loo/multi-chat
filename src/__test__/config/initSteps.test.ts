@@ -173,12 +173,13 @@ describe('initSteps 配置验证', () => {
   });
 
   describe('关键步骤标记', () => {
-    it('应该只有 i18n 和 masterKey 是关键步骤', () => {
+    it('应该只有 i18n 是关键步骤（在非 Tauri 环境）', () => {
       const criticalSteps = initSteps.filter((step) => step.critical);
 
-      expect(criticalSteps.length).toBe(2);
-      // eslint-disable-next-line unicorn/no-array-sort
-      expect(criticalSteps.map((s) => s.name).sort()).toEqual(['i18n', 'masterKey']);
+      // 在测试环境（非 Tauri），masterKey 的 critical 为 false
+      // 所以只有 i18n 是关键步骤
+      expect(criticalSteps.length).toBe(1);
+      expect(criticalSteps.map((s) => s.name)).toEqual(['i18n']);
     });
   });
 });
