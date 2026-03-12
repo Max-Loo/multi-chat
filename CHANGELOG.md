@@ -4,6 +4,52 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.1] - 2026-03-12
+
+### ✨ 新功能
+
+- **错误消息国际化支持**：新增 error.json 命名空间，支持英文、中文、法文三种语言的错误消息翻译
+  - 新增 tSafely() 函数，用于非 React 环境的安全翻译获取（支持降级策略）
+  - 创建 en/zh/fr/error.json 翻译文件（包含初始化和应用配置相关的 11 个错误消息）
+  - 替换 appConfigSlices.ts 中 3 个 thunk 的硬编码错误消息
+  - 替换 initSteps.ts 中 8 个初始化步骤的硬编码错误消息
+- **自动调整输入框高度**：新增 useAutoResizeTextarea Hook，根据内容自动调整输入框高度，提升输入体验
+- **Toast API 优化**：重构 Toast 系统，优化不同布局下的展示逻辑
+  - 新增统一的 Toast API（`toast/index.ts`）
+  - 优化移动端和桌面端的 Toast 展示策略
+  - 新增 Toast 测试页面（`ToastTest`）
+- **侧边栏抽屉最小宽度限制**：为侧边栏抽屉添加最小宽度限制，提升移动端布局稳定性
+
+### 🐛 Bug 修复
+
+- **修复兜底语言持久化问题**：修复触发国际化语言兜底策略时，兜底语言没有持久化储存的问题
+- **i18n 初始化文案优化**：将 i18n 初始化时的提示文案改成英文，提升国际化体验
+
+### 🧪 测试增强
+
+- **新增 Hook 测试**：useAutoResizeTextarea Hook 测试（474 行新增，覆盖所有边界情况）
+- **新增组件测试**：ChatPanelSender 组件测试增强（314 行新增）
+- **新增 i18n 测试**：tSafely() 函数单元测试（12 个测试场景）
+- **新增中间件测试**：appConfigMiddleware 测试增强（语言持久化相关测试）
+
+### 🔧 重构
+
+- **ChatPanelSender 组件重构**：优化输入框布局和交互逻辑，集成自动调整高度功能
+- **Toast 系统重构**：重构 toastQueue.ts，提升代码可维护性和可测试性
+
+### 📝 文档变更
+
+- **更新国际化系统文档**：更新 `i18n-system.md`，补充错误消息国际化和语言检测相关说明
+- **新增 OpenSpec 变更记录**：新增 6 个 OpenSpec 变更目录
+  - `i18n-error-messages` - 错误消息国际化
+  - `i18n-init-language-english` - i18n 初始化文案英文化
+  - `language-detection` - 语言检测和兜底策略
+  - `mobile-toast-optimization` - Toast 优化
+  - `refactor-chat-input-layout` - 输入框布局重构
+  - `auto-resize-textarea` - 自动调整输入框高度
+
+---
+
 ## [0.3.0] - 2026-03-10
 
 ### ✨ 新功能
