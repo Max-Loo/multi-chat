@@ -33,12 +33,22 @@ const SettingSidebar: React.FC = () => {
 
   // 需要渲染的按钮列表
   const settingList = useMemo<SettingButton[]>(() => {
-    return [
+    const list = [
       {
         name: t(($) => $.setting.generalSetting),
         path: "common",
       },
     ];
+
+    // 仅开发环境显示 Toast 测试按钮
+    if (import.meta.env.DEV) {
+      list.push({
+        name: t(($) => $.setting.toastTest),
+        path: "toast-test",
+      });
+    }
+
+    return list;
   }, [t]);
 
   // 点击某一类设置按钮的回调

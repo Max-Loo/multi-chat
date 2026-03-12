@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTranslation } from "react-i18next";
 import { useState } from 'react';
 import { changeAppLanguage } from "@/lib/i18n";
-import { toast } from "sonner";
+import { toastQueue } from '@/lib/toast';
 import { LANGUAGE_CONFIGS } from "@/utils/constants";
 
 // 语言选项配置（从 LANGUAGE_CONFIGS 派生）
@@ -44,11 +44,11 @@ const LanguageSetting: React.FC<LanguageSettingProps> = ({
         dispatch(setAppLanguage(lang));
       } else {
         // 切换失败，显示错误提示
-        toast.error(t($ => ($.setting as any).languageSwitchFailed));
+        toastQueue.error(t($ => ($.setting as any).languageSwitchFailed));
       }
     } catch (error) {
       console.error('Failed to change language:', error);
-      toast.error(t($ => ($.setting as any).languageSwitchFailed));
+      toastQueue.error(t($ => ($.setting as any).languageSwitchFailed));
     } finally {
       // 在 try-finally 中恢复状态
       setTimeout(() => setIsChanging(false), 500);

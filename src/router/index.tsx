@@ -1,31 +1,40 @@
-import Layout from '@/components/Layout';
-import { lazy } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import Layout from "@/components/Layout";
+import { lazy } from "react";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 
 // 懒加载页面组件
-const ChatPage = lazy(() => import('@/pages/Chat'));
-const ModelPage = lazy(() => import('@/pages/Model'));
-const ModelTable = lazy(() => import('@/pages/Model/ModelTable'));
-const CreateModel = lazy(() => import('@/pages/Model/CreateModel'));
-const SettingPage = lazy(() => import('@/pages/Setting'));
-const GeneralSetting = lazy(() => import('@/pages/Setting/components/GeneralSetting'));
-const NotFound = lazy(() => import('@/pages/NotFound'));
+const ChatPage = lazy(() => import("@/pages/Chat"));
+const ModelPage = lazy(() => import("@/pages/Model"));
+const ModelTable = lazy(() => import("@/pages/Model/ModelTable"));
+const CreateModel = lazy(() => import("@/pages/Model/CreateModel"));
+const SettingPage = lazy(() => import("@/pages/Setting"));
+const GeneralSetting = lazy(
+  () => import("@/pages/Setting/components/GeneralSetting"),
+);
+const ToastTest = lazy(() => import("@/pages/Setting/components/ToastTest"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
+// 仅开发环境添加 toast-test 路由
+const toastTestRoute = import.meta.env.DEV
+  ? {
+      path: "toast-test",
+      element: <ToastTest />,
+    }
+  : null;
 
 // import.meta.env.BASE_URL 会自动读取 vite.config.ts 中的 base 配置
 // 注意：它会包含末尾的斜杠，比如 '/my-repo/'
-const basename = import.meta.env.BASE_URL
+const basename = import.meta.env.BASE_URL;
 
 // 如果需要移除末尾的斜杠（createBrowserRouter 的 basename 不需要末尾斜杠）
-const routerBasename = basename.endsWith('/') 
-  ? basename.slice(0, -1)  // 移除末尾的斜杠
-  : basename
+const routerBasename = basename.endsWith("/")
+  ? basename.slice(0, -1) // 移除末尾的斜杠
+  : basename;
 
-  
 const router = createBrowserRouter(
   [
     {
-      path: '/',
+      path: "/",
       element: <Layout />,
       children: [
         {
@@ -33,11 +42,11 @@ const router = createBrowserRouter(
           element: <Navigate to="chat" replace />,
         },
         {
-          path: 'chat',
+          path: "chat",
           element: <ChatPage />,
         },
         {
-          path: 'model',
+          path: "model",
           element: <ModelPage />,
           children: [
             {
@@ -45,17 +54,17 @@ const router = createBrowserRouter(
               element: <Navigate to="table" replace />,
             },
             {
-              path: 'table',
+              path: "table",
               element: <ModelTable />,
             },
             {
-              path: 'add',
+              path: "add",
               element: <CreateModel />,
             },
           ],
         },
         {
-          path: 'setting',
+          path: "setting",
           element: <SettingPage />,
           children: [
             {
@@ -63,18 +72,19 @@ const router = createBrowserRouter(
               element: <Navigate to="common" replace />,
             },
             {
-              path: 'common',
+              path: "common",
               element: <GeneralSetting />,
             },
+            ...(toastTestRoute ? [toastTestRoute] : []),
           ],
         },
         // 兜底路由，匹配所有未定义的路径
         {
-          path: '*',
+          path: "*",
           element: <Navigate to="/404" replace />,
         },
         {
-          path: '404',
+          path: "404",
           element: <NotFound />,
         },
       ],
@@ -83,7 +93,7 @@ const router = createBrowserRouter(
   {
     // GitHub Pages 子路径部署支持
     basename: routerBasename,
-  }
+  },
 );
 
 export default router;

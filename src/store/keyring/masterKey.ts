@@ -5,7 +5,7 @@
  */
 import { getPassword, setPassword } from "@/utils/tauriCompat";
 import { isTauri } from "@/utils/tauriCompat/env";
-import { toast } from 'sonner';
+import { toastQueue } from '@/lib/toast';
 
 // 服务名和账户名配置
 const SERVICE_NAME = "com.multichat.app";
@@ -160,7 +160,7 @@ export const handleSecurityWarning = async (): Promise<void> => {
     'The web version has a lower security level than the desktop version. ' +
     'We strongly recommend handling sensitive data (such as API keys) in the desktop version for better protection.';
 
-  toast.warning(message, {
+  toastQueue.warning(message, {
     duration: Infinity,
     action: {
       label: 'OK',

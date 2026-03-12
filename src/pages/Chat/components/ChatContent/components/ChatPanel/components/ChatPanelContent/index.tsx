@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { ChatModel } from "@/types/chat";
 import { useTypedSelectedChat } from "../../hooks/useTypedSelectedChat";
 import ChatPanelContentDetail from "./components/ChatPanelContentDetail";
+import { cn } from "@/lib/utils";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -32,9 +33,10 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
     return list;
   }, [columnCount, chatModelList]);
 
+  // 开启手动拖拽窗口大小
   if (isSplitter && chatModelList.length > 1) {
     return (
-      <div className="absolute top-0 left-0 w-full h-full pt-12 pb-22">
+      <div className="absolute top-0 left-0 w-full h-full pt-12 pb-30">
         <ResizablePanelGroup orientation="vertical">
           {board.map((row, idx) => (
             <React.Fragment key={idx}>
@@ -65,18 +67,20 @@ const ChatPanelContent: React.FC<ChatPanelContentProps> = ({
 
   // 渲染成棋盘
   return (
-    <div className="absolute top-0 left-0 w-full h-full pt-12 pb-24">
+    <div className="absolute top-0 left-0 w-full h-full pt-12 pb-30">
       <div className="flex flex-col w-full h-full">
         {board.map((row, idx) => {
           return (
             <div className={`flex w-full flex-1 overflow-y-hidden`} key={idx}>
-              {row.map((chatModel) => {
+              {row.map((chatModel, cellIdx) => {
                 return (
                   <div
                     key={chatModel.modelId}
-                    className={`
-                relative flex-1 min-w-0 border-b border-r border-gray-300
-              `}
+                    className={cn(
+                      "relative flex-1 min-w-0 border-gray-300",
+                      cellIdx < row.length - 1 && "border-r",
+                      idx < board.length - 1 && "border-b",
+                    )}
                   >
                     {/* 具体渲染的内容 */}
                     <ChatPanelContentDetail chatModel={chatModel} />

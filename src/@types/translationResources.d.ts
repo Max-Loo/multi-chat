@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/3/10 17:24:36
+// 生成时间: 2026/3/11 11:26:14
 
 interface Resources {
   translation: {
@@ -113,6 +113,7 @@ interface Resources {
       title: string;
       openMenu: string;
       generalSetting: string;
+      toastTest: string;
       autoNaming: {
         title: string;
         description: string;

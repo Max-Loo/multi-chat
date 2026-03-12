@@ -28,9 +28,10 @@ Toast 队列 (初始化期间提示)
 
 ### 策略
 
-**英文资源**：
-- 静态打包到初始 bundle（~5KB）
+**英文资源**（"第一公民"策略）：
+- 静态打包到初始 bundle（~7KB，包含 error 命名空间）
 - 作为默认语言和降级选项
+- 包括：common, chat, model, navigation, provider, setting, table, **error**
 
 **其他语言**：
 - 按需异步加载
@@ -62,12 +63,14 @@ Toast 队列 (初始化期间提示)
 - `initI18n()`: 初始化 i18n 配置
 - `changeAppLanguage(lang)`: 切换应用语言
 - `getInitI18nPromise()`: 获取初始化 Promise
+- `tSafely(key, fallback)`: 安全地获取翻译文本（用于非 React 环境）
 
 **关键特性**：
 - 单例模式（避免重复初始化）
 - 并发控制（避免重复加载）
 - 指数退避重试（1s → 2s）
 - 资源缓存（Set + Map）
+- **error 命名空间**：静态打包，初始化阶段的错误消息立即可用
 
 ## 2. 缓存验证和迁移
 
@@ -163,9 +166,35 @@ toastQueue.markReady();
 
 ### Redux Middleware
 
-监听 `setAppLanguage` action，自动同步到 localStorage：
+监听语言变更 actions，自动同步到 localStorage：
 
 ```typescript
+// 方案 1：使用 Listener Middleware（推荐）
+import { createListenerMiddleware, isAnyOf } from '@reduxjs/toolkit';
+
+saveDefaultAppLanguage.startListening({
+  matcher: isAnyOf(
+    setAppLanguage,                      // 用户主动切换语言
+    initializeAppLanguage.fulfilled,     // 初始化时语言降级
+  ),
+  effect: async (action, listenerApi) => {
+    // 根据 action 类型选择数据源，确保持久化的值准确可靠
+    // - initializeAppLanguage.fulfilled: 使用 action.payload（直接来自 thunk 返回值，更可靠）
+    // - setAppLanguage: 使用 store 中的值（可能有其他中间件或 reducer 修改）
+    const langToPersist = action.type.endsWith('/fulfilled')
+      ? (action.payload as string)
+      : listenerApi.getState().appConfig.language;
+
+    localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, langToPersist);
+
+    // 只在用户主动切换时显示 Toast（初始化降级不显示）
+    if (action.type === 'appConfig/setAppLanguage') {
+      // 显示 Toast 提示...
+    }
+  },
+});
+
+// 方案 2：使用普通 Middleware
 export const createLanguagePersistenceMiddleware = (): Middleware => {
   return (_store) => (next) => (action: any) => {
     const result = next(action);
@@ -175,7 +204,6 @@ export const createLanguagePersistenceMiddleware = (): Middleware => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, action.payload);
       } catch (error) {
         console.warn('[LanguagePersistence] 持久化失败:', error);
-        // 静默降级，不影响应用运行
       }
     }
 
@@ -184,13 +212,22 @@ export const createLanguagePersistenceMiddleware = (): Middleware => {
 };
 ```
 
+### 两个 Actions 的区别
+
+| Action Type | 触发时机 | 是否显示 Toast | 使用场景 |
+|------------|---------|---------------|----------|
+| `initializeAppLanguage.fulfilled` | 应用初始化时 | ❌ 否 | 语言降级、缓存迁移 |
+| `setAppLanguage` | 用户主动切换 | ✅ 是 | 用户在设置中切换语言 |
+
 ### 静默降级
 
 写入失败时不抛出错误，确保应用继续运行。
 
 ### 实现位置
 
-**位置**：`src/store/middleware/languagePersistence.ts`
+**位置**：
+- **主 middleware**：`src/store/middleware/appConfigMiddleware.ts`（推荐）
+- **备用 middleware**：`src/store/middleware/languagePersistence.ts`
 
 ## 5. 翻译完整性检查
 
@@ -245,13 +282,46 @@ npm run validate
 ## 实现位置
 
 - **按需加载**：`src/lib/i18n.ts`
+- **安全翻译函数**：`src/lib/i18n.ts` - `tSafely()`
 - **缓存验证**：`src/lib/global.ts`, `src/utils/constants.ts`
 - **Toast 队列**：`src/lib/toast/toastQueue.ts`
-- **自动持久化**：`src/store/middleware/languagePersistence.ts`
+- **自动持久化**：`src/store/middleware/appConfigMiddleware.ts`, `src/store/middleware/languagePersistence.ts`
 - **翻译完整性检查**：`scripts/check-i18n.js`
 - **翻译文件**：`src/locales/{lang}/`
+- **error 命名空间**：`src/locales/{lang}/error.json`
 
 ## 使用示例
+
+### 安全翻译函数（tSafely）
+
+用于非 React 环境（如 Redux thunks、初始化代码）：
+
+```typescript
+import { tSafely } from '@/lib/i18n';
+
+// 在 Redux thunk 中使用
+throw new Error(
+  tSafely(
+    'error.appConfig.failToInitializeLanguage',
+    'Failed to initialize language'
+  ),
+  { cause: error }
+);
+
+// 在初始化步骤中使用
+onError: (error) => ({
+  severity: 'fatal',
+  message: tSafely('error.initialization.masterKeyFailed', 'Failed to initialize master key'),
+  originalError: error,
+})
+```
+
+**tSafely 特性**：
+- 处理 i18n 未初始化的情况（返回降级文本）
+- 翻译不存在时使用降级文本
+- 支持嵌套键值（如 'error.initialization.i18nFailed'）
+- 参数验证：防御 null/undefined
+- 类型安全：确保始终返回字符串
 
 ### 切换语言
 
@@ -315,6 +385,10 @@ npm run lint:i18n
 3. **降级策略**：所有语言加载失败时都会降级到英文
 4. **缓存清理**：修改 `LANGUAGE_MIGRATION_MAP` 后需清理缓存
 5. **Toast 时序**：初始化期间必须使用 toastQueue，不能直接调用 toast()
+6. **错误消息国际化**：
+   - 初始化错误使用 `tSafely()` 函数（i18n 初始化错误除外，使用英文常量）
+   - error 命名空间静态打包，立即可用
+   - 所有用户可见的错误消息都应支持多语言
 
 ## 性能优化
 
@@ -323,3 +397,36 @@ npm run lint:i18n
 3. **缓存机制**：避免重复加载语言资源
 4. **指数退避**：减少网络请求压力
 5. **批量处理**：Toast 消息批量显示，避免 UI 抖动
+6. **error 命名空间**：静态打包增加约 1-2KB，对性能影响可忽略不计
+
+## error 命名空间
+
+### 用途
+
+专门用于错误消息的国际化翻译，包括：
+- 初始化错误（i18n、masterKey、models 等）
+- 应用配置错误（语言、推理内容传输、自动命名等）
+
+### 结构
+
+```json
+{
+  "initialization": {
+    "i18nFailed": "Failed to initialize internationalization",
+    "masterKeyFailed": "Failed to initialize master key",
+    "modelsFailed": "Failed to load model data",
+    ...
+  },
+  "appConfig": {
+    "failToInitializeLanguage": "Failed to initialize language",
+    "failToInitializeTransmitHistoryReasoning": "Failed to initialize transmit history reasoning",
+    "failToInitializeAutoNamingEnabled": "Failed to initialize auto naming"
+  }
+}
+```
+
+### 特性
+
+- **静态打包**：纳入"第一公民"策略，立即可用
+- **完整翻译**：支持 en/zh/fr 三种语言
+- **类型安全**：通过构建验证确保所有语言的键值结构一致

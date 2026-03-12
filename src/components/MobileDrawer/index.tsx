@@ -1,4 +1,4 @@
-import { useTranslation } from "react-i18next"
+import { useTranslation } from "react-i18next";
 
 import React from "react";
 import {
@@ -29,17 +29,22 @@ export function MobileDrawer({
   children,
   showCloseButton = true,
 }: MobileDrawerProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent
         aria-description={t(($) => $.navigation.mobileDrawer.ariaDescription)}
         side="left"
-        className="w-fit max-w-[85vw] sm:max-w-md"
+        className="w-fit max-w-[85vw] sm:max-w-md min-w-60"
         showCloseButton={showCloseButton}
       >
-        <SheetTitle className="sr-only">{t(($) => $.navigation.mobileDrawer.title)}</SheetTitle>
-        <SheetDescription className="sr-only">{t(($) => $.navigation.mobileDrawer.description)}</SheetDescription>
+        <SheetTitle className="sr-only">
+          {t(($) => $.navigation.mobileDrawer.title)}
+        </SheetTitle>
+        <SheetDescription className="sr-only">
+          {t(($) => $.navigation.mobileDrawer.description)}
+        </SheetDescription>
         {children}
       </SheetContent>
     </Sheet>

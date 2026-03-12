@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
-import { toast } from "sonner";
+import { toastQueue } from "@/lib/toast";
 import { isUndefined } from "es-toolkit";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -97,14 +97,14 @@ const ModelSelect: React.FC = () => {
   // 点击确定创建聊天
   const onConfirm = async () => {
     if (checkedModelIdList.length <= 0) {
-      toast.info(t(($) => $.chat.selectModelHint));
+      toastQueue.info(t(($) => $.chat.selectModelHint));
       return;
     }
 
     setConfirmLoading(true);
 
     try {
-      await dispatch(
+      dispatch(
         editChat({
           chat: {
             ...typedSelectedChat,
@@ -116,19 +116,9 @@ const ModelSelect: React.FC = () => {
         }),
       );
 
-      toast.success(
-        t(($) => $.chat.configureChatSuccess),
-        {
-          position: "top-right",
-        },
-      );
+      toastQueue.success(t(($) => $.chat.configureChatSuccess));
     } catch {
-      toast.error(
-        t(($) => $.chat.configureChatFailed),
-        {
-          position: "top-right",
-        },
-      );
+      toastQueue.error(t(($) => $.chat.configureChatFailed));
     }
 
     setConfirmLoading(false);
