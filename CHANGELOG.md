@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.2] - 2026-03-12
+
+### 🐛 Bug 修复
+
+- **修复聊天页面按钮重复**：修复聊天页面出现两个「新建聊天」按钮的问题
+
+---
+
 ## [0.3.1] - 2026-03-12
 
 ### ✨ 新功能
