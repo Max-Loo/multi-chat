@@ -780,7 +780,7 @@ describe('ChatPanelContent', () => {
 
       expect(containerElement).toHaveClass('pt-12');
 
-      expect(containerElement).toHaveClass('pb-22');
+      expect(containerElement).toHaveClass('pb-30');
 
     });
 
@@ -942,7 +942,7 @@ describe('ChatPanelContent', () => {
 
       // 验证内边距
       expect(absContainer).toHaveClass('pt-12');
-      expect(absContainer).toHaveClass('pb-24');
+      expect(absContainer).toHaveClass('pb-30');
     });
 
   });
