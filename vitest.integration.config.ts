@@ -28,7 +28,7 @@ export default defineConfig({
     },
 
     // 仅运行集成测试
-    include: ['src/__test__/integration/**/*.test.ts'],
+    include: ['src/__test__/integration/**/*.test.{ts,tsx}'],
     exclude: ['node_modules/', 'dist/'],
   },
 
