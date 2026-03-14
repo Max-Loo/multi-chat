@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { Avatar } from '@/components/ui/avatar';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { RootState } from '@/store';
+import { getProviderLogoUrl } from '@/utils/providerUtils';
 
 interface ModelProviderDisplayProps {
   providerKey: ModelProviderKeyEnum;
@@ -21,7 +22,7 @@ const ModelProviderDisplay = memo<ModelProviderDisplayProps>(({ providerKey }) =
   return (
     <div className="flex items-center gap-2">
       <Avatar className="h-6 w-6">
-        <img src={`https://models.dev/logos/${provider.providerKey}.svg`} alt={provider.providerName} />
+        <img src={getProviderLogoUrl(provider.providerKey)} alt={provider.providerName} />
       </Avatar>
       <span>{provider.providerName}</span>
     </div>

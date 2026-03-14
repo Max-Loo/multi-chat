@@ -5,14 +5,6 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { generateCleanHtml } from "@/utils/markdown";
 
 /**
- * 模型供应商信息接口
- */
-interface ModelProvider {
-  /** 供应商唯一标识 */
-  providerKey: string;
-}
-
-/**
  * 推理内容折叠组件的属性接口
  */
 interface ThinkingSectionProps {
@@ -24,8 +16,6 @@ interface ThinkingSectionProps {
   loading?: boolean;
   /** 初始展开状态（默认折叠） */
   initiallyExpanded?: boolean;
-  /** 模型供应商信息（用于显示 logo） */
-  provider?: ModelProvider;
 }
 
 /**
@@ -37,7 +27,6 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
   content,
   loading = false,
   initiallyExpanded = false,
-  provider,
 }) => {
   const [expanded, setExpanded] = useState(initiallyExpanded);
 
@@ -56,24 +45,15 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
         className="w-full font-normal hover:bg-muted/50"
       >
         <div className="flex items-center w-full">
-          {/* 左侧：加载动画（供应商 logo） */}
-          {provider && (
-            <img
-              src={`https://models.dev/logos/${provider.providerKey}.svg`}
-              alt={provider.providerKey}
-              className={`h-5 w-5 ${loading && 'animate-pulse-fade'}`}
-            />
-          )}
-
-          {/* 中间：标题 */}
-          <span className={`text-sm text-left mx-2 ${loading && 'animate-pulse-fade'}`}>{title}</span>
+          {/* 标题 */}
+          <span
+            className={`text-sm text-left mr-2 ${loading && "animate-pulse-fade"}`}
+          >
+            {title}
+          </span>
 
           {/* 右侧：折叠/展开图标 */}
-          {expanded ? (
-            <ChevronDown size={4} />
-          ) : (
-            <ChevronRight size={4} />
-          )}
+          {expanded ? <ChevronDown size={4} /> : <ChevronRight size={4} />}
         </div>
       </Button>
 
