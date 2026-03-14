@@ -288,7 +288,7 @@ describe('设置变更集成测试', () => {
 
       // Then: 应返回 localStorage 中的值
 
-      expect(defaultLang).toBe('zh');
+      expect(defaultLang).toEqual({ lang: 'zh', migrated: false });
 
     });
 

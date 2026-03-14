@@ -8,6 +8,7 @@ export default defineConfig({
     // 集成测试配置
     setupFiles: ['./src/__test__/integration/setup.ts'],
     testTimeout: 30000,
+    hookTimeout: 60000, // 增加 hook 超时时间以适应 Vite 8
     maxConcurrency: 1,
     isolate: true,
 

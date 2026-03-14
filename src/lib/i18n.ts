@@ -34,7 +34,8 @@ const languageResourcesCache = new Map<string, Record<string, unknown>>();
 languageResourcesCache.set("en", EN_RESOURCES);
 
 // Vite import.meta.glob 预先获取所有语言文件映射（排除英文，因为已静态加载）
-const allLocaleModules = import.meta.glob("../locales/!(en)/**/*.json");
+// 注意：添加新语言时需同步更新此 brace expansion 列表（如添加 ja、de 等）
+const allLocaleModules = import.meta.glob("../locales/{zh,fr}/**/*.json");
 
 /**
  * 加载指定语言的资源
