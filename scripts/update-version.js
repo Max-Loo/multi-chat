@@ -15,15 +15,7 @@ const __dirname = path.dirname(__filename);
 
 // 获取命令行参数
 const args = process.argv.slice(2);
-const versionType = args[0] || 'patch'; // 默认为补丁版本更新
-
-// 版本类型验证
-const validVersionTypes = ['major', 'minor', 'patch', 'prerelease'];
-if (!validVersionTypes.includes(versionType)) {
-  console.error(`无效的版本类型: ${versionType}`);
-  console.error(`有效类型: ${validVersionTypes.join(', ')}`);
-  process.exit(1);
-}
+const input = args[0] || 'patch'; // 默认为补丁版本更新
 
 // 读取package.json
 const packageJsonPath = path.join(__dirname, '../package.json');
@@ -33,38 +25,68 @@ const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const currentVersion = packageJson.version;
 console.log(`当前版本: ${currentVersion}`);
 
-// 分割版本号
-const versionParts = currentVersion.split('.');
-let major = parseInt(versionParts[0], 10);
-let minor = parseInt(versionParts[1], 10);
-let patch = parseInt(versionParts[2], 10);
+/**
+ * 检查是否为有效的语义化版本号
+ * @param {string} version - 版本号字符串
+ * @returns {boolean} 是否为有效版本号
+ */
+const isValidVersion = (version) => {
+  // 支持标准版本号 (x.y.z) 和预发布版本号 (x.y.z-alpha, x.y.z-beta.1 等)
+  const versionRegex = /^\d+\.\d+\.\d+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$/;
+  return versionRegex.test(version);
+};
 
-// 根据类型更新版本号
-switch (versionType) {
-  case 'major':
-    major += 1;
-    minor = 0;
-    patch = 0;
-    break;
-  case 'minor':
-    minor += 1;
-    patch = 0;
-    break;
-  case 'patch':
-    patch += 1;
-    break;
-  case 'prerelease':
-    // 如果是预发布版本，增加补丁号并添加-alpha后缀
-    patch += 1;
-    break;
-}
-
-// 构建新版本号
 let newVersion;
-if (versionType === 'prerelease') {
-  newVersion = `${major}.${minor}.${patch}-alpha`;
+
+// 判断输入是版本号还是版本类型
+if (isValidVersion(input)) {
+  // 直接使用指定的版本号
+  newVersion = input;
+  console.log(`指定版本: ${newVersion}`);
 } else {
-  newVersion = `${major}.${minor}.${patch}`;
+  // 按版本类型处理
+  const versionType = input;
+  const validVersionTypes = ['major', 'minor', 'patch', 'prerelease'];
+
+  if (!validVersionTypes.includes(versionType)) {
+    console.error(`无效的版本类型或版本号: ${versionType}`);
+    console.error(`有效版本类型: ${validVersionTypes.join(', ')}`);
+    console.error(`或直接指定版本号: x.y.z (如 0.3.3)`);
+    process.exit(1);
+  }
+
+  // 分割版本号
+  const versionParts = currentVersion.split('-')[0].split('.'); // 移除预发布后缀后分割
+  let major = parseInt(versionParts[0], 10);
+  let minor = parseInt(versionParts[1], 10);
+  let patch = parseInt(versionParts[2], 10);
+
+  // 根据类型更新版本号
+  switch (versionType) {
+    case 'major':
+      major += 1;
+      minor = 0;
+      patch = 0;
+      break;
+    case 'minor':
+      minor += 1;
+      patch = 0;
+      break;
+    case 'patch':
+      patch += 1;
+      break;
+    case 'prerelease':
+      // 如果是预发布版本，增加补丁号并添加-alpha后缀
+      patch += 1;
+      break;
+  }
+
+  // 构建新版本号
+  if (versionType === 'prerelease') {
+    newVersion = `${major}.${minor}.${patch}-alpha`;
+  } else {
+    newVersion = `${major}.${minor}.${patch}`;
+  }
 }
 
 console.log(`新版本: ${newVersion}`);

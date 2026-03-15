@@ -44,6 +44,7 @@ jobs:
         run: pnpm web:build
         env:
           CI: false
+          BASE_PATH: /multi-chat/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
