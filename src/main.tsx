@@ -17,6 +17,13 @@ import router from "@/router";
 import { ToasterWrapper } from "@/lib/toast/ToasterWrapper";
 import { triggerSilentRefreshIfNeeded } from "@/store/slices/modelProviderSlice";
 
+// 打印应用版本号到控制台
+console.log(
+  `%c Multi Chat %c v${__APP_VERSION__} `,
+  "background:#2563eb; color:white; border-radius:3px 0 0 3px; padding:2px 5px;",
+  "background:#1e40af; color:white; border-radius:0 3px 3px 0; padding:2px 5px;",
+);
+
 const rootDom = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
