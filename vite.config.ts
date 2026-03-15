@@ -1,20 +1,20 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import tailwindcss from '@tailwindcss/vite'
-import { visualizer } from 'rollup-plugin-visualizer'
+import tailwindcss from "@tailwindcss/vite";
+import { visualizer } from "rollup-plugin-visualizer";
 
 // //@ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  // GitHub Pages 子路径部署支持：开发环境使用根路径，生产环境使用 /multi-chat/
-  base: process.env.NODE_ENV === 'production' ? '/multi-chat/' : '/',
+  // GitHub Pages 部署通过 BASE_PATH 环境变量设置子路径，默认使用根路径
+  base: process.env.BASE_PATH || "/",
   plugins: [
     react({
       babel: {
-        plugins: [['babel-plugin-react-compiler']],
+        plugins: [["babel-plugin-react-compiler"]],
       },
     }),
     tailwindcss(),
@@ -22,7 +22,7 @@ export default defineConfig(async () => ({
       // open: true, // 自动打开浏览器
       gzipSize: true, // 显示 gzip 后大小
       brotliSize: true,
-      filename: 'dist/stats.html', // 生成文件
+      filename: "dist/stats.html", // 生成文件
     }),
   ],
 
@@ -30,7 +30,10 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@/test-helpers": path.resolve(__dirname, "./src/__test__/helpers/index.ts"),
+      "@/test-helpers": path.resolve(
+        __dirname,
+        "./src/__test__/helpers/index.ts",
+      ),
       "@/test-helpers/*": path.resolve(__dirname, "./src/__test__/helpers/*"),
       // 配置 highlight.js 别名，用于动态导入
       "/@highlight.js": path.resolve(__dirname, "./node_modules/highlight.js"),
@@ -39,16 +42,16 @@ export default defineConfig(async () => ({
 
   // Vitest 测试配置
   test: {
-    environment: 'happy-dom',
-    setupFiles: ['./src/__test__/setup.ts'],
-    include: ['src/__test__/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', 'dist', 'src/__test__/integration/**'],
+    environment: "happy-dom",
+    setupFiles: ["./src/__test__/setup.ts"],
+    include: ["src/__test__/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["node_modules", "dist", "src/__test__/integration/**"],
 
     // 忽略未处理的 Promise rejection（测试错误处理场景时会故意创建错误）
     dangerouslyIgnoreUnhandledErrors: true,
 
     // 并行执行配置
-    pool: 'threads',
+    pool: "threads",
     singleThread: false,
     minThreads: 1,
     maxThreads: 1, // 限制为单线程，确保 mock 正确工作
@@ -58,7 +61,7 @@ export default defineConfig(async () => ({
     deps: {
       optimizer: {
         web: {
-          include: ['antd', '@ant-design/x'],
+          include: ["antd", "@ant-design/x"],
         },
       },
     },
@@ -70,19 +73,19 @@ export default defineConfig(async () => ({
 
     // 慢速测试标记
     benchmark: {
-      include: ['**/*.bench.ts'],
+      include: ["**/*.bench.ts"],
     },
 
     // 覆盖率配置
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html', 'json', 'lcov'],
-      include: ['src/**/*.{ts,tsx}'],
+      provider: "v8",
+      reporter: ["text", "html", "json", "lcov"],
+      include: ["src/**/*.{ts,tsx}"],
       exclude: [
-        'src/__test__/**',
-        'src/__mock__/**',
-        'src/main.tsx',
-        'src/__test__/setup.ts',
+        "src/__test__/**",
+        "src/__mock__/**",
+        "src/main.tsx",
+        "src/__test__/setup.ts",
       ],
       // 覆盖率阈值
       thresholds: {
@@ -92,7 +95,7 @@ export default defineConfig(async () => ({
         statements: 60,
       },
       // 临时目录
-      tempDirectory: './coverage/tmp',
+      tempDirectory: "./coverage/tmp",
     },
   },
 
@@ -105,107 +108,124 @@ export default defineConfig(async () => ({
         // 手动代码分割配置
         manualChunks: (id) => {
           // 只处理 node_modules 中的依赖
-          if (id.includes('node_modules')) {
+          if (id.includes("node_modules")) {
             // React 和 React-DOM
-            if (id.includes('react') && !id.includes('react-router')) {
-              return 'vendor-react';
+            if (id.includes("react") && !id.includes("react-router")) {
+              return "vendor-react";
             }
 
             // Redux 相关（包含 Redux Toolkit、React-Redux、Redux 核心、Immer、Reselect）
-            if (id.includes('@reduxjs') ||
-                id.includes('react-redux') ||
-                id.includes('redux') ||
-                id.includes('immer') ||
-                id.includes('reselect')) {
-              return 'vendor-redux';
+            if (
+              id.includes("@reduxjs") ||
+              id.includes("react-redux") ||
+              id.includes("redux") ||
+              id.includes("immer") ||
+              id.includes("reselect")
+            ) {
+              return "vendor-redux";
             }
 
             // Router 相关（React Router、@remix-run）
-            if (id.includes('react-router') || id.includes('@remix-run')) {
-              return 'vendor-router';
+            if (id.includes("react-router") || id.includes("@remix-run")) {
+              return "vendor-router";
             }
 
             // i18next 国际化库
-            if (id.includes('i18next') || id.includes('react-i18next')) {
-              return 'vendor-i18n';
+            if (id.includes("i18next") || id.includes("react-i18next")) {
+              return "vendor-i18n";
             }
 
             // Zod 数据验证库
-            if (id.includes('zod')) {
-              return 'vendor-zod';
+            if (id.includes("zod")) {
+              return "vendor-zod";
             }
 
-             // Markdown 和代码高亮库
-             if (id.includes('markdown-it') ||
-                 id.includes('dompurify')) {
-               return 'vendor-markdown';
-             }
+            // Markdown 和代码高亮库
+            if (id.includes("markdown-it") || id.includes("dompurify")) {
+              return "vendor-markdown";
+            }
 
-             // Highlight.js 核心库
-             if (id.includes('highlight.js/lib/core')) {
-               return 'vendor-highlight-core';
-             }
+            // Highlight.js 核心库
+            if (id.includes("highlight.js/lib/core")) {
+              return "vendor-highlight-core";
+            }
 
-             // Highlight.js 预加载语言（15 种常见语言）
-             if (id.includes('highlight.js/lib/languages')) {
-               const preloadedLanguages = [
-                 'javascript', 'typescript', 'python', 'java', 'cpp',
-                 'xml', 'css', 'bash', 'json', 'markdown',
-                 'sql', 'go', 'rust', 'yaml', 'csharp'
-               ];
-               
-               const isPreloaded = preloadedLanguages.some(lang =>
-                 id.includes(`/languages/${lang}.js`)
-               );
+            // Highlight.js 预加载语言（15 种常见语言）
+            if (id.includes("highlight.js/lib/languages")) {
+              const preloadedLanguages = [
+                "javascript",
+                "typescript",
+                "python",
+                "java",
+                "cpp",
+                "xml",
+                "css",
+                "bash",
+                "json",
+                "markdown",
+                "sql",
+                "go",
+                "rust",
+                "yaml",
+                "csharp",
+              ];
 
-               if (isPreloaded) {
-                 return 'vendor-highlight-core';
-               }
+              const isPreloaded = preloadedLanguages.some((lang) =>
+                id.includes(`/languages/${lang}.js`),
+              );
 
-               // 其他语言包动态分割
-               return 'vendor-highlight-languages';
-             }
+              if (isPreloaded) {
+                return "vendor-highlight-core";
+              }
+
+              // 其他语言包动态分割
+              return "vendor-highlight-languages";
+            }
 
             // Ant Design X 组件库
-            if (id.includes('@ant-design/x')) {
-              return 'vendor-antd-x';
+            if (id.includes("@ant-design/x")) {
+              return "vendor-antd-x";
             }
 
             // Vercel AI SDK
-            if (id.includes('ai') || id.includes('@ai-sdk')) {
-              return 'vendor-ai';
+            if (id.includes("ai") || id.includes("@ai-sdk")) {
+              return "vendor-ai";
             }
 
             // lucide-react 图标库
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
             }
 
             // Radix UI 组件库
-            if (id.includes('@radix-ui')) {
-              return 'vendor-radix';
+            if (id.includes("@radix-ui")) {
+              return "vendor-radix";
             }
 
             // UI 工具库（class-variance-authority, clsx, tailwind-merge）
-            if (id.includes('class-variance-authority') ||
-                id.includes('clsx') ||
-                id.includes('tailwind-merge')) {
-              return 'vendor-ui-utils';
+            if (
+              id.includes("class-variance-authority") ||
+              id.includes("clsx") ||
+              id.includes("tailwind-merge")
+            ) {
+              return "vendor-ui-utils";
             }
 
             // Tauri 插件
-            if (id.includes('@tauri-apps/plugin-') ||
-                id.includes('tauri-plugin-')) {
-              return 'vendor-tauri';
+            if (
+              id.includes("@tauri-apps/plugin-") ||
+              id.includes("tauri-plugin-")
+            ) {
+              return "vendor-tauri";
             }
 
             // TanStack 库
-            if (id.includes('@tanstack')) {
-              return 'vendor-tanstack';
+            if (id.includes("@tanstack")) {
+              return "vendor-tanstack";
             }
 
             // 其他所有 node_modules 依赖
-            return 'vendor';
+            return "vendor";
           }
         },
       },
@@ -223,10 +243,10 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host
       ? {
-        protocol: "ws",
-        host,
-        port: 1421,
-      }
+          protocol: "ws",
+          host,
+          port: 1421,
+        }
       : undefined,
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`
@@ -234,30 +254,31 @@ export default defineConfig(async () => ({
     },
     proxy: {
       // 匹配 /deepseek/xxx
-      '/deepseek': {
-        target: 'https://api.deepseek.com',
+      "/deepseek": {
+        target: "https://api.deepseek.com",
         changeOrigin: true,
         secure: true,
         // 去掉前缀再转发
-        rewrite: (requestPath) => requestPath.replace(/^\/deepseek/, ''),
+        rewrite: (requestPath) => requestPath.replace(/^\/deepseek/, ""),
       },
-      '/kimi': {
-        target: 'https://api.moonshot.cn',
+      "/kimi": {
+        target: "https://api.moonshot.cn",
         changeOrigin: true,
         secure: true,
-        rewrite: (requestPath) => requestPath.replace(/^\/kimi/, ''),
+        rewrite: (requestPath) => requestPath.replace(/^\/kimi/, ""),
       },
-      '/zhipuai-coding-plan': {
-        target: 'https://open.bigmodel.cn/api/coding/paas/v4',
+      "/zhipuai-coding-plan": {
+        target: "https://open.bigmodel.cn/api/coding/paas/v4",
         changeOrigin: true,
         secure: true,
-        rewrite: (requestPath) => requestPath.replace(/^\/zhipuai-coding-plan/, ''),
+        rewrite: (requestPath) =>
+          requestPath.replace(/^\/zhipuai-coding-plan/, ""),
       },
-      '/zhipuai': {
-        target: 'https://open.bigmodel.cn/api/paas/v4',
+      "/zhipuai": {
+        target: "https://open.bigmodel.cn/api/paas/v4",
         changeOrigin: true,
         secure: true,
-        rewrite: (requestPath) => requestPath.replace(/^\/zhipuai/, ''),
+        rewrite: (requestPath) => requestPath.replace(/^\/zhipuai/, ""),
       },
     },
   },
