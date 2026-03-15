@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.3] - 2026-03-15
+
+### 🐛 Bug 修复
+
+- **修复桌面端构建路径错误**：修复构建桌面端应用时路径配置错误的问题
+
+### 🔧 重构
+
+- **优化版本号更新脚本**：重构 `scripts/update-version.js`，提升脚本可维护性
+
+---
+
 ## [0.3.2] - 2026-03-12
 
 ### 🐛 Bug 修复
