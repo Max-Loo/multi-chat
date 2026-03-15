@@ -6,6 +6,7 @@ import {
   REMOTE_MODEL_CACHE_CONFIG,
   ALLOWED_REMOTE_MODEL_PROVIDERS,
 } from "./config";
+import { logger } from '@/utils/logger';
 
 /**
  * models.dev API 响应的实际数据结构（键值对对象）
@@ -293,6 +294,11 @@ export const saveCachedProviderData = async (
 
   await store.set(REMOTE_MODEL_CACHE_KEY, cachedData);
   await store.save();
+
+  logger.debug("已缓存模型供应商数据", {
+    action: "saveCachedProviderData",
+    providerCount: Object.keys(fullApiResponse).length,
+  });
 };
 
 /**
@@ -310,8 +316,15 @@ export const loadCachedProviderData = async (
   const cached = await store.get<CachedModelData>(REMOTE_MODEL_CACHE_KEY);
 
   if (!cached) {
+    logger.debug("缓存不存在", { action: "loadCachedProviderData" });
     throw new RemoteDataError(RemoteDataErrorType.NO_CACHE, "无可用缓存");
   }
+
+  logger.debug("从缓存加载模型供应商数据", {
+    action: "loadCachedProviderData",
+    cachedTime: cached.metadata.lastRemoteUpdate,
+    source: cached.metadata.source,
+  });
 
   // 加载时过滤完整响应
   return adaptApiResponseToInternalFormat(cached.apiResponse, allowedProviders);
@@ -349,6 +362,12 @@ export const fetchRemoteData = async (
   } = options;
 
   let lastError: RemoteDataError | null = null;
+
+  logger.debug("开始获取远程模型数据", {
+    action: "fetchRemoteData",
+    timeout,
+    maxRetries,
+  });
 
   // 重试循环（maxRetries 表示最大重试次数，不包括首次请求）
   for (let retryCount = 0; retryCount <= maxRetries; retryCount++) {
@@ -390,6 +409,13 @@ export const fetchRemoteData = async (
         ALLOWED_REMOTE_MODEL_PROVIDERS,
       );
 
+      logger.info("远程模型数据获取成功", {
+        action: "fetchRemoteData",
+        totalProviders: Object.keys(apiData).length,
+        filteredProviders: filteredData.length,
+        retryCount,
+      });
+
       // 返回完整响应和过滤后的数据
       return {
         fullApiResponse: apiData,
@@ -410,12 +436,24 @@ export const fetchRemoteData = async (
         retryCount < maxRetries && isRetryableError(lastError);
 
       if (!shouldRetry) {
+        logger.error("远程模型数据获取失败", lastError, {
+          action: "fetchRemoteData",
+          errorType: lastError.type,
+          statusCode: lastError.statusCode,
+          retryCount,
+        });
         throw lastError;
       }
 
       // 指数退避延迟
       const delay =
         REMOTE_MODEL_NETWORK_CONFIG.RETRY_DELAY_BASE * Math.pow(2, retryCount);
+      logger.debug("请求失败，准备重试", {
+        action: "fetchRemoteData",
+        retryCount,
+        delay,
+        errorType: lastError.type,
+      });
       await sleep(delay);
     }
   }

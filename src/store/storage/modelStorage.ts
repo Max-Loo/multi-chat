@@ -7,6 +7,7 @@ import { encryptField, decryptField } from "@/utils/crypto";
 import { getMasterKey } from "@/store/keyring/masterKey";
 import { createLazyStore, saveToStore, loadFromStore } from "./storeUtils";
 import type { StoreCompat } from "@/utils/tauriCompat";
+import { logger } from '@/utils/logger';
 
 /**
  * 模型存储的 LazyStore 实例（模块级单例）
@@ -57,7 +58,10 @@ const encryptModelSensitiveFields = async (
         encryptedModel.apiKey = await encryptField(model.apiKey, masterKey);
       }
     } catch (error) {
-      console.error(`加密模型 ${model.id} 的 apiKey 失败:`, error);
+      logger.error(`加密模型 API 密钥失败`, error instanceof Error ? error : undefined, {
+        modelId: model.id,
+        modelName: model.nickname || model.id,
+      });
       throw new Error(`无法加密模型 ${model.nickname || model.id} 的 API 密钥`, {
         cause: error,
       });
@@ -83,7 +87,9 @@ const decryptModelSensitiveFields = async (
     try {
       decryptedModel.apiKey = await decryptField(model.apiKey, masterKey);
     } catch (error) {
-      console.error(`解密模型 ${model.id} 的 apiKey 失败:`, error);
+      logger.error(`解密模型 API 密钥失败`, error instanceof Error ? error : undefined, {
+        modelId: model.id,
+      });
       decryptedModel.apiKey = "";
     }
   }
@@ -123,7 +129,7 @@ export const loadModelsFromJson = async (): Promise<Model[]> => {
 
   const masterKey = await getMasterKey();
   if (!masterKey) {
-    console.warn("主密钥不存在，无法解密敏感数据，返回带空 apiKey 的模型");
+    logger.warn("主密钥不存在，无法解密敏感数据，返回带空 apiKey 的模型");
     return storedModels.map((model) => ({
       ...model,
       apiKey: model.apiKey?.startsWith("enc:") ? "" : model.apiKey,

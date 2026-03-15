@@ -29,5 +29,27 @@
     "apiEndpoint": "API 端点:",
     "providerId": "供应商 ID:",
     "viewDocs": "查看文档"
+  },
+  "log": {
+    "title": "日志管理",
+    "size": "日志大小",
+    "files": "文件数",
+    "dateRange": "日期范围",
+    "retention": "保留策略",
+    "retentionDays": "{{days}} 天",
+    "noLogs": "暂无日志",
+    "loadError": "加载日志状态失败",
+    "export": "导出日志",
+    "exporting": "导出中...",
+    "exportSuccess": "日志导出成功",
+    "exportError": "日志导出失败",
+    "openDir": "打开目录",
+    "openDirError": "打开日志目录失败",
+    "desktopOnly": "此功能仅在桌面应用中可用",
+    "clear": "清除日志",
+    "clearSuccess": "已清除 {{count}} 个文件，释放 {{size}} 空间",
+    "clearError": "清除日志失败",
+    "clearConfirmTitle": "确认清除日志",
+    "clearConfirmDesc": "此操作将删除所有日志文件且无法恢复，确定要继续吗？"
   }
 }

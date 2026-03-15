@@ -6,6 +6,7 @@ import { buildMessages } from '@/services/chat/messageTransformer';
 import { processStreamEvents } from '@/services/chat/streamProcessor';
 import { MetadataCollectionError } from '@/services/chat/types';
 import type { AISDKDependencies, ChatRequestParams } from '@/services/chat/types';
+import { logger } from '@/utils/logger';
 
 /**
  * 默认的 AI SDK 依赖（使用真实的 Vercel AI SDK）
@@ -109,7 +110,10 @@ export async function* streamChatCompletion(
   } catch (error) {
     // 降级方案：元数据收集失败时保留已流式传输的内容
     if (error instanceof MetadataCollectionError) {
-      console.warn('Metadata collection failed, but stream content is preserved:', error);
+      logger.warn('元数据收集失败，但流内容已保留', error, {
+        conversationId,
+        modelKey: model.modelKey,
+      });
       // 不 yield 任何消息，保留已流式传输的内容
       // 如果 yield 空内容，会覆盖 Redux store 中的完整内容
       return;

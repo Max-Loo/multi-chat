@@ -8,6 +8,7 @@ import {
   type RemoteProviderData,
 } from "@/services/modelRemote";
 import { ALLOWED_REMOTE_MODEL_PROVIDERS } from "@/services/modelRemote/config";
+import { logger } from '@/utils/logger';
 
 /**
  * Redux store 接口（仅包含需要的方法）
@@ -104,13 +105,13 @@ export const initializeModelProvider = createAsyncThunk(
 export const silentRefreshModelProvider = createAsyncThunk(
   "modelProvider/silentRefresh",
   async (_, { rejectWithValue }) => {
-    console.log("[silentRefreshModelProvider] 开始发起远程请求");
+    logger.debug("开始发起远程请求", { action: "silentRefreshModelProvider" });
     try {
       const { fullApiResponse, filteredData } = await fetchRemoteData();
-      console.log(
-        "[silentRefreshModelProvider] 远程请求成功",
-        filteredData.length,
-      );
+      logger.info("远程请求成功", {
+        action: "silentRefreshModelProvider",
+        providerCount: filteredData.length,
+      });
       await saveCachedProviderData(fullApiResponse);
       return {
         providers: filteredData,
@@ -118,9 +119,9 @@ export const silentRefreshModelProvider = createAsyncThunk(
       };
     } catch (error) {
       // 静默失败，返回空对象，extraReducers 不处理
-      // 忽略 error 未使用的警告
-      void error;
-      console.log("[silentRefreshModelProvider] 远程请求失败", error);
+      logger.warn("远程请求失败", error instanceof Error ? error : undefined, {
+        action: "silentRefreshModelProvider",
+      });
       return rejectWithValue({});
     }
   },
@@ -275,18 +276,19 @@ export function triggerSilentRefreshIfNeeded(store: StoreInterface): void {
   const state = store.getState();
   const modelProviderState = state.modelProvider;
 
-  console.log("[triggerSilentRefreshIfNeeded] 准备触发后台静默刷新", {
+  logger.debug("准备触发后台静默刷新", {
+    action: "triggerSilentRefreshIfNeeded",
     loading: modelProviderState.loading,
     backgroundRefreshing: modelProviderState.backgroundRefreshing,
     providersCount: modelProviderState.providers.length,
-    error: modelProviderState.error,
+    hasError: !!modelProviderState.error,
   });
 
   // 在 dispatch 之前检查是否已有后台刷新在进行
   if (!modelProviderState.backgroundRefreshing) {
-    console.log("[triggerSilentRefreshIfNeeded] 触发后台静默刷新");
+    logger.debug("触发后台静默刷新", { action: "triggerSilentRefreshIfNeeded" });
     store.dispatch(silentRefreshModelProvider());
   } else {
-    console.log("[triggerSilentRefreshIfNeeded] 已有后台刷新在进行，跳过");
+    logger.debug("已有后台刷新在进行，跳过", { action: "triggerSilentRefreshIfNeeded" });
   }
 }

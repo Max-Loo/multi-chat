@@ -11,6 +11,7 @@ import { getCurrentTimestamp } from "@/utils/utils";
 import { selectTransmitHistoryReasoning, selectAutoNamingEnabled } from "./appConfigSlices";
 import { getProviderSDKLoader } from "@/services/chat/providerLoader";
 import { ModelProviderKeyEnum } from "@/utils/enums";
+import { logger } from '@/utils/logger';
 
 // 生成用户消息 ID 的工具函数（带前缀）
 const generateUserMessageId = createIdGenerator({ prefix: USER_MESSAGE_ID_PREFIX });
@@ -146,7 +147,7 @@ export const setSelectedChatIdWithPreload = createAsyncThunk<
     const chat = state.chat.chatList.find(c => c.id === chatId);
     
     if (!chat) {
-      console.warn(`Chat ${chatId} not found for preload`);
+      logger.warn(`聊天未找到，无法预加载`, { chatId, action: 'setSelectedChatIdWithPreload' });
       return { chatId };
     }
 
@@ -177,7 +178,10 @@ export const setSelectedChatIdWithPreload = createAsyncThunk<
       }
     } catch (error) {
       // 预加载失败不影响聊天切换，仅记录警告
-      console.warn('Failed to preload provider SDKs:', error);
+      logger.warn('预加载供应商 SDK 失败', error instanceof Error ? error : undefined, {
+        chatId,
+        action: 'setSelectedChatIdWithPreload',
+      });
     }
     
     return { chatId };
@@ -221,7 +225,10 @@ export const generateChatName = createAsyncThunk<
       };
     } catch (error) {
       // 静默处理错误，记录警告日志
-      console.warn('Failed to generate chat title:', error);
+      logger.warn('生成聊天标题失败', error instanceof Error ? error : undefined, {
+        chatId: chat.id,
+        action: 'generateChatName',
+      });
       return null;
     }
   },
@@ -509,16 +516,12 @@ const chatSlice = createSlice({
         // 记录错误信息
         currentChatModel.errorMessage = errorMessage + errorStack
 
-        console.error('❌ 聊天消息发送失败:', {
+        logger.error('聊天消息发送失败', action.error, {
           chatId: chat.id,
           chatName: chat.name,
           modelId: model.id,
           modelName: model.modelName,
           modelKey: model.modelKey,
-          errorName: action.error?.name,
-          errorMessage: action?.error?.message,
-          errorStack: action.error?.stack,
-          fullAction: action,
         });
 
       })

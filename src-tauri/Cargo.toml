@@ -28,6 +28,9 @@ tauri-plugin-keyring = "0.1.0"
 tauri-plugin-fs = "2"
 tauri-plugin-os = "2"
 tauri-plugin-http = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "json", "env-filter"] }
+tracing-appender = "0.2"
+time = { version = "0.3", features = ["formatting", "macros"] }
+dirs = "5"
 
-[profile.dev.package.scrypt]
-opt-level = 3

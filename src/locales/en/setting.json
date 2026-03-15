@@ -29,5 +29,27 @@
     "apiEndpoint": "API Endpoint:",
     "providerId": "Provider ID:",
     "viewDocs": "View Docs"
+  },
+  "log": {
+    "title": "Log Management",
+    "size": "Size",
+    "files": "Files",
+    "dateRange": "Date Range",
+    "retention": "Retention",
+    "retentionDays": "{{days}} days",
+    "noLogs": "No logs",
+    "loadError": "Failed to load log status",
+    "export": "Export Logs",
+    "exporting": "Exporting...",
+    "exportSuccess": "Logs exported successfully",
+    "exportError": "Failed to export logs",
+    "openDir": "Open Directory",
+    "openDirError": "Failed to open log directory",
+    "clear": "Clear Logs",
+    "clearSuccess": "Cleared {{count}} files, freed {{size}}",
+    "clearError": "Failed to clear logs",
+    "clearConfirmTitle": "Clear Logs",
+    "clearConfirmDesc": "This will delete all log files. This action cannot be undone. Are you sure?",
+    "desktopOnly": "This feature is only available in desktop app"
   }
 }

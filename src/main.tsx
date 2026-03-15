@@ -16,6 +16,7 @@ import { RouterProvider } from "react-router-dom";
 import router from "@/router";
 import { ToasterWrapper } from "@/lib/toast/ToasterWrapper";
 import { triggerSilentRefreshIfNeeded } from "@/store/slices/modelProviderSlice";
+import { setupGlobalErrorCapture, logger } from "@/utils/logger";
 
 const rootDom = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
@@ -26,12 +27,27 @@ rootDom.render(<InitializationScreen />);
 
 interceptClickAToJump();
 
+// 启用全局错误捕获
+setupGlobalErrorCapture();
+
+// 应用退出时刷新日志缓冲区，确保日志不丢失
+window.addEventListener('beforeunload', () => {
+  logger.flush();
+});
+
+// 页面隐藏时也刷新（移动端场景）
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    logger.flush();
+  }
+});
+
 // 使用新的初始化系统执行初始化
 const manager = new InitializationManager();
 const result = await manager.runInitialization({
   steps: initSteps,
   onProgress: (current, total, currentStep) => {
-    console.log(`初始化进度: ${current}/${total} - ${currentStep}`);
+    logger.debug(`初始化进度`, { current, total, currentStep });
   },
 });
 

@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/3/14 00:43:29
+// 生成时间: 2026/3/15 20:51:44
 
 interface Resources {
   translation: {
@@ -160,6 +160,28 @@ interface Resources {
         apiEndpoint: string;
         providerId: string;
         viewDocs: string;
+      };
+      log: {
+        title: string;
+        size: string;
+        files: string;
+        dateRange: string;
+        retention: string;
+        retentionDays: string;
+        noLogs: string;
+        loadError: string;
+        export: string;
+        exporting: string;
+        exportSuccess: string;
+        exportError: string;
+        openDir: string;
+        openDirError: string;
+        clear: string;
+        clearSuccess: string;
+        clearError: string;
+        clearConfirmTitle: string;
+        clearConfirmDesc: string;
+        desktopOnly: string;
       };
     };
     table: {

@@ -29,6 +29,7 @@ describe.skip('modelStorage (Integration Test)', () => {
   // WebKeyringCompat 实例用于清理
   let keyringCompat: WebKeyringCompat | null = null;
 
+  // 增加超时时间，因为 IndexedDB 操作可能较慢
   beforeEach(async () => {
     // 关闭所有可能的数据库连接
     // 1. 关闭 modelStorage 的 store 连接

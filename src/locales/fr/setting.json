@@ -29,5 +29,27 @@
     "apiEndpoint": "Point de terminaison API :",
     "providerId": "ID du fournisseur :",
     "viewDocs": "Voir la documentation"
+  },
+  "log": {
+    "title": "Gestion des journaux",
+    "size": "Taille",
+    "files": "Fichiers",
+    "dateRange": "Plage de dates",
+    "retention": "Rétention",
+    "retentionDays": "{{days}} jours",
+    "noLogs": "Aucun journal",
+    "loadError": "Échec du chargement de l'état des journaux",
+    "export": "Exporter les journaux",
+    "exporting": "Exportation...",
+    "exportSuccess": "Journaux exportés avec succès",
+    "exportError": "Échec de l'exportation des journaux",
+    "openDir": "Ouvrir le dossier",
+    "openDirError": "Échec de l'ouverture du dossier des journaux",
+    "clear": "Effacer les journaux",
+    "clearSuccess": "{{count}} fichiers effacés, {{size}} libérés",
+    "clearError": "Échec de l'effacement des journaux",
+    "clearConfirmTitle": "Effacer les journaux",
+    "clearConfirmDesc": "Cette action supprimera tous les fichiers journaux. Cette action est irréversible. Êtes-vous sûr ?",
+    "desktopOnly": "Cette fonctionnalité n'est available que dans the desktop application"
   }
 }

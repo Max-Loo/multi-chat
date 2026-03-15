@@ -278,13 +278,12 @@ describe('设置变更集成测试', () => {
 
       localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh');
 
-      
+
 
       // When: 读取默认语言
 
       const defaultLang = await getDefaultAppLanguage();
 
-      
 
       // Then: 应返回 localStorage 中的值（返回的是 { lang, migrated } 对象）
       expect(defaultLang.lang).toBe('zh');

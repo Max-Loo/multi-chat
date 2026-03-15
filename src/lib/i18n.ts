@@ -2,6 +2,7 @@ import i18n, { Resource, TFunction } from "i18next";
 import { initReactI18next } from "react-i18next";
 import { getDefaultAppLanguage, getLanguageLabel } from "./global";
 import { toastQueue } from "./toast/toastQueue";
+import { logger } from '@/utils/logger';
 
 // 英文资源"第一公民"策略（静态导入，同步打包）
 import enCommon from "../locales/en/common.json";
@@ -207,7 +208,9 @@ export const initI18n = async () => {
     try {
       languageResult = await getDefaultAppLanguage();
     } catch (error) {
-      console.warn("Failed to get system language, using English", error);
+      logger.warn("获取系统语言失败，使用英语", error instanceof Error ? error : undefined, {
+        action: "initI18n",
+      });
     }
 
     // 显示 Toast 提示（根据迁移信息）
@@ -227,11 +230,10 @@ export const initI18n = async () => {
         toastQueue.warning(`Language code invalid, switched to English`);
       }
     } catch (toastError) {
-      // Toast 显示失败，降级到 console.warn
-      console.warn(
-        "[Toast] Failed to display, falling back to console.warn",
-        toastError,
-      );
+      // Toast 显示失败，降级到日志
+      logger.warn("Toast 显示失败", toastError instanceof Error ? toastError : undefined, {
+        action: "initI18n",
+      });
     }
 
     // 准备初始资源对象（使用 Resource 类型）
@@ -260,10 +262,10 @@ export const initI18n = async () => {
         }
       } catch (error) {
         // 加载失败，保持英文，显示警告（非阻塞）
-        console.warn(
-          `System language ${languageResult.lang} failed to load, using English instead`,
-          error,
-        );
+        logger.warn("系统语言加载失败，使用英语", error instanceof Error ? error : undefined, {
+          action: "initI18n",
+          targetLang: languageResult.lang,
+        });
         // 显示 Toast 警告（使用降级方案）
         try {
           toastQueue.warning(
@@ -312,7 +314,7 @@ export const getInitI18nPromise = () => {
 export const changeAppLanguage = async (
   lang: string,
 ): Promise<{ success: boolean }> => {
-  console.log("changeAppLanguage", lang);
+  logger.debug("切换应用语言", { action: "changeAppLanguage", lang });
 
   try {
     // 等待 i18n 初始化完成（防止在初始化期间调用）
@@ -324,11 +326,16 @@ export const changeAppLanguage = async (
     // 加载成功后切换语言
     await i18n.changeLanguage(lang);
 
+    logger.info("应用语言切换成功", { action: "changeAppLanguage", lang });
+
     // 返回成功
     return { success: true };
   } catch (error) {
     // 如果加载失败，记录错误并返回失败
-    console.error(`Failed to change language to ${lang}:`, error);
+    logger.error("切换语言失败", error instanceof Error ? error : undefined, {
+      action: "changeAppLanguage",
+      lang,
+    });
     return { success: false };
   }
 };
@@ -367,7 +374,10 @@ export const tSafely = (key: string, fallback: string): string => {
       return translated;
     } catch (error) {
       // 记录异常但不中断流程
-      console.warn('[tSafely] Translation failed for key:', safeKey, error);
+      logger.warn("翻译失败", error instanceof Error ? error : undefined, {
+        action: "tSafely",
+        key: safeKey,
+      });
       return safeFallback;
     }
   }

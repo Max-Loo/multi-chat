@@ -6,6 +6,7 @@
 import { getPassword, setPassword } from "@/utils/tauriCompat";
 import { isTauri } from "@/utils/tauriCompat/env";
 import { toastQueue } from '@/lib/toast';
+import { logger } from '@/utils/logger';
 
 // 服务名和账户名配置
 const SERVICE_NAME = "com.multichat.app";
@@ -34,7 +35,7 @@ export const isMasterKeyExists = async (): Promise<boolean> => {
     const key = await getPassword(SERVICE_NAME, ACCOUNT_NAME);
     return key !== null && key !== undefined && key.length > 0;
   } catch (error) {
-    console.error("检查主密钥是否存在时出错:", error);
+    logger.error("检查主密钥是否存在时出错", error instanceof Error ? error : undefined);
     return false;
   }
 };
@@ -48,7 +49,7 @@ export const getMasterKey = async (): Promise<string | null> => {
     const key = await getPassword(SERVICE_NAME, ACCOUNT_NAME);
     return key;
   } catch (error) {
-    console.error("获取主密钥时出错:", error);
+    logger.error("获取主密钥时出错", error instanceof Error ? error : undefined);
 
     // Web 环境可能因为 IndexedDB 不可用或解密失败而抛出错误
     if (!isTauri()) {
@@ -74,7 +75,7 @@ export const storeMasterKey = async (key: string): Promise<void> => {
   try {
     await setPassword(SERVICE_NAME, ACCOUNT_NAME, key);
   } catch (error) {
-    console.error("存储主密钥时出错:", error);
+    logger.error("存储主密钥时出错", error instanceof Error ? error : undefined);
 
     // Web 环境可能因为 IndexedDB 不可用或加密失败而抛出错误
     if (!isTauri()) {
@@ -108,31 +109,23 @@ export const initializeMasterKey = async (): Promise<string> => {
     }
 
     // 密钥不存在，生成新密钥
-    console.warn("⚠️  Master key does not exist, generating new key...");
+    logger.warn("主密钥不存在，正在生成新密钥");
     const newKey = generateMasterKey();
 
     // 存储新密钥
     await storeMasterKey(newKey);
 
     if (!isTauri()) {
-      console.warn(
-        "⚠️  A new master key has been generated and stored in browser secure storage (IndexedDB + encryption)."
-      );
-      console.warn(
-        "⚠️  [IMPORTANT] Old encrypted data cannot be decrypted, you need to reconfigure API keys."
-      );
-      console.warn(
-        "⚠️  Security notice: The web version has a lower security level than the desktop version, we recommend handling sensitive data in the desktop version."
-      );
+      logger.warn("新主密钥已生成并存储在浏览器安全存储中（IndexedDB + 加密）");
+      logger.warn("旧加密数据无法解密，需要重新配置 API 密钥");
+      logger.warn("安全提示：Web 版本安全级别低于桌面版本，建议在桌面版本中处理敏感数据");
     } else {
-      console.warn(
-        "⚠️  A new master key has been generated and stored in system secure storage. Note: Old encrypted data cannot be decrypted, you need to reconfigure API keys."
-      );
+      logger.warn("新主密钥已生成并存储在系统安全存储中。注意：旧加密数据无法解密，需要重新配置 API 密钥");
     }
 
     return newKey;
   } catch (error) {
-    console.error("Error getting or creating master key:", error);
+    logger.error("获取或创建主密钥时出错", error instanceof Error ? error : undefined);
     throw error;
   }
 };

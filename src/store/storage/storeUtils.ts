@@ -4,6 +4,7 @@
  * 使用 Store 兼容层，自动适配 Tauri 和 Web 环境
  */
 import { createLazyStore as createCompatStore, type StoreCompat } from '@/utils/tauriCompat';
+import { logger } from '@/utils/logger';
 
 /**
  * 设置存储类，扩展基本 Store 功能
@@ -66,7 +67,7 @@ class SettingStore {
       await this.store.set(key, value);
       await this.store.save();
     } catch (error) {
-      console.error(message, error);
+      logger.error(message || '存储失败', error instanceof Error ? error : undefined, { key });
       throw new Error(message, { cause: error });
     }
   }
@@ -99,10 +100,10 @@ export const saveToStore = async <T>(
     await store.set(key, data);
     await store.save();
     if (successMessage) {
-      console.log(`成功${successMessage}到 ${key}`);
+      logger.debug(`成功${successMessage}`, { key });
     }
   } catch (error) {
-    console.error(`保存数据到 ${key} 失败:`, error);
+    logger.error(`保存数据失败`, error instanceof Error ? error : undefined, { key });
     throw error;
   }
 };
@@ -123,12 +124,12 @@ export const loadFromStore = async <T>(
     await store.init();
     const data = await store.get<T>(key);
     if (!data) {
-      console.log(`${key} 数据不存在，返回默认值`);
+      logger.debug(`数据不存在，返回默认值`, { key });
       return defaultValue;
     }
     return data;
   } catch (error) {
-    console.error(`从 ${key} 加载数据失败:`, error);
+    logger.error(`加载数据失败`, error instanceof Error ? error : undefined, { key });
     return defaultValue;
   }
 };
