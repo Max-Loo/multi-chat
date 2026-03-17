@@ -19,7 +19,9 @@ import type { InitResult } from "@/lib/initialization";
  * 管理初始化状态，根据初始化结果渲染不同界面
  */
 const App: React.FC = () => {
-  const [appState, setAppState] = useState<'initializing' | 'ready'>('initializing');
+  const [appState, setAppState] = useState<"initializing" | "ready">(
+    "initializing",
+  );
 
   /**
    * 处理初始化完成
@@ -39,7 +41,7 @@ const App: React.FC = () => {
     }
 
     // 切换到就绪状态
-    setAppState('ready');
+    setAppState("ready");
 
     // 应用渲染后，处理安全性警告（现在可以使用 Toast）
     await handleSecurityWarning();
@@ -49,7 +51,7 @@ const App: React.FC = () => {
   }, []);
 
   // 初始化中，显示进度条
-  if (appState === 'initializing') {
+  if (appState === "initializing") {
     return <InitializationController onComplete={handleInitComplete} />;
   }
 
