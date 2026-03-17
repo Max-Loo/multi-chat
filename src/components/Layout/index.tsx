@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
-import InitializationScreen from "@/components/InitializationScreen";
+import { PageSkeleton } from "@/components/Skeleton";
 import { useResponsive } from "@/hooks/useResponsive";
 
 interface LayoutProps {
@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ className = "" }) => {
 
       {/* 主内容区域 */}
       <div className={`flex-1 overflow-y-hidden ${isMobile && "pb-16"}`}>
-        <Suspense fallback={<InitializationScreen />}>
+        <Suspense fallback={<PageSkeleton />}>
           <Outlet />
         </Suspense>
       </div>

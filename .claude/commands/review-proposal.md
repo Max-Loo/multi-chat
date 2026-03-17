@@ -1,1 +1,0 @@
-../../.opencode/command/review-proposal.md

@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/3/11 11:26:14
+// 生成时间: 2026/3/14 00:43:29
 
 interface Resources {
   translation: {
@@ -36,6 +36,9 @@ interface Resources {
       typeMessage: string;
       transmitHistoryReasoning: string;
       transmitHistoryReasoningHint: string;
+      supplier: string;
+      model: string;
+      nickname: string;
     };
     common: {
       submit: string;
@@ -62,6 +65,23 @@ interface Resources {
       showErrorDetails: string;
       hideErrorDetails: string;
       loading: string;
+    };
+    error: {
+      initialization: {
+        i18nFailed: string;
+        masterKeyFailed: string;
+        modelsFailed: string;
+        chatListFailed: string;
+        appLanguageFailed: string;
+        transmitHistoryReasoningFailed: string;
+        autoNamingEnabledFailed: string;
+        modelProviderFailed: string;
+      };
+      appConfig: {
+        failToInitializeLanguage: string;
+        failToInitializeTransmitHistoryReasoning: string;
+        failToInitializeAutoNamingEnabled: string;
+      };
     };
     model: {
       title: string;

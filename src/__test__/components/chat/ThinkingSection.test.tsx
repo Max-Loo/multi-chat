@@ -166,7 +166,6 @@ describe('ThinkingSection UI 组件', () => {
           title="思考中"
           content="推理内容"
           loading={true}
-          provider={{ providerKey: 'deepseek' }}
         />
       );
 
@@ -181,7 +180,6 @@ describe('ThinkingSection UI 组件', () => {
           title="思考中"
           content="内容"
           loading={true}
-          provider={{ providerKey: 'deepseek' }}
         />
       );
 
@@ -194,7 +192,6 @@ describe('ThinkingSection UI 组件', () => {
           title="思考完成"
           content="内容"
           loading={false}
-          provider={{ providerKey: 'deepseek' }}
         />
       );
 
@@ -376,7 +373,6 @@ describe('ThinkingSection UI 组件', () => {
           title="思考中"
           content="内容"
           loading={true}
-          provider={{ providerKey: 'deepseek' }}
         />
       );
 
@@ -387,7 +383,6 @@ describe('ThinkingSection UI 组件', () => {
           title="思考完成"
           content="内容"
           loading={false}
-          provider={{ providerKey: 'deepseek' }}
         />
       );
 

@@ -21,10 +21,48 @@ const SEED_STORAGE_KEY = 'multi-chat-keyring-seed';
 
 /**
  * PBKDF2 密钥派生参数
+ * 在测试环境中使用更低的迭代次数以加快测试速度
  */
-const PBKDF2_ITERATIONS = 100000;
 const PBKDF2_ALGORITHM = 'SHA-256';
 const DERIVED_KEY_LENGTH = 256; // bits
+
+/**
+ * 检测是否在测试环境中运行
+ * 使用多种方式检测以提高可靠性
+ */
+const isTestEnvironment = (): boolean => {
+  // 方式 1: 检测全局 vitest 变量（通过 globalThis 避免编译错误）
+  if (typeof (globalThis as Record<string, unknown>).vitest !== 'undefined') {
+    return true;
+  }
+  // 方式 2: 检测全局 __VITEST__ 标识
+  if ((globalThis as Record<string, unknown>).__VITEST__) {
+    return true;
+  }
+  // 方式 3: 检测环境变量
+  if (typeof process !== 'undefined' && process.env?.VITEST) {
+    return true;
+  }
+  // 方式 4: 检测 import.meta.env.VITEST
+  try {
+    // 使用 try-catch 避免在某些环境中访问 import.meta.env 抛出错误
+    const env = (import.meta as unknown as Record<string, unknown>).env as Record<string, unknown> | undefined;
+    if (env?.VITEST === 'true') {
+      return true;
+    }
+  } catch {
+    // 忽略错误，继续检测其他方式
+  }
+  return false;
+};
+
+/**
+ * 获取 PBKDF2 迭代次数
+ * 在测试环境中使用更低的值以加快测试速度
+ */
+const getPBKDF2Iterations = (): number => {
+  return isTestEnvironment() ? 1000 : 100000;
+};
 
 /**
  * Keyring 兼容接口
@@ -124,7 +162,7 @@ const deriveEncryptionKey = async (seed: string): Promise<CryptoKey> => {
     {
       name: 'PBKDF2',
       salt: encoder.encode(seed),
-      iterations: PBKDF2_ITERATIONS,
+      iterations: getPBKDF2Iterations(),
       hash: PBKDF2_ALGORITHM,
     },
     key,

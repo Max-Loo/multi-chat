@@ -29,5 +29,8 @@
   "itemsUnit": "",
   "typeMessage": "Entrez votre message...",
   "transmitHistoryReasoning": "Inclure le contenu de raisonnement",
-  "transmitHistoryReasoningHint": "Lorsque activé, inclut le processus de raisonnement du modèle dans l'historique du chat pour améliorer la qualité des réponses au coût d'une utilisation accrue de jetons"
+  "transmitHistoryReasoningHint": "Lorsque activé, inclut le processus de raisonnement du modèle dans l'historique du chat pour améliorer la qualité des réponses au coût d'une utilisation accrue de jetons",
+  "supplier": "Fournisseur",
+  "model": "Modèle",
+  "nickname": "Surnom"
 }

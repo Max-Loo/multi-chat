@@ -10,6 +10,7 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { RootState } from "@/store";
 import { useResponsive } from "@/hooks/useResponsive";
+import { getProviderLogoUrl } from "@/utils/providerUtils";
 
 interface ModelSidebarProps {
   // 当前选中的大模型
@@ -104,7 +105,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
             >
               <Avatar className={avatarClassName}>
                 <img
-                  src={`https://models.dev/logos/${provider.providerKey}.svg`}
+                  src={getProviderLogoUrl(provider.providerKey)}
                   alt={provider.providerName}
                 />
               </Avatar>
