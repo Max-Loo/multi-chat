@@ -26,6 +26,10 @@ rootDom.render(<InitializationScreen />);
 
 interceptClickAToJump();
 
+// 最小初始化显示时间 (毫秒) - 临时调试用，确保能看到动画
+const MIN_INIT_DURATION = 0;
+const startTime = Date.now();
+
 // 使用新的初始化系统执行初始化
 const manager = new InitializationManager();
 const result = await manager.runInitialization({
@@ -34,6 +38,14 @@ const result = await manager.runInitialization({
     console.log(`初始化进度: ${current}/${total} - ${currentStep}`);
   },
 });
+
+// 确保动画至少显示 MIN_INIT_DURATION 毫秒
+const elapsed = Date.now() - startTime;
+if (elapsed < MIN_INIT_DURATION) {
+  await new Promise((resolve) =>
+    setTimeout(resolve, MIN_INIT_DURATION - elapsed),
+  );
+}
 
 // 根据初始化结果渲染不同界面
 if (!result.success) {
