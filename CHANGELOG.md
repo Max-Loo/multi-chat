@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.4] - 2026-03-17
+
+### ✨ 新功能
+
+- **初始化进度条**：为初始化内容增加进度条，提升用户等待体验
+- **Logo 和加载动画**：增加应用 Logo 和加载动画，增强品牌识别
+- **初始化页面骨架屏**：完善初始化动画和页面骨架屏，优化首屏加载体验
+
+---
+
 ## [0.3.3] - 2026-03-15
 
 ### 🐛 Bug 修复

@@ -8,6 +8,9 @@ import 'fake-indexeddb/auto';
  * 配置 MSW server 和全局测试钩子
  */
 
+// 设置全局测试环境标识，用于优化加密性能
+(globalThis as Record<string, unknown>).__VITEST__ = true;
+
 // 创建 MSW server，使用所有默认 handlers
 export const server = setupServer(...allHandlers);
 

@@ -29,5 +29,8 @@
   "itemsUnit": "个",
   "typeMessage": "请输入消息...",
   "transmitHistoryReasoning": "传输推理内容",
-  "transmitHistoryReasoningHint": "开启后会在历史消息中包含模型的推理过程，提升响应质量但会增加 token 消耗"
+  "transmitHistoryReasoningHint": "开启后会在历史消息中包含模型的推理过程，提升响应质量但会增加 token 消耗",
+  "supplier": "供应商",
+  "model": "模型",
+  "nickname": "昵称"
 }

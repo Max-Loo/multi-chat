@@ -3,6 +3,12 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { visualizer } from "rollup-plugin-visualizer";
+import { readFileSync } from "fs";
+
+// 读取 package.json 获取版本号
+const packageJson = JSON.parse(
+  readFileSync(path.resolve(__dirname, "./package.json"), "utf-8"),
+);
 
 // //@ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -25,6 +31,11 @@ export default defineConfig(async () => ({
       filename: "dist/stats.html", // 生成文件
     }),
   ],
+
+  // 注入版本号到全局变量
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
 
   // 配置路径别名
   resolve: {

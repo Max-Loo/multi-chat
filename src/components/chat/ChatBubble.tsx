@@ -6,14 +6,6 @@ import { generateCleanHtml } from "@/utils/markdown";
 import { useTranslation } from "react-i18next"
 
 /**
- * 模型供应商信息接口
- */
-interface ModelProvider {
-  /** 供应商唯一标识 */
-  providerKey: string;
-}
-
-/**
  * 聊天气泡组件的属性接口
  */
 interface ChatBubbleProps {
@@ -25,8 +17,6 @@ interface ChatBubbleProps {
   reasoningContent?: string;
   /** 是否正在生成中 */
   isRunning?: boolean;
-  /** 模型供应商信息（用于显示 logo） */
-  provider?: ModelProvider;
 }
 
 /**
@@ -38,7 +28,6 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   content,
   reasoningContent,
   isRunning = false,
-  provider,
 }) => {
   const { t } = useTranslation()
   // 推理内容的加载状态
@@ -46,13 +35,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     return isRunning && !content;
   }, [isRunning, content]);
 
-  // 缓存用户消息的 HTML（避免重复生成导致重新渲染）
-  const userContentHtml = useMemo(() => {
-    return generateCleanHtml(content);
-  }, [content]);
-
-  // 缓存 AI 助手消息的 HTML（避免重复生成导致重新渲染）
-  const assistantContentHtml = useMemo(() => {
+  // 缓存消息内容的 HTML（避免重复生成导致重新渲染）
+  const contentHtml = useMemo(() => {
     return generateCleanHtml(content);
   }, [content]);
 
@@ -66,7 +50,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
             <div
               className="p-4"
               dangerouslySetInnerHTML={{
-                __html: userContentHtml,
+                __html: contentHtml,
               }}
             />
           </Card>
@@ -85,7 +69,6 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
                   title={thinkingLoading ? t(($) => $.chat.thinking) : t(($) => $.chat.thinkingComplete)}
                   content={reasoningContent}
                   loading={thinkingLoading}
-                  provider={provider}
                 />
               )}
               {/* 正式回复内容 */}
@@ -93,7 +76,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
                 <div
                   className="mt-2"
                   dangerouslySetInnerHTML={{
-                    __html: assistantContentHtml,
+                    __html: contentHtml,
                   }}
                 />
               )}
