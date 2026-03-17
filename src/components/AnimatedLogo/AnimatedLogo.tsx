@@ -17,6 +17,8 @@ const AnimatedLogo: React.FC = () => {
   const animationRef = useRef<number | null>(null);
   const stateRef = useRef<AnimationState>(createInitialState());
   const lastTimeRef = useRef<number>(0);
+  const resizeHandlerRef = useRef<(() => void) | null>(null);
+  const prefersReducedMotionRef = useRef<boolean>(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [canvasSupported, setCanvasSupported] = useState(true);
 
@@ -37,12 +39,15 @@ const AnimatedLogo: React.FC = () => {
     // 更新状态
     stateRef.current = updateState(stateRef.current, deltaTime);
 
-    // 计算缩放
-    const scale = calculateScale(canvas.width, canvas.height);
+    // 计算缩放（使用 CSS 像素尺寸）
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = canvas.width / dpr;
+    const cssHeight = canvas.height / dpr;
+    const scale = calculateScale(cssWidth, cssHeight);
 
     // 绘制
     draw(
-      { ctx, scale, width: canvas.width, height: canvas.height },
+      { ctx, scale, width: cssWidth, height: cssHeight },
       stateRef.current
     );
 
@@ -68,26 +73,54 @@ const AnimatedLogo: React.FC = () => {
 
     // 检测用户是否偏好减少动画
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    prefersReducedMotionRef.current = mediaQuery.matches;
     setPrefersReducedMotion(mediaQuery.matches);
 
     const handleChange = (e: MediaQueryListEvent) => {
+      prefersReducedMotionRef.current = e.matches;
       setPrefersReducedMotion(e.matches);
     };
 
     mediaQuery.addEventListener("change", handleChange);
 
-    // 设置 Canvas 尺寸
+    // 设置 Canvas 尺寸（处理高 DPR 屏幕）并触发重绘
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
-      // 使用 CSS 像素尺寸，绘制逻辑会处理缩放
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      const dpr = window.devicePixelRatio || 1;
+      // 设置实际像素尺寸为 CSS 尺寸乘以 DPR，确保高分辨率屏幕清晰显示
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      // 重置变换矩阵并缩放 Canvas 上下文，使绘制逻辑仍使用 CSS 像素坐标
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+
+      // 强制重绘一次，避免 resize 后画面空白或错位
+      if (prefersReducedMotionRef.current) {
+        const cssWidth = canvas.width / dpr;
+        const cssHeight = canvas.height / dpr;
+        const scale = calculateScale(cssWidth, cssHeight);
+        drawStaticFrame({ ctx, scale, width: cssWidth, height: cssHeight });
+      } else if (!animationRef.current) {
+        // 如果动画未运行，触发一次绘制
+        const cssWidth = canvas.width / dpr;
+        const cssHeight = canvas.height / dpr;
+        const scale = calculateScale(cssWidth, cssHeight);
+        draw(
+          { ctx, scale, width: cssWidth, height: cssHeight },
+          stateRef.current
+        );
+      }
     };
+
+    // 存储 resize handler 到 ref，确保 ResizeObserver 始终调用最新版本
+    resizeHandlerRef.current = resizeCanvas;
 
     resizeCanvas();
 
     // 使用 ResizeObserver 监听容器尺寸变化
-    const resizeObserver = new ResizeObserver(resizeCanvas);
+    const resizeObserver = new ResizeObserver(() => {
+      resizeHandlerRef.current?.();
+    });
     resizeObserver.observe(canvas);
 
     return () => {
@@ -109,9 +142,12 @@ const AnimatedLogo: React.FC = () => {
       animationRef.current = null;
     }
 
-    // 计算缩放
-    const scale = calculateScale(canvas.width, canvas.height);
-    const drawCtx = { ctx, scale, width: canvas.width, height: canvas.height };
+    // 计算缩放（使用 CSS 像素尺寸而非 Canvas 实际像素）
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = canvas.width / dpr;
+    const cssHeight = canvas.height / dpr;
+    const scale = calculateScale(cssWidth, cssHeight);
+    const drawCtx = { ctx, scale, width: cssWidth, height: cssHeight };
 
     if (prefersReducedMotion) {
       // 静态帧模式
