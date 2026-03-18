@@ -141,9 +141,15 @@ export const isKeyringSupported = (): boolean
 ```
 
 **加密方案**（Web 环境）：
-- 使用 Web Crypto API 加密
-- 密钥存储在 IndexedDB
-- 提供与系统钥匙串相同的安全性
+- 使用 Web Crypto API 加密（AES-256-GCM）
+- 密钥通过 PBKDF2 从 localStorage 中的种子派生
+- 密钥派生仅依赖种子，不依赖 navigator.userAgent（V2 方式）
+- 加密数据存储在 IndexedDB
+
+**数据迁移**：
+- 位置：`src/utils/tauriCompat/keyringMigration.ts`
+- V1 → V2 迁移在应用启动时自动执行
+- 详见 `openspec/changes/keyring-migration-v1-to-v2/`
 
 ## 统一 API 设计
 

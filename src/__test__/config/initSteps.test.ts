@@ -14,7 +14,7 @@ describe('initSteps 配置验证', () => {
       const uniqueNames = new Set(names);
 
       expect(names.length).toBe(uniqueNames.size);
-      expect(names.length).toBe(8); // 8 个步骤
+      expect(names.length).toBe(9); // 9 个步骤
     });
 
     it('应该检测重复的步骤名称', () => {
@@ -126,13 +126,14 @@ describe('initSteps 配置验证', () => {
       expect(Array.isArray(initSteps)).toBe(true);
     });
 
-    it('应该数组长度为 8', () => {
-      // i18n、masterKey、models、chatList、appLanguage、transmitHistoryReasoning、autoNamingEnabled、modelProvider
-      expect(initSteps.length).toBe(8);
+    it('应该数组长度为 9', () => {
+      // keyringMigration、i18n、masterKey、models、chatList、appLanguage、transmitHistoryReasoning、autoNamingEnabled、modelProvider
+      expect(initSteps.length).toBe(9);
     });
 
     it('应该包含所有预期的步骤名称', () => {
       const expectedSteps = [
+        'keyringMigration',
         'i18n',
         'masterKey',
         'models',

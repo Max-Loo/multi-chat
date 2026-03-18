@@ -88,9 +88,9 @@
 - **WHEN** 应用在 Web 环境中初始化 Keyring（首次或后续启动）
 - **THEN** 系统 SHALL 使用 PBKDF2 算法派生加密密钥
 - **AND** 派生参数：
-  - 基础密钥材料：`navigator.userAgent` + 存储在 `localStorage` 中的种子（base64 字符串拼接）
+  - 基础密钥材料：存储在 `localStorage` 中的种子（base64 字符串）
   - 盐值（salt）：种子本身（base64 字符串）
-  - 迭代次数：100,000 次
+  - 迭代次数：100,000 次（测试环境 1,000 次）
   - 哈希算法：SHA-256
   - 输出密钥长度：256 bits（AES-256-GCM 密钥）
 - **AND** 派生密钥 SHALL 存储在内存中（不持久化）
@@ -120,7 +120,7 @@
 - **WHEN** 应用初始化主密钥存储
 - **THEN** 系统 SHALL 按以下顺序执行：
   1. 生成 256-bit 随机种子并存储到 `localStorage`（存储键：`multi-chat-keyring-seed`）
-  2. 使用 `navigator.userAgent` + 种子作为基础密钥材料，通过 PBKDF2 派生加密密钥
+  2. 使用种子作为基础密钥材料，通过 PBKDF2 派生加密密钥
   3. 使用 Web Crypto API 的 `crypto.getRandomValues()` 生成 256-bit 主密钥
   4. 使用派生的加密密钥对主密钥进行 AES-256-GCM 加密（生成随机 IV）
   5. 将加密后的主密钥、IV、时间戳存储到 IndexedDB 的 `keys` 对象存储
@@ -138,7 +138,7 @@
 - **WHEN** 应用启动并调用 `getPassword("com.multichat.app", "master-key")`
 - **THEN** 系统 SHALL 按以下顺序执行：
   1. 从 `localStorage` 读取种子（存储键：`multi-chat-keyring-seed`）
-  2. 使用 `navigator.userAgent` + 种子作为基础密钥材料，通过 PBKDF2 重新派生加密密钥
+  2. 使用种子作为基础密钥材料，通过 PBKDF2 重新派生加密密钥
   3. 从 IndexedDB 的 `keys` 对象存储读取加密的主密钥记录
   4. 使用派生的加密密钥和存储的 IV 对主密钥进行 AES-256-GCM 解密
   5. 返回解密后的主密钥明文
@@ -230,6 +230,7 @@
 - **THEN** 系统 SHALL 使用高迭代次数（100,000+）增加暴力破解难度
 - **AND** 使用存储在 `localStorage` 中的种子作为盐值
 - **AND** 结果密钥长度为 256 位
+- **AND** 密钥派生不依赖 `navigator.userAgent` 或其他易变的浏览器属性
 
 #### Scenario: 种子明文存储的安全性权衡
 - **GIVEN** Web 环境无法像 Tauri 端使用系统钥匙串存储密钥
@@ -239,8 +240,8 @@
   - **攻击向量**: 攻击者需要同时获取 `localStorage`（种子）+ IndexedDB（加密主密钥）
   - **保护层**: PBKDF2 100,000 次迭代增加暴力破解难度
   - **安全级别**: ⚠️ 低于 Tauri 端的系统钥匙串，但高于完全不加密
-  - **风险评估**: 种子可被浏览器插件或 XSS 攻击读取，但仍需破解 AES-256-GCM 加密的主密钥
-- **AND** 这是 Web 环境下安全性与可用性的合理权衡
+  - **稳定性**: 不依赖 `navigator.userAgent`，跨浏览器版本数据可访问
+- **AND** 这是 Web 环境下安全性、可用性和稳定性的合理权衡
 
 #### Scenario: 安全性警告
 - **WHEN** 用户在 Web 环境中使用应用

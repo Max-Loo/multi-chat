@@ -12,6 +12,7 @@ import { initializeModels } from '@/store/slices/modelSlice';
 import { initializeChatList } from '@/store/slices/chatSlices';
 import { initializeAppLanguage, initializeTransmitHistoryReasoning, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
+import { migrateKeyringV1ToV2 } from '@/utils/tauriCompat';
 
 /** "无可用供应商"错误的标识字符串 */
 const NO_PROVIDERS_ERROR_MESSAGE = "无法获取模型供应商数据，请检查网络连接";
@@ -23,6 +24,20 @@ const I18N_INIT_FAILED = 'Failed to initialize internationalization';
  * 初始化步骤列表
  */
 export const initSteps: InitStep[] = [
+  {
+    name: 'keyringMigration',
+    critical: false,
+    execute: async (context) => {
+      const result = await migrateKeyringV1ToV2();
+      context.setResult('keyringMigration', result);
+      return result;
+    },
+    onError: (error) => ({
+      severity: 'warning',
+      message: 'Keyring migration failed',
+      originalError: error,
+    }),
+  },
   {
     name: 'i18n',
     critical: true,
@@ -38,6 +53,7 @@ export const initSteps: InitStep[] = [
   {
     name: 'masterKey',
     critical: true,
+    dependencies: ['keyringMigration'],
     execute: async (context) => {
       const key = await initializeMasterKey();
       context.setResult('masterKey', key);

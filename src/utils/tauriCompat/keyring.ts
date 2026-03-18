@@ -140,12 +140,14 @@ const getOrCreateSeed = (): string => {
 };
 
 /**
- * 使用 PBKDF2 从种子派生加密密钥
+ * 使用 PBKDF2 从种子派生加密密钥（V2 方式）
+ * 仅使用 seed 作为密钥材料，不依赖 navigator.userAgent
  * @param {string} seed - base64 编码的种子字符串
  * @returns {Promise<CryptoKey>} 派生的加密密钥
  */
 const deriveEncryptionKey = async (seed: string): Promise<CryptoKey> => {
-  const keyMaterial = navigator.userAgent + seed;
+  // V2: 仅使用 seed，移除 userAgent 依赖
+  const keyMaterial = seed;
 
   const encoder = new TextEncoder();
   const keyData = encoder.encode(keyMaterial);
@@ -270,6 +272,7 @@ class TauriKeyringCompat implements KeyringCompat {
 export class WebKeyringCompat implements KeyringCompat {
   private db: IDBDatabase | null = null;
   private encryptionKey: CryptoKey | null = null;
+  private currentSeed: string | null = null; // 跟踪当前使用的种子
 
   /**
    * 初始化 IndexedDB 数据库和加密密钥
@@ -282,7 +285,12 @@ export class WebKeyringCompat implements KeyringCompat {
 
       // 获取或生成种子，并派生加密密钥
       const seed = getOrCreateSeed();
-      this.encryptionKey = await deriveEncryptionKey(seed);
+
+      // 如果种子变化了，需要重新派生密钥
+      if (this.currentSeed !== seed) {
+        this.encryptionKey = await deriveEncryptionKey(seed);
+        this.currentSeed = seed;
+      }
     } catch (error) {
       console.error('初始化 Keyring 失败:', error);
       throw new Error('浏览器不支持安全存储或初始化失败', { cause: error });
@@ -412,14 +420,23 @@ export class WebKeyringCompat implements KeyringCompat {
 
   /**
    * 关闭数据库连接并重置状态
-   * 用于测试环境清理
+   * 用于测试环境清理或迁移后重置
    */
-  close(): void {
+  resetState(): void {
     if (this.db) {
       this.db.close();
       this.db = null;
     }
     this.encryptionKey = null;
+    this.currentSeed = null;
+  }
+
+  /**
+   * 关闭数据库连接并重置状态（向后兼容别名）
+   * 用于测试环境清理
+   */
+  close(): void {
+    this.resetState();
   }
 
   /**
@@ -494,11 +511,11 @@ export const deletePassword = async (service: string, user: string): Promise<voi
 /**
  * 检查 Keyring 功能是否可用
  * @returns {boolean} 如果功能可用返回 true
- * 
+ *
  * @example
  * ```typescript
  * import { isKeyringSupported } from '@/utils/tauriCompat';
- * 
+ *
  * if (isKeyringSupported()) {
  *   // 使用 Keyring 功能
  * }
@@ -506,6 +523,24 @@ export const deletePassword = async (service: string, user: string): Promise<voi
  */
 export const isKeyringSupported = (): boolean => {
   return keyringCompat.isSupported();
+};
+
+/**
+ * 重置 WebKeyringCompat 实例的状态
+ * 用于迁移完成后强制重新初始化
+ *
+ * @example
+ * ```typescript
+ * import { resetWebKeyringState } from '@/utils/tauriCompat';
+ *
+ * // 迁移完成后调用
+ * resetWebKeyringState();
+ * ```
+ */
+export const resetWebKeyringState = (): void => {
+  if (keyringCompat instanceof WebKeyringCompat) {
+    keyringCompat.resetState();
+  }
 };
 
 /**
