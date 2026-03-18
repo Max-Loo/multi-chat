@@ -46,8 +46,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 // Mock useResponsive 为移动端模式（抽屉才显示）
-vi.mock('@/context/ResponsiveContext', () => ({
-  ResponsiveProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => ({
     layoutMode: 'mobile',
     width: 600,
@@ -389,12 +388,12 @@ describe('抽屉打开/关闭集成测试', () => {
     it('重复 dispatch toggleDrawer 应该正确切换状态', () => {
       renderChatPage(store);
 
-      // 连续切换 5 次
-      for (let i = 0; i < 5; i++) {
+      // 连续切换 4 次
+      for (let i = 0; i < 4; i++) {
         store.dispatch({ type: 'chatPage/toggleDrawer' });
       }
 
-      // 第 5 次后应该是关闭状态（初始关闭，切换 5 次后仍为关闭）
+      // 第 4 次后应该是关闭状态（初始关闭，切换 4 次后仍为关闭）
       expect(store.getState().chatPage.isDrawerOpen).toBe(false);
     });
 

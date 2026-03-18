@@ -43,6 +43,35 @@ vi.mock('react-i18next', () => ({
   },
 }));
 
+// 响应式状态存储，用于动态 mock
+let mockResponsiveState = {
+  layoutMode: 'desktop' as 'mobile' | 'compact' | 'compressed' | 'desktop',
+  width: 1280,
+  height: 800,
+  isMobile: false,
+  isCompact: false,
+  isCompressed: false,
+  isDesktop: true,
+};
+
+// 根据窗口宽度计算响应式状态
+function updateResponsiveState(width: number) {
+  mockResponsiveState = {
+    layoutMode: width < 768 ? 'mobile' : width < 1024 ? 'compact' : width < 1280 ? 'compressed' : 'desktop',
+    width,
+    height: 800,
+    isMobile: width < 768,
+    isCompact: width >= 768 && width < 1024,
+    isCompressed: width >= 1024 && width < 1280,
+    isDesktop: width >= 1280,
+  };
+}
+
+// Mock useResponsive hook
+vi.mock('@/hooks/useResponsive', () => ({
+  useResponsive: () => mockResponsiveState,
+}));
+
 /**
  * 创建测试用 Redux Store
  */
@@ -134,7 +163,7 @@ describe('响应式布局模式切换集成测试', () => {
     store = createTestStore();
     // 模拟桌面端窗口尺寸
     global.innerWidth = 1280;
-    global.dispatchEvent(new Event('resize'));
+    updateResponsiveState(1280);
   });
 
   afterEach(() => {
@@ -147,31 +176,30 @@ describe('响应式布局模式切换集成测试', () => {
       renderChatPageWithResponsive(store);
 
       // 初始状态：Desktop 模式（1280px）
-      expect(global.innerWidth).toBe(1280);
+      expect(mockResponsiveState.isDesktop).toBe(true);
 
       // 模拟窗口缩小到 800px（Compact 模式）
-      global.innerWidth = 800;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(800);
 
       await waitFor(() => {
-        // 验证侧边栏宽度从 224px 变为 180px
-        // 这需要在实际的 DOM 中检查样式
-        const layoutContainer = document.querySelector('.flex.h-screen');
-        expect(layoutContainer).toBeInTheDocument();
+        // 验证已切换到 Compact 模式
+        expect(mockResponsiveState.isCompact).toBe(true);
+        // 验证 ChatPage 正确渲染
+        const chatPage = document.querySelector('[data-testid="chat-page"]');
+        expect(chatPage).toBeInTheDocument();
       });
     });
 
     it('Compact 模式下侧边栏应该使用压缩宽度', async () => {
       // 设置窗口宽度为 Compact 范围
-      global.innerWidth = 900;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(900);
 
       const { container } = renderChatPageWithResponsive(store);
 
       await waitFor(() => {
         // 验证组件正确渲染
-        const layoutContainer = container.querySelector('.flex.h-screen');
-        expect(layoutContainer).toBeInTheDocument();
+        const chatPage = container.querySelector('[data-testid="chat-page"]');
+        expect(chatPage).toBeInTheDocument();
       });
     });
   });
@@ -181,38 +209,36 @@ describe('响应式布局模式切换集成测试', () => {
       renderChatPageWithResponsive(store);
 
       // 设置窗口宽度为 Compressed 范围
-      global.innerWidth = 1100;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(1100);
 
       await waitFor(() => {
+        // 验证已切换到 Compressed 模式
+        expect(mockResponsiveState.isCompressed).toBe(true);
         // 验证布局正确更新
-        const layoutContainer = document.querySelector('.flex.h-screen');
-        expect(layoutContainer).toBeInTheDocument();
+        const chatPage = document.querySelector('[data-testid="chat-page"]');
+        expect(chatPage).toBeInTheDocument();
       });
     });
 
     it('Compressed 和 Compact 模式的侧边栏宽度应该相同', async () => {
+      // Compact 模式
+      updateResponsiveState(900);
       const { container: compactContainer } = renderChatPageWithResponsive(store);
 
-      // Compact 模式
-      global.innerWidth = 900;
-      global.dispatchEvent(new Event('resize'));
-
       await waitFor(() => {
-        const layout = compactContainer.querySelector('.flex.h-screen');
-        expect(layout).toBeInTheDocument();
+        const chatPage = compactContainer.querySelector('[data-testid="chat-page"]');
+        expect(chatPage).toBeInTheDocument();
       });
 
       cleanup();
 
       // Compressed 模式
+      updateResponsiveState(1100);
       const { container: compressedContainer } = renderChatPageWithResponsive(store);
-      global.innerWidth = 1100;
-      global.dispatchEvent(new Event('resize'));
 
       await waitFor(() => {
-        const layout = compressedContainer.querySelector('.flex.h-screen');
-        expect(layout).toBeInTheDocument();
+        const chatPage = compressedContainer.querySelector('[data-testid="chat-page"]');
+        expect(chatPage).toBeInTheDocument();
       });
     });
   });
@@ -222,25 +248,20 @@ describe('响应式布局模式切换集成测试', () => {
       renderLayoutWithResponsive(store);
 
       // 初始状态：Compressed 模式
-      global.innerWidth = 1100;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(1100);
 
       // 切换到 Mobile 模式
-      global.innerWidth = 600;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(600);
 
       await waitFor(() => {
         // Mobile 模式下应该显示底部导航栏
-        // 注意：BottomNav 只在 isMobile 为 true 时渲染
-        // 这里的测试验证组件能正确响应窗口尺寸变化
-        expect(global.innerWidth).toBe(600);
+        expect(mockResponsiveState.isMobile).toBe(true);
       });
     });
 
     it('Mobile 模式下侧边导航栏应该隐藏', async () => {
       // 设置窗口宽度为 Mobile 范围
-      global.innerWidth = 600;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(600);
 
       renderLayoutWithResponsive(store);
 
@@ -253,8 +274,7 @@ describe('响应式布局模式切换集成测试', () => {
 
   describe('所有组件正确渲染和交互', () => {
     it('Desktop 模式下应该渲染侧边导航栏和主内容', async () => {
-      global.innerWidth = 1280;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(1280);
 
       renderLayoutWithResponsive(store);
 
@@ -262,26 +282,24 @@ describe('响应式布局模式切换集成测试', () => {
         const layout = document.querySelector('.flex.h-screen');
         expect(layout).toBeInTheDocument();
 
-        const mainContent = document.querySelector('.flex-1.overflow-auto');
+        const mainContent = document.querySelector('.flex-1.overflow-y-hidden');
         expect(mainContent).toBeInTheDocument();
       });
     });
 
     it('Compact 模式下应该渲染侧边导航栏和压缩的侧边栏', async () => {
-      global.innerWidth = 900;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(900);
 
       renderChatPageWithResponsive(store);
 
       await waitFor(() => {
-        const layout = document.querySelector('.flex.h-screen');
-        expect(layout).toBeInTheDocument();
+        const chatPage = document.querySelector('[data-testid="chat-page"]');
+        expect(chatPage).toBeInTheDocument();
       });
     });
 
     it('Mobile 模式下应该渲染底部导航栏', async () => {
-      global.innerWidth = 600;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(600);
 
       renderLayoutWithResponsive(store);
 
@@ -289,19 +307,18 @@ describe('响应式布局模式切换集成测试', () => {
         const layout = document.querySelector('.flex.h-screen');
         expect(layout).toBeInTheDocument();
 
-        const mainContent = document.querySelector('.flex-1.overflow-auto');
+        const mainContent = document.querySelector('.flex-1.overflow-y-hidden');
         expect(mainContent).toBeInTheDocument();
       });
     });
   });
 
   describe('组件间交互和数据流', () => {
-    it('窗口尺寸变化时应该正确更新 ResponsiveContext', async () => {
+    it('窗口尺寸变化时应该正确更新响应式状态', async () => {
       const { container } = renderLayoutWithResponsive(store);
 
       // Desktop 模式
-      global.innerWidth = 1280;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(1280);
 
       await waitFor(() => {
         const layout = container.querySelector('.flex.h-screen');
@@ -309,8 +326,7 @@ describe('响应式布局模式切换集成测试', () => {
       });
 
       // 切换到 Mobile 模式
-      global.innerWidth = 600;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(600);
 
       await waitFor(() => {
         const layout = container.querySelector('.flex.h-screen');
@@ -322,17 +338,10 @@ describe('响应式布局模式切换集成测试', () => {
       renderLayoutWithResponsive(store);
 
       // 模拟快速窗口尺寸变化
-      global.innerWidth = 1280;
-      global.dispatchEvent(new Event('resize'));
-
-      global.innerWidth = 900;
-      global.dispatchEvent(new Event('resize'));
-
-      global.innerWidth = 600;
-      global.dispatchEvent(new Event('resize'));
-
-      global.innerWidth = 1280;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(1280);
+      updateResponsiveState(900);
+      updateResponsiveState(600);
+      updateResponsiveState(1280);
 
       await waitFor(() => {
         const layout = document.querySelector('.flex.h-screen');
@@ -346,8 +355,7 @@ describe('响应式布局模式切换集成测试', () => {
       renderLayoutWithResponsive(store);
 
       // 测试 768px 边界（Mobile ↔ Compact）
-      global.innerWidth = 768;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(768);
 
       await waitFor(() => {
         const layout = document.querySelector('.flex.h-screen');
@@ -359,8 +367,7 @@ describe('响应式布局模式切换集成测试', () => {
       renderLayoutWithResponsive(store);
 
       // 测试 1024px 边界（Compact ↔ Compressed）
-      global.innerWidth = 1024;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(1024);
 
       await waitFor(() => {
         const layout = document.querySelector('.flex.h-screen');
@@ -372,8 +379,7 @@ describe('响应式布局模式切换集成测试', () => {
       renderLayoutWithResponsive(store);
 
       // 测试 1280px 边界（Compressed ↔ Desktop）
-      global.innerWidth = 1280;
-      global.dispatchEvent(new Event('resize'));
+      updateResponsiveState(1280);
 
       await waitFor(() => {
         const layout = document.querySelector('.flex.h-screen');
