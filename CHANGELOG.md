@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.6] - 2026-03-18
+
+### ⚡ 性能优化
+
+- **渐进式加载能力**：实现 Web 应用启动时的渐进式加载机制，优化首屏加载体验
+  - HTML 内联 Spinner：在 JavaScript 加载完成前立即显示加载动画（<100ms）
+  - 初始化动画优先加载：InitializationController 及其依赖独立打包为 `chunk-init`（~50KB）
+  - 主应用按需加载：将重型依赖（Redux store、React Router）延迟到初始化完成后加载
+  - 弱网环境优化：三阶段加载策略确保弱网环境下也能提供良好体验
+- **InitializationController 轻量化**：移除对 Redux store 的直接依赖，通过 InitResult 回调传递状态
+- **错误处理增强**：为 chunk 加载失败提供友好的错误提示和重试机制
+
+### 🔧 重构
+
+- **MainApp 组件独立**：创建独立的 `MainApp.tsx` 文件，使用动态 `import()` 实现主应用按需加载
+- **initSteps 动态加载**：将 initSteps 独立打包为 `chunk-initsteps`（~10KB），在 App 组件挂载时动态加载
+- **Vite 配置优化**：配置 manualChunks 实现代码分割策略
+
+### 🧪 测试增强
+
+- **InitializationController 测试更新**：更新测试用例以适配无 store 依赖的新架构
+
+### 📝 文档变更
+
+- **新增规格文档**：添加 `progressive-loading` 规格说明
+- **OpenSpec 归档**：归档 `optimize-web-initial-loading` 变更记录
+
+---
+
 ## [0.3.5] - 2026-03-18
 
 ### 🧪 测试增强

@@ -10,6 +10,7 @@ import type {
   InitResult,
   InitStep,
   ExecutionContext,
+  ModelProviderStatus,
 } from './types';
 
 /**
@@ -97,6 +98,12 @@ export class InitializationManager {
 
       // 判断是否成功（没有致命错误）
       result.success = result.fatalErrors.length === 0;
+
+      // 从 context 中提取 modelProviderStatus（如果已设置）
+      const modelProviderStatus = context.getResult<ModelProviderStatus>('modelProviderStatus');
+      if (modelProviderStatus) {
+        result.modelProviderStatus = modelProviderStatus;
+      }
     } catch (error) {
       // 捕获未处理的错误
       if (error instanceof Object && 'severity' in error) {

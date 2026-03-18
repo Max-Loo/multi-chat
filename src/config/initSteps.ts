@@ -4,7 +4,7 @@
  * 定义应用的所有初始化步骤，包括依赖关系、错误处理和执行逻辑
  */
 
-import type { InitStep } from '@/lib/initialization';
+import type { InitStep, ModelProviderStatus } from '@/lib/initialization';
 import { initI18n, tSafely } from '@/lib/i18n';
 import { initializeMasterKey } from '@/store/keyring/masterKey';
 import { store } from '@/store';
@@ -12,6 +12,9 @@ import { initializeModels } from '@/store/slices/modelSlice';
 import { initializeChatList } from '@/store/slices/chatSlices';
 import { initializeAppLanguage, initializeTransmitHistoryReasoning, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
+
+/** "无可用供应商"错误的标识字符串 */
+const NO_PROVIDERS_ERROR_MESSAGE = "无法获取模型供应商数据，请检查网络连接";
 
 // i18n 初始化失败的错误消息（使用英文常量，因为此时 i18n 肯定未就绪）
 const I18N_INIT_FAILED = 'Failed to initialize internationalization';
@@ -122,9 +125,35 @@ export const initSteps: InitStep[] = [
     name: 'modelProvider',
     critical: false,
     execute: async (context) => {
-      const modelProvider = await store.dispatch(initializeModelProvider()).unwrap();
-      context.setResult('modelProvider', modelProvider);
-      return modelProvider;
+      try {
+        const modelProvider = await store.dispatch(initializeModelProvider()).unwrap();
+        context.setResult('modelProvider', modelProvider);
+
+        // 请求成功，设置成功状态
+        const status: ModelProviderStatus = {
+          hasError: false,
+          isNoProvidersError: false,
+        };
+        context.setResult('modelProviderStatus', status);
+
+        return modelProvider;
+      } catch (error) {
+        // 请求失败，从 store 中获取错误状态
+        // 注意：虽然 rejectWithValue 的 payload 包含 error 字段，
+        // 但 unwrap() 会将其作为错误抛出，所以我们从 store 获取状态
+        const storeState = store.getState();
+        const modelProviderError = storeState.modelProvider.error;
+        const modelProviderLoading = storeState.modelProvider.loading;
+
+        const status: ModelProviderStatus = {
+          hasError: !modelProviderLoading && !!modelProviderError,
+          isNoProvidersError: modelProviderError === NO_PROVIDERS_ERROR_MESSAGE,
+        };
+        context.setResult('modelProviderStatus', status);
+
+        // 重新抛出错误，让 onError 处理
+        throw error;
+      }
     },
     onError: (error) => ({
       severity: 'warning',
