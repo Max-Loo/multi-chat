@@ -10,14 +10,14 @@ import { FatalErrorScreen } from "@/components/FatalErrorScreen";
 import { NoProvidersAvailable } from "@/components/NoProvidersAvailable";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
 import { InitializationManager } from "@/lib/initialization";
-import { initSteps } from "@/config/initSteps";
-import { store } from "@/store";
-import type { InitResult, InitError } from "@/lib/initialization";
+import type { InitResult, InitError, InitStep } from "@/lib/initialization";
 
 /**
  * 初始化控制器属性
  */
 interface InitializationControllerProps {
+  /** 初始化步骤列表（由外部传入，实现依赖注入） */
+  initSteps: InitStep[];
   /** 初始化完成回调 */
   onComplete: (result: InitResult) => void;
 }
@@ -46,7 +46,7 @@ interface InitializationState {
  */
 export const InitializationController: React.FC<
   InitializationControllerProps
-> = ({ onComplete }) => {
+> = ({ initSteps, onComplete }) => {
   // 初始化状态管理
   const [state, setState] = useState<InitializationState>({
     status: "initializing",
@@ -125,14 +125,12 @@ export const InitializationController: React.FC<
           fatalErrors: result.fatalErrors,
         }));
       } else {
-        // 检查 modelProvider 的致命错误
-        const modelProviderError = store.getState().modelProvider.error;
-        const modelProviderLoading = store.getState().modelProvider.loading;
+        // 从 result 中检查 modelProvider 状态（解耦 store 依赖）
+        const modelProviderStatus = result.modelProviderStatus;
 
         // 检查是否应该显示"无可用的模型供应商"错误提示
         const shouldShowNoProvidersError =
-          !modelProviderLoading &&
-          modelProviderError === "无法获取模型供应商数据，请检查网络连接";
+          modelProviderStatus?.isNoProvidersError === true;
 
         if (shouldShowNoProvidersError) {
           // 显示无可用模型供应商提示
@@ -152,7 +150,7 @@ export const InitializationController: React.FC<
     };
 
     runInit();
-  }, []);
+  }, [initSteps]);
 
   // 计算进度百分比
   const progress = Math.round((state.currentStep / state.totalSteps) * 100);

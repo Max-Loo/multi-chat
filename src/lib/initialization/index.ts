@@ -12,4 +12,5 @@ export type {
   InitStep,
   ExecutionContext,
   ErrorSeverity,
+  ModelProviderStatus,
 } from './types';

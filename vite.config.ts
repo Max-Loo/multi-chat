@@ -118,10 +118,33 @@ export default defineConfig(async () => ({
       output: {
         // 手动代码分割配置
         manualChunks: (id) => {
+          // chunk-initsteps: initSteps 配置 + store（独立打包，~10KB gzip 目标）
+          if (id.includes("config/initSteps")) {
+            return "chunk-initsteps";
+          }
+
+          // chunk-init: 初始化 UI 组件、逻辑、types（~50KB gzip 目标）
+          // 注意：不包含 initSteps 和 store，确保轻量化
+          if (
+            id.includes("components/InitializationController") ||
+            id.includes("components/AnimatedLogo") ||
+            id.includes("components/canvas-logo") ||
+            id.includes("components/FatalErrorScreen") ||
+            id.includes("components/NoProvidersAvailable") ||
+            id.includes("lib/initialization") ||
+            id.includes("components/ui/progress")
+          ) {
+            return "chunk-init";
+          }
+
           // 只处理 node_modules 中的依赖
           if (id.includes("node_modules")) {
-            // React 和 React-DOM
-            if (id.includes("react") && !id.includes("react-router")) {
+            // React 及其依赖（包括 scheduler, loose-envify 等，避免循环依赖）
+            if (
+              /\/node_modules\/(react|react-dom|scheduler|loose-envify)(?:\/|$|\.js)/.test(
+                id,
+              )
+            ) {
               return "vendor-react";
             }
 
@@ -191,11 +214,6 @@ export default defineConfig(async () => ({
 
               // 其他语言包动态分割
               return "vendor-highlight-languages";
-            }
-
-            // Ant Design X 组件库
-            if (id.includes("@ant-design/x")) {
-              return "vendor-antd-x";
             }
 
             // Vercel AI SDK

@@ -58,6 +58,16 @@ export interface InitConfig {
 }
 
 /**
+ * 模型供应商状态（用于解耦 chunk-init 与 store）
+ */
+export interface ModelProviderStatus {
+  /** 是否有错误 */
+  hasError: boolean;
+  /** 是否为"无可用供应商"错误 */
+  isNoProvidersError: boolean;
+}
+
+/**
  * 初始化结果
  */
 export interface InitResult {
@@ -71,4 +81,6 @@ export interface InitResult {
   ignorableErrors: InitError[];
   /** 成功执行的步骤名称列表 */
   completedSteps: string[];
+  /** 模型供应商状态（由 modelProvider 步骤设置） */
+  modelProviderStatus?: ModelProviderStatus;
 }

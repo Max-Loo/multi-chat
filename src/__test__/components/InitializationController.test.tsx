@@ -5,19 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import * as InitializationModule from '@/lib/initialization';
 import { InitializationController } from '@/components/InitializationController';
-import type { InitResult, InitConfig } from '@/lib/initialization';
-
-// Mock store
-vi.mock('@/store', () => ({
-  store: {
-    getState: vi.fn(() => ({
-      modelProvider: {
-        error: null,
-        loading: false,
-      },
-    })),
-  },
-}));
+import type { InitResult, InitConfig, InitStep } from '@/lib/initialization';
 
 // Mock FatalErrorScreen
 vi.mock('@/components/FatalErrorScreen', () => ({
@@ -47,6 +35,12 @@ vi.mock('@/components/ui/progress', () => ({
 // 创建一个可控制的 mock runInitialization 函数
 let mockRunInitialization: ReturnType<typeof vi.fn>;
 
+// Mock initSteps
+const mockInitSteps: InitStep[] = [
+  { name: 'step1', critical: true, execute: vi.fn(), onError: vi.fn() },
+  { name: 'step2', critical: false, execute: vi.fn(), onError: vi.fn() },
+];
+
 describe('InitializationController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,7 +65,7 @@ describe('InitializationController', () => {
       mockRunInitialization.mockImplementation(() => new Promise<InitResult>(() => {}));
 
       const onComplete = vi.fn();
-      render(<InitializationController onComplete={onComplete} />);
+      render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
       // 检查初始进度为 0%（使用 getAllBy 并检查第一个）
       const progressElements = screen.getAllByTestId('progress');
@@ -82,7 +76,7 @@ describe('InitializationController', () => {
       mockRunInitialization.mockImplementation(() => new Promise<InitResult>(() => {}));
 
       const onComplete = vi.fn();
-      render(<InitializationController onComplete={onComplete} />);
+      render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
       // 检查百分比文本显示
       const percentageTexts = screen.getAllByText('0%');
@@ -101,7 +95,7 @@ describe('InitializationController', () => {
       });
 
       const onComplete = vi.fn();
-      render(<InitializationController onComplete={onComplete} />);
+      render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
       // 初始进度为 0%
       const initialProgress = screen.getAllByTestId('progress');
@@ -110,7 +104,7 @@ describe('InitializationController', () => {
       // 模拟第一个步骤完成
       await act(async () => {
         if (progressCallback) {
-          progressCallback(1, 8, 'i18n');
+          progressCallback(1, 2, 'step1');
         }
       });
 
@@ -118,7 +112,7 @@ describe('InitializationController', () => {
       await waitFor(() => {
         const progressElements = screen.getAllByTestId('progress');
         const hasUpdatedProgress = progressElements.some(
-          (el) => el.getAttribute('data-value') === '12' || el.getAttribute('data-value') === '13'
+          (el) => el.getAttribute('data-value') === '50'
         );
         expect(hasUpdatedProgress).toBe(true);
       });
@@ -130,7 +124,7 @@ describe('InitializationController', () => {
       mockRunInitialization.mockImplementation(() => new Promise<InitResult>(() => {}));
 
       const onComplete = vi.fn();
-      render(<InitializationController onComplete={onComplete} />);
+      render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
       // 检查百分比文本存在且有正确的样式类（text-right 表示右对齐）
       const percentageElements = screen.getAllByText('0%');
@@ -149,7 +143,7 @@ describe('InitializationController', () => {
       mockRunInitialization.mockImplementation(() => new Promise<InitResult>(() => {}));
 
       const onComplete = vi.fn();
-      render(<InitializationController onComplete={onComplete} />);
+      render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
       // 检查存在加载文本
       const loadingTexts = screen.getAllByText((content) =>
@@ -166,13 +160,13 @@ describe('InitializationController', () => {
         fatalErrors: [],
         warnings: [{ severity: 'warning', message: 'Test warning' }],
         ignorableErrors: [],
-        completedSteps: ['i18n', 'masterKey'],
+        completedSteps: ['step1', 'step2'],
       };
 
       mockRunInitialization.mockResolvedValue(successResult);
 
       const onComplete = vi.fn();
-      render(<InitializationController onComplete={onComplete} />);
+      render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
       // 等待 onComplete 被调用（包括 500ms 延迟）
       await waitFor(
@@ -204,7 +198,7 @@ describe('InitializationController', () => {
       mockRunInitialization.mockResolvedValue(failureResult);
 
       const onComplete = vi.fn();
-      render(<InitializationController onComplete={onComplete} />);
+      render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('fatal-error-screen')).toBeInTheDocument();
@@ -215,27 +209,24 @@ describe('InitializationController', () => {
       expect(onComplete).not.toHaveBeenCalled();
     });
 
-    it('无可用供应商时应该渲染 NoProvidersAvailable', async () => {
-      const { store } = await import('@/store');
-      vi.mocked(store.getState).mockReturnValue({
-        modelProvider: {
-          error: '无法获取模型供应商数据，请检查网络连接',
-          loading: false,
-        },
-      } as ReturnType<typeof store.getState>);
-
+    it('无可用供应商时应该渲染 NoProvidersAvailable（通过 modelProviderStatus）', async () => {
       const successResult: InitResult = {
         success: true,
         fatalErrors: [],
         warnings: [],
         ignorableErrors: [],
-        completedSteps: ['i18n', 'masterKey'],
+        completedSteps: ['step1', 'step2'],
+        // 通过 modelProviderStatus 传递状态
+        modelProviderStatus: {
+          hasError: true,
+          isNoProvidersError: true,
+        },
       };
 
       mockRunInitialization.mockResolvedValue(successResult);
 
       const onComplete = vi.fn();
-      render(<InitializationController onComplete={onComplete} />);
+      render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('no-providers')).toBeInTheDocument();
