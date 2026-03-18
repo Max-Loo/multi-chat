@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.5] - 2026-03-18
+
+### 🧪 测试增强
+
+- **Toast 模块测试覆盖**：为 Toast 模块添加完整的测试覆盖
+- **Hook 和工具测试**：为 ToastQueue 和 useCreateChat 模块添加单元测试
+- **清理测试代码**：删除无用的测试文件
+
+---
+
 ## [0.3.4] - 2026-03-17
 
 ### ✨ 新功能
