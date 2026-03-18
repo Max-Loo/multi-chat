@@ -74,8 +74,12 @@ export { createLazyStore } from './store';
 export type { StoreCompat } from './store';
 
 // Keyring 插件兼容层
-export { setPassword, getPassword, deletePassword, isKeyringSupported } from './keyring';
+export { setPassword, getPassword, deletePassword, isKeyringSupported, resetWebKeyringState } from './keyring';
 export type { KeyringCompat } from './keyring';
+
+// Keyring 迁移模块
+export { migrateKeyringV1ToV2, isMigrationToV2Complete } from './keyringMigration';
+export type { MigrationResult } from './keyringMigration';
 
 // 重新导出 Tauri 类型供外部使用
 export type { ChildProcess } from '@tauri-apps/plugin-shell';
