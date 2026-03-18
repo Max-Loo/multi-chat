@@ -176,65 +176,6 @@ describe('Toast 系统集成测试', () => {
 
       errorSpy.mockRestore();
     });
-
-    test.skip('应该显示 Toast 当模型配置更新', async () => {
-      // SKIP: 根据当前的 appConfigMiddleware 实现，模型配置更新不显示 Toast
-      // 这个测试用例保留为占位符，如果未来添加此功能，可以实现测试
-    });
-  });
-
-  describe('响应式位置集成', () => {
-    test.skip('应该在移动端显示 Toast 于 top-center 位置', async () => {
-      // SKIP: 集成测试使用真实的 useResponsive Hook，无法控制 MediaQuery
-      // 响应式位置的逻辑已在 toastQueue 单元测试中覆盖（ensureResponsivePosition 方法）
-      // ToasterWrapper 的状态同步逻辑已在单元测试中验证
-
-      // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
-
-      // 渲染 ToasterWrapper
-      render(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ToasterWrapper />
-          </BrowserRouter>
-        </Provider>
-      );
-
-      // 等待初始化完成
-      await waitFor(() => {
-        expect(document.querySelector('[data-testid="toaster"]')).toBeInTheDocument();
-      });
-
-      // 验证 isMobile 状态被设置
-      expect(toastQueue.getIsMobile()).toBeDefined();
-    });
-
-    test.skip('应该在桌面端显示 Toast 于 bottom-right 位置', async () => {
-      // SKIP: 集成测试使用真实的 useResponsive Hook，无法控制 MediaQuery
-      // 响应式位置的逻辑已在 toastQueue 单元测试中覆盖（ensureResponsivePosition 方法）
-      // ToasterWrapper 的状态同步逻辑已在单元测试中验证
-
-      // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
-
-      // 渲染 ToasterWrapper
-      render(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ToasterWrapper />
-          </BrowserRouter>
-        </Provider>
-      );
-
-      // 等待初始化完成
-      await waitFor(() => {
-        expect(document.querySelector('[data-testid="toaster"]')).toBeInTheDocument();
-      });
-
-      // 验证 isMobile 状态被设置
-      expect(toastQueue.getIsMobile()).toBeDefined();
-    });
   });
 
   describe('边界情况', () => {
