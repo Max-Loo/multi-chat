@@ -49,8 +49,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 // Mock useResponsive 为移动端模式（底部导航栏才显示）
-vi.mock('@/context/ResponsiveContext', () => ({
-  ResponsiveProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => ({
     layoutMode: 'mobile',
     width: 600,
