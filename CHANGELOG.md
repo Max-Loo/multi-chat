@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.7] - 2026-03-18
+
+### ✨ 新功能
+
+- **Keyring V1 到 V2 迁移**：实现 Web 环境下密钥派生方式的自动迁移
+  - V2 密钥派生不再依赖 `navigator.userAgent`，解决浏览器更新导致密钥变化的问题
+  - 应用启动时自动检测并执行迁移，用户无感知
+  - 新增 `keyringMigration.ts` 处理迁移逻辑
+
+### 🧪 测试增强
+
+- 为 keyring 迁移功能添加完整的单元测试覆盖
+
+### 📝 文档变更
+
+- 更新跨平台兼容层文档，补充迁移说明
+- 新增 keyring-migration 和 web-keyring-compat 规格文档
+
+---
+
 ## [0.3.6] - 2026-03-18
 
 ### ⚡ 性能优化
