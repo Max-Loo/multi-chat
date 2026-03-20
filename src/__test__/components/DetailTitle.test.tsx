@@ -8,7 +8,7 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
-import DetailTitle from '@/pages/Chat/components/ChatContent/components/ChatPanel/components/ChatPanelContent/components/ChatPanelContentDetail/components/DetailTitle';
+import DetailTitle from '@/pages/Chat/components/Panel/Detail/Title';
 import { ChatModel } from '@/types/chat';
 import { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';

@@ -1,6 +1,6 @@
 /**
 
- * useTypedSelectedChat Hook 测试
+ * useSelectedChat Hook 测试
 
  *
 
@@ -20,7 +20,7 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import React from 'react';
 
-import { useTypedSelectedChat } from '@/pages/Chat/components/ChatContent/components/ChatPanel/hooks/useTypedSelectedChat';
+import { useSelectedChat } from '@/pages/Chat/hooks/useSelectedChat';
 
 import chatReducer from '@/store/slices/chatSlices';
 
@@ -72,7 +72,7 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
 
 
 
-describe('useTypedSelectedChat', () => {
+describe('useSelectedChat', () => {
 
   describe('基础场景', () => {
 
@@ -108,7 +108,7 @@ describe('useTypedSelectedChat', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useTypedSelectedChat(), { wrapper });
+      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
 
 
@@ -156,7 +156,7 @@ describe('useTypedSelectedChat', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useTypedSelectedChat(), { wrapper });
+      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
 
 
@@ -198,7 +198,7 @@ describe('useTypedSelectedChat', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useTypedSelectedChat(), { wrapper });
+      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
 
 
@@ -242,11 +242,11 @@ describe('useTypedSelectedChat', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useTypedSelectedChat(), { wrapper });
+      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
 
 
-      // 当 selectedChat 为 null 时，useTypedSelectedChat 会将其转换为 Chat 类型
+      // 当 selectedChat 为 null 时，useSelectedChat 会将其转换为 Chat 类型
 
       expect(result.current.selectedChat).toBeDefined();
 
@@ -292,7 +292,7 @@ describe('useTypedSelectedChat', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useTypedSelectedChat(), { wrapper });
+      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
 
 
@@ -320,7 +320,7 @@ describe('useTypedSelectedChat', () => {
 
       // 重新渲染 hook
 
-      const { result: newResult } = renderHook(() => useTypedSelectedChat(), { wrapper });
+      const { result: newResult } = renderHook(() => useSelectedChat(), { wrapper });
 
 
 
@@ -362,7 +362,7 @@ describe('useTypedSelectedChat', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result, rerender } = renderHook(() => useTypedSelectedChat(), { wrapper });
+      const { result, rerender } = renderHook(() => useSelectedChat(), { wrapper });
 
 
 
@@ -418,7 +418,7 @@ describe('useTypedSelectedChat', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useTypedSelectedChat(), { wrapper });
+      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
 
 
@@ -460,13 +460,13 @@ describe('useTypedSelectedChat', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useTypedSelectedChat(), { wrapper });
+      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
 
 
       // 当找不到聊天时，useCurrentSelectedChat 返回 undefined
 
-      // useTypedSelectedChat 应该返回 null
+      // useSelectedChat 应该返回 null
 
       expect(result.current.selectedChat).toBeNull();
 

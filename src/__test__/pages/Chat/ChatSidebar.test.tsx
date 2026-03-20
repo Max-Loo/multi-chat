@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer from '@/store/slices/chatSlices';
 import chatPageReducer from '@/store/slices/chatPageSlices';
-import ChatSidebar from '@/pages/Chat/components/ChatSidebar';
+import ChatSidebar from '@/pages/Chat/components/Sidebar';
 
 import { resetTestState } from '@/__test__/helpers/isolation';
 

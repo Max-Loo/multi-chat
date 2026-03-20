@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import ChatSidebar from "./components/ChatSidebar";
-import ChatContent from "./components/ChatContent";
+import Sidebar from "@/pages/Chat/components/Sidebar";
+import Content from "@/pages/Chat/components/Content";
 import { MobileDrawer } from "@/components/MobileDrawer";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useSearchParams } from "react-router-dom";
@@ -98,7 +98,7 @@ const ChatPage: React.FC = () => {
           onOpenChange={handleDrawerOpenChange}
           showCloseButton={false}
         >
-          <ChatSidebar />
+          <Sidebar />
         </MobileDrawer>
       )}
 
@@ -114,7 +114,7 @@ const ChatPage: React.FC = () => {
             ${isDesktop ? "w-56" : "w-48"}
           `}
         >
-          <ChatSidebar />
+          <Sidebar />
         </div>
       )}
 
@@ -125,7 +125,7 @@ const ChatPage: React.FC = () => {
           h-full grow overflow-x-auto
         `}
       >
-        <ChatContent />
+        <Content />
       </div>
     </div>
   );

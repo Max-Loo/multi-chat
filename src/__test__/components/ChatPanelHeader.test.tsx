@@ -18,7 +18,7 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import React from 'react';
 
-import ChatPanelHeader from '@/pages/Chat/components/ChatContent/components/ChatPanel/components/ChatPanelHeader';
+import ChatPanelHeader from '@/pages/Chat/components/Panel/Header';
 
 import type { Chat } from '@/types/chat';
 

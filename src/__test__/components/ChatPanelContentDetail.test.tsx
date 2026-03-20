@@ -9,7 +9,7 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
-import ChatPanelContentDetail from '@/pages/Chat/components/ChatContent/components/ChatPanel/components/ChatPanelContent/components/ChatPanelContentDetail';
+import ChatPanelContentDetail from '@/pages/Chat/components/Panel/Detail';
 import type { ChatModel } from '@/types/chat';
 import { ChatRoleEnum } from '@/types/chat';
 import chatReducer from '@/store/slices/chatSlices';
@@ -33,9 +33,9 @@ vi.mock('react-i18next', () => ({
   I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-// Mock useTypedSelectedChat hook because it requires complex Redux store setup
-vi.mock('@/pages/Chat/components/ChatContent/components/ChatPanel/hooks/useTypedSelectedChat', () => ({
-  useTypedSelectedChat: () => ({
+// Mock useSelectedChat hook because it requires complex Redux store setup
+vi.mock('@/pages/Chat/hooks/useSelectedChat', () => ({
+  useSelectedChat: () => ({
     selectedChat: {
       id: 'test-chat-1',
       name: 'Test Chat',
@@ -45,9 +45,9 @@ vi.mock('@/pages/Chat/components/ChatContent/components/ChatPanel/hooks/useTyped
   }),
 }));
 
-// Mock useIsChatSending hook because it requires complex Redux state
-vi.mock('@/pages/Chat/components/ChatContent/components/ChatPanel/hooks/useIsChatSending', () => ({
-  useIsChatSending: () => ({
+// Mock useIsSending hook because it requires complex Redux state
+vi.mock('@/pages/Chat/hooks/useIsSending', () => ({
+  useIsSending: () => ({
     isSending: false,
   }),
 }));
