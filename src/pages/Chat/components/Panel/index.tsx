@@ -1,8 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import Header from "./Header";
 import Grid from "./Grid";
-import Splitter from "./Splitter";
 import Sender from "./Sender";
+import { Skeleton } from "@/components/ui/skeleton";
+
+/**
+ * Splitter 组件异步导入
+ * 仅在用户启用可拖拽布局时加载，减少主 bundle 体积
+ */
+const Splitter = lazy(() => import("./Splitter"));
 import { useSelectedChat } from "@/pages/Chat/hooks/useSelectedChat";
 import { useBoard } from "@/pages/Chat/hooks/useBoard";
 
@@ -32,7 +38,21 @@ const Panel: React.FC = () => {
   // 如果需要保持状态，应使用 CSS display:none 隐藏而非卸载
   const renderContent = useMemo(() => {
     if (shouldUseSplitter) {
-      return <Splitter board={board} />;
+      return (
+        <Suspense
+          fallback={
+            <div className="absolute top-0 left-0 w-full h-full pt-12 pb-30">
+              <div className="flex flex-col w-full h-full gap-2 p-4">
+                {board.flat().map((_, idx) => (
+                  <Skeleton key={idx} className="flex-1 rounded-lg" />
+                ))}
+              </div>
+            </div>
+          }
+        >
+          <Splitter board={board} />
+        </Suspense>
+      );
     }
     return <Grid board={board} />;
   }, [shouldUseSplitter, board]);
