@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.8] - 2026-03-20
+
+### ⚡ 性能优化
+
+- **Splitter 组件异步加载**：将 Splitter 组件改为异步加载，优化 bundle 大小
+
+### 🔧 重构
+
+- **聊天页面组件结构优化**：重构 Chat 页面的目录和组件结构，提升可维护性
+  - 新增 Panel 组件及其子组件（Grid、Header、Sender、Splitter、Skeleton）
+  - 新增页面级 Hooks（`useBoard`、`useIsSending`、`useSelectedChat`）
+  - 优化组件目录结构，提升代码组织清晰度
+
+### 🧪 测试增强
+
+- **新增测试文件**：Grid 组件、Splitter 组件测试
+- **新增测试工具**：`panelLayout` mock 工具
+
+### 📝 文档变更
+
+- **新增 OpenSpec 变更记录**：
+  - `lazy-load-splitter` - Splitter 组件异步加载
+  - `flatten-chat-components` - 聊天页面组件结构扁平化
+
+---
+
 ## [0.3.7] - 2026-03-18
 
 ### ✨ 新功能
