@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import RunningChatBubble from '@/pages/Chat/components/ChatContent/components/ChatPanel/components/ChatPanelContent/components/ChatPanelContentDetail/components/RunningChatBubble';
+import RunningChatBubble from '@/pages/Chat/components/Panel/Detail/RunningBubble';
 import { createMockPanelMessage } from '@/__test__/helpers/mocks/chatPanel';
 import { ChatRoleEnum, type ChatModel } from '@/types/chat';
 
@@ -53,7 +53,7 @@ vi.mock('@/components/chat/ChatBubble', () => ({
   )),
 }));
 
-// Mock useTypedSelectedChat hook because it requires complex Redux store setup
+// Mock useSelectedChat hook because it requires complex Redux store setup
 const mockSelectedChat = {
   id: 'test-chat-1',
   title: 'Test Chat',
@@ -61,8 +61,8 @@ const mockSelectedChat = {
   timestamp: Date.now() / 1000,
 };
 
-vi.mock('@/pages/Chat/components/ChatContent/components/ChatPanel/hooks/useTypedSelectedChat', () => ({
-  useTypedSelectedChat: vi.fn(() => ({
+vi.mock('@/pages/Chat/hooks/useSelectedChat', () => ({
+  useSelectedChat: vi.fn(() => ({
     selectedChat: mockSelectedChat,
   })),
 }));

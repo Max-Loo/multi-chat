@@ -7,7 +7,10 @@ import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
 import ChatButton from "./components/ChatButton";
 import { useExistingChatList } from "@/hooks/useExistingChatList";
 
-const ChatSidebar: React.FC = () => {
+/**
+ * 聊天侧边栏组件
+ */
+const Sidebar: React.FC = () => {
   const chatList = useExistingChatList();
   const chatListLoading = useAppSelector((state) => state.chat.loading);
 
@@ -64,4 +67,4 @@ const ChatSidebar: React.FC = () => {
   );
 };
 
-export default ChatSidebar;
+export default Sidebar;

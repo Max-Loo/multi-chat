@@ -16,3 +16,4 @@ export * from './chatPanel';
 export * from './modelManagement';
 export * from './chatSidebar';
 export * from './aiSdk';
+export * from './panelLayout';

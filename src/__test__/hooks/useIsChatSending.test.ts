@@ -1,6 +1,6 @@
 /**
 
- * useIsChatSending Hook 测试
+ * useIsSending Hook 测试
 
  *
 
@@ -20,7 +20,7 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import React from 'react';
 
-import { useIsChatSending } from '@/pages/Chat/components/ChatContent/components/ChatPanel/hooks/useIsChatSending';
+import { useIsSending } from '@/pages/Chat/hooks/useIsSending';
 
 import chatReducer from '@/store/slices/chatSlices';
 
@@ -72,7 +72,7 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
 
 
 
-describe('useIsChatSending', () => {
+describe('useIsSending', () => {
 
   describe('基础场景', () => {
 
@@ -114,7 +114,7 @@ describe('useIsChatSending', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useIsChatSending(), { wrapper });
+      const { result } = renderHook(() => useIsSending(), { wrapper });
 
 
 
@@ -178,7 +178,7 @@ describe('useIsChatSending', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useIsChatSending(), { wrapper });
+      const { result } = renderHook(() => useIsSending(), { wrapper });
 
 
 
@@ -234,7 +234,7 @@ describe('useIsChatSending', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useIsChatSending(), { wrapper });
+      const { result } = renderHook(() => useIsSending(), { wrapper });
 
 
 
@@ -288,7 +288,7 @@ describe('useIsChatSending', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useIsChatSending(), { wrapper });
+      const { result } = renderHook(() => useIsSending(), { wrapper });
 
 
 
@@ -328,7 +328,7 @@ describe('useIsChatSending', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useIsChatSending(), { wrapper });
+      const { result } = renderHook(() => useIsSending(), { wrapper });
 
 
 
@@ -376,7 +376,7 @@ describe('useIsChatSending', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useIsChatSending(), { wrapper });
+      const { result } = renderHook(() => useIsSending(), { wrapper });
 
 
 
@@ -436,7 +436,7 @@ describe('useIsChatSending', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useIsChatSending(), { wrapper });
+      const { result } = renderHook(() => useIsSending(), { wrapper });
 
 
 
@@ -460,7 +460,7 @@ describe('useIsChatSending', () => {
 
       // 重新渲染 hook
 
-      const { result: newResult } = renderHook(() => useIsChatSending(), { wrapper });
+      const { result: newResult } = renderHook(() => useIsSending(), { wrapper });
 
       expect(newResult.current.isSending).toBe(false);
 
@@ -506,7 +506,7 @@ describe('useIsChatSending', () => {
 
       const wrapper = createWrapper(store);
 
-      const { result } = renderHook(() => useIsChatSending(), { wrapper });
+      const { result } = renderHook(() => useIsSending(), { wrapper });
 
 
 

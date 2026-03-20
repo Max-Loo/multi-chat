@@ -2,23 +2,23 @@ import { memo } from "react";
 import { ChatBubble } from "@/components/chat/ChatBubble";
 import { useAppSelector } from "@/hooks/redux";
 import { ChatModel } from "@/types/chat";
-import { useTypedSelectedChat } from "../../../../../hooks/useTypedSelectedChat";
+import { useSelectedChat } from "@/pages/Chat/hooks/useSelectedChat";
 import { isNil } from "es-toolkit";
 import { Spinner } from "@/components/ui/spinner";
 
-interface RunningChatBubbleProps {
+interface RunningBubbleProps {
   chatModel: ChatModel
 }
 
 /**
- * @description 封装正在生成的聊天气泡
+ * 封装正在生成的聊天气泡
  */
-const RunningChatBubble = memo<RunningChatBubbleProps>(({
+const RunningBubble = memo<RunningBubbleProps>(({
   chatModel,
 }) => {
   const {
     selectedChat,
-  } = useTypedSelectedChat()
+  } = useSelectedChat()
   // 当前在运行的聊天
   const runningChat = useAppSelector(state => state.chat.runningChat)
 
@@ -53,4 +53,4 @@ const RunningChatBubble = memo<RunningChatBubbleProps>(({
   />
 })
 
-export default RunningChatBubble
+export default RunningBubble

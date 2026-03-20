@@ -7,9 +7,9 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { useTranslation } from "react-i18next";
 
 /**
- * @description 聊天页面未选择聊天时的占位内容
+ * 聊天页面未选择聊天时的占位内容
  */
-const ChatPlaceholder: React.FC = () => {
+const Placeholder: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const { createNewChat } = useCreateChat();
@@ -48,4 +48,4 @@ const ChatPlaceholder: React.FC = () => {
   );
 };
 
-export default ChatPlaceholder;
+export default Placeholder;

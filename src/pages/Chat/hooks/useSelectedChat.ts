@@ -2,8 +2,12 @@ import { useCurrentSelectedChat } from "@/hooks/useCurrentSelectedChat"
 import { Chat, ChatModel } from "@/types/chat";
 import { useMemo } from "react"
 
-// 消除空值的「当前选中的聊天」
-export const useTypedSelectedChat = (): {
+/**
+ * 获取当前选中的聊天
+ * @returns selectedChat - 当前选中的聊天（可能为 null）
+ * @returns chatModelList - 当前聊天的模型列表
+ */
+export const useSelectedChat = (): {
   selectedChat: Chat | null;
   chatModelList: ChatModel[]
 } => {

@@ -16,7 +16,7 @@ interface DetailTitleProps {
   chatModel: ChatModel;
 }
 
-const DetailTitle = memo<DetailTitleProps>(({ chatModel }) => {
+const Title = memo<DetailTitleProps>(({ chatModel }) => {
   const { t } = useTranslation();
   // 模型列表
   const models = useAppSelector((state) => state.models.models);
@@ -87,4 +87,4 @@ const DetailTitle = memo<DetailTitleProps>(({ chatModel }) => {
   );
 });
 
-export default DetailTitle;
+export default Title;

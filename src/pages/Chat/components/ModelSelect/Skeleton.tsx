@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton"
 
 /**
- * @description ModelSelect 组件的骨架屏
+ * ModelSelect 组件的骨架屏
  *
  * 注意：此骨架屏应与 ModelSelect 组件的布局保持同步
  * 当 ModelSelect 的布局发生变化时，需要相应更新此骨架屏

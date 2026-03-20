@@ -18,7 +18,7 @@ import { Provider } from 'react-redux';
 
 import { configureStore } from '@reduxjs/toolkit';
 
-import ModelSelect from '@/pages/Chat/components/ChatContent/components/ModelSelect';
+import ModelSelect from '@/pages/Chat/components/ModelSelect';
 
 import chatReducer from '@/store/slices/chatSlices';
 

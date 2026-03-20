@@ -1,15 +1,18 @@
 import { useAppSelector } from "@/hooks/redux";
-import { useTypedSelectedChat } from "./useTypedSelectedChat";
+import { useSelectedChat } from "./useSelectedChat";
 import { useMemo } from "react";
 import { isNil } from "es-toolkit";
 
-export const useIsChatSending = (): {
-  // 是否处于发送状态
+/**
+ * 获取当前聊天是否处于发送状态
+ * @returns isSending - 是否处于发送状态
+ */
+export const useIsSending = (): {
   isSending: boolean;
 } => {
   const {
     selectedChat,
-  } = useTypedSelectedChat()
+  } = useSelectedChat()
 
 
   // 当前在运行的聊天

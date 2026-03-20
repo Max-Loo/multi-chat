@@ -20,7 +20,7 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import React from 'react';
 
-import ChatPanel from '@/pages/Chat/components/ChatContent/components/ChatPanel';
+import ChatPanel from '@/pages/Chat/components/Panel';
 
 import chatReducer from '@/store/slices/chatSlices';
 

@@ -15,7 +15,7 @@ import {
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import React from "react";
-import ChatPanelSender from "@/pages/Chat/components/ChatContent/components/ChatPanel/components/ChatPanelSender";
+import ChatPanelSender from "@/pages/Chat/components/Panel/Sender";
 import chatReducer from "@/store/slices/chatSlices";
 import type { RootState } from "@/store";
 import { createMockChat } from "@/__test__/helpers/mocks/chatSidebar";

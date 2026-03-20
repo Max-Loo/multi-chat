@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { isNil, isString } from "es-toolkit";
 import React, { useRef, useState } from "react";
-import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
+import { useSelectedChat } from "@/pages/Chat/hooks/useSelectedChat";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { startSendChatMessage } from "@/store/slices/chatSlices";
-import { useIsChatSending } from "../hooks/useIsChatSending";
+import { useIsSending } from "@/pages/Chat/hooks/useIsSending";
 import { useTranslation } from "react-i18next";
 import {
   selectTransmitHistoryReasoning,
@@ -83,9 +83,9 @@ const isMacSafari = (): boolean => {
 };
 
 /**
- * @description 聊天内容发送框
+ * 聊天内容发送框组件
  */
-const ChatPanelSender: React.FC = () => {
+const Sender: React.FC = () => {
   const { t } = useTranslation();
 
   const dispatch = useAppDispatch();
@@ -95,9 +95,9 @@ const ChatPanelSender: React.FC = () => {
     selectTransmitHistoryReasoning,
   );
 
-  const { selectedChat } = useTypedSelectedChat();
+  const { selectedChat } = useSelectedChat();
 
-  const { isSending } = useIsChatSending();
+  const { isSending } = useIsSending();
 
   // 要发送的内容
   const [text, setText] = useState("");
@@ -253,4 +253,4 @@ const ChatPanelSender: React.FC = () => {
   );
 };
 
-export default ChatPanelSender;
+export default Sender;

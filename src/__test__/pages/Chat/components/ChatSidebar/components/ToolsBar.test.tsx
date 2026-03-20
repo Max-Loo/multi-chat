@@ -12,7 +12,7 @@ import chatReducer from '@/store/slices/chatSlices';
 
 import chatPageReducer from '@/store/slices/chatPageSlices';
 
-import ToolsBar from '@/pages/Chat/components/ChatSidebar/components/ToolsBar';
+import ToolsBar from '@/pages/Chat/components/Sidebar/components/ToolsBar';
 
 import { resetTestState } from '@/__test__/helpers/isolation';
 

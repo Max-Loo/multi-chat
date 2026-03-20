@@ -1,16 +1,16 @@
 import { Skeleton } from "@/components/ui/skeleton"
 
 /**
- * @description ChatPanel 组件的骨架屏
+ * Panel 组件的骨架屏
  *
- * 注意：此骨架屏应与 ChatPanel 组件的布局保持同步
- * 当 ChatPanel 的布局发生变化时，需要相应更新此骨架屏
+ * 注意：此骨架屏应与 Panel 组件的布局保持同步
+ * 当 Panel 的布局发生变化时，需要相应更新此骨架屏
  */
-interface ChatPanelSkeletonProps {
+interface SkeletonProps {
   columnCount?: number
 }
 
-const ChatPanelSkeleton: React.FC<ChatPanelSkeletonProps> = ({
+const PanelSkeleton: React.FC<SkeletonProps> = ({
   columnCount = 1,
 }) => {
   return (
@@ -93,4 +93,4 @@ const ChatPanelSkeleton: React.FC<ChatPanelSkeletonProps> = ({
   )
 }
 
-export default ChatPanelSkeleton
+export default PanelSkeleton

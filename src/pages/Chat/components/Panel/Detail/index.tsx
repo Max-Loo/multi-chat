@@ -1,39 +1,39 @@
 import { useAppSelector } from "@/hooks/redux"
 import { ChatModel, StandardMessage } from "@/types/chat"
-import { useTypedSelectedChat } from "../../../../hooks/useTypedSelectedChat"
+import { useSelectedChat } from "@/pages/Chat/hooks/useSelectedChat"
 import { useMemo, useRef, useState, useEffect, useCallback } from "react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { ArrowDown } from "lucide-react"
-import DetailTitle from "./components/DetailTitle";
+import Title from "./Title";
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import { ChatBubble } from "@/components/chat/ChatBubble"
-import RunningChatBubble from "./components/RunningChatBubble";
-import { useIsChatSending } from "../../../../hooks/useIsChatSending";
+import RunningBubble from "./RunningBubble";
+import { useIsSending } from "@/pages/Chat/hooks/useIsSending";
 import { isNil, isNotNil } from "es-toolkit"
 import { useTranslation } from "react-i18next"
 
-interface ChatPanelContentDetailProps {
+interface DetailProps {
   chatModel: ChatModel
 }
 
 /**
- * @description 具体渲染聊天内容的组件
+ * 具体渲染聊天内容的组件
  */
-const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
+const Detail: React.FC<DetailProps> = ({
   chatModel,
 }) => {
   const { t } = useTranslation()
   const {
     selectedChat,
-  } = useTypedSelectedChat()
+  } = useSelectedChat()
 
   // 当前在运行的聊天
   const runningChat = useAppSelector(state => state.chat.runningChat)
 
   const {
     isSending,
-  } = useIsChatSending()
+  } = useIsSending()
 
   // 组合起来的，进行循环渲染的列表
   // 🔧 修复：直接返回原数组引用，避免每次 useMemo 都创建新数组导致无限循环
@@ -149,7 +149,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
         `}
         ref={scrollContainerRef}
       >
-    <DetailTitle chatModel={chatModel} />
+    <Title chatModel={chatModel} />
     {/* 历史记录列表 */}
     {historyList.map(historyRecord => {
       return <ChatBubble
@@ -161,7 +161,7 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
       />
     })}
     {/* 单独展示正在生成的消息 */}
-    <RunningChatBubble chatModel={chatModel} />
+    <RunningBubble chatModel={chatModel} />
     {/* 展示可能的错误信息 */}
     {
       isNotNil(selectedChat) && runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage
@@ -202,4 +202,4 @@ const ChatPanelContentDetail: React.FC<ChatPanelContentDetailProps> = ({
 }
 
 
-export default ChatPanelContentDetail
+export default Detail

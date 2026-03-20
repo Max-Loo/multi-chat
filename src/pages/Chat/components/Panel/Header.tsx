@@ -9,12 +9,12 @@ import { PanelLeftOpen, Minus, Plus, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useTypedSelectedChat } from "../hooks/useTypedSelectedChat";
+import { useSelectedChat } from "@/pages/Chat/hooks/useSelectedChat";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useResponsive } from "@/hooks/useResponsive";
 
-interface ChatPanelHeaderProps {
+interface HeaderProps {
   columnCount: number;
   setColumnCount: (value: number) => void;
   isSplitter: boolean;
@@ -22,9 +22,9 @@ interface ChatPanelHeaderProps {
 }
 
 /**
- * @description 聊天详情页的头部
+ * 聊天面板头部组件
  */
-const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
+const Header: React.FC<HeaderProps> = ({
   columnCount,
   setColumnCount,
   isSplitter,
@@ -49,7 +49,7 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
     dispatch(toggleDrawer());
   };
 
-  const { selectedChat, chatModelList } = useTypedSelectedChat();
+  const { selectedChat, chatModelList } = useSelectedChat();
 
   // 记录是否打开了具体聊天页面
   useEffect(() => {
@@ -143,4 +143,4 @@ const ChatPanelHeader: React.FC<ChatPanelHeaderProps> = ({
   );
 };
 
-export default ChatPanelHeader;
+export default Header;
