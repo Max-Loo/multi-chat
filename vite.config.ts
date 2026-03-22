@@ -72,7 +72,8 @@ export default defineConfig(async () => ({
     deps: {
       optimizer: {
         web: {
-          include: ["antd", "@ant-design/x"],
+          // 预构建 CommonJS 模块以解决 ESM 兼容性问题
+          include: ["use-sync-external-store", "cookie"],
         },
       },
     },
