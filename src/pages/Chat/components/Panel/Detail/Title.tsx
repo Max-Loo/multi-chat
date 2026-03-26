@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ProviderLogo } from "@/components/ProviderLogo";
 import { isNil } from "es-toolkit";
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 
 interface DetailTitleProps {
@@ -18,13 +18,11 @@ interface DetailTitleProps {
 
 const Title = memo<DetailTitleProps>(({ chatModel }) => {
   const { t } = useTranslation();
-  // 模型列表
-  const models = useAppSelector((state) => state.models.models);
 
   // 当前展示的模型在模型列表里面的完整版
-  const currentModel = useMemo(() => {
-    return models.find((model) => model.id === chatModel.modelId);
-  }, [chatModel, models]);
+  const currentModel = useAppSelector((state) =>
+    state.models.models.find((model) => model.id === chatModel.modelId)
+  );
 
   // 模型不存在时显示错误提示
   if (isNil(currentModel)) {

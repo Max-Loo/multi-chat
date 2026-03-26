@@ -1,4 +1,4 @@
-import { useAppDispatch, useAppSelector } from "@/hooks/redux"
+import { useAppDispatch } from "@/hooks/redux"
 import { useNavigateToChat } from "@/hooks/useNavigateToPage"
 import { deleteChat, editChatName } from "@/store/slices/chatSlices"
 import { Chat } from "@/types/chat"
@@ -18,8 +18,9 @@ import { toastQueue } from '@/lib/toast'
 import { useConfirm } from "@/hooks/useConfirm"
 import { useResponsive } from "@/hooks/useResponsive"
 
-interface ChatButtonProps {
+export interface ChatButtonProps {
   chat: Chat
+  isSelected: boolean
 }
 
 /**
@@ -27,6 +28,7 @@ interface ChatButtonProps {
  */
 const ChatButton = memo<ChatButtonProps>(({
   chat,
+  isSelected,
 }) => {
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
@@ -34,8 +36,6 @@ const ChatButton = memo<ChatButtonProps>(({
   const { layoutMode } = useResponsive()
   // Desktop 和 Mobile 模式使用正常尺寸
   const isNormalSize = layoutMode === 'desktop' || layoutMode === 'mobile'
-
-  const selectedChatId = useAppSelector((state) => state.chat.selectedChatId)
 
   const {
     navigateToChat,
@@ -75,7 +75,7 @@ const ChatButton = memo<ChatButtonProps>(({
         toastQueue.success(t($ => $.chat.deleteChatSuccess))
 
         // 如果删除的是当前选中的聊天，清除 URL 中的 chatId 参数
-        if (chat.id === selectedChatId) {
+        if (isSelected) {
           clearChatIdParam()
         }
       } catch {
@@ -123,7 +123,7 @@ const ChatButton = memo<ChatButtonProps>(({
     return (
       <div
         className={`flex items-center gap-2 w-full px-2 py-2
-        ${chat.id === selectedChatId && 'bg-primary/20'}
+        ${isSelected && 'bg-primary/20'}
         `}
       >
         <Input
@@ -163,7 +163,7 @@ const ChatButton = memo<ChatButtonProps>(({
             ? 'py-2 px-1'
             : 'py-1.5 px-1'
         }
-        ${chat.id === selectedChatId ? 'bg-primary/20' : 'hover:bg-accent'}
+        ${isSelected ? 'bg-primary/20' : 'hover:bg-accent'}
         ${isRenaming && 'pl-1 pr-1'}
       `}
       onClick={() => onClickChat(chat)}
@@ -234,7 +234,8 @@ const ChatButton = memo<ChatButtonProps>(({
 
   return (
     id === nextId &&
-    name === nextName
+    name === nextName &&
+    prevProps.isSelected === nextProps.isSelected
   )
 })
 
