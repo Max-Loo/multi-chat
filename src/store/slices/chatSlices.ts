@@ -301,7 +301,7 @@ const chatSlice = createSlice({
     },
     // 新增聊天
     createChat: (state, action: PayloadAction<{chat: Chat}>) => {
-      state.chatList.push(action.payload.chat)
+      state.chatList.unshift(action.payload.chat)
     },
     // 编辑聊天
     editChat: (state, action: PayloadAction<{chat: Chat}>) => {

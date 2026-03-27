@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useAppDispatch } from "./redux";
 import { useNavigateToChat } from "./useNavigateToPage";
-import { createChat } from "@/store/slices/chatSlices";
+import { createChat, setSelectedChatId } from "@/store/slices/chatSlices";
 import { generateId } from "ai";
 
 /**
@@ -21,6 +21,7 @@ export const useCreateChat = () => {
     };
 
     dispatch(createChat({ chat }));
+    dispatch(setSelectedChatId(chat.id));
     navigateToChat({
       chatId: chat.id,
     });

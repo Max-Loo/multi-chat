@@ -54,7 +54,6 @@ describe('useCreateChat', () => {
 
     await result.current.createNewChat();
 
-    expect(mockDispatch).toHaveBeenCalledTimes(1);
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: expect.stringContaining('createChat'),
@@ -106,4 +105,64 @@ describe('useCreateChat', () => {
 
     expect(firstRef).toBe(secondRef);
   });
+
+  it('应该在创建聊天后同步设置 selectedChatId', async () => {
+    const { useCreateChat } = await import('@/hooks/useCreateChat');
+    const { result } = renderHook(() => useCreateChat());
+
+    await result.current.createNewChat();
+
+    // 第一个 dispatch 是 createChat，第二个是 setSelectedChatId
+    expect(mockDispatch).toHaveBeenCalledTimes(2);
+    expect(mockDispatch).toHaveBeenNthCalledWith(2,
+      expect.objectContaining({
+        type: expect.stringContaining('setSelectedChatId'),
+        payload: 'test-chat-id',
+      })
+    );
+  });
+
+  it('应该按正确顺序执行：createChat → setSelectedChatId → navigateToChat', async () => {
+    const { useCreateChat } = await import('@/hooks/useCreateChat');
+    const callOrder: string[] = [];
+    mockDispatch.mockImplementation((action) => {
+      callOrder.push(action.type);
+      return action;
+    });
+    mockNavigateToChat.mockImplementation(() => {
+      callOrder.push('navigateToChat');
+    });
+
+    const { result } = renderHook(() => useCreateChat());
+    await result.current.createNewChat();
+
+    expect(callOrder).toEqual([
+      expect.stringContaining('createChat'),
+      expect.stringContaining('setSelectedChatId'),
+      'navigateToChat',
+    ]);
+  });
+
+  it('连续快速创建多个新聊天时，selectedChatId 应为最后一个', async () => {
+    const { useCreateChat } = await import('@/hooks/useCreateChat');
+    vi.mocked(generateId)
+      .mockReturnValueOnce('chat-1')
+      .mockReturnValueOnce('chat-2')
+      .mockReturnValueOnce('chat-3');
+
+    const { result } = renderHook(() => useCreateChat());
+
+    await result.current.createNewChat();
+    await result.current.createNewChat();
+    await result.current.createNewChat();
+
+    // 每次 createNewChat 都会 dispatch createChat + setSelectedChatId = 6 次
+    expect(mockDispatch).toHaveBeenCalledTimes(6);
+    // 最后一次 setSelectedChatId 应为 chat-3
+    const lastSetSelectedCall = mockDispatch.mock.calls
+      .filter(([action]) => String(action.type).includes('setSelectedChatId'))
+      .pop();
+    expect(lastSetSelectedCall![0].payload).toBe('chat-3');
+  });
+
 });
