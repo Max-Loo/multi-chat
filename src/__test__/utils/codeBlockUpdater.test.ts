@@ -192,6 +192,7 @@ describe('codeBlockUpdater', () => {
 
       // 推进 5 秒触发自动清理
       vi.advanceTimersByTime(5000);
+
       expect(getPendingUpdatesCount()).toBe(0);
     });
   });

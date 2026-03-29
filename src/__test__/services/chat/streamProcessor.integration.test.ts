@@ -345,6 +345,166 @@ describe('streamProcessor', () => {
     });
   });
 
+  describe('节流逻辑', () => {
+    it('应该在节流间隔内延迟 yield，间隔到期后 yield 累积内容', async () => {
+      const events = [
+        { type: 'text-delta', text: 'A' },
+        { type: 'text-delta', text: 'B' },
+        { type: 'text-delta', text: 'C' },
+        { type: 'text-delta', text: 'D' },
+        { type: 'text-delta', text: 'E' },
+      ];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      // Mock Date.now() to simulate event timing at 0/30/60/90/120ms
+      // Call order: streamStartTime → event1..5 now → streamEndTime
+      const mockDateNow = vi.spyOn(Date, 'now');
+      mockDateNow
+        .mockReturnValueOnce(0)    // streamStartTime
+        .mockReturnValueOnce(0)    // event 1: 0-0=0 < 100 → no yield
+        .mockReturnValueOnce(30)   // event 2: 30-0=30 < 100 → no yield
+        .mockReturnValueOnce(60)   // event 3: 60-0=60 < 100 → no yield
+        .mockReturnValueOnce(90)   // event 4: 90-0=90 < 100 → no yield
+        .mockReturnValueOnce(120)  // event 5: 120-0=120 >= 100 → yield
+        .mockReturnValueOnce(200); // streamEndTime
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, {
+        ...defaultOptions,
+        throttleInterval: 100,
+      })) {
+        messages.push(message);
+      }
+
+      mockDateNow.mockRestore();
+
+      // 前 4 个事件不 yield，第 5 个 yield，加上最终消息 = 2 条
+      expect(messages.length).toBe(2);
+      expect(messages[0].content).toBe('ABCDE');
+      expect(messages[0].raw).toBeNull();
+      expect(messages[1].content).toBe('ABCDE');
+      expect(messages[1].raw).toBeDefined();
+    });
+
+    it('应该在流结束时有未发送更新时立即 yield', async () => {
+      const events = [{ type: 'text-delta', text: 'Hello' }];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      // Mock Date.now(): event arrives before throttle interval
+      const mockDateNow = vi.spyOn(Date, 'now');
+      mockDateNow
+        .mockReturnValueOnce(0)    // streamStartTime
+        .mockReturnValueOnce(50)   // event 1: 50-0=50 < 1000 → no yield, hasPendingUpdate=true
+        .mockReturnValueOnce(100); // streamEndTime
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, {
+        ...defaultOptions,
+        throttleInterval: 1000,
+      })) {
+        messages.push(message);
+      }
+
+      mockDateNow.mockRestore();
+
+      // 流结束立即 yield 未发送更新 + 最终消息 = 2 条
+      expect(messages.length).toBe(2);
+      expect(messages[0].content).toBe('Hello');
+      expect(messages[0].raw).toBeNull();
+      expect(messages[1].raw).toBeDefined();
+    });
+
+    it('应该在 throttleInterval=0 时每个事件都 yield', async () => {
+      const events = [
+        { type: 'text-delta', text: 'A' },
+        { type: 'text-delta', text: 'B' },
+        { type: 'text-delta', text: 'C' },
+      ];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      // 3 条中间消息 + 1 条最终消息 = 4 条
+      expect(messages.length).toBe(4);
+      expect(messages[0].content).toBe('A');
+      expect(messages[1].content).toBe('AB');
+      expect(messages[2].content).toBe('ABC');
+      expect(messages[3].raw).toBeDefined();
+    });
+  });
+
+  describe('边界情况', () => {
+    it('应该正确处理 text-delta text 为 undefined 的事件', async () => {
+      const events = [{ type: 'text-delta', text: undefined as unknown as string }];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      // content 累加空字符串，不抛出错误
+      expect(messages[0].content).toBe('');
+    });
+
+    it('应该正确处理 reasoning-delta text 为 null 的事件', async () => {
+      const events = [{ type: 'reasoning-delta', text: null as unknown as string }];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      // reasoningContent 累加空字符串
+      expect(messages[0].reasoningContent).toBe('');
+    });
+
+    it('应该忽略不支持的事件类型且不修改 content', async () => {
+      const events = [
+        { type: 'text-delta', text: 'Hello' },
+        { type: 'tool-call', data: 'ignored' } as unknown as { type: string; text?: string },
+      ];
+
+      const mockMetadata = createDefaultMetadata();
+      collectAllMetadataSpy.mockResolvedValue(mockMetadata);
+
+      const mockResult = createMockStreamResult(events, mockMetadata);
+      const messages: StandardMessage[] = [];
+
+      for await (const message of processStreamEvents(mockResult, defaultOptions)) {
+        messages.push(message);
+      }
+
+      // tool-call 后 content 仍为 Hello（未被修改）
+      expect(messages[0].content).toBe('Hello');
+      expect(messages[1].content).toBe('Hello');
+    });
+  });
+
   describe('消息格式', () => {
     it('应该生成正确格式的 StandardMessage', async () => {
       const events = [{ type: 'text-delta', text: 'Hello' }];
