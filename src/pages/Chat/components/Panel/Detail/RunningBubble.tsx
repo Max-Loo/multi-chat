@@ -19,13 +19,12 @@ const RunningBubble = memo<RunningBubbleProps>(({
   const {
     selectedChat,
   } = useSelectedChat()
-  // 当前在运行的聊天
-  const runningChat = useAppSelector(state => state.chat.runningChat)
 
-  // 🔧 提取嵌套访问，避免 useMemo 依赖数组复杂表达式
-  const selectedChatId = selectedChat?.id
-  const modelId = chatModel.modelId
-  const chatData = selectedChatId ? runningChat[selectedChatId]?.[modelId] : undefined
+  // 精确订阅当前面板的 runningChat 数据，避免其他面板更新触发重渲染
+  const chatData = useAppSelector(state => {
+    const selectedChatId = selectedChat?.id
+    return selectedChatId ? state.chat.runningChat[selectedChatId]?.[chatModel.modelId] : undefined
+  })
 
   if (isNil(chatData) || !chatData.isSending) {
     return null

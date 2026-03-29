@@ -12,6 +12,11 @@ import RunningBubble from "./RunningBubble";
 import { useIsSending } from "@/pages/Chat/hooks/useIsSending";
 import { isNil, isNotNil } from "es-toolkit"
 import { useTranslation } from "react-i18next"
+import { Virtualizer } from "virtua"
+import type { VirtualizerHandle } from "virtua"
+
+/** 滚动到底部的阈值（px） */
+const SCROLL_BOTTOM_THRESHOLD = 24
 
 interface DetailProps {
   chatModel: ChatModel
@@ -46,6 +51,18 @@ const Detail: React.FC<DetailProps> = ({
   // 引用滚动容器
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  // Virtualizer 引用
+  const virtualizerRef = useRef<VirtualizerHandle>(null)
+
+  // Title 引用，用于测量高度作为 startMargin
+  const titleRef = useRef<HTMLDivElement>(null)
+
+  // 跟踪用户是否在底部（用于流式自动跟随判断）
+  const shouldStickToBottom = useRef(true)
+
+  // Virtualizer 的 startMargin（Title 的高度）
+  const [startMargin, setStartMargin] = useState(0)
+
   // 控制滚动条的相关逻辑
   const {
     onScrollEvent,
@@ -64,17 +81,25 @@ const Detail: React.FC<DetailProps> = ({
 
   /**
    * 滚动到列表底部
+   * 优先使用 Virtualizer API 以确保与虚拟化引擎协调
    */
-  const scrollToBottom = () => {
-    if (isNil(scrollContainerRef.current)) {
+  const scrollToBottom = useCallback(() => {
+    const virtualizer = virtualizerRef.current
+    if (virtualizer) {
+      virtualizer.scrollToIndex(historyList.length - 1, { align: 'end' })
       return
     }
-    scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
-  }
+    // 降级：无虚拟化时直接操作 DOM
+    const container = scrollContainerRef.current
+    if (isNil(container)) {
+      return
+    }
+    container.scrollTop = container.scrollHeight
+  }, [historyList.length])
 
   // 检测是否需要滚动条以及是否在底部
   const checkScrollStatus = useCallback(() => {
-    // 🔧 防止递归调用
+    // 防止递归调用
     if (isCheckingScrollRef.current) {
       return
     }
@@ -87,31 +112,54 @@ const Detail: React.FC<DetailProps> = ({
     // 检测是否需要滚动条（内容高度大于容器高度）
     const hasScrollbar = container.scrollHeight > container.clientHeight
 
-    // 检测是否在底部（允许10px的误差）
-    const threshold = 24
-    const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= threshold
+    // 检测是否在底部
+    const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= SCROLL_BOTTOM_THRESHOLD
 
-    // 🔧 使用 requestAnimationFrame 避免在同一帧内多次更新状态
+    // 使用 requestAnimationFrame 避免在同一帧内多次更新状态
     requestAnimationFrame(() => {
       setNeedsScrollbar(hasScrollbar)
       setIsAtBottom(atBottom)
 
-      // 🔧 延迟重置标志，确保状态更新完成
-      setTimeout(() => {
+      // 在下一帧重置标志，确保状态更新已完成
+      requestAnimationFrame(() => {
         isCheckingScrollRef.current = false
-      }, 100)
+      })
     })
   }, [])
 
-  // 监听内容变化和滚动事件
+  // 监听 Title 高度变化，更新 Virtualizer 的 startMargin
   useEffect(() => {
-    const container = scrollContainerRef.current
-    if (!container) return
+    const titleEl = titleRef.current
+    if (!titleEl) return
 
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      setStartMargin(entry.contentRect.height)
+    })
+    resizeObserver.observe(titleEl)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [])
+
+  // 流式自动跟随：当用户在底部且有流式数据更新时，等待 DOM 更新后自动滚动到底部
+  useEffect(() => {
+    if (shouldStickToBottom.current && runningChatData) {
+      requestAnimationFrame(() => {
+        scrollToBottom()
+      })
+    }
+  }, [runningChatData, scrollToBottom])
+
+  // 监听内容变化和滚动容器尺寸变化
+  useEffect(() => {
     // 初始检测
     checkScrollStatus()
 
-    // 监听内容变化（使用 ResizeObserver）
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    // 监听容器尺寸变化（使用 ResizeObserver）
     const resizeObserver = new ResizeObserver(() => {
       checkScrollStatus()
     })
@@ -120,25 +168,20 @@ const Detail: React.FC<DetailProps> = ({
     return () => {
       resizeObserver.disconnect()
     }
-  }, [historyList, runningChatData, checkScrollStatus]) // 依赖聊天历史、运行状态变化和滚动状态检测函数
+  }, [historyList, runningChatData, checkScrollStatus])
 
-  // 处理滚动事件
-  const handleScroll = useCallback(() => {
-    checkScrollStatus()
-    onScrollEvent()
-  }, [checkScrollStatus, onScrollEvent])
-
-  // 添加 passive 监听器
-  useEffect(() => {
+  // Virtualizer 滚动事件处理（替代原有的 addEventListener）
+  const handleVirtualizerScroll = useCallback((_offset: number) => {
     const container = scrollContainerRef.current
     if (!container) return
 
-    container.addEventListener('scroll', handleScroll, { passive: true })
+    // 更新 shouldStickToBottom
+    const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= SCROLL_BOTTOM_THRESHOLD
+    shouldStickToBottom.current = atBottom
 
-    return () => {
-      container.removeEventListener('scroll', handleScroll)
-    }
-  }, [handleScroll])
+    checkScrollStatus()
+    onScrollEvent()
+  }, [checkScrollStatus, onScrollEvent])
 
   return (
     <>
@@ -151,18 +194,29 @@ const Detail: React.FC<DetailProps> = ({
         `}
         ref={scrollContainerRef}
       >
-    <Title chatModel={chatModel} />
-    {/* 历史记录列表 */}
-    {historyList.map(historyRecord => {
-      return <ChatBubble
-        key={historyRecord.id}
-        role={historyRecord.role}
-        content={historyRecord.content || ''}
-        reasoningContent={historyRecord.reasoningContent}
-        isRunning={false}
-      />
-    })}
-    {/* 单独展示正在生成的消息 */}
+    <div ref={titleRef} className="w-full">
+      <Title chatModel={chatModel} />
+    </div>
+    {/* 历史记录列表 — 使用 Virtualizer 虚拟化渲染 */}
+    <div className="w-full">
+      <Virtualizer
+        ref={virtualizerRef}
+        startMargin={startMargin}
+        scrollRef={scrollContainerRef}
+        onScroll={handleVirtualizerScroll}
+      >
+        {historyList.map(historyRecord => {
+          return <ChatBubble
+            key={historyRecord.id}
+            role={historyRecord.role}
+            content={historyRecord.content || ''}
+            reasoningContent={historyRecord.reasoningContent}
+            isRunning={false}
+          />
+        })}
+      </Virtualizer>
+    </div>
+    {/* 单独展示正在生成的消息（放在 Virtualizer 外部，不参与虚拟化） */}
     <RunningBubble chatModel={chatModel} />
     {/* 展示可能的错误信息 */}
     {

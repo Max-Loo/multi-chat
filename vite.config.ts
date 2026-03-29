@@ -73,7 +73,13 @@ export default defineConfig(async () => ({
       optimizer: {
         web: {
           // 预构建 CommonJS 模块以解决 ESM 兼容性问题
-          include: ["use-sync-external-store", "cookie"],
+          include: [
+            "use-sync-external-store",
+            "cookie",
+            "react",
+            "react-dom",
+            "react/jsx-runtime",
+          ],
         },
       },
     },
