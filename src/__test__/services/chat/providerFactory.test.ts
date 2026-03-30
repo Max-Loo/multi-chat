@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { getProvider } from '@/services/chat/providerFactory';
 import { getProviderSDKLoader } from '@/services/chat/providerLoader';
 import { ModelProviderKeyEnum } from '@/utils/enums';

@@ -573,4 +573,28 @@ describe('appConfigMiddleware', () => {
       );
     });
   });
+
+  describe('自动命名功能开关持久化', () => {
+    it('应该持久化到 localStorage 当启用自动命名', async () => {
+      store.dispatch(setAutoNamingEnabled(true));
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(global.localStorage.setItem).toHaveBeenCalledWith(
+        LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
+        'true'
+      );
+    });
+
+    it('应该持久化到 localStorage 当禁用自动命名', async () => {
+      store.dispatch(setAutoNamingEnabled(false));
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(global.localStorage.setItem).toHaveBeenCalledWith(
+        LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
+        'false'
+      );
+    });
+  });
 });
