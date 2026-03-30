@@ -13,6 +13,7 @@ import { useExistingChatList } from "@/hooks/useExistingChatList";
 const Sidebar: React.FC = () => {
   const chatList = useExistingChatList();
   const chatListLoading = useAppSelector((state) => state.chat.loading);
+  const selectedChatId = useAppSelector((state) => state.chat.selectedChatId);
 
   const { onScrollEvent, scrollbarClassname } = useAdaptiveScrollbar();
 
@@ -53,7 +54,7 @@ const Sidebar: React.FC = () => {
       >
         {!chatListLoading ? (
           filteredChatList.map((chat) => {
-            return <ChatButton chat={chat} key={chat.id} />;
+            return <ChatButton chat={chat} key={chat.id} isSelected={chat.id === selectedChatId} />;
           })
         ) : (
           <div className="w-full p-2 space-y-2">

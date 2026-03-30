@@ -15,8 +15,10 @@ export const useIsSending = (): {
   } = useSelectedChat()
 
 
-  // 当前在运行的聊天
-  const runningChat = useAppSelector(state => state.chat.runningChat)
+  // 当前选中聊天的运行数据
+  const currentChatRunning = useAppSelector(state =>
+    selectedChat ? state.chat.runningChat[selectedChat.id] : undefined
+  )
 
   // 将每个独立窗口的发送状态汇总起来
   const isSending = useMemo(() => {
@@ -24,15 +26,13 @@ export const useIsSending = (): {
       return false
     }
 
-    const chat = runningChat[selectedChat.id]
-
-    if (isNil(chat)) {
+    if (isNil(currentChatRunning)) {
       return false
     }
 
-    return Object.values(chat).some(item => item.isSending)
+    return Object.values(currentChatRunning).some(item => item.isSending)
 
-  }, [selectedChat, runningChat])
+  }, [selectedChat, currentChatRunning])
 
   return {
     isSending,

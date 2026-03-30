@@ -214,7 +214,7 @@ function createTestStore(preloadedState?: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 // Reason: 测试错误处理，需要构造无效输入
-function renderChatButton(chat: any, store?: any) {
+function renderChatButton(chat: any, store?: any, isSelected = true) {
 
   const testStore = store || createTestStore({
 
@@ -246,7 +246,7 @@ function renderChatButton(chat: any, store?: any) {
 
       <BrowserRouter>
 
-        <ChatButton chat={chat} />
+        <ChatButton chat={chat} isSelected={isSelected} />
 
       </BrowserRouter>
 
@@ -378,7 +378,7 @@ describe('ChatButton Component', () => {
 
 
 
-      const { container } = renderChatButton(chat, store);
+      const { container } = renderChatButton(chat, store, false);
 
       const buttonDiv = container.querySelector('.bg-primary\\/20');
 
@@ -646,7 +646,7 @@ describe('ChatButton Component', () => {
 
           <BrowserRouter>
 
-            <ChatButton chat={chat} />
+            <ChatButton chat={chat} isSelected={true} />
 
           </BrowserRouter>
 
@@ -700,7 +700,7 @@ describe('ChatButton Component', () => {
 
           <BrowserRouter>
 
-            <ChatButton chat={updatedChat} />
+            <ChatButton chat={updatedChat} isSelected={true} />
 
           </BrowserRouter>
 

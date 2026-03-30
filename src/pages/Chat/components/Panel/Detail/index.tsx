@@ -28,8 +28,10 @@ const Detail: React.FC<DetailProps> = ({
     selectedChat,
   } = useSelectedChat()
 
-  // 当前在运行的聊天
-  const runningChat = useAppSelector(state => state.chat.runningChat)
+  // 当前在运行的聊天数据（精确到 chatId + modelId）
+  const runningChatData = useAppSelector(state =>
+    selectedChat ? state.chat.runningChat[selectedChat.id]?.[chatModel.modelId] : undefined
+  )
 
   const {
     isSending,
@@ -118,7 +120,7 @@ const Detail: React.FC<DetailProps> = ({
     return () => {
       resizeObserver.disconnect()
     }
-  }, [historyList, runningChat, checkScrollStatus]) // 依赖聊天历史、运行状态变化和滚动状态检测函数
+  }, [historyList, runningChatData, checkScrollStatus]) // 依赖聊天历史、运行状态变化和滚动状态检测函数
 
   // 处理滚动事件
   const handleScroll = useCallback(() => {
@@ -164,13 +166,13 @@ const Detail: React.FC<DetailProps> = ({
     <RunningBubble chatModel={chatModel} />
     {/* 展示可能的错误信息 */}
     {
-      isNotNil(selectedChat) && runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage
+      isNotNil(selectedChat) && runningChatData?.errorMessage
       && <Alert
         variant="destructive"
         className="self-start"
       >
         <AlertDescription>
-          {runningChat[selectedChat.id]?.[chatModel.modelId]?.errorMessage}
+          {runningChatData?.errorMessage}
         </AlertDescription>
       </Alert>
     }
