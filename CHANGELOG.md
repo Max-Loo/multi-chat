@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.9] - 2026-03-31
+
+### ✨ 新功能
+
+- **新建聊天插入列表头部并同步选中状态**：新建聊天时将其插入到列表头部，并自动选中该聊天
+- **增加 claude health skill**：新增 Claude health 检查 skill
+- **更新 AGENTS.md**：更新 agent spec 文档
+
+### ⚡ 性能优化
+
+- **收窄 Redux selector 订阅粒度减少不必要重渲染**：优化聊天页面 Redux selector 订阅策略，减少无关状态变更导致的重渲染
+  - ChatButton：selectedChatId 从内部订阅改为 isSelected props 下沉
+  - Sidebar：新增 selectedChatId 订阅，传递给子组件
+  - Detail：runningChat selector 收窄到 chatId + modelId 精确路径
+  - useIsSending：runningChat selector 收窄到当前 chatId
+  - Title：合并 useAppSelector + useMemo 为单个 selector
+
+### 🐛 Bug 修复
+
+- **修复测试运行报错**：修复测试运行时的报错问题
+
+---
+
 ## [0.3.8] - 2026-03-20
 
 ### ⚡ 性能优化
