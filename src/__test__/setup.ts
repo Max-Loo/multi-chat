@@ -5,6 +5,7 @@
  */
 
 import { vi, expect, afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import 'fake-indexeddb/auto';
 
@@ -281,6 +282,7 @@ setupCustomAssertions();
 
 // 在每个测试后清理所有 Mock 和状态
 afterEach(() => {
+  cleanup();
   vi.clearAllMocks();
 });
 
