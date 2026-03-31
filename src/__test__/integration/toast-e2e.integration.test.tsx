@@ -28,7 +28,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { ToasterWrapper } from '@/lib/toast/ToasterWrapper';
+import { ToasterWrapper } from '@/services/toast/ToasterWrapper';
 import { getTestStore, cleanupStore } from '@/__test__/helpers/integration/resetStore';
 
 /**
@@ -58,7 +58,7 @@ describe('Toast 端到端场景测试', () => {
   describe('用户操作反馈场景', () => {
     test('应该显示成功反馈当设置保存成功', async () => {
       // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // Spy on success
       const successSpy = vi.spyOn(toastQueue, 'success');
@@ -88,7 +88,7 @@ describe('Toast 端到端场景测试', () => {
 
     test('应该显示失败反馈当设置保存失败', async () => {
       // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // Spy on error
       const errorSpy = vi.spyOn(toastQueue, 'error');
@@ -118,7 +118,7 @@ describe('Toast 端到端场景测试', () => {
 
     test('应该显示加载状态反馈', async () => {
       // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // Spy on loading
       const loadingSpy = vi.spyOn(toastQueue, 'loading');
@@ -150,7 +150,7 @@ describe('Toast 端到端场景测试', () => {
   describe('竞态条件场景', () => {
     test('应该处理初始化期间的多个 Toast 请求', async () => {
       // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // Spy on toast methods
       const successSpy = vi.spyOn(toastQueue, 'success');
@@ -193,7 +193,7 @@ describe('Toast 端到端场景测试', () => {
   describe('边界情况', () => {
     test('应该保持 Toast 稳定性当用户快速切换页面', async () => {
       // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // 渲染 ToasterWrapper
       const { unmount, rerender } = render(

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { AlertOctagon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
-import type { InitError } from "@/lib/initialization";
+import type { InitError } from "@/services/initialization";
 
 /**
  * 致命错误屏幕组件属性

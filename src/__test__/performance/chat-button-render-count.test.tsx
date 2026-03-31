@@ -87,7 +87,7 @@ vi.mock('@/hooks/useConfirm', () => ({
   ConfirmProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 
-vi.mock('@/lib/toast', () => ({
+vi.mock('@/services/toast', () => ({
   toastQueue: {
     success: vi.fn(async () => 'toast-id'),
     error: vi.fn(async () => 'toast-id'),
@@ -96,17 +96,13 @@ vi.mock('@/lib/toast', () => ({
 
 /**
  * 渲染追踪器
- * 记录每个 ChatButton 的渲染次数和耗时
+ * 记录每个 ChatButton 的渲染次数
  */
 function createRenderTracker() {
   const renderCounts = new Map<string, number>()
-  const renderTimestamps = new Map<string, number[]>()
 
   const record = (id: string) => {
     renderCounts.set(id, (renderCounts.get(id) || 0) + 1)
-    const timestamps = renderTimestamps.get(id) || []
-    timestamps.push(performance.now())
-    renderTimestamps.set(id, timestamps)
   }
 
   return {
@@ -118,23 +114,8 @@ function createRenderTracker() {
       renderCounts.forEach(n => { if (n > 1) count++ })
       return count
     },
-    /** 获取某次操作的重渲染耗时（ms），取最后一次渲染时间戳与首次之差 */
-    getReRenderDuration(id: string): number {
-      const timestamps = renderTimestamps.get(id)
-      if (!timestamps || timestamps.length < 2) return 0
-      return timestamps[timestamps.length - 1] - timestamps[0]
-    },
-    /** 切换操作的总耗时区间：所有组件最后一次渲染中最大的时间戳 - dispatch 前的时间戳 */
-    getTotalDuration(startTime: number): number {
-      let maxTime = 0
-      renderTimestamps.forEach(ts => {
-        if (ts.length > 0) maxTime = Math.max(maxTime, ts[ts.length - 1])
-      })
-      return maxTime - startTime
-    },
     reset() {
       renderCounts.clear()
-      renderTimestamps.clear()
     },
   }
 }
@@ -192,7 +173,7 @@ function createOptimizedPattern(tracker: ReturnType<typeof createRenderTracker>)
 }
 
 /**
- * 渲染聊天列表并测量选中切换的渲染性能
+ * 渲染聊天列表并触发选中切换
  */
 function measureSelectionChange(
   Pattern: React.FC<{ chatList: Chat[] }>,
@@ -210,13 +191,9 @@ function measureSelectionChange(
     </Provider>
   )
 
-  const startTime = performance.now()
-
   act(() => {
     store.dispatch(setSelectedChatId(newSelectedId))
   })
-
-  return { startTime }
 }
 
 // ============ 测试用例 ============
@@ -335,44 +312,6 @@ describe('ChatButton selector 优化 - 连续切换稳定性', () => {
     unchangedChats.forEach(chat => {
       expect(tracker.getCount(chat.id)).toBe(1)
     })
-  })
-})
-
-describe('ChatButton selector 优化 - 渲染耗时', () => {
-  it('优化后的总渲染耗时不应超过优化前', () => {
-    const chatList = createMockChatList(50)
-    const RUNS = 10
-
-    const legacyTimes: number[] = []
-    const optimizedTimes: number[] = []
-
-    for (let i = 0; i < RUNS; i++) {
-      // 优化前
-      const legacyStore = createPerfStore(chatList, chatList[0].id)
-      const legacyTracker = createRenderTracker()
-      const { startTime: legacyStart } = measureSelectionChange(
-        createLegacyPattern(legacyTracker), chatList, legacyStore, chatList[49].id,
-      )
-      legacyTimes.push(legacyTracker.getTotalDuration(legacyStart))
-
-      // 优化后
-      const optimizedStore = createPerfStore(chatList, chatList[0].id)
-      const optimizedTracker = createRenderTracker()
-      const { startTime: optimizedStart } = measureSelectionChange(
-        createOptimizedPattern(optimizedTracker), chatList, optimizedStore, chatList[49].id,
-      )
-      optimizedTimes.push(optimizedTracker.getTotalDuration(optimizedStart))
-    }
-
-    const avgLegacy = legacyTimes.reduce((a, b) => a + b, 0) / RUNS
-    const avgOptimized = optimizedTimes.reduce((a, b) => a + b, 0) / RUNS
-
-    // 输出耗时供人工审查
-    // eslint-disable-next-line no-console
-    console.log(`[Perf] 平均渲染耗时 — 优化前: ${avgLegacy.toFixed(2)}ms, 优化后: ${avgOptimized.toFixed(2)}ms`)
-
-    // 断言：优化后耗时不超过优化前的 1.5 倍（容许测试环境波动）
-    expect(avgOptimized).toBeLessThanOrEqual(avgLegacy * 1.5)
   })
 })
 

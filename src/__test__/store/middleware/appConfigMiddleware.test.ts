@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock toastQueue and i18n before importing middleware
-vi.mock('@/lib/toast', () => ({
+vi.mock('@/services/toast', () => ({
   toastQueue: {
     loading: vi.fn(async () => 'loading-toast-id'),
     success: vi.fn(async () => 'toast-id'),
@@ -16,7 +16,7 @@ vi.mock('@/lib/toast', () => ({
   },
 }));
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/services/i18n', () => ({
   changeAppLanguage: vi.fn(),
 }));
 
@@ -30,10 +30,10 @@ import chatPageReducer from '@/store/slices/chatPageSlices';
 import modelProviderReducer from '@/store/slices/modelProviderSlice';
 import settingPageReducer from '@/store/slices/settingPageSlices';
 import modelPageReducer from '@/store/slices/modelPageSlices';
-import { changeAppLanguage } from '@/lib/i18n';
-import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
+import { changeAppLanguage } from '@/services/i18n';
+import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
 import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY } from '@/utils/constants';
-import { toastQueue } from '@/lib/toast';
+import { toastQueue } from '@/services/toast';
 
 const mockChangeAppLanguage = vi.mocked(changeAppLanguage);
 const mockToastLoading = vi.mocked(toastQueue.loading);

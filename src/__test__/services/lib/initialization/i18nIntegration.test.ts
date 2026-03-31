@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { InitializationManager } from '@/lib/initialization/InitializationManager';
-import { initI18n, changeAppLanguage, getLocalesResources } from '@/lib/i18n';
-import type { InitStep } from '@/lib/initialization';
+import { InitializationManager } from '@/services/initialization/InitializationManager';
+import { initI18n, changeAppLanguage, getLocalesResources } from '@/services/i18n';
+import type { InitStep } from '@/services/initialization';
 
 // Mock getDefaultAppLanguage
-vi.mock('@/lib/global', () => ({
+vi.mock('@/services/global', () => ({
   getDefaultAppLanguage: vi.fn().mockResolvedValue('en'),
 }));
 

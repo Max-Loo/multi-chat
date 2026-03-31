@@ -1,5 +1,5 @@
-import { getDefaultAppLanguage } from "@/lib/global";
-import { tSafely } from "@/lib/i18n";
+import { getDefaultAppLanguage } from "@/services/global";
+import { tSafely } from "@/services/i18n";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
 

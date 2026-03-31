@@ -60,22 +60,22 @@ vi.mock("react-i18next", () => ({
   initReactI18next: mockInitReactI18next,
 }));
 
-// Mock ../lib/global 中的函数
-vi.mock("../lib/global", () => ({
+// Mock @/services/global 中的函数
+vi.mock("@/services/global", () => ({
   getDefaultAppLanguage: mockGetDefaultAppLanguage,
   getLanguageLabel: mockGetLanguageLabel,
   LOCAL_STORAGE_LANGUAGE_KEY: 'multi-chat:language',
 }));
 
 // Mock toastQueue
-vi.mock("../../lib/toast/toastQueue", () => ({
+vi.mock("@/services/toast/toastQueue", () => ({
   toastQueue: mockToastQueue,
 }));
 
 // 动态导入被测试模块（在 mock 之后）
 describe("i18n module", () => {
   // 保存模块引用，用于重置单例状态（稍后使用）
-  // let i18nModule: typeof import("@/lib/i18n");
+  // let i18nModule: typeof import("@/services/i18n");
 
   // 全局 mock 数据：模拟语言文件（包含所有 7 个命名空间）
   const mockLocaleModules = {
@@ -182,7 +182,7 @@ describe("i18n module", () => {
 
   describe("getLocalesResources", () => {
     it("应该成功从 i18next 实例读取已加载资源", async () => {
-      const module = await import("@/lib/i18n");
+      const module = await import("@/services/i18n");
       const { getLocalesResources, initI18n } = module;
 
       // 先初始化 i18n（getLocalesResources 依赖 i18n 实例状态）
@@ -214,7 +214,7 @@ describe("i18n module", () => {
     });
 
     it("应该正确返回符合预期的数据结构", async () => {
-      const module = await import("@/lib/i18n");
+      const module = await import("@/services/i18n");
       const { getLocalesResources } = module;
 
       const resources = getLocalesResources() as Record<string, { translation: Record<string, unknown> }>;
@@ -234,7 +234,7 @@ describe("i18n module", () => {
 
   describe("initI18n", () => {
     it("应该首次初始化成功", async () => {
-      const { initI18n } = await import("@/lib/i18n");
+      const { initI18n } = await import("@/services/i18n");
 
       const result = await initI18n();
 
@@ -255,7 +255,7 @@ describe("i18n module", () => {
     });
 
     it("应该验证单例模式", async () => {
-      const { initI18n } = await import("@/lib/i18n");
+      const { initI18n } = await import("@/services/i18n");
 
       // 多次调用 initI18n
       const result1 = await initI18n();
@@ -271,7 +271,7 @@ describe("i18n module", () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const { initI18n } = await import("@/lib/i18n");
+      const { initI18n } = await import("@/services/i18n");
 
       // Mock loadLanguage 失败
       mockI18nChangeLanguage.mockRejectedValueOnce(new Error("Change language failed"));
@@ -299,7 +299,7 @@ describe("i18n module", () => {
         return Promise.resolve({ t: (key: string) => key });
       });
 
-      const { initI18n } = await import("@/lib/i18n");
+      const { initI18n } = await import("@/services/i18n");
       await initI18n();
     });
 
@@ -307,7 +307,7 @@ describe("i18n module", () => {
       mockGetDefaultAppLanguage.mockResolvedValue('zh');
       mockI18nChangeLanguage.mockResolvedValue('zh');
 
-      const { initI18n } = await import("@/lib/i18n");
+      const { initI18n } = await import("@/services/i18n");
 
       await initI18n();
 
@@ -318,7 +318,7 @@ describe("i18n module", () => {
     it("应该在系统语言为英文时跳过异步加载", async () => {
       mockGetDefaultAppLanguage.mockResolvedValue('en');
 
-      const { initI18n } = await import("@/lib/i18n");
+      const { initI18n } = await import("@/services/i18n");
 
       await initI18n();
 
@@ -347,7 +347,7 @@ describe("i18n module", () => {
           });
 
           // 重新导入模块以应用新的 mock
-          const { initI18n, resetInitI18nForTest } = await import("@/lib/i18n");
+          const { initI18n, resetInitI18nForTest } = await import("@/services/i18n");
 
           // 重置单例以允许重新初始化
           resetInitI18nForTest();
@@ -367,7 +367,7 @@ describe("i18n module", () => {
           });
 
           // 重新导入模块以应用新的 mock
-          const { initI18n, resetInitI18nForTest } = await import("@/lib/i18n");
+          const { initI18n, resetInitI18nForTest } = await import("@/services/i18n");
 
           // 重置单例以允许重新初始化
           resetInitI18nForTest();
@@ -387,7 +387,7 @@ describe("i18n module", () => {
           });
 
           // 重新导入模块以应用新的 mock
-          const { initI18n, resetInitI18nForTest } = await import("@/lib/i18n");
+          const { initI18n, resetInitI18nForTest } = await import("@/services/i18n");
 
           // 重置单例以允许重新初始化
           resetInitI18nForTest();
@@ -406,7 +406,7 @@ describe("i18n module", () => {
           });
 
           // 重新导入模块以应用新的 mock
-          const { initI18n, resetInitI18nForTest } = await import("@/lib/i18n");
+          const { initI18n, resetInitI18nForTest } = await import("@/services/i18n");
 
           // 重置单例以允许重新初始化
           resetInitI18nForTest();
@@ -422,7 +422,7 @@ describe("i18n module", () => {
 
   describe("getInitI18nPromise", () => {
     it("应该在已初始化时返回缓存的 Promise", async () => {
-      const { getInitI18nPromise, initI18n } = await import("@/lib/i18n");
+      const { getInitI18nPromise, initI18n } = await import("@/services/i18n");
 
       // 先初始化 i18n
       await initI18n();
@@ -438,7 +438,7 @@ describe("i18n module", () => {
 
     it("应该在未初始化时触发初始化", async () => {
       // 由于前面的测试已经初始化过，我们只能测试触发初始化的代码路径存在
-      const { getInitI18nPromise } = await import("@/lib/i18n");
+      const { getInitI18nPromise } = await import("@/services/i18n");
 
       // 调用 getInitI18nPromise 应该返回一个 Promise
       const promise = getInitI18nPromise();
@@ -447,7 +447,7 @@ describe("i18n module", () => {
     });
 
     it("应该验证返回的 Promise 实例一致性", async () => {
-      const { getInitI18nPromise } = await import("@/lib/i18n");
+      const { getInitI18nPromise } = await import("@/services/i18n");
 
       // 多次调用应该返回 Promise 实例
       const promise1 = getInitI18nPromise();
@@ -494,7 +494,7 @@ describe("i18n module", () => {
     });
 
     it("应该成功切换到英文（已加载）", async () => {
-      const { changeAppLanguage } = await import("@/lib/i18n");
+      const { changeAppLanguage } = await import("@/services/i18n");
 
       const result = await changeAppLanguage("en");
 
@@ -512,7 +512,7 @@ describe("i18n module", () => {
       // Mock i18n.changeLanguage 返回失败的 Promise
       mockI18nChangeLanguage.mockRejectedValueOnce(new Error("Change language failed"));
 
-      const { changeAppLanguage } = await import("@/lib/i18n");
+      const { changeAppLanguage } = await import("@/services/i18n");
 
       const result = await changeAppLanguage("zh");
 
@@ -523,7 +523,7 @@ describe("i18n module", () => {
     });
 
     it("应该验证返回类型结构", async () => {
-      const { changeAppLanguage } = await import("@/lib/i18n");
+      const { changeAppLanguage } = await import("@/services/i18n");
 
       const result = await changeAppLanguage("en");
 
@@ -537,7 +537,7 @@ describe("i18n module", () => {
     it("应该在初始化时同步添加英文资源", async () => {
       mockI18nInit.mockResolvedValue({ t: (key: string) => key });
 
-      const { initI18n } = await import("@/lib/i18n");
+      const { initI18n } = await import("@/services/i18n");
 
       await initI18n();
 
@@ -557,7 +557,7 @@ describe("i18n module", () => {
     it("应该验证英文资源包含所有命名空间", async () => {
       mockI18nInit.mockResolvedValue({ t: (key: string) => key });
 
-      const { initI18n } = await import("@/lib/i18n");
+      const { initI18n } = await import("@/services/i18n");
 
       await initI18n();
 

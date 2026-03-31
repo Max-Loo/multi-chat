@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./main.css";
-import { interceptClickAToJump } from "./lib/global";
+import { interceptClickAToJump } from "@/services/global";
 import { InitializationController } from "@/components/InitializationController";
-import type { InitResult, InitStep } from "@/lib/initialization";
+import type { InitResult, InitStep } from "@/services/initialization";
 
 // 异步导入 initSteps，确保依赖模块正确初始化
 const initStepsModule = await import("@/config/initSteps");

@@ -11,7 +11,7 @@ import { setIsDrawerOpen } from "@/store/slices/modelPageSlices";
 import { useResponsive } from "@/hooks/useResponsive";
 import { MobileDrawer } from "@/components/MobileDrawer";
 import { useTranslation } from "react-i18next";
-import { toastQueue } from '@/lib/toast';
+import { toastQueue } from '@/services/toast';
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
 
 /**

@@ -330,7 +330,7 @@ multi-chat/
 ### 添加新的模型服务商
 
 1. 在 `src/utils/enums.ts` 中添加新的服务商枚举
-2. 在 `src/lib/factory/` 中实现对应的服务商工厂类
+2. 在 `src/services/chat/providerLoader.ts` 中注册对应的 Provider 工厂函数
 3. 在 `src/pages/Model/components/ModelSidebar.tsx` 中添加服务商选项
 
 ### 代码规范

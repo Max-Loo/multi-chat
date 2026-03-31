@@ -5,9 +5,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { InitializationManager } from '@/lib/initialization/InitializationManager';
+import { InitializationManager } from '@/services/initialization/InitializationManager';
 import { initSteps } from '@/config/initSteps';
-import type { InitStep } from '@/lib/initialization';
+import type { InitStep } from '@/services/initialization';
 
 describe('初始化系统集成测试', () => {
   let manager: InitializationManager;

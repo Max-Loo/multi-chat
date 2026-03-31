@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { resetInitI18nForTest, tSafely } from '@/lib/i18n';
+import { resetInitI18nForTest, tSafely } from '@/services/i18n';
 import i18n from 'i18next';
 
 describe('tSafely', () => {

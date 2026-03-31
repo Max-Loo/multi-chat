@@ -8,7 +8,7 @@ import FilterInput from "@/components/FilterInput";
 import EditModelModal from "./components/EditModelModal";
 import { useBasicModelTable } from "@/hooks/useBasicModelTable";
 import { useTranslation } from "react-i18next";
-import { toastQueue } from '@/lib/toast';
+import { toastQueue } from '@/services/toast';
 import {
   Popover,
   PopoverTrigger,

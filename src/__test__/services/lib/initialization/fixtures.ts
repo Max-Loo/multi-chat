@@ -5,7 +5,7 @@
  */
 
 import { vi } from 'vitest';
-import type { InitStep, InitError, ExecutionContext } from '@/lib/initialization';
+import type { InitStep, InitError, ExecutionContext } from '@/services/initialization';
 
 /**
  * 创建 Mock 初始化步骤

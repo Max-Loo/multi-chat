@@ -188,7 +188,7 @@ import { Model } from "../../types/model";
 | 主密钥管理       | `src/store/keyring/masterKey.ts`       |
 | 加密工具         | `src/utils/crypto.ts`                  |
 | 时间戳工具       | `src/utils/utils.ts`                   |
-| 国际化配置       | `src/lib/i18n.ts`                      |
+| 国际化配置       | `src/services/i18n.ts`                 |
 | 测试规范         | `src/__test__/README.md`              |
 
 完整文档索引：见 `docs/README.md`

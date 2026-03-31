@@ -119,7 +119,7 @@ vi.mock('react-i18next', () => ({
 
 // Mock toastQueue
 
-vi.mock('@/lib/toast', () => ({
+vi.mock('@/services/toast', () => ({
 
   toastQueue: {
 

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
-import { toastQueue } from "@/lib/toast";
+import { toastQueue } from "@/services/toast";
 import { isUndefined } from "es-toolkit";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

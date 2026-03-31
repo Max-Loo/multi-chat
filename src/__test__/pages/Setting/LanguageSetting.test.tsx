@@ -37,7 +37,7 @@ vi.mock("@/store/slices/appConfigSlices", () => ({
 }))
 
 // Mock i18n functions - 在 factory 内部创建所有内容
-vi.mock("@/lib/i18n", () => {
+vi.mock("@/services/i18n", () => {
   const mockChangeAppLanguage = vi.fn().mockResolvedValue({ success: true })
   return {
     changeAppLanguage: mockChangeAppLanguage,

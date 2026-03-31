@@ -57,7 +57,7 @@ Toast 队列 (初始化期间提示)
 
 ### 实现位置
 
-**位置**：`src/lib/i18n.ts`
+**位置**：`src/services/i18n.ts`
 
 **核心函数**：
 - `initI18n()`: 初始化 i18n 配置
@@ -111,7 +111,7 @@ LANGUAGE_MIGRATION_MAP = {
 
 ### 实现位置
 
-**位置**：`src/lib/global.ts`, `src/utils/constants.ts`
+**位置**：`src/services/global.ts`, `src/utils/constants.ts`
 
 **核心函数**：
 - `getDefaultAppLanguage()`: 获取默认应用语言
@@ -142,7 +142,7 @@ interface LanguageResult {
 
 ### 实现位置
 
-**位置**：`src/lib/toast/toastQueue.ts`, `src/main.tsx`
+**位置**：`src/services/toast/toastQueue.ts`, `src/main.tsx`
 
 **核心 API**：
 ```typescript
@@ -281,10 +281,10 @@ npm run validate
 
 ## 实现位置
 
-- **按需加载**：`src/lib/i18n.ts`
-- **安全翻译函数**：`src/lib/i18n.ts` - `tSafely()`
-- **缓存验证**：`src/lib/global.ts`, `src/utils/constants.ts`
-- **Toast 队列**：`src/lib/toast/toastQueue.ts`
+- **按需加载**：`src/services/i18n.ts`
+- **安全翻译函数**：`src/services/i18n.ts` - `tSafely()`
+- **缓存验证**：`src/services/global.ts`, `src/utils/constants.ts`
+- **Toast 队列**：`src/services/toast/toastQueue.ts`
 - **自动持久化**：`src/store/middleware/appConfigMiddleware.ts`, `src/store/middleware/languagePersistence.ts`
 - **翻译完整性检查**：`scripts/check-i18n.js`
 - **翻译文件**：`src/locales/{lang}/`
@@ -297,7 +297,7 @@ npm run validate
 用于非 React 环境（如 Redux thunks、初始化代码）：
 
 ```typescript
-import { tSafely } from '@/lib/i18n';
+import { tSafely } from '@/services/i18n';
 
 // 在 Redux thunk 中使用
 throw new Error(
@@ -326,7 +326,7 @@ onError: (error) => ({
 ### 切换语言
 
 ```typescript
-import { changeAppLanguage } from '@/lib/i18n';
+import { changeAppLanguage } from '@/services/i18n';
 
 // 切换到中文
 const { success } = await changeAppLanguage('zh');
@@ -339,7 +339,7 @@ if (!success) {
 ### 使用 Toast 队列
 
 ```typescript
-import { toastQueue } from '@/lib/toast/toastQueue';
+import { toastQueue } from '@/services/toast/toastQueue';
 
 // 在初始化期间使用
 toastQueue.enqueue({

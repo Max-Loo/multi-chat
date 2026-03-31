@@ -45,7 +45,7 @@ const { mockGetDefaultAppLanguage } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/lib/global', () => ({
+vi.mock('@/services/global', () => ({
   getDefaultAppLanguage: mockGetDefaultAppLanguage,
 }));
 

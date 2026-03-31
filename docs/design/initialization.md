@@ -108,7 +108,7 @@ const key = await context.getResult('masterKey');
 ## 实现位置
 
 - **配置文件**：`src/config/initSteps.ts`
-- **类型定义**：`src/lib/initialization.ts`
+- **类型定义**：`src/services/initialization.ts`
 - **执行入口**：应用启动时的 `main.tsx`
 
 ## 使用示例

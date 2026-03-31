@@ -58,11 +58,11 @@ import {
 
 } from '@/store/slices/appConfigSlices';
 
-import { initI18n } from '@/lib/i18n';
+import { initI18n } from '@/services/i18n';
 
-import { getDefaultAppLanguage } from '@/lib/global';
+import { getDefaultAppLanguage } from '@/services/global';
 
-import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/lib/global';
+import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
 
 import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from '@/utils/constants';
 

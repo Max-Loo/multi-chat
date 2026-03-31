@@ -6,7 +6,7 @@ import { EditableModel, Model } from "@/types/model"
 import { useAppDispatch } from "@/hooks/redux"
 import { editModel } from "@/store/slices/modelSlice"
 import { useTranslation } from "react-i18next"
-import { toastQueue } from '@/lib/toast'
+import { toastQueue } from '@/services/toast'
 import { isBoolean } from "es-toolkit"
 
 interface EditModelModalProps {

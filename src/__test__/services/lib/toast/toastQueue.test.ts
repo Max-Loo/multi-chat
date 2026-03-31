@@ -43,7 +43,7 @@ describe('ToastQueue', () => {
 
   describe('队列机制', () => {
     it('应该在初始化前调用 Toast 时入队', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       void toastQueue.success('测试消息');
 
@@ -56,7 +56,7 @@ describe('ToastQueue', () => {
     it('应该在 markReady 后刷新队列', async () => {
       vi.useFakeTimers();
       
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       void toastQueue.success('消息1');
       void toastQueue.error('消息2');
@@ -76,7 +76,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该在 markReady 后新 Toast 立即显示', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       toastQueue.markReady();
 
@@ -87,7 +87,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该在空队列调用 markReady 时不抛出错误', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       expect(() => toastQueue.markReady()).not.toThrow();
     });
@@ -95,7 +95,7 @@ describe('ToastQueue', () => {
 
   describe('响应式位置', () => {
     it('应该在移动端强制使用 top-center', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       toastQueue.setIsMobile(true);
       toastQueue.markReady();
@@ -106,7 +106,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该在桌面端默认使用 bottom-right', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       toastQueue.setIsMobile(false);
       toastQueue.markReady();
@@ -117,7 +117,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该在桌面端保留用户传入的 position', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       toastQueue.setIsMobile(false);
       toastQueue.markReady();
@@ -128,7 +128,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该在未设置 isMobile 时默认使用桌面端位置', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       toastQueue.markReady();
 
@@ -140,7 +140,7 @@ describe('ToastQueue', () => {
 
   describe('异步 Promise', () => {
     it('应该返回 Promise', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       const result = toastQueue.success('测试消息');
 
@@ -148,7 +148,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该在 Toaster 就绪时 Promise 立即 resolve', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       toastQueue.markReady();
 
@@ -158,7 +158,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该在 Toaster 未就绪时 Promise 延迟 resolve', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       const promise = toastQueue.success('测试消息');
 
@@ -182,7 +182,7 @@ describe('ToastQueue', () => {
         throw new Error('Toast error');
       });
 
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
       toastQueue.markReady();
 
       let result: string | number | undefined;
@@ -207,7 +207,7 @@ describe('ToastQueue', () => {
         throw new Error('Toast error');
       });
 
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
       toastQueue.markReady();
 
       await toastQueue.success('测试消息');
@@ -220,7 +220,7 @@ describe('ToastQueue', () => {
 
   describe('所有 Toast 类型', () => {
     it('应该调用 success 类型', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
       toastQueue.markReady();
 
       await toastQueue.success('成功消息');
@@ -229,7 +229,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该调用 error 类型', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
       toastQueue.markReady();
 
       await toastQueue.error('错误消息');
@@ -238,7 +238,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该调用 warning 类型', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
       toastQueue.markReady();
 
       await toastQueue.warning('警告消息');
@@ -247,7 +247,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该调用 info 类型', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
       toastQueue.markReady();
 
       await toastQueue.info('信息消息');
@@ -256,7 +256,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该调用 loading 类型', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
       toastQueue.markReady();
 
       await toastQueue.loading('加载中');
@@ -267,7 +267,7 @@ describe('ToastQueue', () => {
 
   describe('dismiss 和 promise 方法', () => {
     it('应该立即执行 dismiss 不经过队列', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       toastQueue.dismiss('toast-id');
 
@@ -275,7 +275,7 @@ describe('ToastQueue', () => {
     });
 
     it('应该立即执行 promise 不经过队列', async () => {
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       const mockPromise = Promise.resolve('data');
       toastQueue.promise(mockPromise, {

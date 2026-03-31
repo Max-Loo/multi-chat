@@ -9,11 +9,11 @@ import { RouterProvider } from "react-router-dom";
 import { store } from "@/store";
 import router from "@/router";
 import { ConfirmProvider } from "@/hooks/useConfirm";
-import { ToasterWrapper } from "@/lib/toast/ToasterWrapper";
+import { ToasterWrapper } from "@/services/toast/ToasterWrapper";
 import { handleSecurityWarning } from "@/store/keyring/masterKey";
 import { triggerSilentRefreshIfNeeded } from "@/store/slices/modelProviderSlice";
-import { toastQueue } from "@/lib/toast";
-import type { InitResult } from "@/lib/initialization";
+import { toastQueue } from "@/services/toast";
+import type { InitResult } from "@/services/initialization";
 
 /**
  * 创建主应用组件的工厂函数

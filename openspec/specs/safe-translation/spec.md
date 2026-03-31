@@ -8,10 +8,10 @@
 
 ### Requirement: tSafely 函数可用性
 
-系统 MUST 在 `src/lib/i18n.ts` 中导出 `tSafely()` 函数，用于在非 React 环境中安全地获取翻译文本。
+系统 MUST 在 `src/services/i18n.ts` 中导出 `tSafely()` 函数，用于在非 React 环境中安全地获取翻译文本。
 
 #### Scenario: 函数导出
-- **WHEN** 任何模块导入 `tSafely` from `@/lib/i18n`
+- **WHEN** 任何模块导入 `tSafely` from `@/services/i18n`
 - **THEN** 函数 MUST 可用且类型正确
 
 #### Scenario: 函数签名

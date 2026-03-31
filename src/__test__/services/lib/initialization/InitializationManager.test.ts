@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { InitializationManager } from '@/lib/initialization/InitializationManager';
-import type { InitStep } from '@/lib/initialization';
+import { InitializationManager } from '@/services/initialization/InitializationManager';
+import type { InitStep } from '@/services/initialization';
 import { createMockInitStep } from './fixtures';
 
 describe('InitializationManager', () => {

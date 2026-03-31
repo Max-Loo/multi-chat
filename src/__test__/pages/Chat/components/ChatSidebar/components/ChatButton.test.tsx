@@ -162,7 +162,7 @@ vi.mock('@/hooks/useConfirm', () => ({
 
  */
 
-vi.mock('@/lib/toast', () => ({
+vi.mock('@/services/toast', () => ({
 
   toastQueue: {
 

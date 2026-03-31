@@ -5,7 +5,7 @@
  */
 import { getPassword, setPassword } from "@/utils/tauriCompat";
 import { isTauri } from "@/utils/tauriCompat/env";
-import { toastQueue } from '@/lib/toast';
+import { toastQueue } from '@/services/toast';
 
 // 服务名和账户名配置
 const SERVICE_NAME = "com.multichat.app";

@@ -9,8 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { FatalErrorScreen } from "@/components/FatalErrorScreen";
 import { NoProvidersAvailable } from "@/components/NoProvidersAvailable";
 import { AnimatedLogo } from "@/components/AnimatedLogo";
-import { InitializationManager } from "@/lib/initialization";
-import type { InitResult, InitError, InitStep } from "@/lib/initialization";
+import { InitializationManager } from "@/services/initialization";
+import type { InitResult, InitError, InitStep } from "@/services/initialization";
 
 /**
  * 初始化控制器属性

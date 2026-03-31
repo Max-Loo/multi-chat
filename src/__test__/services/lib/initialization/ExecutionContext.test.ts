@@ -18,9 +18,9 @@
 
 import { describe, it, expect, vi } from 'vitest';
 
-import { InitializationManager } from '@/lib/initialization/InitializationManager';
+import { InitializationManager } from '@/services/initialization/InitializationManager';
 
-import type { InitStep } from '@/lib/initialization';
+import type { InitStep } from '@/services/initialization';
 
 
 

@@ -18,8 +18,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup, waitFor, screen } from '@testing-library/react';
-import { ToasterWrapper } from '@/lib/toast/ToasterWrapper';
-import { toastQueue } from '@/lib/toast/toastQueue';
+import { ToasterWrapper } from '@/services/toast/ToasterWrapper';
+import { toastQueue } from '@/services/toast/toastQueue';
 
 /**
  * 可变的 mock 响应式状态
@@ -68,7 +68,7 @@ vi.mock('@/components/ui/sonner', () => ({
  * - getIsMobile 是用于验证状态同步的公共 API
  * - 验证公共 API 的正确调用是合理的单元测试策略
  */
-vi.mock('@/lib/toast/toastQueue', () => ({
+vi.mock('@/services/toast/toastQueue', () => ({
   toastQueue: {
     setIsMobile: vi.fn(),
     getIsMobile: vi.fn(() => false),

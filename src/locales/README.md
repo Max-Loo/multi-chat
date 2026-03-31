@@ -113,17 +113,7 @@
 | `'取消'` | `common.cancel` | 通用取消按钮 |
 | `'确定'` | `common.confirm` | 通用确认按钮 |
 
-### 5. 模型提供商
-
-| 原始文案 | i18n键 | 文件位置 |
-|---------|--------|----------|
-| `'智谱AI'` | `provider.bigModel` | `src/lib/factory/modelProviderFactory/providers/BigModelProvider.ts` |
-| `'月之暗面'` | `provider.kimi` | `src/lib/factory/modelProviderFactory/providers/KimiProvider.ts` |
-| `'/ 结尾会忽略v1，# 结尾表示自定义'` | `provider.apiAddressKimi` | `src/lib/factory/modelProviderFactory/providers/KimiProvider.ts` |
-| `'深度求索'` | `provider.deepseek` | `src/lib/factory/modelProviderFactory/providers/DeepseekProvider.ts` |
-| `'# 结尾表示自定义'` | `provider.apiAddressCustom` | `src/lib/factory/modelProviderFactory/providers/DeepseekProvider.ts` |
-
-### 6. 设置页面
+### 5. 设置页面
 
 | 原始文案 | i18n键 | 文件位置 |
 |---------|--------|----------|

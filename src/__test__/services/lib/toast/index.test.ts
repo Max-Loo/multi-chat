@@ -1,7 +1,7 @@
 /**
  * Toast API 单元测试
  *
- * 测试 @/lib/toast 模块的导出是否正确
+ * 测试 @/services/toast 模块的导出是否正确
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -24,7 +24,7 @@ describe('Toast API 导出', () => {
 
   describe('toastQueue 导出', () => {
     it('应该正确导出 toastQueue 单例', async () => {
-      const { toastQueue } = await import('@/lib/toast');
+      const { toastQueue } = await import('@/services/toast');
 
       expect(toastQueue).toBeDefined();
       expect(typeof toastQueue.success).toBe('function');
@@ -39,7 +39,7 @@ describe('Toast API 导出', () => {
 
   describe('rawToast 导出', () => {
     it('应该正确导出 rawToast 对象', async () => {
-      const { rawToast } = await import('@/lib/toast');
+      const { rawToast } = await import('@/services/toast');
 
       expect(rawToast).toBeDefined();
       expect(typeof rawToast.success).toBe('function');
@@ -48,7 +48,7 @@ describe('Toast API 导出', () => {
 
   describe('方法返回值', () => {
     it('toastQueue 方法返回 Promise', async () => {
-      const { toastQueue } = await import('@/lib/toast');
+      const { toastQueue } = await import('@/services/toast');
       toastQueue.markReady();
 
       const result = toastQueue.success('测试消息');
@@ -57,7 +57,7 @@ describe('Toast API 导出', () => {
     });
 
     it('dismiss 不返回 Promise', async () => {
-      const { toastQueue } = await import('@/lib/toast');
+      const { toastQueue } = await import('@/services/toast');
 
       const result = toastQueue.dismiss('toast-id');
 
@@ -65,7 +65,7 @@ describe('Toast API 导出', () => {
     });
 
     it('promise 不返回 Promise', async () => {
-      const { toastQueue } = await import('@/lib/toast');
+      const { toastQueue } = await import('@/services/toast');
 
       const result = toastQueue.promise(Promise.resolve('data'), {
         loading: '加载中',

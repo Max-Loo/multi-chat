@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { toastQueue, rawToast } from "@/lib/toast";
+import { toastQueue, rawToast } from "@/services/toast";
 import { Button } from "@/components/ui/button";
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
 
