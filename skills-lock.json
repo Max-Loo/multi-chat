@@ -5,6 +5,11 @@
       "source": "tw93/claude-health",
       "sourceType": "github",
       "computedHash": "471caff56d878d0beebe9a4a08b9e6ba0ca91fb41ee99181d59d8c6406744bf4"
+    },
+    "software-design-philosophy": {
+      "source": "luoling8192/software-design-philosophy-skill",
+      "sourceType": "github",
+      "computedHash": "6abaf1049dd2b154a3ea36d7f640703a55f7699401efaf4f6bb3eb5a6412c4bb"
     }
   }
 }
