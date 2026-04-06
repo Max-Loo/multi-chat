@@ -68,7 +68,8 @@ export const createTauriMocks = (options: TauriMockOptions = {}): TauriMocks => 
     getPassword: vi.fn().mockResolvedValue(null),
     setPassword: vi.fn().mockResolvedValue(undefined),
     deletePassword: vi.fn().mockResolvedValue(undefined),
-    isKeyringSupported: vi.fn().mockReturnValue(true),
+    isSupported: vi.fn().mockReturnValue(true),
+    resetState: vi.fn(),
   };
 
   // 创建环境检测 Mock
@@ -88,7 +89,7 @@ export const createTauriMocks = (options: TauriMockOptions = {}): TauriMocks => 
     keyring.getPassword,
     keyring.setPassword,
     keyring.deletePassword,
-    keyring.isKeyringSupported,
+    keyring.isSupported,
     env.isTauri,
   ];
 

@@ -42,7 +42,8 @@ export interface TauriMocks {
     getPassword: Mock;
     setPassword: Mock;
     deletePassword: Mock;
-    isKeyringSupported: Mock;
+    isSupported: Mock;
+    resetState: Mock;
   };
   /** 环境检测 Mock */
   env: {

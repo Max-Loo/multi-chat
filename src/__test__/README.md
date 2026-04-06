@@ -432,8 +432,13 @@ vi.mocked(streamText).mockReturnValueOnce(mockResult as any);
  * in test environment. We use in-memory mock instead.
  */
 vi.mock('@/utils/tauriCompat', () => ({
-  getPassword: vi.fn().mockResolvedValue(null),
-  setPassword: vi.fn().mockResolvedValue(undefined),
+  keyring: {
+    getPassword: vi.fn().mockResolvedValue(null),
+    setPassword: vi.fn().mockResolvedValue(undefined),
+    deletePassword: vi.fn().mockResolvedValue(undefined),
+    isSupported: vi.fn().mockReturnValue(true),
+    resetState: vi.fn(),
+  },
 }));
 
 /**

@@ -3,7 +3,7 @@
  * 使用 Web Crypto API 生成密钥，使用 Keyring 兼容层存储密钥
  * Tauri 环境使用系统钥匙串，Web 环境使用 IndexedDB + AES-256-GCM 加密
  */
-import { getPassword, setPassword } from "@/utils/tauriCompat";
+import { keyring } from "@/utils/tauriCompat";
 import { isTauri } from "@/utils/tauriCompat/env";
 import { toastQueue } from '@/services/toast';
 
@@ -31,7 +31,7 @@ export const generateMasterKey = (): string => {
  */
 export const isMasterKeyExists = async (): Promise<boolean> => {
   try {
-    const key = await getPassword(SERVICE_NAME, ACCOUNT_NAME);
+    const key = await keyring.getPassword(SERVICE_NAME, ACCOUNT_NAME);
     return key !== null && key !== undefined && key.length > 0;
   } catch (error) {
     console.error("检查主密钥是否存在时出错:", error);
@@ -45,7 +45,7 @@ export const isMasterKeyExists = async (): Promise<boolean> => {
  */
 export const getMasterKey = async (): Promise<string | null> => {
   try {
-    const key = await getPassword(SERVICE_NAME, ACCOUNT_NAME);
+    const key = await keyring.getPassword(SERVICE_NAME, ACCOUNT_NAME);
     return key;
   } catch (error) {
     console.error("获取主密钥时出错:", error);
@@ -72,7 +72,7 @@ export const getMasterKey = async (): Promise<string | null> => {
  */
 export const storeMasterKey = async (key: string): Promise<void> => {
   try {
-    await setPassword(SERVICE_NAME, ACCOUNT_NAME, key);
+    await keyring.setPassword(SERVICE_NAME, ACCOUNT_NAME, key);
   } catch (error) {
     console.error("存储主密钥时出错:", error);
 

@@ -6,7 +6,7 @@ import { initFakeIndexedDB, cleanupFakeIndexedDB } from '@/__test__/utils/tauriC
  * Store 工具函数测试套件
  *
  * 测试 src/store/storage/storeUtils.ts 模块的功能
- * 覆盖 SettingStore 的基础场景
+ * 覆盖 createLazyStore 的基础场景
  *
  * 注：saveToStore 和 loadFromStore 的测试需要完整的 IndexedDB 设置，
  * 相关功能已在其他单元测试中覆盖
@@ -22,7 +22,7 @@ describe('Store 工具函数', () => {
     cleanupFakeIndexedDB(idbCtx);
   });
 
-  describe('SettingStore', () => {
+  describe('createLazyStore', () => {
     it('get/set/delete/save 功能正常', async () => {
       const testStore = createLazyStore('test-setting.json');
       await testStore.init();

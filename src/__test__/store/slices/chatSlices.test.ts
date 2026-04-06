@@ -35,7 +35,6 @@ vi.mock('@/store/storage', () => ({
   createLazyStore: vi.fn(() => ({})),
   saveToStore: vi.fn(() => Promise.resolve()),
   loadFromStore: vi.fn(() => Promise.resolve()),
-  settingStore: {},
 }));
 
 vi.mock('@/store/storage/modelStorage', () => ({

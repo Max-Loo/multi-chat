@@ -134,10 +134,15 @@ interface StoreCompat {
 
 **API**：
 ```typescript
-export const setPassword = (service: string, account: string, password: string): Promise<void>
-export const getPassword = (service: string, account: string): Promise<string | null>
-export const deletePassword = (service: string, account: string): Promise<void>
-export const isKeyringSupported = (): boolean
+export const keyring: KeyringPublicAPI
+
+interface KeyringPublicAPI {
+  setPassword(service: string, account: string, password: string): Promise<void>
+  getPassword(service: string, account: string): Promise<string | null>
+  deletePassword(service: string, account: string): Promise<void>
+  isSupported(): boolean
+  resetState(): void
+}
 ```
 
 **加密方案**（Web 环境）：
@@ -172,7 +177,7 @@ import { fetch, getFetchFunc } from '@/utils/tauriCompat';
 import { createLazyStore, type StoreCompat } from '@/utils/tauriCompat';
 
 // 导入 Keyring API
-import { setPassword, getPassword, deletePassword, isKeyringSupported } from '@/utils/tauriCompat';
+import { keyring, type KeyringPublicAPI } from '@/utils/tauriCompat';
 ```
 
 ### 使用示例
@@ -210,9 +215,9 @@ await store.save();
 const models = await store.get<Model[]>('models');
 
 // 使用 Keyring API
-if (isKeyringSupported()) {
-  await setPassword('com.multichat.app', 'master-key', 'my-secret-key');
-  const key = await getPassword('com.multichat.app', 'master-key');
+if (keyring.isSupported()) {
+  await keyring.setPassword('com.multichat.app', 'master-key', 'my-secret-key');
+  const key = await keyring.getPassword('com.multichat.app', 'master-key');
 }
 ```
 
@@ -266,7 +271,7 @@ export type KeyringCompat = {
   setPassword(service: string, account: string, password: string): Promise<void>;
   getPassword(service: string, account: string): Promise<string | null>;
   deletePassword(service: string, account: string): Promise<void>;
-  isKeyringSupported(): boolean;
+  isSupported(): boolean;
 };
 ```
 

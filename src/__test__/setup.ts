@@ -30,12 +30,6 @@ vi.mock('@/store/storage/storeUtils', () => ({
   })),
   saveToStore: vi.fn().mockResolvedValue(undefined),
   loadFromStore: vi.fn().mockResolvedValue([]),
-  settingStore: {
-    init: vi.fn().mockResolvedValue(undefined),
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(undefined),
-    save: vi.fn().mockResolvedValue(undefined),
-  },
 }));
 
 vi.mock('@/utils/tauriCompat/shell', () => ({

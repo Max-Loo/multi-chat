@@ -42,7 +42,6 @@ vi.mock('@/store/storage/storeUtils', () => ({
   createLazyStore: vi.fn(() => ({})),
   saveToStore: vi.fn(() => Promise.resolve()),
   loadFromStore: vi.fn(() => Promise.resolve([])),
-  settingStore: {},
 }));
 
 import { configureStore } from '@reduxjs/toolkit';

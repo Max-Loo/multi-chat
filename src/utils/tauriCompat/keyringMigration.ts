@@ -11,7 +11,7 @@
  */
 
 import { isTauri } from './env';
-import { resetWebKeyringState } from './keyring';
+import { keyring } from './keyring';
 
 /**
  * 版本标记存储键名
@@ -483,7 +483,7 @@ export const migrateKeyringV1ToV2 = async (): Promise<MigrationResult> => {
         localStorage.setItem(SEED_STORAGE_KEY, newSeed);
 
         // 重置 WebKeyringCompat 实例状态，确保下次使用时重新初始化
-        resetWebKeyringState();
+        keyring.resetState();
 
         markMigrationComplete();
         console.warn('[KeyringMigration] 迁移失败，已重置数据');
@@ -501,7 +501,7 @@ export const migrateKeyringV1ToV2 = async (): Promise<MigrationResult> => {
     db.close();
 
     // 重置 WebKeyringCompat 实例状态，确保下次使用时用新密钥初始化
-    resetWebKeyringState();
+    keyring.resetState();
 
     markMigrationComplete();
     console.log(`[KeyringMigration] 成功迁移 ${migratedRecords.length} 条记录`);

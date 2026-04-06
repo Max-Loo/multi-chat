@@ -6,73 +6,6 @@
 import { createLazyStore as createCompatStore, type StoreCompat } from '@/utils/tauriCompat';
 
 /**
- * 设置存储类，扩展基本 Store 功能
- */
-class SettingStore {
-  private store: StoreCompat;
-
-  constructor() {
-    this.store = createCompatStore('.setting.dat');
-  }
-
-  /**
-   * 初始化存储
-   */
-  async init(): Promise<void> {
-    await this.store.init();
-  }
-
-  /**
-   * 获取值
-   * @param key 键
-   * @returns 值或 null
-   */
-  async get<T>(key: string): Promise<T | null> {
-    return this.store.get<T>(key);
-  }
-
-  /**
-   * 设置值
-   * @param key 键
-   * @param value 值
-   */
-  async set(key: string, value: unknown): Promise<void> {
-    await this.store.set(key, value);
-  }
-
-  /**
-   * 删除值
-   * @param key 键
-   */
-  async delete(key: string): Promise<void> {
-    await this.store.delete(key);
-  }
-
-  /**
-   * 保存更改
-   */
-  async save(): Promise<void> {
-    await this.store.save();
-  }
-
-  /**
-   * 设置并保存值
-   * @param key 键
-   * @param value 值
-   * @param message 错误信息
-   */
-  async setAndSave(key: string, value: unknown, message?: string): Promise<void> {
-    try {
-      await this.store.set(key, value);
-      await this.store.save();
-    } catch (error) {
-      console.error(message, error);
-      throw new Error(message, { cause: error });
-    }
-  }
-}
-
-/**
  * 创建 LazyStore 实例的工厂函数
  * @param filename - 存储文件名
  * @returns StoreCompat 实例
@@ -132,8 +65,3 @@ export const loadFromStore = async <T>(
     return defaultValue;
   }
 };
-
-/**
- * 创建并导出设置存储实例
- */
-export const settingStore = new SettingStore();

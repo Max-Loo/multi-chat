@@ -76,6 +76,14 @@ interface KeyringCompat {
 }
 
 /**
+ * Keyring 公开 API 接口
+ * 受类型约束的统一入口，替代独立转发函数
+ */
+export interface KeyringPublicAPI extends KeyringCompat {
+  resetState: () => void;
+}
+
+/**
  * 密码记录结构（存储在 IndexedDB 中）
  */
 interface PasswordRecord {
@@ -452,96 +460,43 @@ export class WebKeyringCompat implements KeyringCompat {
  * Keyring 兼容层实例
  * 根据运行环境自动选择合适的实现
  */
-export const keyringCompat: KeyringCompat = isTauri()
+const keyringCompat: KeyringCompat = isTauri()
   ? new TauriKeyringCompat()
   : new WebKeyringCompat();
 
 /**
- * 设置密码
- * @param {string} service - 服务名
- * @param {string} user - 用户名
- * @param {string} password - 密码
- * @returns {Promise<void>}
- * 
- * @example
- * ```typescript
- * import { setPassword } from '@/utils/tauriCompat';
- * 
- * await setPassword('com.multichat.app', 'master-key', 'my-secret-key');
- * ```
+ * 创建 Keyring 公开 API 实例的工厂函数
+ * 通过 duck typing 分发 resetState（Web 环境调用实际方法，Tauri 环境为空操作）
+ * @param impl - Keyring 兼容层实例
+ * @returns KeyringPublicAPI 实例
  */
-export const setPassword = (service: string, user: string, password: string): Promise<void> => {
-  return keyringCompat.setPassword(service, user, password);
-};
+const createKeyringAPI = (impl: KeyringCompat): KeyringPublicAPI => ({
+  setPassword: (service, user, password) => impl.setPassword(service, user, password),
+  getPassword: (service, user) => impl.getPassword(service, user),
+  deletePassword: (service, user) => impl.deletePassword(service, user),
+  isSupported: () => impl.isSupported(),
+  resetState: () => {
+    if ('resetState' in impl) {
+      (impl as WebKeyringCompat).resetState();
+    }
+  },
+});
 
 /**
- * 获取密码
- * @param {string} service - 服务名
- * @param {string} user - 用户名
- * @returns {Promise<string | null>} 密码或 null
- * 
- * @example
- * ```typescript
- * import { getPassword } from '@/utils/tauriCompat';
- * 
- * const key = await getPassword('com.multichat.app', 'master-key');
- * ```
- */
-export const getPassword = (service: string, user: string): Promise<string | null> => {
-  return keyringCompat.getPassword(service, user);
-};
-
-/**
- * 删除密码
- * @param {string} service - 服务名
- * @param {string} user - 用户名
- * @returns {Promise<void>}
- * 
- * @example
- * ```typescript
- * import { deletePassword } from '@/utils/tauriCompat';
- * 
- * await deletePassword('com.multichat.app', 'master-key');
- * ```
- */
-export const deletePassword = async (service: string, user: string): Promise<void> => {
-  await keyringCompat.deletePassword(service, user);
-};
-
-/**
- * 检查 Keyring 功能是否可用
- * @returns {boolean} 如果功能可用返回 true
+ * Keyring 公开 API 实例
+ * 受 KeyringPublicAPI 接口约束的统一入口
  *
  * @example
  * ```typescript
- * import { isKeyringSupported } from '@/utils/tauriCompat';
+ * import { keyring } from '@/utils/tauriCompat';
  *
- * if (isKeyringSupported()) {
- *   // 使用 Keyring 功能
+ * if (keyring.isSupported()) {
+ *   await keyring.setPassword('com.multichat.app', 'master-key', 'my-secret-key');
+ *   const key = await keyring.getPassword('com.multichat.app', 'master-key');
  * }
  * ```
  */
-export const isKeyringSupported = (): boolean => {
-  return keyringCompat.isSupported();
-};
-
-/**
- * 重置 WebKeyringCompat 实例的状态
- * 用于迁移完成后强制重新初始化
- *
- * @example
- * ```typescript
- * import { resetWebKeyringState } from '@/utils/tauriCompat';
- *
- * // 迁移完成后调用
- * resetWebKeyringState();
- * ```
- */
-export const resetWebKeyringState = (): void => {
-  if (keyringCompat instanceof WebKeyringCompat) {
-    keyringCompat.resetState();
-  }
-};
+export const keyring: KeyringPublicAPI = createKeyringAPI(keyringCompat);
 
 /**
  * 导出 Keyring 兼容接口类型供外部使用
