@@ -4,8 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { interceptClickAToJump, getDefaultAppLanguage, LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
-
-// 获取 mock 函数的引用
+import { locale, shell } from '@/utils/tauriCompat';
 
 describe('global.ts 模块测试', () => {
   // 保存全局事件监听器引用，用于测试后清理
@@ -13,24 +12,20 @@ describe('global.ts 模块测试', () => {
   let removeClickListener: (() => void) | null = null;
 
   // Spy 变量
-  let openSpy: ReturnType<typeof vi.spyOn>;
+  let openSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     // 清除所有 mocks
     vi.clearAllMocks();
-    
+
     // 清除 localStorage
     localStorage.clear();
 
-    // Mock window.open
-    openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    // 默认 mock locale 返回 zh-CN
+    vi.mocked(locale).mockResolvedValue('zh-CN');
 
-    // Mock navigator.language（locale 函数在 Web 环境中使用它）
-    Object.defineProperty(window.navigator, 'language', {
-      value: 'zh-CN',
-      writable: true,
-      configurable: true,
-    });
+    // Spy shell.open
+    openSpy = vi.mocked(shell.open);
 
     // 清除 localStorage
     localStorage.clear();
@@ -67,8 +62,6 @@ describe('global.ts 模块测试', () => {
     // 清理全局事件监听器
     removeClickListener?.();
 
-    // 恢复原始方法
-    openSpy.mockRestore();
     vi.restoreAllMocks();
   });
 
@@ -139,11 +132,7 @@ describe('global.ts 模块测试', () => {
     describe('无效缓存清理与降级测试', () => {
       it('应该删除无效缓存并降级到系统语言', async () => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'de'); // 德语不在支持列表中
-        Object.defineProperty(window.navigator, 'language', {
-          value: 'fr-FR',
-          writable: true,
-          configurable: true,
-        });
+        vi.mocked(locale).mockResolvedValue('fr-FR');
 
         const result = await getDefaultAppLanguage();
 
@@ -155,11 +144,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该删除无效缓存并降级到英文（系统语言不支持）', async () => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'de'); // 德语不在支持列表中
-        Object.defineProperty(window.navigator, 'language', {
-          value: 'de-DE',
-          writable: true,
-          configurable: true,
-        }); // 系统语言也不在支持列表中
+        vi.mocked(locale).mockResolvedValue('de-DE'); // 系统语言也不在支持列表中
 
         const result = await getDefaultAppLanguage();
 
@@ -171,11 +156,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该删除无效缓存并降级到英文（系统语言为空）', async () => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'invalid');
-        Object.defineProperty(window.navigator, 'language', {
-          value: '',
-          writable: true,
-          configurable: true,
-        });
+        vi.mocked(locale).mockResolvedValue('');
 
         const result = await getDefaultAppLanguage();
 
@@ -189,7 +170,7 @@ describe('global.ts 模块测试', () => {
         // 注意：当前实现中有 zh-CN -> zh 的迁移规则
         // 这个测试验证如果没有迁移规则时的行为
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh-TW'); // 无迁移规则
-        Object.defineProperty(window.navigator, 'language', { value: 'en-US', writable: true, configurable: true });; // 系统语言为英语
+        vi.mocked(locale).mockResolvedValue('en-US'); // 系统语言为英语
 
         const result = await getDefaultAppLanguage();
 
@@ -204,7 +185,7 @@ describe('global.ts 模块测试', () => {
     describe('系统语言检测测试', () => {
       it('应该返回支持的系统语言（无缓存时）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        Object.defineProperty(window.navigator, 'language', { value: 'zh-CN', writable: true, configurable: true });;
+        vi.mocked(locale).mockResolvedValue('zh-CN');
 
         const result = await getDefaultAppLanguage();
 
@@ -215,7 +196,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该正确提取系统语言的前缀（en-US -> en）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        Object.defineProperty(window.navigator, 'language', { value: 'en-US', writable: true, configurable: true });;
+        vi.mocked(locale).mockResolvedValue('en-US');
 
         const result = await getDefaultAppLanguage();
 
@@ -225,7 +206,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该处理不同格式的系统 locale（zh -> zh）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        Object.defineProperty(window.navigator, 'language', { value: 'zh', writable: true, configurable: true });;
+        vi.mocked(locale).mockResolvedValue('zh');
 
         const result = await getDefaultAppLanguage();
 
@@ -235,7 +216,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该在不支持的系统语言时回退到 en', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        Object.defineProperty(window.navigator, 'language', { value: 'de-DE', writable: true, configurable: true });;
+        vi.mocked(locale).mockResolvedValue('de-DE');
 
         const result = await getDefaultAppLanguage();
 
@@ -250,7 +231,7 @@ describe('global.ts 模块测试', () => {
         const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
           throw new Error('localStorage access denied');
         });
-        Object.defineProperty(window.navigator, 'language', { value: 'fr-FR', writable: true, configurable: true });;
+        vi.mocked(locale).mockResolvedValue('fr-FR');
 
         const result = await getDefaultAppLanguage();
 
@@ -293,7 +274,7 @@ describe('global.ts 模块测试', () => {
         const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
           throw new Error('localStorage remove failed');
         });
-        Object.defineProperty(window.navigator, 'language', { value: 'en-US', writable: true, configurable: true });;
+        vi.mocked(locale).mockResolvedValue('en-US');
 
         const result = await getDefaultAppLanguage();
 
@@ -317,7 +298,7 @@ describe('global.ts 模块测试', () => {
 
       it('localStorage 优先级应该高于系统语言', async () => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'en');
-        Object.defineProperty(window.navigator, 'language', { value: 'zh-CN', writable: true, configurable: true });;
+        vi.mocked(locale).mockResolvedValue('zh-CN');
 
         const result = await getDefaultAppLanguage();
 
@@ -360,7 +341,7 @@ describe('global.ts 模块测试', () => {
 
         // 等待异步操作完成
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
         });
 
         // 清理 DOM
@@ -379,7 +360,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://example.com/', '_blank', expect.any(String));
+          expect(openSpy).toHaveBeenCalledWith('https://example.com/');
         });
         expect(clickEvent.preventDefault).toHaveBeenCalled();
 
@@ -397,7 +378,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://www.external-site.com/path?query=value', '_blank', expect.any(String));
+          expect(openSpy).toHaveBeenCalledWith('https://www.external-site.com/path?query=value');
         });
 
         document.body.removeChild(anchor);
@@ -528,7 +509,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
         });
 
         document.body.removeChild(anchor);
@@ -549,7 +530,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
         });
 
         document.body.removeChild(anchor);
@@ -566,7 +547,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
         });
 
         document.body.removeChild(anchor);
@@ -637,7 +618,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', expect.any(String));
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
         });
 
         document.body.removeChild(anchor);
@@ -674,7 +655,7 @@ describe('global.ts 模块测试', () => {
       document.dispatchEvent(clickEvent1);
 
       await vi.waitFor(() => {
-        expect(openSpy).toHaveBeenCalledWith('https://test1.com/', '_blank', expect.any(String));
+        expect(openSpy).toHaveBeenCalledWith('https://test1.com/');
       });
 
       document.body.removeChild(anchor1);
@@ -696,7 +677,7 @@ describe('global.ts 模块测试', () => {
       document.dispatchEvent(clickEvent2);
 
       await vi.waitFor(() => {
-        expect(openSpy).toHaveBeenCalledWith('https://test2.com/', '_blank', expect.any(String));
+        expect(openSpy).toHaveBeenCalledWith('https://test2.com/');
       });
 
       document.body.removeChild(anchor2);

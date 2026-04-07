@@ -7,11 +7,38 @@
  * - 真实的 Web Crypto API 加密/解密
  * - 真实的 masterKey 管理（IndexedDB + AES-256-GCM）
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
+// 提供本地 storeUtils mock，使用 Map 持久化数据（集成测试需要真实存储行为）
+const storeMap = new Map<string, unknown>();
+
+vi.mock('@/store/storage/storeUtils', () => ({
+  createLazyStore: vi.fn(() => ({
+    init: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn((key: string) => Promise.resolve(storeMap.get(key) ?? null)),
+    set: vi.fn((key: string, value: unknown) => { storeMap.set(key, value); return Promise.resolve(); }),
+    delete: vi.fn((key: string) => { storeMap.delete(key); return Promise.resolve(); }),
+    keys: vi.fn(() => Promise.resolve([...storeMap.keys()])),
+    save: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn(),
+    isSupported: vi.fn().mockReturnValue(true),
+  })),
+  saveToStore: vi.fn(async (store: { init: () => Promise<void>; set: (k: string, v: unknown) => Promise<void>; save: () => Promise<void> }, key: string, data: unknown) => {
+    await store.init();
+    await store.set(key, data);
+    await store.save();
+  }),
+  loadFromStore: vi.fn(async (store: { init: () => Promise<void>; get: (k: string) => Promise<unknown> }, key: string, defaultValue: unknown) => {
+    await store.init();
+    return (await store.get(key)) ?? defaultValue;
+  }),
+}));
+
+import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vitest';
 import type { Model } from '@/types/model';
 import {
   saveModelsToJson,
   loadModelsFromJson,
+  resetModelsStore,
 } from '@/store/storage/modelStorage';
 import { storeMasterKey, getMasterKey } from '@/store/keyring/masterKey';
 import { WebKeyringCompat } from '@/utils/tauriCompat/keyring';
@@ -25,6 +52,9 @@ describe('modelStorage (Integration Test)', () => {
   let keyringCompat: WebKeyringCompat;
 
   beforeAll(async () => {
+    // 清理 Map 存储
+    storeMap.clear();
+
     // 清理 IndexedDB 和 localStorage
     await Promise.all([
       new Promise<void>((resolve) => {
@@ -62,6 +92,12 @@ describe('modelStorage (Integration Test)', () => {
     if (keyringCompat) {
       keyringCompat.close();
     }
+  });
+
+  // 每个测试前重置 storeMap 和 modelsStore 单例，确保测试隔离
+  beforeEach(() => {
+    storeMap.clear();
+    resetModelsStore();
   });
 
   // ========================================
@@ -224,24 +260,9 @@ describe('modelStorage (Integration Test)', () => {
     });
 
     it('应该处理明文 API key（跳过解密）', async () => {
-      // 直接写入明文数据到 IndexedDB
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open('multi-chat-store', 1);
-        request.addEventListener('success', () => resolve(request.result));
-        request.addEventListener('error', () => reject(request.error));
-      });
-
-      await new Promise<void>((resolve, reject) => {
-        const transaction = db.transaction('store', 'readwrite');
-        const objectStore = transaction.objectStore('store');
-        const model = createMockModel({ apiKey: 'sk-plaintext-key' });
-        const request = objectStore.put({ key: 'models', value: [model] });
-
-        request.addEventListener('success', () => resolve());
-        request.addEventListener('error', () => reject(request.error));
-      });
-
-      db.close();
+      // 直接写入明文数据到 Map 存储
+      const model = createMockModel({ apiKey: 'sk-plaintext-key' });
+      storeMap.set('models', [model]);
 
       // 加载应该保持明文
       const loadedModels = await loadModelsFromJson();
@@ -290,26 +311,9 @@ describe('modelStorage (Integration Test)', () => {
       const model = createMockModel({ apiKey: 'sk-test' });
       await saveModelsToJson([model]);
 
-      // 修改存储的数据为无效的密文
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open('multi-chat-store', 1);
-        request.addEventListener('success', () => resolve(request.result));
-        request.addEventListener('error', () => reject(request.error));
-      });
-
-      await new Promise<void>((resolve, reject) => {
-        const transaction = db.transaction('store', 'readwrite');
-        const objectStore = transaction.objectStore('store');
-        const request = objectStore.put({
-          key: 'models',
-          value: [{ ...model, apiKey: 'enc:invalid-base64!' }],
-        });
-
-        request.addEventListener('success', () => resolve());
-        request.addEventListener('error', () => reject(request.error));
-      });
-
-      db.close();
+      // 修改存储的数据为无效的密文（直接操作 Map）
+      const stored = storeMap.get('models') as Model[];
+      stored[0].apiKey = 'enc:invalid-base64!';
 
       // 加载应该返回空 API key（解密失败）
       const loadedModels = await loadModelsFromJson();
@@ -326,37 +330,9 @@ describe('modelStorage (Integration Test)', () => {
       ];
       await saveModelsToJson(models);
 
-      // 修改第二个模型的数据为无效密文
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open('multi-chat-store', 1);
-        request.addEventListener('success', () => resolve(request.result));
-        request.addEventListener('error', () => reject(request.error));
-      });
-
-      const storedModels = await new Promise<Model[]>((resolve, reject) => {
-        const transaction = db.transaction('store', 'readonly');
-        const objectStore = transaction.objectStore('store');
-        const request = objectStore.get('models');
-
-        request.addEventListener('success', () => {
-          const result = request.result;
-          resolve(result?.value || []);
-        });
-        request.addEventListener('error', () => reject(request.error));
-      });
-
-      storedModels[1].apiKey = 'enc:invalid';
-
-      await new Promise<void>((resolve, reject) => {
-        const transaction = db.transaction('store', 'readwrite');
-        const objectStore = transaction.objectStore('store');
-        const request = objectStore.put({ key: 'models', value: storedModels });
-
-        request.addEventListener('success', () => resolve());
-        request.addEventListener('error', () => reject(request.error));
-      });
-
-      db.close();
+      // 修改第二个模型的数据为无效密文（直接操作 Map）
+      const stored = storeMap.get('models') as Model[];
+      stored[1].apiKey = 'enc:invalid';
 
       // 加载应该继续处理，失败的模型返回空 API key
       const loadedModels = await loadModelsFromJson();

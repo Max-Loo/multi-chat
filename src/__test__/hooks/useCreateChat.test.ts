@@ -18,9 +18,13 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
   })),
 }));
 
-vi.mock('ai', () => ({
-  generateId: vi.fn(),
-}));
+vi.mock('ai', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return {
+    ...actual,
+    generateId: vi.fn(),
+  };
+});
 
 import { useAppDispatch } from '@/hooks/redux';
 import { useNavigateToChat } from '@/hooks/useNavigateToPage';

@@ -11,11 +11,8 @@ import { createIdGenerator } from 'ai';
 import { createMockMessage as _createMockMessage } from '@/__test__/fixtures/chat';
 import { createMockChat as _createMockChat } from './mocks/chatSidebar';
 
-// 重新导出 Redux store 创建函数
-export { createTestStore } from './render/redux';
-
-// 重新导出渲染函数
-export { renderWithProviders } from './render/redux';
+// render/redux 不在此处重新导出：它导入 react-redux 会在全局 setup 阶段触发 CJS/ESM 兼容性问题
+// 需要的测试文件请直接 import from '@/__test__/helpers/render/redux'
 
 // 重新导出 Model fixtures
 export { createMockModel } from './fixtures/model';
