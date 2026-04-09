@@ -32,6 +32,10 @@ import { WebKeyringCompat } from '@/utils/tauriCompat/keyring';
 // Mock @/utils/tauriCompat/env 模块中的 isTauri 函数
 vi.mock('@/utils/tauriCompat/env', () => ({
   isTauri: vi.fn(),
+  isTestEnvironment: vi.fn(() => true),
+  getPBKDF2Iterations: vi.fn(() => 1000),
+  PBKDF2_ALGORITHM: 'SHA-256',
+  DERIVED_KEY_LENGTH: 256,
 }));
 
 import { isTauri } from '@/utils/tauriCompat/env';

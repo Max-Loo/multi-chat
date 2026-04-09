@@ -39,7 +39,7 @@ export const hexToBytes = (hex: string): Uint8Array => {
 
 /**
  * 将 Uint8Array 转换为 Base64 字符串
- * @internal 此函数内部使用，导出仅用于测试
+ * 跨模块共享工具函数，供 crypto-helpers、keyring 等模块使用
  * @param bytes - Uint8Array
  * @returns Base64 编码的字符串
  */
@@ -52,7 +52,7 @@ export const bytesToBase64 = (bytes: Uint8Array): string => {
 
 /**
  * 将 Base64 字符串转换为 Uint8Array
- * @internal 此函数内部使用，导出仅用于测试
+ * 跨模块共享工具函数，供 crypto-helpers、keyring 等模块使用
  * @param base64 - Base64 编码的字符串
  * @returns Uint8Array
  * @throws {Error} 如果输入不是有效的 Base64 字符串

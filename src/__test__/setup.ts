@@ -75,9 +75,13 @@ vi.mock('@/utils/tauriCompat/store', () => ({
   }),
 }));
 
-// Mock env 模块
+// Mock env 模块（必须在桶模块 mock 之前，因为 importOriginal 会触发 keyring/keyringMigration 加载 env）
 vi.mock('@/utils/tauriCompat/env', () => ({
   isTauri: vi.fn(() => false), // 默认返回 false
+  isTestEnvironment: vi.fn(() => true),
+  getPBKDF2Iterations: vi.fn(() => 1000),
+  PBKDF2_ALGORITHM: 'SHA-256' as const,
+  DERIVED_KEY_LENGTH: 256,
 }));
 
 // Mock @/utils/tauriCompat 桶模块

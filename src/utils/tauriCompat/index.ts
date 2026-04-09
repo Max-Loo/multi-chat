@@ -59,7 +59,7 @@
  */
 
 // 环境检测
-export { isTauri } from './env';
+export { isTauri, isTestEnvironment, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
 
 // Shell 插件兼容层
 export { Command, shell } from './shell';

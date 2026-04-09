@@ -13,6 +13,10 @@ vi.mock('tauri-plugin-keyring-api', () => ({
 // Mock @/utils/tauriCompat/env
 vi.mock('@/utils/tauriCompat/env', () => ({
   isTauri: vi.fn(() => true), // 默认返回 true（Tauri 环境）
+  isTestEnvironment: vi.fn(() => true),
+  getPBKDF2Iterations: vi.fn(() => 1000),
+  PBKDF2_ALGORITHM: 'SHA-256',
+  DERIVED_KEY_LENGTH: 256,
 }));
 
 /**

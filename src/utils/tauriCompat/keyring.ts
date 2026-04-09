@@ -5,64 +5,11 @@
  */
 
 import { getPassword as tauriGetPassword, setPassword as tauriSetPassword, deletePassword as tauriDeletePassword } from 'tauri-plugin-keyring-api';
-import { isTauri } from './env';
+import { isTauri, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
+import { initIndexedDB } from './indexedDB';
+import { encrypt, decrypt, type PasswordRecord } from './crypto-helpers';
 import { getCurrentTimestampMs } from '@/utils/utils';
-
-/**
- * IndexedDB 数据库名称和对象存储名称
- */
-const DB_NAME = 'multi-chat-keyring';
-const STORE_NAME = 'keys';
-
-/**
- * localStorage 中存储种子的键名
- */
-const SEED_STORAGE_KEY = 'multi-chat-keyring-seed';
-
-/**
- * PBKDF2 密钥派生参数
- * 在测试环境中使用更低的迭代次数以加快测试速度
- */
-const PBKDF2_ALGORITHM = 'SHA-256';
-const DERIVED_KEY_LENGTH = 256; // bits
-
-/**
- * 检测是否在测试环境中运行
- * 使用多种方式检测以提高可靠性
- */
-const isTestEnvironment = (): boolean => {
-  // 方式 1: 检测全局 vitest 变量（通过 globalThis 避免编译错误）
-  if (typeof (globalThis as Record<string, unknown>).vitest !== 'undefined') {
-    return true;
-  }
-  // 方式 2: 检测全局 __VITEST__ 标识
-  if ((globalThis as Record<string, unknown>).__VITEST__) {
-    return true;
-  }
-  // 方式 3: 检测环境变量
-  if (typeof process !== 'undefined' && process.env?.VITEST) {
-    return true;
-  }
-  // 方式 4: 检测 import.meta.env.VITEST
-  try {
-    // 使用 try-catch 避免在某些环境中访问 import.meta.env 抛出错误
-    const env = (import.meta as unknown as Record<string, unknown>).env as Record<string, unknown> | undefined;
-    if (env?.VITEST === 'true') {
-      return true;
-    }
-  } catch {
-    // 忽略错误，继续检测其他方式
-  }
-  return false;
-};
-
-/**
- * 获取 PBKDF2 迭代次数
- * 在测试环境中使用更低的值以加快测试速度
- */
-const getPBKDF2Iterations = (): number => {
-  return isTestEnvironment() ? 1000 : 100000;
-};
+import { bytesToBase64 } from '@/utils/crypto';
 
 /**
  * Keyring 兼容接口
@@ -84,44 +31,15 @@ export interface KeyringPublicAPI extends KeyringCompat {
 }
 
 /**
- * 密码记录结构（存储在 IndexedDB 中）
+ * IndexedDB 数据库名称和对象存储名称
  */
-interface PasswordRecord {
-  service: string;
-  user: string;
-  encryptedPassword: string; // base64 编码的密文
-  iv: string; // base64 编码的初始化向量
-  createdAt: number; // 时间戳
-}
+const DB_NAME = 'multi-chat-keyring';
+const STORE_NAME = 'keys';
 
 /**
- * 初始化 IndexedDB 数据库
- * @param {string} dbName - 数据库名称
- * @param {string} storeName - 对象存储名称
- * @returns {Promise<IDBDatabase>} IndexedDB 数据库实例
+ * localStorage 中存储种子的键名
  */
-const initIndexedDB = async (dbName: string, storeName: string): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(dbName, 1);
-
-    request.addEventListener('error', () => {
-      reject(new Error(`无法打开 IndexedDB 数据库: ${request.error}`));
-    });
-
-    request.addEventListener('success', () => {
-      resolve(request.result);
-    });
-
-    request.addEventListener('upgradeneeded', (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(storeName)) {
-        // 使用复合主键：service + user
-        const keyPath = ['service', 'user'];
-        db.createObjectStore(storeName, { keyPath });
-      }
-    });
-  });
-};
+const SEED_STORAGE_KEY = 'multi-chat-keyring-seed';
 
 /**
  * 生成 256-bit 随机种子并存储到 localStorage
@@ -130,7 +48,7 @@ const initIndexedDB = async (dbName: string, storeName: string): Promise<IDBData
 const generateAndStoreSeed = (): string => {
   const array = new Uint8Array(32); // 256 bits = 32 bytes
   crypto.getRandomValues(array);
-  const seed = btoa(String.fromCharCode(...array));
+  const seed = bytesToBase64(array);
   localStorage.setItem(SEED_STORAGE_KEY, seed);
   return seed;
 };
@@ -180,52 +98,6 @@ const deriveEncryptionKey = async (seed: string): Promise<CryptoKey> => {
     false,
     ['encrypt', 'decrypt']
   );
-};
-
-/**
- * 使用 AES-256-GCM 加密数据
- * @param {string} plaintext - 明文
- * @param {CryptoKey} key - 加密密钥
- * @returns {Promise<{ ciphertext: string; iv: string }>} 加密后的密文和 IV（base64 编码）
- */
-const encrypt = async (plaintext: string, key: CryptoKey): Promise<{ ciphertext: string; iv: string }> => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(plaintext);
-
-  // 生成随机 IV（12 字节是 GCM 推荐长度）
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    data
-  );
-
-  return {
-    ciphertext: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
-    iv: btoa(String.fromCharCode(...iv)),
-  };
-};
-
-/**
- * 使用 AES-256-GCM 解密数据
- * @param {string} ciphertext - base64 编码的密文
- * @param {string} iv - base64 编码的 IV
- * @param {CryptoKey} key - 解密密钥
- * @returns {Promise<string>} 解密后的明文
- */
-const decrypt = async (ciphertext: string, iv: string, key: CryptoKey): Promise<string> => {
-  const encryptedData = Uint8Array.from(atob(ciphertext), (c) => c.charCodeAt(0));
-  const ivData = Uint8Array.from(atob(iv), (c) => c.charCodeAt(0));
-
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: ivData },
-    key,
-    encryptedData
-  );
-  const decoder = new TextDecoder();
-  
-  return decoder.decode(decrypted);
 };
 
 /**
@@ -289,7 +161,7 @@ export class WebKeyringCompat implements KeyringCompat {
   async init(): Promise<void> {
     try {
       // 初始化 IndexedDB
-      this.db = await initIndexedDB(DB_NAME, STORE_NAME);
+      this.db = await initIndexedDB(DB_NAME, STORE_NAME, ['service', 'user']);
 
       // 获取或生成种子，并派生加密密钥
       const seed = getOrCreateSeed();

@@ -6,6 +6,7 @@
 
 import { LazyStore as TauriStore } from '@tauri-apps/plugin-store';
 import { isTauri } from './env';
+import { initIndexedDB } from './indexedDB';
 
 /**
  * IndexedDB 数据库名称和对象存储名称
@@ -27,33 +28,6 @@ interface StoreCompat {
   close: () => void;
   isSupported: () => boolean;
 }
-
-/**
- * 初始化 IndexedDB 数据库
- * @param {string} dbName - 数据库名称
- * @param {string} storeName - 对象存储名称
- * @returns {Promise<IDBDatabase>} IndexedDB 数据库实例
- */
-const initIndexedDB = async (dbName: string, storeName: string): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(dbName, 1);
-
-    request.addEventListener('error', () => {
-      reject(new Error(`无法打开 IndexedDB 数据库: ${request.error}`));
-    });
-
-    request.addEventListener('success', () => {
-      resolve(request.result);
-    });
-
-    request.addEventListener('upgradeneeded', (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(storeName)) {
-        db.createObjectStore(storeName, { keyPath: 'key' });
-      }
-    });
-  });
-};
 
 /**
  * Tauri 环境的 Store 实现
@@ -154,7 +128,7 @@ class WebStoreCompat implements StoreCompat {
    */
   async init(): Promise<void> {
     try {
-      this.db = await initIndexedDB(DB_NAME, STORE_NAME);
+      this.db = await initIndexedDB(DB_NAME, STORE_NAME, 'key');
     } catch (error) {
       console.error('初始化 IndexedDB 失败:', error);
       throw new Error('浏览器不支持 IndexedDB 或初始化失败', { cause: error });
