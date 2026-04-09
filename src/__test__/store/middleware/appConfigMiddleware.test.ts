@@ -22,7 +22,7 @@ vi.mock('@/services/i18n', () => ({
 
 import { configureStore } from '@reduxjs/toolkit';
 import { saveDefaultAppLanguage } from '@/store/middleware/appConfigMiddleware';
-import { setAppLanguage, setTransmitHistoryReasoning } from '@/store/slices/appConfigSlices';
+import { setAppLanguage, setTransmitHistoryReasoning, setAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import appConfigReducer from '@/store/slices/appConfigSlices';
 import modelReducer from '@/store/slices/modelSlice';
 import chatReducer from '@/store/slices/chatSlices';
@@ -32,7 +32,7 @@ import settingPageReducer from '@/store/slices/settingPageSlices';
 import modelPageReducer from '@/store/slices/modelPageSlices';
 import { changeAppLanguage } from '@/services/i18n';
 import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
-import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY } from '@/utils/constants';
+import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from '@/utils/constants';
 import { toastQueue } from '@/services/toast';
 
 const mockChangeAppLanguage = vi.mocked(changeAppLanguage);
@@ -189,6 +189,44 @@ describe('appConfigMiddleware', () => {
 
       // 验证 state 被更新
       expect(store.getState().appConfig.transmitHistoryReasoning).toBe(includeReasoning);
+    });
+  });
+
+  describe('自动命名开关的持久化', () => {
+    it('应该将自动命名开关持久化到 localStorage 当启用时', async () => {
+      const enabled = true;
+      store.dispatch(setAutoNamingEnabled(enabled));
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证 localStorage.setItem 被调用
+      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      expect(global.localStorage.setItem).toHaveBeenCalledWith(
+        LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
+        String(enabled)
+      );
+
+      // 验证 state 被更新
+      expect(store.getState().appConfig.autoNamingEnabled).toBe(enabled);
+    });
+
+    it('应该将自动命名开关持久化到 localStorage 当禁用时', async () => {
+      const enabled = false;
+      store.dispatch(setAutoNamingEnabled(enabled));
+
+      // 等待异步 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证 localStorage.setItem 被调用
+      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      expect(global.localStorage.setItem).toHaveBeenCalledWith(
+        LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
+        String(enabled)
+      );
+
+      // 验证 state 被更新
+      expect(store.getState().appConfig.autoNamingEnabled).toBe(enabled);
     });
   });
 
