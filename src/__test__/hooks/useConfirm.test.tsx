@@ -161,6 +161,50 @@ describe('useConfirm', () => {
       expect(onCancel).toBeDefined();
       expect(typeof onCancel).toBe('function');
     });
+
+    it('应该在点击确认按钮时调用 onOk 回调', async () => {
+      const onOk = vi.fn();
+      const { result } = renderHook(() => useConfirm(), { wrapper });
+
+      result.current.modal.confirm({
+        title: '确认操作',
+        description: '是否继续？',
+        onOk,
+        okText: '确认操作按钮',
+        cancelText: '取消操作按钮',
+      });
+
+      // 等待对话框渲染
+      await screen.findByText('确认操作');
+
+      // 点击确认按钮
+      const confirmButton = screen.getByText('确认操作按钮');
+      confirmButton.click();
+
+      expect(onOk).toHaveBeenCalledTimes(1);
+    });
+
+    it('应该在点击取消按钮时调用 onCancel 回调', async () => {
+      const onCancel = vi.fn();
+      const { result } = renderHook(() => useConfirm(), { wrapper });
+
+      result.current.modal.confirm({
+        title: '确认操作',
+        description: '是否继续？',
+        onCancel,
+        okText: '确认操作按钮',
+        cancelText: '取消操作按钮',
+      });
+
+      // 等待对话框渲染
+      await screen.findByText('确认操作');
+
+      // 点击取消按钮
+      const cancelButton = screen.getByText('取消操作按钮');
+      cancelButton.click();
+
+      expect(onCancel).toHaveBeenCalled();
+    });
   });
 
   describe('自定义按钮文本测试', () => {
