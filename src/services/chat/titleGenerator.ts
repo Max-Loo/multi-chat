@@ -27,24 +27,16 @@ export function truncateTitle(title: string, maxLength: number = 10): string {
 }
 
 /**
- * 生成聊天标题的服务
- * @param messages 消息历史（应为最后一条用户消息和最后一条 AI 回复）
- * @param model 使用的模型配置
- * @returns 生成的标题
- * @throws 当 API 调用失败或生成内容为空时抛出错误
+ * 从消息数组构建标题生成 prompt
+ * @param messages 消息列表，取最后一条用户消息和最后一条助手消息
+ * @returns 构建好的 prompt 字符串
  */
-export async function generateChatTitleService(
-  messages: StandardMessage[],
-  model: Model
-): Promise<string> {
-  // 1. 提取最后一条用户消息和最后一条 AI 回复
+export function buildTitlePrompt(messages: StandardMessage[]): string {
   const lastTwoMessages = messages.slice(-2);
-
-  // 2. 构建提示词
   const userMessage = lastTwoMessages.find(msg => msg.role === ChatRoleEnum.USER)?.content || '';
   const assistantMessage = lastTwoMessages.find(msg => msg.role === ChatRoleEnum.ASSISTANT)?.content || '';
 
-  const prompt = `你是一个聊天标题生成助手。请根据以下对话内容生成一个简洁的标题。
+  return `你是一个聊天标题生成助手。请根据以下对话内容生成一个简洁的标题。
 
 要求：
 - 长度：5-10 个汉字
@@ -56,18 +48,29 @@ export async function generateChatTitleService(
 助手：${assistantMessage}
 
 标题：`;
+}
 
-  // 3. 调用 generateText API
+/**
+ * 生成聊天标题的服务
+ * @param messages 消息历史（应为最后一条用户消息和最后一条 AI 回复）
+ * @param model 使用的模型配置
+ * @returns 生成的标题
+ * @throws 当 API 调用失败或生成内容为空时抛出错误
+ */
+export async function generateChatTitleService(
+  messages: StandardMessage[],
+  model: Model
+): Promise<string> {
+  const prompt = buildTitlePrompt(messages);
+
   const provider = await getProvider(model.providerKey, model.apiKey, model.apiAddress);
   const { text } = await generateText({
     model: provider(model.modelKey),
     prompt,
   });
 
-  // 4. 后处理：移除标点符号、截取前 10 个字符
   const cleanedTitle = truncateTitle(removePunctuation(text));
 
-  // 5. 验证结果
   if (!cleanedTitle || cleanedTitle.length === 0) {
     throw new Error('Generated title is empty');
   }

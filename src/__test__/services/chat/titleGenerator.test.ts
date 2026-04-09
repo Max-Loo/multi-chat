@@ -1,15 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 /**
  * titleGenerator 单元测试
- *
- * 注意：由于 Vitest 无法正确 mock Vercel AI SDK 的 generateText 函数，
- * 我们改为测试后处理逻辑（标点移除、长度截取），而不是完整的 API 调用流程。
- *
- * 完整的 API 调用测试已在集成测试中覆盖（auto-naming.integration.test.ts）。
  */
 
-import { removePunctuation, truncateTitle } from '@/services/chat/titleGenerator';
+import {
+  removePunctuation,
+  truncateTitle,
+  buildTitlePrompt,
+  generateChatTitleService,
+} from '@/services/chat/titleGenerator';
+import { generateText } from 'ai';
+import { getProvider } from '@/services/chat/providerFactory';
+import { StandardMessage } from '@/types/chat';
+import { createUserMessage, createAssistantMessage } from '@/__test__/fixtures/chat';
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
+
+vi.mock('@/services/chat/providerFactory', () => ({
+  getProvider: vi.fn(),
+}));
 
 describe('titleGenerator - 后处理逻辑', () => {
   describe('removePunctuation', () => {
@@ -81,5 +90,137 @@ describe('titleGenerator - 后处理逻辑', () => {
       const result = truncateTitle(input);
       expect(result.length).toBeLessThanOrEqual(10);
     });
+  });
+});
+
+describe('buildTitlePrompt', () => {
+  it('应该从用户和助手消息构建 prompt', () => {
+    const messages: StandardMessage[] = [
+      createUserMessage('什么是 TypeScript？'),
+      createAssistantMessage('TypeScript 是 JavaScript 的超集。'),
+    ];
+    const result = buildTitlePrompt(messages);
+    expect(result).toContain('什么是 TypeScript？');
+    expect(result).toContain('TypeScript 是 JavaScript 的超集。');
+  });
+
+  it('应该处理单条消息（助手消息为空）', () => {
+    const messages: StandardMessage[] = [
+      createUserMessage('你好'),
+    ];
+    const result = buildTitlePrompt(messages);
+    expect(result).toContain('你好');
+    expect(result).toContain('助手：');
+  });
+
+  it('应该处理空消息数组', () => {
+    const result = buildTitlePrompt([]);
+    expect(result).toContain('用户：');
+    expect(result).toContain('助手：');
+  });
+
+  it('应该仅使用最后两条消息', () => {
+    const messages: StandardMessage[] = [
+      createUserMessage('第一条用户消息'),
+      createAssistantMessage('第一条助手回复'),
+      createUserMessage('第二条用户消息'),
+      createAssistantMessage('第二条助手回复'),
+      createUserMessage('第三条用户消息'),
+    ];
+    const result = buildTitlePrompt(messages);
+    expect(result).toContain('第三条用户消息');
+    // 取 slice(-2) 后只剩最后两条，不包含早期消息
+    expect(result).not.toContain('第一条用户消息');
+    expect(result).not.toContain('第二条用户消息');
+  });
+});
+
+describe('generateChatTitleService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('应该返回经过后处理的标题', async () => {
+    const messages: StandardMessage[] = [
+      createUserMessage('介绍一下 React'),
+      createAssistantMessage('React 是一个前端框架'),
+    ];
+    const model = createMockModel();
+
+    vi.mocked(generateText).mockResolvedValue({ text: 'React 入门指南' } as any);
+    vi.mocked(getProvider).mockResolvedValue(vi.fn().mockReturnValue('mock-model-instance'));
+
+    const result = await generateChatTitleService(messages, model);
+
+    expect(result).toBe('React 入门指南');
+    expect(getProvider).toHaveBeenCalledWith(
+      model.providerKey,
+      model.apiKey,
+      model.apiAddress
+    );
+    expect(generateText).toHaveBeenCalledWith(
+      expect.objectContaining({ prompt: expect.any(String) })
+    );
+  });
+
+  it('应该在 provider 初始化失败时抛出错误', async () => {
+    const messages: StandardMessage[] = [
+      createUserMessage('你好'),
+      createAssistantMessage('你好！'),
+    ];
+    const model = createMockModel();
+
+    vi.mocked(getProvider).mockRejectedValue(new Error('API key 无效'));
+
+    await expect(
+      generateChatTitleService(messages, model)
+    ).rejects.toThrow('API key 无效');
+  });
+
+  it('应该在返回空文本时抛出错误', async () => {
+    const messages: StandardMessage[] = [
+      createUserMessage('你好'),
+      createAssistantMessage('你好！'),
+    ];
+    const model = createMockModel();
+
+    vi.mocked(generateText).mockResolvedValue({ text: '' } as any);
+    vi.mocked(getProvider).mockResolvedValue(vi.fn());
+
+    await expect(
+      generateChatTitleService(messages, model)
+    ).rejects.toThrow('Generated title is empty');
+  });
+
+  it('应该在返回纯标点文本时抛出错误', async () => {
+    const messages: StandardMessage[] = [
+      createUserMessage('你好'),
+      createAssistantMessage('你好！'),
+    ];
+    const model = createMockModel();
+
+    vi.mocked(generateText).mockResolvedValue({ text: '！！！。。。' } as any);
+    vi.mocked(getProvider).mockResolvedValue(vi.fn());
+
+    await expect(
+      generateChatTitleService(messages, model)
+    ).rejects.toThrow('Generated title is empty');
+  });
+
+  it('应该截取超长文本到 10 个字符', async () => {
+    const longTitle = '这是一个非常非常长的标题需要被截断处理才行';
+    const messages: StandardMessage[] = [
+      createUserMessage('你好'),
+      createAssistantMessage('你好！'),
+    ];
+    const model = createMockModel();
+
+    vi.mocked(generateText).mockResolvedValue({ text: longTitle } as any);
+    vi.mocked(getProvider).mockResolvedValue(vi.fn());
+
+    const result = await generateChatTitleService(messages, model);
+
+    expect(result).toBe('这是一个非常非常长的');
+    expect(result.length).toBe(10);
   });
 });
