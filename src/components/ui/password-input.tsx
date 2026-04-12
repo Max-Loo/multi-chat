@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Eye, EyeOff } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 import { Button } from "@/components/ui/button"
 
 // 密码输入组件的属性类型，继承自原生 input 元素的所有属性

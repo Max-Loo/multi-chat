@@ -246,7 +246,7 @@ describe('useCurrentSelectedChat', () => {
 
 
 
-    it('当聊天列表为空时应返回 undefined', () => {
+    it('当聊天列表为空时应返回 null', () => {
 
       const store = createTestStore({
 
@@ -276,13 +276,13 @@ describe('useCurrentSelectedChat', () => {
 
 
 
-      expect(result.current).toBeUndefined();
+      expect(result.current).toBeNull();
 
     });
 
 
 
-    it('当选中的聊天ID不存在时应返回 undefined', () => {
+    it('当选中的聊天ID不存在时应返回 null', () => {
 
       const chat1 = createMockChat('chat-1', 'Chat 1');
 
@@ -316,7 +316,7 @@ describe('useCurrentSelectedChat', () => {
 
 
 
-      expect(result.current).toBeUndefined();
+      expect(result.current).toBeNull();
 
     });
 

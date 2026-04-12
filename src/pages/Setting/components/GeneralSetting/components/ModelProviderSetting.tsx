@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { refreshModelProvider } from '@/store/slices/modelProviderSlice';
 import { RootState, AppDispatch } from '@/store';
-import { toastQueue } from '@/lib/toast';
+import { toastQueue } from '@/services/toast';
 import { useTranslation } from 'react-i18next';
 import { ProviderHeader } from './ModelProviderSetting/components/ProviderHeader';
 import { ProviderGrid } from './ModelProviderSetting/components/ProviderGrid';

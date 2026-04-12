@@ -20,7 +20,7 @@
  * import { createLazyStore, type StoreCompat } from '@/utils/tauriCompat';
  *
  * // 导入 Keyring 插件 API
- * import { setPassword, getPassword, deletePassword, isKeyringSupported } from '@/utils/tauriCompat';
+ * import { keyring, type KeyringPublicAPI } from '@/utils/tauriCompat';
  *
  * if (isTauri()) {
  *   console.log('运行在 Tauri 桌面环境');
@@ -51,13 +51,15 @@
  * const models = await store.get<Model[]>('models');
  *
  * // 使用 Keyring API
- * await setPassword('com.multichat.app', 'master-key', 'my-secret-key');
- * const key = await getPassword('com.multichat.app', 'master-key');
+ * if (keyring.isSupported()) {
+ *   await keyring.setPassword('com.multichat.app', 'master-key', 'my-secret-key');
+ *   const key = await keyring.getPassword('com.multichat.app', 'master-key');
+ * }
  * ```
  */
 
 // 环境检测
-export { isTauri } from './env';
+export { isTauri, isTestEnvironment, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
 
 // Shell 插件兼容层
 export { Command, shell } from './shell';
@@ -74,8 +76,8 @@ export { createLazyStore } from './store';
 export type { StoreCompat } from './store';
 
 // Keyring 插件兼容层
-export { setPassword, getPassword, deletePassword, isKeyringSupported, resetWebKeyringState } from './keyring';
-export type { KeyringCompat } from './keyring';
+export { keyring } from './keyring';
+export type { KeyringPublicAPI, KeyringCompat } from './keyring';
 
 // Keyring 迁移模块
 export { migrateKeyringV1ToV2, isMigrationToV2Complete } from './keyringMigration';

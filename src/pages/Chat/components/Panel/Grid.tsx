@@ -1,6 +1,6 @@
 import React from "react";
 import { ChatModel } from "@/types/chat";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/utils";
 import Detail from "./Detail";
 
 /**

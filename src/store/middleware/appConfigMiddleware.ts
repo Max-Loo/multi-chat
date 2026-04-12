@@ -1,10 +1,10 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import { RootState } from "..";
 import { setAppLanguage, setTransmitHistoryReasoning, setAutoNamingEnabled, initializeAppLanguage } from "../slices/appConfigSlices";
-import { LOCAL_STORAGE_LANGUAGE_KEY } from "@/lib/global";
+import { LOCAL_STORAGE_LANGUAGE_KEY } from "@/services/global";
 import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from "@/utils/constants";
-import { changeAppLanguage } from "@/lib/i18n";
-import { toastQueue } from '@/lib/toast';
+import { changeAppLanguage } from "@/services/i18n";
+import { toastQueue } from '@/services/toast';
 
 export const saveDefaultAppLanguage = createListenerMiddleware<RootState>()
 

@@ -2,14 +2,14 @@
  * masterKey 完整测试套件
  *
  * 测试策略：
- * - 使用 keyringCompat 实例 mock 隔离外部依赖
+ * - 使用 keyring 实例 mock 隔离外部依赖
  * - 测试正常流程和错误处理
  * - 测试跨平台兼容性（Tauri vs Web 环境）
  * - 测试安全警告和密钥导出功能
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { keyringCompat } from '@/utils/tauriCompat/keyring';
+import { keyring } from '@/utils/tauriCompat/keyring';
 import * as tauriEnv from '@/utils/tauriCompat/env';
 import {
   generateMasterKey,
@@ -26,10 +26,10 @@ describe('masterKey 完整测试套件', () => {
     localStorage.clear();
     vi.clearAllMocks();
     
-    // Mock keyringCompat 实例方法
-    vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
-    vi.spyOn(keyringCompat, 'setPassword').mockResolvedValue(undefined);
-    vi.spyOn(keyringCompat, 'deletePassword').mockResolvedValue(undefined);
+    // Mock keyring 实例方法
+    vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
+    vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
+    vi.spyOn(keyring, 'deletePassword').mockResolvedValue(undefined);
     
     // Mock isTauri（默认为 false）
     vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
@@ -64,16 +64,16 @@ describe('masterKey 完整测试套件', () => {
 
   describe('isMasterKeyExists', () => {
     it('应该返回 true 当密钥存在时', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue('test-key-123');
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue('test-key-123');
       
       const exists = await isMasterKeyExists();
       
       expect(exists).toBe(true);
-      expect(keyringCompat.getPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key');
+      expect(keyring.getPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key');
     });
 
     it('应该返回 false 当密钥不存在时', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
       
       const exists = await isMasterKeyExists();
       
@@ -81,7 +81,7 @@ describe('masterKey 完整测试套件', () => {
     });
 
     it('应该返回 false 当密钥为空字符串', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue('');
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue('');
       
       const exists = await isMasterKeyExists();
       
@@ -89,7 +89,7 @@ describe('masterKey 完整测试套件', () => {
     });
 
     it('应该返回 false 当 getPassword 抛出错误', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockRejectedValue(new Error('Access denied'));
+      vi.spyOn(keyring, 'getPassword').mockRejectedValue(new Error('Access denied'));
       
       const exists = await isMasterKeyExists();
       
@@ -100,7 +100,7 @@ describe('masterKey 完整测试套件', () => {
   describe('getMasterKey', () => {
     it('应该返回密钥字符串当密钥存在时', async () => {
       const testKey = 'a'.repeat(64);
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(testKey);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(testKey);
       
       const key = await getMasterKey();
       
@@ -108,7 +108,7 @@ describe('masterKey 完整测试套件', () => {
     });
 
     it('应该返回 null 当密钥不存在时', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
       
       const key = await getMasterKey();
       
@@ -117,14 +117,14 @@ describe('masterKey 完整测试套件', () => {
 
     it('应该抛出错误 当 getPassword 在 Web 环境失败', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
-      vi.spyOn(keyringCompat, 'getPassword').mockRejectedValue(new Error('IndexedDB error'));
+      vi.spyOn(keyring, 'getPassword').mockRejectedValue(new Error('IndexedDB error'));
       
       await expect(getMasterKey()).rejects.toThrow('无法访问浏览器安全存储或密钥解密失败');
     });
 
     it('应该抛出错误 当 getPassword 在 Tauri 环境失败', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyringCompat, 'getPassword').mockRejectedValue(new Error('Keychain error'));
+      vi.spyOn(keyring, 'getPassword').mockRejectedValue(new Error('Keychain error'));
       
       await expect(getMasterKey()).rejects.toThrow();
     });
@@ -133,23 +133,23 @@ describe('masterKey 完整测试套件', () => {
   describe('storeMasterKey', () => {
     it('应该成功存储密钥', async () => {
       const testKey = 'b'.repeat(64);
-      vi.spyOn(keyringCompat, 'setPassword').mockResolvedValue(undefined);
+      vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
       
       await storeMasterKey(testKey);
       
-      expect(keyringCompat.setPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key', testKey);
+      expect(keyring.setPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key', testKey);
     });
 
     it('应该抛出错误 当 setPassword 在 Web 环境失败', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
-      vi.spyOn(keyringCompat, 'setPassword').mockRejectedValue(new Error('IndexedDB error'));
+      vi.spyOn(keyring, 'setPassword').mockRejectedValue(new Error('IndexedDB error'));
       
       await expect(storeMasterKey('a'.repeat(64))).rejects.toThrow('无法将密钥存储到浏览器安全存储');
     });
 
     it('应该抛出错误 当 setPassword 在 Tauri 环境失败', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyringCompat, 'setPassword').mockRejectedValue(new Error('Keychain error'));
+      vi.spyOn(keyring, 'setPassword').mockRejectedValue(new Error('Keychain error'));
       
       await expect(storeMasterKey('a'.repeat(64))).rejects.toThrow();
     });
@@ -158,30 +158,30 @@ describe('masterKey 完整测试套件', () => {
   describe('initializeMasterKey', () => {
     it('应该返回已存在的密钥 当密钥已存在', async () => {
       const existingKey = 'c'.repeat(64);
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(existingKey);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(existingKey);
       
       const key = await initializeMasterKey();
       
       expect(key).toBe(existingKey);
-      expect(keyringCompat.getPassword).toHaveBeenCalled();
-      expect(keyringCompat.setPassword).not.toHaveBeenCalled();
+      expect(keyring.getPassword).toHaveBeenCalled();
+      expect(keyring.setPassword).not.toHaveBeenCalled();
     });
 
     it('应该生成并存储新密钥 当密钥不存在', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
-      vi.spyOn(keyringCompat, 'setPassword').mockResolvedValue(undefined);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
+      vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
       
       const key = await initializeMasterKey();
       
       expect(key).toHaveLength(64);
       expect(key).toMatch(/^[0-9a-f]{64}$/);
-      expect(keyringCompat.setPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key', key);
+      expect(keyring.setPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key', key);
     });
 
     it('应该在 Web 环境生成密钥时输出安全警告', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
-      vi.spyOn(keyringCompat, 'setPassword').mockResolvedValue(undefined);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
+      vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       
       await initializeMasterKey();
@@ -201,8 +201,8 @@ describe('masterKey 完整测试套件', () => {
 
     it('应该在 Tauri 环境生成密钥时输出警告', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
-      vi.spyOn(keyringCompat, 'setPassword').mockResolvedValue(undefined);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
+      vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       
       await initializeMasterKey();
@@ -218,14 +218,14 @@ describe('masterKey 完整测试套件', () => {
     });
 
     it('应该传播错误 当获取密钥失败', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockRejectedValue(new Error('Access denied'));
+      vi.spyOn(keyring, 'getPassword').mockRejectedValue(new Error('Access denied'));
       
       await expect(initializeMasterKey()).rejects.toThrow();
     });
 
     it('应该传播错误 当存储密钥失败', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
-      vi.spyOn(keyringCompat, 'setPassword').mockRejectedValue(new Error('Storage error'));
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
+      vi.spyOn(keyring, 'setPassword').mockRejectedValue(new Error('Storage error'));
       
       await expect(initializeMasterKey()).rejects.toThrow();
     });
@@ -268,7 +268,7 @@ describe('masterKey 完整测试套件', () => {
   describe('exportMasterKey', () => {
     it('应该成功导出密钥 当密钥存在', async () => {
       const testKey = 'd'.repeat(64);
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(testKey);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(testKey);
       
       const key = await exportMasterKey();
       
@@ -276,13 +276,13 @@ describe('masterKey 完整测试套件', () => {
     });
 
     it('应该抛出错误 当密钥不存在', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
       
       await expect(exportMasterKey()).rejects.toThrow('主密钥不存在，无法导出');
     });
 
     it('应该传播错误 当获取密钥失败', async () => {
-      vi.spyOn(keyringCompat, 'getPassword').mockRejectedValue(new Error('Access denied'));
+      vi.spyOn(keyring, 'getPassword').mockRejectedValue(new Error('Access denied'));
       
       await expect(exportMasterKey()).rejects.toThrow();
     });
@@ -291,8 +291,8 @@ describe('masterKey 完整测试套件', () => {
   describe('跨平台兼容性', () => {
     it('应该在 Web 环境正常工作', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
-      vi.spyOn(keyringCompat, 'setPassword').mockResolvedValue(undefined);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
+      vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
       
       const key = await initializeMasterKey();
       
@@ -301,8 +301,8 @@ describe('masterKey 完整测试套件', () => {
 
     it('应该在 Tauri 环境正常工作', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyringCompat, 'getPassword').mockResolvedValue(null);
-      vi.spyOn(keyringCompat, 'setPassword').mockResolvedValue(undefined);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
+      vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
       
       const key = await initializeMasterKey();
       

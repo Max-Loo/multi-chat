@@ -10,8 +10,11 @@
  * - [ ] 预计清理时间：待定（根据迁移覆盖率数据调整）
  */
 
-import { isTauri } from './env';
-import { resetWebKeyringState } from './keyring';
+import { isTauri, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
+import { initIndexedDB } from './indexedDB';
+import { encrypt, decrypt, type PasswordRecord } from './crypto-helpers';
+import { keyring } from './keyring';
+import { bytesToBase64 } from '@/utils/crypto';
 
 /**
  * 版本标记存储键名
@@ -33,43 +36,6 @@ const SEED_STORAGE_KEY = 'multi-chat-keyring-seed';
  */
 const KEYRING_DB_NAME = 'multi-chat-keyring';
 const STORE_DB_NAME = 'multi-chat-store';
-
-/**
- * PBKDF2 密钥派生参数
- */
-const PBKDF2_ALGORITHM = 'SHA-256';
-const DERIVED_KEY_LENGTH = 256; // bits
-
-/**
- * 检测是否在测试环境中运行
- */
-const isTestEnvironment = (): boolean => {
-  if (typeof (globalThis as Record<string, unknown>).vitest !== 'undefined') {
-    return true;
-  }
-  if ((globalThis as Record<string, unknown>).__VITEST__) {
-    return true;
-  }
-  if (typeof process !== 'undefined' && process.env?.VITEST) {
-    return true;
-  }
-  try {
-    const env = (import.meta as unknown as Record<string, unknown>).env as Record<string, unknown> | undefined;
-    if (env?.VITEST === 'true') {
-      return true;
-    }
-  } catch {
-    // 忽略错误
-  }
-  return false;
-};
-
-/**
- * 获取 PBKDF2 迭代次数
- */
-const getPBKDF2Iterations = (): number => {
-  return isTestEnvironment() ? 1000 : 100000;
-};
 
 /**
  * 迁移结果类型
@@ -178,45 +144,6 @@ export const deriveEncryptionKeyV2 = async (seed: string): Promise<CryptoKey> =>
 };
 
 /**
- * 密码记录结构（存储在 IndexedDB 中）
- */
-interface PasswordRecord {
-  service: string;
-  user: string;
-  encryptedPassword: string;
-  iv: string;
-  createdAt: number;
-}
-
-/**
- * 初始化 IndexedDB 数据库
- * @param {string} dbName - 数据库名称
- * @param {string} storeName - 对象存储名称
- * @returns {Promise<IDBDatabase>} IndexedDB 数据库实例
- */
-const initIndexedDB = async (dbName: string, storeName: string): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(dbName, 1);
-
-    request.addEventListener('error', () => {
-      reject(new Error(`无法打开 IndexedDB 数据库: ${request.error}`));
-    });
-
-    request.addEventListener('success', () => {
-      resolve(request.result);
-    });
-
-    request.addEventListener('upgradeneeded', (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(storeName)) {
-        const keyPath = ['service', 'user'];
-        db.createObjectStore(storeName, { keyPath });
-      }
-    });
-  });
-};
-
-/**
  * 获取 IndexedDB 中的所有记录
  * @param {IDBDatabase} db - 数据库实例
  * @param {string} storeName - 对象存储名称
@@ -261,51 +188,6 @@ const clearStore = async (db: IDBDatabase, storeName: string): Promise<void> => 
 };
 
 /**
- * 使用 AES-256-GCM 解密数据
- * @param {string} ciphertext - base64 编码的密文
- * @param {string} iv - base64 编码的 IV
- * @param {CryptoKey} key - 解密密钥
- * @returns {Promise<string>} 解密后的明文
- */
-const decrypt = async (ciphertext: string, iv: string, key: CryptoKey): Promise<string> => {
-  const encryptedData = Uint8Array.from(atob(ciphertext), (c) => c.charCodeAt(0));
-  const ivData = Uint8Array.from(atob(iv), (c) => c.charCodeAt(0));
-
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: ivData },
-    key,
-    encryptedData
-  );
-  const decoder = new TextDecoder();
-
-  return decoder.decode(decrypted);
-};
-
-/**
- * 使用 AES-256-GCM 加密数据
- * @param {string} plaintext - 明文
- * @param {CryptoKey} key - 加密密钥
- * @returns {Promise<{ ciphertext: string; iv: string }>} 加密后的密文和 IV（base64 编码）
- */
-const encrypt = async (plaintext: string, key: CryptoKey): Promise<{ ciphertext: string; iv: string }> => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(plaintext);
-
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    data
-  );
-
-  return {
-    ciphertext: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
-    iv: btoa(String.fromCharCode(...iv)),
-  };
-};
-
-/**
  * 写入记录到 IndexedDB
  * @param {IDBDatabase} db - 数据库实例
  * @param {string} storeName - 对象存储名称
@@ -335,7 +217,7 @@ const putRecord = async (db: IDBDatabase, storeName: string, record: PasswordRec
 const generateNewSeed = (): string => {
   const array = new Uint8Array(32); // 256 bits = 32 bytes
   crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array));
+  return bytesToBase64(array);
 };
 
 /**
@@ -432,7 +314,7 @@ export const migrateKeyringV1ToV2 = async (): Promise<MigrationResult> => {
     // 初始化 IndexedDB
     let db: IDBDatabase;
     try {
-      db = await initIndexedDB(KEYRING_DB_NAME, 'keys');
+      db = await initIndexedDB(KEYRING_DB_NAME, 'keys', ['service', 'user']);
     } catch {
       // 数据库初始化失败，可能不存在，视为新用户
       markMigrationComplete();
@@ -483,7 +365,7 @@ export const migrateKeyringV1ToV2 = async (): Promise<MigrationResult> => {
         localStorage.setItem(SEED_STORAGE_KEY, newSeed);
 
         // 重置 WebKeyringCompat 实例状态，确保下次使用时重新初始化
-        resetWebKeyringState();
+        keyring.resetState();
 
         markMigrationComplete();
         console.warn('[KeyringMigration] 迁移失败，已重置数据');
@@ -501,7 +383,7 @@ export const migrateKeyringV1ToV2 = async (): Promise<MigrationResult> => {
     db.close();
 
     // 重置 WebKeyringCompat 实例状态，确保下次使用时用新密钥初始化
-    resetWebKeyringState();
+    keyring.resetState();
 
     markMigrationComplete();
     console.log(`[KeyringMigration] 成功迁移 ${migratedRecords.length} 条记录`);

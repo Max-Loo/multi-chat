@@ -5,7 +5,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { configureStore } from '@reduxjs/toolkit';
 import { saveModelsMiddleware } from '@/store/middleware/modelMiddleware';
 import { saveModelsToJson } from '@/store/storage';
 import {
@@ -13,14 +12,8 @@ import {
   deleteModel,
   editModel,
 } from '@/store/slices/modelSlice';
-import modelReducer from '@/store/slices/modelSlice';
-import chatReducer from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
-import appConfigReducer from '@/store/slices/appConfigSlices';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
-import settingPageReducer from '@/store/slices/settingPageSlices';
-import modelPageReducer from '@/store/slices/modelPageSlices';
 import { ModelProviderKeyEnum } from '@/utils/enums';
+import { createMiddlewareTestStore } from './createMiddlewareTestStore';
 
 // Mock 存储层
 vi.mock('@/store/storage', () => ({
@@ -33,23 +26,6 @@ describe('modelMiddleware', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
-
-  // 创建测试用的 Redux store（包含 middleware 和完整的 RootState）
-  const createTestStore = () => {
-    return configureStore({
-      reducer: {
-        models: modelReducer,
-        chat: chatReducer,
-        chatPage: chatPageReducer,
-        appConfig: appConfigReducer,
-        modelProvider: modelProviderReducer,
-        settingPage: settingPageReducer,
-        modelPage: modelPageReducer,
-      },
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().prepend(saveModelsMiddleware.middleware),
-    });
-  };
 
   // Mock 模型数据（符合 Model 接口）
   const mockModel = {
@@ -68,39 +44,36 @@ describe('modelMiddleware', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    store = createTestStore();
+    store = createMiddlewareTestStore(saveModelsMiddleware.middleware);
   });
 
   describe('模型操作触发保存', () => {
     it('应该在创建模型时触发保存', async () => {
       await store.dispatch(createModel({ model: mockModel }));
 
-      // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证 saveModelsToJson 被调用
+      // 等待 Listener Middleware 异步 effect 完成
+      await vi.waitFor(() => {
+        expect(mockSaveModelsToJson).toHaveBeenCalledWith(expect.any(Array));
+      });
       expect(mockSaveModelsToJson).toHaveBeenCalledTimes(1);
-      expect(mockSaveModelsToJson).toHaveBeenCalledWith(expect.any(Array));
     });
 
     it('应该在编辑模型时触发保存', async () => {
       const updatedModel = { ...mockModel, modelName: 'Updated Name' };
       await store.dispatch(editModel({ model: updatedModel }));
 
-      // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证 saveModelsToJson 被调用
+      await vi.waitFor(() => {
+        expect(mockSaveModelsToJson).toHaveBeenCalled();
+      });
       expect(mockSaveModelsToJson).toHaveBeenCalledTimes(1);
     });
 
     it('应该在删除模型时触发保存', async () => {
       await store.dispatch(deleteModel({ model: mockModel }));
 
-      // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证 saveModelsToJson 被调用
+      await vi.waitFor(() => {
+        expect(mockSaveModelsToJson).toHaveBeenCalled();
+      });
       expect(mockSaveModelsToJson).toHaveBeenCalledTimes(1);
     });
   });
@@ -110,7 +83,7 @@ describe('modelMiddleware', () => {
       // Dispatch 不相关的 action
       store.dispatch({ type: 'some/other/action' });
 
-      // 等待异步 effect 完成
+      // 等待一个微任务周期确保 effect 有机会执行
       await new Promise(resolve => setTimeout(resolve, 0));
 
       // 验证 saveModelsToJson 没有被调用
@@ -120,15 +93,42 @@ describe('modelMiddleware', () => {
 
   describe('从 Store 获取最新状态', () => {
     it('应该传递最新的 models 给 saveModelsToJson', async () => {
-      // 先创建一个模型
       await store.dispatch(createModel({ model: mockModel }));
 
-      // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        const savedModels = mockSaveModelsToJson.mock.calls[0]?.[0];
+        expect(savedModels).toContainEqual(mockModel);
+      });
+    });
 
-      // 验证传递了最新的 models 数组
-      const savedModels = mockSaveModelsToJson.mock.calls[0][0];
-      expect(savedModels).toContainEqual(mockModel);
+    it('应该在创建后从 store 读取到一致的数据', async () => {
+      await store.dispatch(createModel({ model: mockModel }));
+
+      // 验证 store 中的 models 状态已更新
+      const state = store.getState();
+      expect(state.models.models).toContainEqual(mockModel);
+    });
+
+    it('应该在编辑后从 store 读取到更新后的数据', async () => {
+      await store.dispatch(createModel({ model: mockModel }));
+
+      const updatedModel = { ...mockModel, modelName: 'Updated Name' };
+      await store.dispatch(editModel({ model: updatedModel }));
+
+      // 验证 store 中的数据已更新
+      const state = store.getState();
+      const savedModel = state.models.models.find((m: any) => m.id === mockModel.id);
+      expect(savedModel.modelName).toBe('Updated Name');
+    });
+
+    it('应该在删除后标记数据为已删除', async () => {
+      await store.dispatch(createModel({ model: mockModel }));
+      await store.dispatch(deleteModel({ model: mockModel }));
+
+      // 验证 store 中的数据已被标记为删除
+      const state = store.getState();
+      const deletedModel = state.models.models.find((m: any) => m.id === mockModel.id);
+      expect(deletedModel.isDeleted).toBe(true);
     });
   });
 });

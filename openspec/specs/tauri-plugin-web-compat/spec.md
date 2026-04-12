@@ -286,6 +286,70 @@
 - **AND** 数据库名称格式：`multi-chat-<plugin-name>`（如 `multi-chat-store`、`multi-chat-keyring`）
 - **AND** 不同插件的数据 SHALL 互不干扰
 
+### Requirement: Keyring 插件兼容层
+系统 SHALL 为 `@tauri-plugin-keyring-api` 提供统一的兼容层 API，以受约束的 `keyring` 实例形式导出，在 Tauri 和 Web 环境中均可用。
+
+#### Scenario: Tauri 环境使用原生实现
+- **GIVEN** 应用运行在 Tauri 桌面环境
+- **WHEN** 调用 `keyring.setPassword()`、`keyring.getPassword()`、`keyring.deletePassword()`
+- **THEN** 系统调用 `@tauri-plugin-keyring-api` 的原生实现
+- **AND** 密钥存储到系统级安全存储（macOS Keychain、Windows DPAPI、Linux Secret Service）
+
+#### Scenario: Web 环境使用 IndexedDB 实现
+- **GIVEN** 应用运行在 Web 浏览器环境
+- **WHEN** 调用 `keyring.setPassword()`、`keyring.getPassword()`、`keyring.deletePassword()`
+- **THEN** 系统使用 IndexedDB 实现加密存储
+- **AND** 不抛出运行时错误
+- **AND** 返回类型与 Tauri 环境保持一致
+
+#### Scenario: API 一致性
+- **WHEN** 使用 `keyring` 实例的 Keyring API
+- **THEN** 函数签名和行为与 `@tauri-plugin-keyring-api` 的原生 API 保持一致
+- **AND** 调用者无需修改代码即可在不同环境中运行
+
+#### Scenario: 通过 barrel export 访问
+- **WHEN** 开发者使用 `import { keyring } from '@/utils/tauriCompat'`
+- **THEN** 系统 SHALL 提供 `KeyringPublicAPI` 类型的 `keyring` 实例
+- **AND** 不再导出独立的 `setPassword`、`getPassword`、`deletePassword`、`isKeyringSupported`、`resetWebKeyringState` 函数
+
+### Requirement: Keyring 插件兼容层 barrel export
+系统 SHALL 在 `tauriCompat/index.ts` 中导出 `keyring` 实例和 `KeyringPublicAPI` 类型，不再导出实现类和独立函数。
+
+#### Scenario: Keyring 相关 barrel export
+- **WHEN** 开发者从 `@/utils/tauriCompat` 导入 Keyring 相关 API
+- **THEN** 系统 SHALL 导出 `keyring` 实例（`KeyringPublicAPI` 类型）
+- **AND** 系统 SHALL 导出 `KeyringPublicAPI` 类型
+- **AND** 系统 SHALL NOT 导出 `setPassword`、`getPassword`、`deletePassword`、`isKeyringSupported`、`resetWebKeyringState` 独立函数
+- **AND** 系统 SHALL NOT 通过 barrel export 暴露 `WebKeyringCompat`、`TauriKeyringCompat` 实现类（测试文件直接从 `./keyring` 路径导入）
+
+#### Scenario: 其他兼容层 barrel export 不变
+- **WHEN** 开发者从 `@/utils/tauriCompat` 导入其他模块（isTauri、Command、shell、locale、fetch 等）
+- **THEN** 导出行为 SHALL 保持不变
+
+### Requirement: isTestEnvironment 结果缓存
+
+系统 SHALL 将 `isTestEnvironment()` 的检测结果在模块加载时计算一次并缓存，后续调用 `getPBKDF2Iterations()` 直接使用缓存值。
+
+#### Scenario: 模块加载时计算并缓存
+- **WHEN** `env` 模块被首次导入
+- **THEN** 系统 SHALL 在模块作用域计算一次 `isTestEnvironment()` 的结果
+- **AND** 将结果存储为模块级私有常量
+
+#### Scenario: getPBKDF2Iterations 使用缓存值
+- **WHEN** 调用 `getPBKDF2Iterations()`
+- **THEN** 函数 SHALL 使用模块级缓存值而非重新调用 `isTestEnvironment()`
+- **AND** 返回值与缓存前完全一致（测试环境 1000，生产环境 100000）
+
+#### Scenario: isTestEnvironment 函数仍可导出
+- **WHEN** 外部模块导入 `isTestEnvironment`
+- **THEN** 函数 SHALL 保持可用且签名不变
+- **AND** 每次调用仍执行完整检测逻辑（不使用缓存）
+
+#### Scenario: 测试 mock 兼容性
+- **WHEN** 测试文件使用 `vi.mock()` 覆盖 `env` 模块
+- **THEN** mock 实现 SHALL 正常工作
+- **AND** `getPBKDF2Iterations()` 返回 mock 中定义的值
+
 ### Requirement: 降级策略一致性
 兼容层 SHALL 确保 Web 端的降级实现与 Tauri 端的原生 API 在行为上保持一致，包括数据类型、错误处理和性能特征。
 

@@ -5,7 +5,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { configureStore } from '@reduxjs/toolkit';
 import { saveChatListMiddleware } from '@/store/middleware/chatMiddleware';
 import { saveChatsToJson } from '@/store/storage';
 import {
@@ -15,13 +14,7 @@ import {
   editChatName,
   startSendChatMessage,
 } from '@/store/slices/chatSlices';
-import chatReducer from '@/store/slices/chatSlices';
-import modelReducer from '@/store/slices/modelSlice';
-import chatPageReducer from '@/store/slices/chatPageSlices';
-import appConfigReducer from '@/store/slices/appConfigSlices';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
-import settingPageReducer from '@/store/slices/settingPageSlices';
-import modelPageReducer from '@/store/slices/modelPageSlices';
+import { createMiddlewareTestStore } from './createMiddlewareTestStore';
 
 // Mock 存储层
 vi.mock('@/store/storage', () => ({
@@ -35,23 +28,6 @@ describe('chatMiddleware', () => {
   // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
 
-  // 创建测试用的 Redux store（包含 middleware 和完整的 RootState）
-  const createTestStore = () => {
-    return configureStore({
-      reducer: {
-        models: modelReducer,
-        chat: chatReducer,
-        chatPage: chatPageReducer,
-        appConfig: appConfigReducer,
-        modelProvider: modelProviderReducer,
-        settingPage: settingPageReducer,
-        modelPage: modelPageReducer,
-      },
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().prepend(saveChatListMiddleware.middleware),
-    });
-  };
-
   // Mock 聊天数据（符合 Chat 接口）
   const mockChat = {
     id: 'chat1',
@@ -61,7 +37,7 @@ describe('chatMiddleware', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    store = createTestStore();
+    store = createMiddlewareTestStore(saveChatListMiddleware.middleware);
   });
 
   describe('聊天消息发送触发保存', () => {

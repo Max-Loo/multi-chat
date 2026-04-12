@@ -92,15 +92,15 @@
 - `useToastQueue`：响应式状态同步 hook
 
 #### Scenario: 导入 toastQueue
-- **WHEN** 开发者使用 `import { toastQueue } from '@/lib/toast'`
+- **WHEN** 开发者使用 `import { toastQueue } from '@/services/toast'`
 - **THEN** 系统导出 `toastQueue` 单例，开发者可以调用所有 API 方法
 
 #### Scenario: 导入 rawToast
-- **WHEN** 开发者使用 `import { rawToast } from '@/lib/toast'`
+- **WHEN** 开发者使用 `import { rawToast } from '@/services/toast'`
 - **THEN** 系统导出原始 sonner API，开发者可以自定义位置等选项
 
 #### Scenario: 导入 useToastQueue
-- **WHEN** 开发者使用 `import { useToastQueue } from '@/lib/toast'`
+- **WHEN** 开发者使用 `import { useToastQueue } from '@/services/toast'`
 - **THEN** 系统导出 `useToastQueue` hook，开发者可以在组件中同步响应式状态
 
 ---
@@ -216,11 +216,11 @@
 Toast 模块导出的 API SHALL 正确代理到 toastQueue 单例的方法。
 
 #### Scenario: toastQueue 导出
-- **WHEN** 从 `@/lib/toast` 导入 `toastQueue`
+- **WHEN** 从 `@/services/toast` 导入 `toastQueue`
 - **THEN** 获取到 toastQueue 单例对象
 
 #### Scenario: rawToast 导出
-- **WHEN** 从 `@/lib/toast` 导入 `rawToast`
+- **WHEN** 从 `@/services/toast` 导入 `rawToast`
 - **THEN** 获取到 sonner 的原始 toast 对象
 
 ---

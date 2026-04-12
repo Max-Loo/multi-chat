@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 
-// Mock @/utils/tauriCompat/env
+// Mock @/utils/tauriCompat/env — 测试文件级别的 mock 确保 ./env 相对导入也被正确拦截
 vi.mock('@/utils/tauriCompat/env', () => ({
   isTauri: vi.fn(() => false), // 默认返回 false（Web 环境）
+  isTestEnvironment: vi.fn(() => true),
+  getPBKDF2Iterations: vi.fn(() => 1000),
+  PBKDF2_ALGORITHM: 'SHA-256',
+  DERIVED_KEY_LENGTH: 256,
 }));
 
 /**
@@ -132,8 +136,9 @@ describe('Keyring 迁移模块测试套件', () => {
       const data = encoder.encode(plaintext);
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, v1Key, data);
-      const ciphertext = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-      const ivBase64 = btoa(String.fromCharCode(...iv));
+      const { bytesToBase64 } = await import('@/utils/crypto');
+      const ciphertext = bytesToBase64(new Uint8Array(encrypted));
+      const ivBase64 = bytesToBase64(iv);
 
       // 存储到 IndexedDB
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -284,6 +289,10 @@ describe('Keyring 迁移模块测试套件', () => {
       // 重新配置 mock 为 Tauri 环境
       vi.doMock('@/utils/tauriCompat/env', () => ({
         isTauri: vi.fn(() => true),
+        isTestEnvironment: vi.fn(() => true),
+        getPBKDF2Iterations: vi.fn(() => 1000),
+        PBKDF2_ALGORITHM: 'SHA-256',
+        DERIVED_KEY_LENGTH: 256,
       }));
 
       // 重新导入模块

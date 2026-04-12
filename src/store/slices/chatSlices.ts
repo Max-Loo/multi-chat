@@ -1,5 +1,6 @@
 import { Chat, ChatRoleEnum, StandardMessage } from "@/types/chat";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { WritableDraft } from "@reduxjs/toolkit";
 import { loadChatsFromJson } from "../storage";
 import { RootState } from "..";
 import { Model } from "@/types/model";
@@ -277,6 +278,38 @@ export const startSendChatMessage = createAsyncThunk<
 
 
 /**
+ * 在 chatList 中定位指定聊天和模型，将消息追加到其历史记录中
+ * @param state Immer 可写的聊天状态
+ * @param chatId 目标聊天 ID
+ * @param modelId 目标模型 ID
+ * @param message 要追加的消息，为 null 时静默跳过
+ * @returns 追加成功返回 true，聊天/模型不存在或消息为 null 时返回 false
+ */
+function appendHistoryToModel(
+  state: WritableDraft<ChatSliceState>,
+  chatId: string,
+  modelId: string,
+  message: StandardMessage | null,
+): boolean {
+  if (isNil(message)) return false
+
+  const chatIdx = state.chatList.findIndex(item => item.id === chatId)
+  if (chatIdx === -1) return false
+
+  const chatModelList = state.chatList[chatIdx].chatModelList
+  if (!chatModelList) return false
+
+  const modelIdx = chatModelList.findIndex(item => item.modelId === modelId)
+  if (modelIdx === -1) return false
+
+  if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
+    chatModelList[modelIdx].chatHistoryList = []
+  }
+  chatModelList[modelIdx].chatHistoryList.push(message)
+  return true
+}
+
+/**
  * @description chat 模块管理的 slice
  */
 const chatSlice = createSlice({
@@ -396,21 +429,7 @@ const chatSlice = createSlice({
         message,
       } = action.payload
 
-      // 除非在聊天的过程中被删除，否则都应该存在
-      const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
-      if (chatIdx === -1) return
-
-      const chatModelList = state.chatList[chatIdx].chatModelList
-      if (!Array.isArray(chatModelList)) return
-
-      const modelIdx = chatModelList.findIndex(item => item.modelId === model.id)
-      if (modelIdx === -1) return
-
-      if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
-        chatModelList[modelIdx].chatHistoryList = []
-      }
-      // 将消息写到历史记录的数组中
-      chatModelList[modelIdx].chatHistoryList.push(message)
+      appendHistoryToModel(state, chat.id, model.id, message)
     },
   },
   // 处理异步action的状态变化
@@ -459,21 +478,8 @@ const chatSlice = createSlice({
           const currentChatModel = state.runningChat[chat.id][model.id]
           currentChatModel.isSending = false
 
-          // 除非在聊天的过程中被删除，否则都应该存在
-          const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
-          if (chatIdx === -1) return
-
-          const chatModelList = state.chatList[chatIdx].chatModelList
-          if (!Array.isArray(chatModelList)) return
-
-          const modelIdx = chatModelList.findIndex(item => item.modelId === model.id)
-          if (modelIdx === -1) return
-
-          if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
-            chatModelList[modelIdx].chatHistoryList = []
-          }
-          // 将临时的数据回写到总的数组中
-          chatModelList[modelIdx].chatHistoryList.push(currentChatModel.history as StandardMessage)
+          // 将临时的数据回写到总的数组中，追加失败时跳过清理
+          if (!appendHistoryToModel(state, chat.id, model.id, currentChatModel.history)) return
 
           // 清理临时数据
           delete state.runningChat[chat.id][model.id]
@@ -528,23 +534,7 @@ const chatSlice = createSlice({
         const currentChat = state.runningChat[chat.id]
         if (isNotNil(currentChat)) {
           Object.entries(currentChat).forEach(([modelId, historyItem]) => {
-            // 除非在聊天的过程中被删除，否则都应该存在
-            const chatIdx = state.chatList.findIndex(item => item.id === chat.id)
-            if (chatIdx === -1) return
-  
-            const chatModelList = state.chatList[chatIdx].chatModelList
-            if (!Array.isArray(chatModelList)) return
-  
-            const modelIdx = chatModelList.findIndex(item => item.modelId === modelId)
-            if (modelIdx === -1) return
-  
-            if (!Array.isArray(chatModelList[modelIdx].chatHistoryList)) {
-              chatModelList[modelIdx].chatHistoryList = []
-            }
-            // 将临时的数据回写到总的数组中
-            if (isNotNil(historyItem.history)) {
-              chatModelList[modelIdx].chatHistoryList.push(historyItem.history)
-            }
+            appendHistoryToModel(state, chat.id, modelId, historyItem.history)
           })
         }
 

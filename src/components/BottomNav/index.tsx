@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/utils";
 import { useMemo } from "react";
 import { NAVIGATION_ITEMS } from "@/config/navigation";
 import { Button } from "@/components/ui/button";

@@ -33,13 +33,14 @@ import { encryptField, decryptField } from '@/utils/crypto';
 // Mock @/utils/tauriCompat 模块
 
 vi.mock('@/utils/tauriCompat', () => ({
-
-  getPassword: vi.fn(),
-
-  setPassword: vi.fn(),
-
+  keyring: {
+    getPassword: vi.fn(),
+    setPassword: vi.fn(),
+    deletePassword: vi.fn(),
+    isSupported: vi.fn().mockReturnValue(true),
+    resetState: vi.fn(),
+  },
   isTauri: vi.fn(),
-
 }));
 
 

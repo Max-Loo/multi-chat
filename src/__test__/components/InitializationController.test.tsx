@@ -3,9 +3,9 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import * as InitializationModule from '@/lib/initialization';
+import * as InitializationModule from '@/services/initialization';
 import { InitializationController } from '@/components/InitializationController';
-import type { InitResult, InitConfig, InitStep } from '@/lib/initialization';
+import type { InitResult, InitConfig, InitStep } from '@/services/initialization';
 
 // Mock FatalErrorScreen
 vi.mock('@/components/FatalErrorScreen', () => ({

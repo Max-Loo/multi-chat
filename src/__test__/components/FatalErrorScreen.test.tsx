@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { FatalErrorScreen } from '@/components/FatalErrorScreen';
-import type { InitError } from '@/lib/initialization';
+import type { InitError } from '@/services/initialization';
 
 // Mock window.location.reload
 const mockReload = vi.fn();

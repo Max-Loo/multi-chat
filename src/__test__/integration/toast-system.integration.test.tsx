@@ -9,7 +9,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { ToasterWrapper } from '@/lib/toast/ToasterWrapper';
+import { ToasterWrapper } from '@/services/toast/ToasterWrapper';
 import { getTestStore, cleanupStore } from '@/__test__/helpers/integration/resetStore';
 import { setAppLanguage } from '@/store/slices/appConfigSlices';
 
@@ -53,7 +53,7 @@ describe('Toast 系统集成测试', () => {
 
     test('应该在初始化前缓存 Toast 请求', async () => {
       // 动态导入获取新的 toastQueue 实例
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // 在 ToasterWrapper 渲染前调用 Toast
       // 此时 toastReady 应该为 false，消息会被缓存
@@ -79,7 +79,7 @@ describe('Toast 系统集成测试', () => {
 
     test('应该触发 markReady 当组件就绪', async () => {
       // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // Spy on markReady
       const markReadySpy = vi.spyOn(toastQueue, 'markReady');
@@ -105,7 +105,7 @@ describe('Toast 系统集成测试', () => {
   describe('Redux middleware 集成', () => {
     test('应该显示成功 Toast 当语言切换成功', async () => {
       // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // 渲染 ToasterWrapper 完成初始化
       render(
@@ -144,7 +144,7 @@ describe('Toast 系统集成测试', () => {
 
     test('应该显示错误 Toast 当语言切换失败', async () => {
       // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // 渲染 ToasterWrapper
       render(
@@ -181,7 +181,7 @@ describe('Toast 系统集成测试', () => {
   describe('边界情况', () => {
     test('应该处理快速连续的 Toast 调用', async () => {
       // 动态导入 toastQueue
-      const { toastQueue } = await import('@/lib/toast/toastQueue');
+      const { toastQueue } = await import('@/services/toast/toastQueue');
 
       // 渲染 ToasterWrapper
       render(

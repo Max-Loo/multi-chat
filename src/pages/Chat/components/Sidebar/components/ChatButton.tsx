@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { memo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toastQueue } from '@/lib/toast'
+import { toastQueue } from '@/services/toast'
 import { useConfirm } from "@/hooks/useConfirm"
 import { useResponsive } from "@/hooks/useResponsive"
 

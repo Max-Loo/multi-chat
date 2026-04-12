@@ -30,12 +30,6 @@ vi.mock('@/store/storage/storeUtils', () => ({
   })),
   saveToStore: vi.fn().mockResolvedValue(undefined),
   loadFromStore: vi.fn().mockResolvedValue([]),
-  settingStore: {
-    init: vi.fn().mockResolvedValue(undefined),
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(undefined),
-    save: vi.fn().mockResolvedValue(undefined),
-  },
 }));
 
 vi.mock('@/utils/tauriCompat/shell', () => ({
@@ -81,29 +75,29 @@ vi.mock('@/utils/tauriCompat/store', () => ({
   }),
 }));
 
-// Mock env 模块
+// Mock env 模块（必须在桶模块 mock 之前，因为 importOriginal 会触发 keyring/keyringMigration 加载 env）
 vi.mock('@/utils/tauriCompat/env', () => ({
   isTauri: vi.fn(() => false), // 默认返回 false
+  isTestEnvironment: vi.fn(() => true),
+  getPBKDF2Iterations: vi.fn(() => 1000),
+  PBKDF2_ALGORITHM: 'SHA-256' as const,
+  DERIVED_KEY_LENGTH: 256,
 }));
 
-// Mock @/utils/tauriCompat（不 mock keyring 模块，使用真实实现）
-// 注意：这里不 mock getPassword 和 setPassword，让它们使用 keyring.ts 中的真实实现
-// 在测试中使用 vi.spyOn(keyringCompat, 'method') 来 mock 实例方法
-vi.mock('@/utils/tauriCompat', () => ({
-  // env 相关 - 使用 Mock 函数（从上面的 mock 导入）
-  get isTauri() { return require('@/utils/tauriCompat/env').isTauri; },
-  // 其他模块 - 使用 Mock 函数
-  Command: {
-    create: vi.fn(),
-  },
-  shell: {
-    open: vi.fn(),
-  },
-  locale: vi.fn(),
-  fetch: vi.fn(),
-  getFetchFunc: vi.fn(),
-  createLazyStore: vi.fn(),
-}));
+// Mock @/utils/tauriCompat 桶模块
+// 使用 importOriginal 保留真实导出（如 keyring），仅覆盖需要 mock 的模块
+vi.mock('@/utils/tauriCompat', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/tauriCompat')>();
+  return {
+    ...actual,
+    Command: { create: vi.fn() },
+    shell: { open: vi.fn() },
+    locale: vi.fn(),
+    fetch: vi.fn(),
+    getFetchFunc: vi.fn(),
+    createLazyStore: vi.fn(),
+  };
+});
 
 // ========================================
 // Vercel AI SDK 全局 Mock

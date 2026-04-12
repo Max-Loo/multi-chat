@@ -3,8 +3,8 @@ import { setAppLanguage } from "@/store/slices/appConfigSlices";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
 import { useState } from 'react';
-import { changeAppLanguage } from "@/lib/i18n";
-import { toastQueue } from '@/lib/toast';
+import { changeAppLanguage } from "@/services/i18n";
+import { toastQueue } from '@/services/toast';
 import { LANGUAGE_CONFIGS } from "@/utils/constants";
 
 // 语言选项配置（从 LANGUAGE_CONFIGS 派生）

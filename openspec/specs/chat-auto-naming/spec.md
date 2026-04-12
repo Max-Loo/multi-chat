@@ -227,6 +227,11 @@ TBD - created by archiving change auto-chat-naming. Update Purpose after archive
 - **THEN** 使用 `generateText` 而非 `streamText`
 - **AND** 等待完整响应后返回
 
+#### Scenario: 测试隔离
+- **WHEN** 测试需要 mock `generateText` 或 `getProvider`
+- **THEN** 使用 `vi.mock` 拦截模块，通过 `vi.mocked()` 覆盖行为
+- **AND** 生产代码签名保持干净，不受测试关注点影响
+
 ### Requirement: 全局开关 UI 控制
 系统必须在设置页面提供 UI 控件，允许用户切换自动命名功能的全局开关。
 

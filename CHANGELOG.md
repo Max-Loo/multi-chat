@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.10] - 2026-04-12
+
+### ✨ 新功能
+
+- **增加 software-design-philosophy skill**：新增软件设计哲学 skill
+
+### 🔧 重构
+
+- **消除 src/lib/ 目录**：将 `src/lib/` 下所有模块统一迁移至 `src/services/` 和 `src/utils/`，消除中间层
+- **消除 keyring 和 storeUtils 浅模块**：统一 keyring 实例导出，移除不必要的中间模块
+- **提取共享模块消除重复代码**：从 keyring/store/migration 间提取共享逻辑（`crypto-helpers.ts`、`indexedDB.ts`）
+- **提取 appendHistoryToModel 辅助函数**：从聊天服务中提取历史消息拼接逻辑，提升可测试性
+
+### ⚡ 性能优化
+
+- **使用 createSelector 优化选中聊天 memoization**：新增 `chatSelectors.ts`，使用 Reselect 的 createSelector 缓存派生状态计算，减少无关变更导致的重渲染
+
+### 🧪 测试增强
+
+- **提取 buildTitlePrompt 纯函数**：从 titleGenerator 中提取 prompt 构建为纯函数，补充完整单元测试
+- **补充 appConfig middleware 持久化测试**：为 setAutoNamingEnabled 监听器添加持久化验证
+- **全面改进测试质量**：补充工具函数单元测试（codeBlockUpdater、htmlEscape、crypto-helpers），改进测试基础设施
+
+### 📝 文档变更
+
+- 新增 OpenSpec 变更记录：`merge-lib-into-services`、`eliminate-shallow-modules`、`extract-chat-history-helper`、`optimize-selected-chat-selector`、`test-quality-improvement` 等
+
+---
+
 ## [0.3.9] - 2026-03-31
 
 ### ✨ 新功能

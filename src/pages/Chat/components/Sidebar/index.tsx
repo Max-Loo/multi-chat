@@ -54,7 +54,13 @@ const Sidebar: React.FC = () => {
       >
         {!chatListLoading ? (
           filteredChatList.map((chat) => {
-            return <ChatButton chat={chat} key={chat.id} isSelected={chat.id === selectedChatId} />;
+            return (
+              <ChatButton
+                chat={chat}
+                key={chat.id}
+                isSelected={chat.id === selectedChatId}
+              />
+            );
           })
         ) : (
           <div className="w-full p-2 space-y-2">

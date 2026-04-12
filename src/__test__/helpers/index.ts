@@ -16,8 +16,8 @@ export * from './assertions';
 // 环境隔离
 export * from './isolation';
 
-// 渲染辅助工具
-export * from './render';
+// render 不在此处导出：render/index.ts 无导出内容，会触发 TS2306
+// 需要的测试文件请直接 import from '@/__test__/helpers/render/redux'
 
 // 通用测试工具函数
 export * from './testing-utils';

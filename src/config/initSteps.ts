@@ -4,8 +4,8 @@
  * 定义应用的所有初始化步骤，包括依赖关系、错误处理和执行逻辑
  */
 
-import type { InitStep, ModelProviderStatus } from '@/lib/initialization';
-import { initI18n, tSafely } from '@/lib/i18n';
+import type { InitStep, ModelProviderStatus } from '@/services/initialization';
+import { initI18n, tSafely } from '@/services/i18n';
 import { initializeMasterKey } from '@/store/keyring/masterKey';
 import { store } from '@/store';
 import { initializeModels } from '@/store/slices/modelSlice';

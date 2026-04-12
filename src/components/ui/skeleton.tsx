@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { cn } from "@/utils/utils"
 
 /**
  * Skeleton 组件变体类型
