@@ -37,7 +37,7 @@ describe('useSelectedChat', () => {
   });
 
   it('应该返回 null 和空数组 当无选中聊天', () => {
-    vi.mocked(useCurrentSelectedChat).mockReturnValue(undefined as any);
+    vi.mocked(useCurrentSelectedChat).mockReturnValue(null);
 
     const { result } = renderHook(() => useSelectedChat());
 

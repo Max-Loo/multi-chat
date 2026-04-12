@@ -5,15 +5,23 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { configureStore } from '@reduxjs/toolkit';
 import { saveChatListMiddleware } from '@/store/middleware/chatMiddleware';
 import { saveChatsToJson } from '@/store/storage';
-import {
+import chatReducer, {
   createChat,
   deleteChat,
   editChat,
   editChatName,
   startSendChatMessage,
 } from '@/store/slices/chatSlices';
+import modelReducer from '@/store/slices/modelSlice';
+import chatPageReducer from '@/store/slices/chatPageSlices';
+import appConfigReducer from '@/store/slices/appConfigSlices';
+import type { Chat } from '@/types/chat';
+import modelProviderReducer from '@/store/slices/modelProviderSlice';
+import settingPageReducer from '@/store/slices/settingPageSlices';
+import modelPageReducer from '@/store/slices/modelPageSlices';
 import { createMiddlewareTestStore } from './createMiddlewareTestStore';
 
 // Mock 存储层

@@ -1,6 +1,6 @@
-import { useCurrentSelectedChat } from "@/hooks/useCurrentSelectedChat"
+import { useCurrentSelectedChat } from "@/hooks/useCurrentSelectedChat";
 import { Chat, ChatModel } from "@/types/chat";
-import { useMemo } from "react"
+import { useMemo } from "react";
 
 /**
  * 获取当前选中的聊天及其模型列表
@@ -9,19 +9,19 @@ import { useMemo } from "react"
  */
 export const useSelectedChat = (): {
   selectedChat: Chat | null;
-  chatModelList: ChatModel[]
+  chatModelList: ChatModel[];
 } => {
-  const selectedChat = useCurrentSelectedChat()
+  const selectedChat = useCurrentSelectedChat();
 
   const chatModelList = useMemo(() => {
     if (!selectedChat) {
-      return []
+      return [];
     }
-    return selectedChat.chatModelList || []
-  }, [selectedChat])
+    return selectedChat.chatModelList || [];
+  }, [selectedChat]);
 
   return {
     selectedChat,
     chatModelList,
-  }
-}
+  };
+};
