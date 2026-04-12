@@ -8,6 +8,13 @@
     "description": "自动为聊天生成标题，默认开启"
   },
   "languageSwitchFailed": "语言切换失败",
+  "theme": {
+    "title": "主题",
+    "description": "选择应用的外观主题",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  },
   "modelProvider": {
     "title": "模型供应商",
     "description": "从远程服务器获取最新的模型供应商信息",

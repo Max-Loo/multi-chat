@@ -78,7 +78,7 @@ const CreateModel: React.FC = () => {
 
       {/* 桌面端：直接显示侧边栏（无折叠功能） */}
       {!isMobile && (
-        <div className="h-full border-r border-gray-200 shrink-0">
+        <div className="h-full border-r border-border shrink-0">
           <ModelSidebar
             value={selectedModelProviderKey}
             onChange={setSelectedModelProviderKey}

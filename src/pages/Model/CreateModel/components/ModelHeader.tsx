@@ -31,7 +31,7 @@ const ModelHeader: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center w-full h-12 px-4 border-b border-gray-200 fixed top-0 left-0 z-10 bg-white">
+    <div className="flex items-center w-full h-12 px-4 border-b border-border fixed top-0 left-0 z-10 bg-background">
       {isMobile && (
         <>
           <Button

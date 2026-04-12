@@ -155,7 +155,7 @@ describe('ModelSidebar 组件测试', () => {
 
       // 查找包含 DeepSeek 文本的按钮
       const deepseekButton = screen.getAllByText('DeepSeek')[0].closest('button')
-      expect(deepseekButton).toHaveClass('bg-gray-200')
+      expect(deepseekButton).toHaveClass('bg-accent')
     })
 
     it('应该只显示一个选中状态', () => {
@@ -172,13 +172,13 @@ describe('ModelSidebar 组件测试', () => {
 
       // 验证 DeepSeek 被选中
       const deepseekButton = screen.getAllByText('DeepSeek')[0].closest('button')
-      expect(deepseekButton).toHaveClass('bg-gray-200')
+      expect(deepseekButton).toHaveClass('bg-accent')
 
       // 验证其他供应商未被选中
       const kimiButton = screen.getAllByText('Kimi')[0].closest('button')
       const zhipuButton = screen.getAllByText('ZhipuAI')[0].closest('button')
-      expect(kimiButton).not.toHaveClass('bg-gray-200')
-      expect(zhipuButton).not.toHaveClass('bg-gray-200')
+      expect(kimiButton).not.toHaveClass('bg-accent')
+      expect(zhipuButton).not.toHaveClass('bg-accent')
     })
   })
 

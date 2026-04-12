@@ -46,7 +46,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     case ChatRoleEnum.USER: {
       return (
         <div className="flex justify-end w-full mt-3 mr-2" data-testid="chat-bubble">
-          <Card className="bg-gray-100 text-gray-800 max-w-[80%] border-none shadow-none">
+          <Card className="bg-muted text-foreground max-w-[80%] border-none shadow-none">
             <div
               className="p-4"
               dangerouslySetInnerHTML={{

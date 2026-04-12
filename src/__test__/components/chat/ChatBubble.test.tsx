@@ -94,10 +94,10 @@ describe('ChatBubble UI 组件', () => {
       const wrapper = container.querySelector('.justify-end');
       expect(wrapper).not.toBe(null);
       // 检查 Card 是否有正确的背景色（灰色背景）
-      const card = container.querySelector('.bg-gray-100');
+      const card = container.querySelector('.bg-muted');
       expect(card).not.toBe(null);
       // 检查文字颜色是否正确
-      const textElement = container.querySelector('.text-gray-800');
+      const textElement = container.querySelector('.text-foreground');
       expect(textElement).not.toBe(null);
     });
 

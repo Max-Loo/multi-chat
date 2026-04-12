@@ -36,7 +36,7 @@ const SendButton: React.FC<SendButtonProps> = ({
       <Button
         className={`
         relative flex items-center justify-center p-0 h-8 w-8 rounded-full
-        bg-gray-900 text-white hover:bg-gray-800
+        bg-primary text-primary-foreground hover:bg-primary/90
         shadow-md hover:shadow-lg
         transition-all group shrink-0
       `}
@@ -53,12 +53,12 @@ const SendButton: React.FC<SendButtonProps> = ({
             <div
               className={`
             absolute inset-0 border-4 rounded-full
-            border-gray-300 border-t-gray-600
+            border-muted border-t-foreground/50
             animate-spin
           `}
             ></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-2.5 h-2.5 bg-white rounded-sm"></div>
+              <div className="w-2.5 h-2.5 bg-primary-foreground rounded-sm"></div>
             </div>
           </>
         ) : (
@@ -190,7 +190,7 @@ const Sender: React.FC = () => {
   };
 
   return (
-    <div className="relative z-10 px-3 py-2 bg-background border border-gray-300 rounded-lg">
+    <div className="relative z-10 px-3 py-2 bg-background border border-border rounded-lg">
       {/* Flex 容器包裹 Textarea 和工具栏 */}
       <div className="flex flex-col">
         <Textarea
@@ -238,7 +238,7 @@ const Sender: React.FC = () => {
                 ${
                   transmitHistoryReasoning
                     ? "border-blue-500 text-blue-500 bg-blue-50 hover:bg-blue-100 hover:text-blue-500"
-                    : "border-gray-300 text-gray-500 bg-white hover:border-gray-400 hover:text-gray-700"
+                    : "border-border text-muted-foreground bg-background hover:border-border hover:text-foreground"
                 }
               `}
             >

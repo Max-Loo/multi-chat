@@ -70,9 +70,9 @@ vi.mock('@/config/navigation', () => ({
       i18nKey: 'nav.chat',
       IconComponent: () => <svg data-testid="chat-icon" />,
       theme: {
-        base: 'text-blue-400',
-        active: 'bg-blue-100 text-blue-500',
-        inactive: 'hover:text-blue-500 hover:bg-blue-100',
+        base: 'text-nav-chat',
+        active: 'bg-nav-chat-muted text-nav-chat',
+        inactive: 'hover:text-nav-chat hover:bg-nav-chat-muted',
       },
     },
     {
@@ -81,9 +81,9 @@ vi.mock('@/config/navigation', () => ({
       i18nKey: 'nav.model',
       IconComponent: () => <svg data-testid="model-icon" />,
       theme: {
-        base: 'text-emerald-400',
-        active: 'bg-emerald-100 text-emerald-500',
-        inactive: 'hover:text-emerald-500 hover:bg-emerald-100',
+        base: 'text-nav-model',
+        active: 'bg-nav-model-muted text-nav-model',
+        inactive: 'hover:text-nav-model hover:bg-nav-model-muted',
       },
     },
     {
@@ -92,9 +92,9 @@ vi.mock('@/config/navigation', () => ({
       i18nKey: 'nav.setting',
       IconComponent: () => <svg data-testid="setting-icon" />,
       theme: {
-        base: 'text-violet-400',
-        inactive: 'hover:text-violet-500 hover:bg-violet-100',
-        active: 'bg-violet-100 text-violet-500',
+        base: 'text-nav-setting',
+        inactive: 'hover:text-nav-setting hover:bg-nav-setting-muted',
+        active: 'bg-nav-setting-muted text-nav-setting',
       },
     },
   ],
@@ -249,7 +249,7 @@ describe('底部导航栏集成测试', () => {
       const buttons = screen.getAllByRole('button');
       const chatButton = buttons.find((btn) => btn.textContent?.includes('聊天'));
 
-      expect(chatButton).toHaveClass('bg-blue-100');
+      expect(chatButton).toHaveClass('bg-nav-chat-muted');
     });
 
     it('在 /model 路径时模型按钮应该有激活样式', () => {
@@ -258,7 +258,7 @@ describe('底部导航栏集成测试', () => {
       const buttons = screen.getAllByRole('button');
       const modelButton = buttons.find((btn) => btn.textContent?.includes('模型'));
 
-      expect(modelButton).toHaveClass('bg-emerald-100');
+      expect(modelButton).toHaveClass('bg-nav-model-muted');
     });
 
     it('在 /setting 路径时设置按钮应该有激活样式', () => {
@@ -267,7 +267,7 @@ describe('底部导航栏集成测试', () => {
       const buttons = screen.getAllByRole('button');
       const settingButton = buttons.find((btn) => btn.textContent?.includes('设置'));
 
-      expect(settingButton).toHaveClass('bg-violet-100');
+      expect(settingButton).toHaveClass('bg-nav-setting-muted');
     });
   });
 
@@ -295,7 +295,7 @@ describe('底部导航栏集成测试', () => {
       const buttons = screen.getAllByRole('button');
       const modelButton = buttons.find((btn) => btn.textContent?.includes('模型'));
 
-      expect(modelButton).toHaveClass('bg-emerald-100');
+      expect(modelButton).toHaveClass('bg-nav-model-muted');
     });
 
     it('根路径 / 不应该激活任何按钮', () => {
@@ -305,9 +305,9 @@ describe('底部导航栏集成测试', () => {
 
       // 没有按钮应该有激活样式
       buttons.forEach((button) => {
-        expect(button).not.toHaveClass('bg-blue-100');
-        expect(button).not.toHaveClass('bg-emerald-100');
-        expect(button).not.toHaveClass('bg-violet-100');
+        expect(button).not.toHaveClass('bg-nav-chat-muted');
+        expect(button).not.toHaveClass('bg-nav-model-muted');
+        expect(button).not.toHaveClass('bg-nav-setting-muted');
       });
     });
   });

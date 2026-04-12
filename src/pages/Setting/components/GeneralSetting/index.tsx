@@ -1,5 +1,6 @@
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
 import LanguageSetting from "./components/LanguageSetting";
+import ThemeSetting from "./components/ThemeSetting";
 import ModelProviderSetting from "./components/ModelProviderSetting";
 import AutoNamingSetting from "./components/AutoNamingSetting";
 import { useRef, useEffect } from "react";
@@ -27,13 +28,13 @@ const GeneralSetting: React.FC = () => {
       ref={scrollContainerRef}
       className={`flex flex-col items-center justify-start
       w-full h-full px-4
-      overflow-y-auto bg-gray-100
+      overflow-y-auto bg-muted
       ${scrollbarClassname}
     `}
     >
       <div
         className={`
-      w-full p-3 my-4 bg-white rounded-xl
+      w-full p-3 my-4 bg-card rounded-xl
       flex flex-col justify-start items-center
     `}
       >
@@ -42,7 +43,16 @@ const GeneralSetting: React.FC = () => {
 
       <div
         className={`
-      w-full p-3 my-4 bg-white rounded-xl
+      w-full p-3 my-4 bg-card rounded-xl
+      flex flex-col justify-start items-center
+    `}
+      >
+        <ThemeSetting />
+      </div>
+
+      <div
+        className={`
+      w-full p-3 my-4 bg-card rounded-xl
       flex flex-col justify-start items-center
     `}
       >
@@ -51,7 +61,7 @@ const GeneralSetting: React.FC = () => {
 
       <div
         className={`
-      w-full p-3 my-4 bg-white rounded-xl
+      w-full p-3 my-4 bg-card rounded-xl
       flex flex-col justify-start items-center
     `}
       >

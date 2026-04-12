@@ -71,3 +71,19 @@ export const LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY =
  */
 export const LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY =
   LOCAL_STORAGE_PREFIX + "auto-naming-enabled";
+
+/**
+ * 本地存储键名：主题偏好
+ */
+export const LOCAL_STORAGE_THEME_KEY = LOCAL_STORAGE_PREFIX + "theme";
+
+/**
+ * 判断是否应启用暗色模式
+ * @param savedTheme 用户设置的主题值（light/dark/system），null 表示未设置
+ * @param prefersDark 系统是否偏好暗色模式
+ */
+export function resolveIsDark(savedTheme: string | null, prefersDark: boolean): boolean {
+  return savedTheme === "dark" ||
+    (!savedTheme && prefersDark) ||
+    (savedTheme === "system" && prefersDark);
+}

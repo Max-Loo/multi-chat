@@ -139,6 +139,13 @@ interface Resources {
         description: string;
       };
       languageSwitchFailed: string;
+      theme: {
+        title: string;
+        description: string;
+        light: string;
+        dark: string;
+        system: string;
+      };
       modelProvider: {
         title: string;
         description: string;

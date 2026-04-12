@@ -8,6 +8,13 @@
     "description": "Automatically generate titles for chats, enabled by default"
   },
   "languageSwitchFailed": "Failed to switch language",
+  "theme": {
+    "title": "Theme",
+    "description": "Choose the appearance theme for the app",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
   "modelProvider": {
     "title": "Model Provider",
     "description": "Fetch the latest model provider information from remote server",

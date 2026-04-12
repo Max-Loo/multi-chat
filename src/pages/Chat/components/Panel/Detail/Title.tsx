@@ -47,7 +47,7 @@ const Title = memo<DetailTitleProps>(({ chatModel }) => {
     );
   } else if (!currentModel.isEnable) {
     statusTag = (
-      <Badge variant="secondary" className="bg-orange-500 text-white">
+      <Badge variant="secondary" className="bg-orange-500 dark:bg-orange-600 text-white">
         {t(($) => $.chat.disabled)}
       </Badge>
     );

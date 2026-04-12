@@ -8,6 +8,13 @@
     "description": "Générer automatiquement des titres pour les chats, activé par défaut"
   },
   "languageSwitchFailed": "Échec du changement de langue",
+  "theme": {
+    "title": "Thème",
+    "description": "Choisir le thème d'apparence de l'application",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
   "modelProvider": {
     "title": "Fournisseur de modèles",
     "description": "Récupérer les dernières informations du fournisseur de modèles à partir du serveur distant",

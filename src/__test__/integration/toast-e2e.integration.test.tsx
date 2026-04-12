@@ -33,7 +33,7 @@ import { getTestStore, cleanupStore } from '@/__test__/helpers/integration/reset
 
 /**
  * Mock @/components/ui/sonner Toaster 组件
- * 理由：sonner 库依赖浏览器环境和主题系统（next-themes）
+ * 理由：sonner 库依赖浏览器环境和主题系统（DOM 主题检测）
  * E2E 测试中 Mock 它可以避免配置完整的主题系统，同时保持测试隔离
  * Toast 消息的显示逻辑已在 toastQueue 单元测试中验证
  */

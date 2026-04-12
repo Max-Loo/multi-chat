@@ -107,7 +107,7 @@ const ChatPage: React.FC = () => {
         <div
           data-testid="chat-sidebar"
           className={`
-            h-full overflow-hidden border-r border-gray-200 shrink-0
+            h-full overflow-hidden border-r border-border shrink-0
             transition-spacing duration-300 ease-in-out
             will-change-transform will-change-opacity
             ${isSidebarCollapsed ? (isDesktop ? "-ml-56" : "-ml-48") + " -translate-x-full opacity-0" : "ml-0 translate-x-0 opacity-100"}

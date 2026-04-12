@@ -49,7 +49,7 @@ vi.mock('@/hooks/useResponsive', () => ({
 
 /**
  * Mock @/components/ui/sonner Toaster 组件
- * 理由：sonner 库依赖浏览器环境和主题系统（next-themes）
+ * 理由：sonner 库依赖浏览器环境和主题系统（DOM 主题检测）
  * Mock 它可以避免在测试环境中配置完整的主题系统
  * Mock 的 Toaster 提供最小可渲染的占位符
  */

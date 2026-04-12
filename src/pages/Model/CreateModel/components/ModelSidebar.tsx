@@ -66,7 +66,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
     >
       {/* 表头部分 */}
       <div
-        className={`border-b border-gray-300 w-full ${!isDesktop ? "p-1" : "p-2"}`}
+        className={`border-b border-border w-full ${!isDesktop ? "p-1" : "p-2"}`}
       >
         <div className="flex items-center justify-between w-full pb-2">
           {/* 返回上一页按钮 */}
@@ -96,7 +96,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
               key={provider.providerKey}
               variant="ghost"
               className={`${buttonClassName} ${
-                provider.providerKey === selectedModelKey && "bg-gray-200"
+                provider.providerKey === selectedModelKey && "bg-accent"
               }`}
               title={provider.providerName}
               onClick={() =>

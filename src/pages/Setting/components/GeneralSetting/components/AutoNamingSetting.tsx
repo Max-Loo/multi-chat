@@ -26,7 +26,7 @@ const AutoNamingSetting: React.FC = () => {
       {/* 左侧：标题和说明 */}
       <div className="flex flex-col gap-1">
         <div className="text-base">{t($ => $.setting.autoNaming.title)}</div>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-muted-foreground">
           {t($ => $.setting.autoNaming.description)}
         </div>
       </div>

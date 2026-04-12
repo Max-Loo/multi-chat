@@ -126,7 +126,7 @@ const ModelTable: React.FC = () => {
                     <Button
                       variant="destructive"
                       size="sm"
-                      className="text-white"
+                      className="text-primary-foreground"
                       onClick={() => handleDeleteModel(row.original)}
                     >
                       {t(($) => $.common.confirm)}

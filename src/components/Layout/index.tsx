@@ -14,7 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ className = "" }) => {
 
   return (
     <div
-      className={`flex h-screen bg-white ${isMobile ? "flex-col" : ""} ${className}`}
+      className={`flex h-screen bg-background ${isMobile ? "flex-col" : ""} ${className}`}
     >
       {/* 侧边导航栏：在所有非 Mobile 模式下显示 (方案A) */}
       {!isMobile && <Sidebar />}

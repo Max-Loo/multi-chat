@@ -835,9 +835,9 @@ describe("ChatPanelSender", () => {
       expect(textarea).toHaveClass("shadow-none");
 
       // 外层容器应该有边框
-      const outerContainer = textarea.closest(".border.border-gray-300");
+      const outerContainer = textarea.closest(".border.border-border");
       expect(outerContainer).toBeInTheDocument();
-      expect(outerContainer).toHaveClass("border-gray-300");
+      expect(outerContainer).toHaveClass("border-border");
     });
 
     it("7.3 工具栏应该独立于 Textarea 区域", () => {

@@ -4,6 +4,15 @@ import "./main.css";
 import { interceptClickAToJump } from "@/services/global";
 import { InitializationController } from "@/components/InitializationController";
 import type { InitResult, InitStep } from "@/services/initialization";
+import { LOCAL_STORAGE_THEME_KEY, resolveIsDark } from "@/utils/constants";
+
+/**
+ * 同步初始化主题，避免页面闪烁
+ * 在 React 渲染之前读取 localStorage 并设置 .dark class
+ */
+const savedTheme = localStorage.getItem(LOCAL_STORAGE_THEME_KEY);
+const isDark = resolveIsDark(savedTheme, matchMedia("(prefers-color-scheme: dark)").matches);
+document.documentElement.classList.toggle("dark", isDark);
 
 // 异步导入 initSteps，确保依赖模块正确初始化
 const initStepsModule = await import("@/config/initSteps");
@@ -81,7 +90,7 @@ const App: React.FC = () => {
           <p className="text-lg text-foreground">{error.message}</p>
           <button
             onClick={handleRetry}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 transition-colors"
           >
             重试
           </button>

@@ -21,7 +21,7 @@ interface ModelSelectProps {
 const renderOption = (option: ModelDetail) => (
   <div
     key={option.modelKey}
-    className="flex items-center space-x-2 p-2 border-b border-gray-200 last:border-0"
+    className="flex items-center space-x-2 p-2 border-b border-border last:border-0"
   >
     <RadioGroupItem value={option.modelKey} id={option.modelKey} />
     <label
@@ -53,7 +53,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
       value={value}
       onValueChange={onValueChange}
       className={`
-        flex flex-col border rounded-md border-gray-300
+        flex flex-col border rounded-md border-border
         ${error ? 'border-red-500' : ''}
         ${className}
       `}

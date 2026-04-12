@@ -143,12 +143,12 @@ const ToastTest: React.FC = () => {
       ref={scrollContainerRef}
       className={`flex flex-col items-center justify-start
       w-full h-full px-4
-      overflow-y-auto bg-gray-100
+      overflow-y-auto bg-muted
       ${scrollbarClassname}
     `}
     >
       {/* 第 1 组: toastQueue 方法测试 */}
-      <div className="w-full p-3 my-4 bg-white rounded-xl flex flex-col items-start">
+      <div className="w-full p-3 my-4 bg-card rounded-xl flex flex-col items-start">
         <h3 className="text-lg font-semibold mb-3">toastQueue 方法测试</h3>
         <div className="grid grid-cols-2 gap-2 w-full">
           <Button variant="default" onClick={handleSuccess}>
@@ -170,7 +170,7 @@ const ToastTest: React.FC = () => {
       </div>
 
       {/* 第 2 组: rawToast 位置测试 */}
-      <div className="w-full p-3 my-4 bg-white rounded-xl flex flex-col items-start">
+      <div className="w-full p-3 my-4 bg-card rounded-xl flex flex-col items-start">
         <h3 className="text-lg font-semibold mb-3">rawToast 位置测试</h3>
         <div className="grid grid-cols-2 gap-2 w-full">
           <Button variant="outline" onClick={handleTopLeft}>
@@ -195,7 +195,7 @@ const ToastTest: React.FC = () => {
       </div>
 
       {/* 第 3 组: 队列机制测试 */}
-      <div className="w-full p-3 my-4 bg-white rounded-xl flex flex-col items-start">
+      <div className="w-full p-3 my-4 bg-card rounded-xl flex flex-col items-start">
         <h3 className="text-lg font-semibold mb-3">队列机制测试</h3>
         <div className="grid grid-cols-1 gap-2 w-full">
           <Button variant="default" onClick={handleQueueTest}>
@@ -211,7 +211,7 @@ const ToastTest: React.FC = () => {
       </div>
 
       {/* 第 4 组: Promise 测试 */}
-      <div className="w-full p-3 my-4 bg-white rounded-xl flex flex-col items-start">
+      <div className="w-full p-3 my-4 bg-card rounded-xl flex flex-col items-start">
         <h3 className="text-lg font-semibold mb-3">Promise 测试</h3>
         <div className="grid grid-cols-1 gap-2 w-full">
           <Button variant="default" onClick={handlePromiseSuccess}>

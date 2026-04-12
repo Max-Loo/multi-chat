@@ -80,7 +80,7 @@ export const ProviderLogo = React.memo<ProviderLogoProps>(
         {/* Logo 图片 - 加载成功后淡入 */}
         {!imgError && (
           <div
-            className="flex items-center justify-center rounded-lg bg-gray-100 absolute inset-0 transition-opacity duration-300"
+            className="flex items-center justify-center rounded-lg bg-muted absolute inset-0 transition-opacity duration-300"
             style={{ opacity: imgLoaded ? 1 : 0 }}
           >
             <img

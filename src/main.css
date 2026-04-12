@@ -77,6 +77,12 @@ html {
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+    --color-nav-chat: var(--nav-chat);
+    --color-nav-chat-muted: var(--nav-chat-muted);
+    --color-nav-model: var(--nav-model);
+    --color-nav-model-muted: var(--nav-model-muted);
+    --color-nav-setting: var(--nav-setting);
+    --color-nav-setting-muted: var(--nav-setting-muted);
 }
 
 :root {
@@ -112,6 +118,12 @@ html {
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    --nav-chat: oklch(0.709 0.165 259);
+    --nav-chat-muted: oklch(0.929 0.045 256);
+    --nav-model: oklch(0.765 0.177 163);
+    --nav-model-muted: oklch(0.950 0.052 163);
+    --nav-setting: oklch(0.711 0.183 293);
+    --nav-setting-muted: oklch(0.943 0.029 294);
 }
 
 .dark {
@@ -146,6 +158,12 @@ html {
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+    --nav-chat: oklch(0.623 0.180 259);
+    --nav-chat-muted: oklch(0.22 0.05 256);
+    --nav-model: oklch(0.696 0.15 163);
+    --nav-model-muted: oklch(0.22 0.05 163);
+    --nav-setting: oklch(0.653 0.2 293);
+    --nav-setting-muted: oklch(0.22 0.05 294);
 }
 
 @layer base {

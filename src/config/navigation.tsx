@@ -44,9 +44,9 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     // 对于 BottomNav，提供组件类
     IconComponent: MessageSquare,
     theme: {
-      base: "text-blue-400!",
-      active: "bg-blue-100! text-blue-500!",
-      inactive: "hover:text-blue-500! hover:bg-blue-100!",
+      base: "text-nav-chat",
+      active: "bg-nav-chat-muted text-nav-chat",
+      inactive: "hover:text-nav-chat hover:bg-nav-chat-muted",
     },
   },
   {
@@ -56,9 +56,9 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     icon: <Bot size={24} />,
     IconComponent: Bot,
     theme: {
-      base: "text-emerald-400!",
-      active: "bg-emerald-100! text-emerald-500!",
-      inactive: "hover:text-emerald-500! hover:bg-emerald-100!",
+      base: "text-nav-model",
+      active: "bg-nav-model-muted text-nav-model",
+      inactive: "hover:text-nav-model hover:bg-nav-model-muted",
     },
   },
   {
@@ -68,9 +68,9 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     icon: <Settings size={24} />,
     IconComponent: Settings,
     theme: {
-      base: "text-violet-400!",
-      active: "bg-violet-100! text-violet-500!",
-      inactive: "hover:text-violet-500! hover:bg-violet-100!",
+      base: "text-nav-setting",
+      active: "bg-nav-setting-muted text-nav-setting",
+      inactive: "hover:text-nav-setting hover:bg-nav-setting-muted",
     },
   },
 ] as const;

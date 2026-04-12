@@ -21,7 +21,7 @@ const Grid: React.FC<GridProps> = ({ board }) => {
               <div
                 key={chatModel.modelId}
                 className={cn(
-                  "relative flex-1 min-w-0 border-gray-300",
+                  "relative flex-1 min-w-0 border-border",
                   cellIdx < row.length - 1 && "border-r",
                   idx < board.length - 1 && "border-b",
                 )}

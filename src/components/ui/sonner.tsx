@@ -1,14 +1,18 @@
-import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
+import { useTheme } from "@/hooks/useTheme"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
+/**
+ * Toast 组件
+ * 接入 useTheme Hook 获取 resolvedTheme，确保主题切换时 Toast 样式同步更新
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const { resolvedTheme } = useTheme()
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={resolvedTheme}
       position="bottom-right"
       swipeDirections={["right"]}
       offset={{ bottom: 24, right: 24 }}

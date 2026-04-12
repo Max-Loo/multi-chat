@@ -60,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({
   }, [dispatch]);
 
   return (
-    <div className="relative z-10 flex items-center justify-between w-full h-12 pl-3 pr-3 border-b border-gray-200">
+    <div className="relative z-10 flex items-center justify-between w-full h-12 pl-3 pr-3 border-b border-border">
       <div className="flex items-center justify-start">
         {/* 打开聊天列表抽屉的按钮 */}
         {isMobile && (

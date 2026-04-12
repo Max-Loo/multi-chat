@@ -9,6 +9,7 @@ import { RouterProvider } from "react-router-dom";
 import { store } from "@/store";
 import router from "@/router";
 import { ConfirmProvider } from "@/hooks/useConfirm";
+import { ThemeProvider } from "@/hooks/useTheme";
 import { ToasterWrapper } from "@/services/toast/ToasterWrapper";
 import { handleSecurityWarning } from "@/store/keyring/masterKey";
 import { triggerSilentRefreshIfNeeded } from "@/store/slices/modelProviderSlice";
@@ -59,12 +60,14 @@ export function createMainApp(result: InitResult) {
     }, []);
 
     return (
-      <Provider store={store}>
-        <ConfirmProvider>
-          <RouterProvider router={router} />
-          <ToasterWrapper />
-        </ConfirmProvider>
-      </Provider>
+      <ThemeProvider>
+        <Provider store={store}>
+          <ConfirmProvider>
+            <RouterProvider router={router} />
+            <ToasterWrapper />
+          </ConfirmProvider>
+        </Provider>
+      </ThemeProvider>
     );
   };
 }

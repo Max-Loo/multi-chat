@@ -47,9 +47,9 @@ vi.mock('@/config/navigation', () => ({
       i18nKey: 'nav.chat',
       IconComponent: () => <svg data-testid="chat-icon" />,
       theme: {
-        base: 'text-blue-400',
-        active: 'bg-blue-100 text-blue-500',
-        inactive: 'hover:text-blue-500 hover:bg-blue-100',
+        base: 'text-nav-chat',
+        active: 'bg-nav-chat-muted text-nav-chat',
+        inactive: 'hover:text-nav-chat hover:bg-nav-chat-muted',
       },
     },
     {
@@ -58,9 +58,9 @@ vi.mock('@/config/navigation', () => ({
       i18nKey: 'nav.model',
       IconComponent: () => <svg data-testid="model-icon" />,
       theme: {
-        base: 'text-emerald-400',
-        active: 'bg-emerald-100 text-emerald-500',
-        inactive: 'hover:text-emerald-500 hover:bg-emerald-100',
+        base: 'text-nav-model',
+        active: 'bg-nav-model-muted text-nav-model',
+        inactive: 'hover:text-nav-model hover:bg-nav-model-muted',
       },
     },
     {
@@ -69,9 +69,9 @@ vi.mock('@/config/navigation', () => ({
       i18nKey: 'nav.setting',
       IconComponent: () => <svg data-testid="setting-icon" />,
       theme: {
-        base: 'text-violet-400',
-        inactive: 'hover:text-violet-500 hover:bg-violet-100',
-        active: 'bg-violet-100 text-violet-500',
+        base: 'text-nav-setting',
+        inactive: 'hover:text-nav-setting hover:bg-nav-setting-muted',
+        active: 'bg-nav-setting-muted text-nav-setting',
       },
     },
   ],
@@ -171,7 +171,7 @@ describe('BottomNav 组件', () => {
       const buttons = screen.getAllByRole('button');
       const chatButton = buttons.find((btn) => btn.textContent?.includes('聊天'));
       expect(chatButton).toBeInTheDocument();
-      expect(chatButton).toHaveClass('bg-blue-100');
+      expect(chatButton).toHaveClass('bg-nav-chat-muted');
     });
 
     it('非激活路径应该使用非激活样式', () => {
@@ -213,8 +213,8 @@ describe('BottomNav 组件', () => {
       const buttons = screen.getAllByRole('button');
       const chatButton = buttons.find((btn) => btn.textContent?.includes('聊天'));
 
-      // 激活状态下应该有 text-blue-500 类（来自 activeClassName）
-      expect(chatButton).toHaveClass('text-blue-500');
+      // 激活状态下应该有 text-nav-chat 类（来自 activeClassName）
+      expect(chatButton).toHaveClass('text-nav-chat');
     });
   });
 

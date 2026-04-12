@@ -122,9 +122,9 @@ describe('Sidebar 组件测试', () => {
     expect(settingButton).toBeInTheDocument();
 
     // 检查基础样式类
-    expect(chatButton).toHaveClass('text-blue-400!');
-    expect(modelButton).toHaveClass('text-emerald-400!');
-    expect(settingButton).toHaveClass('text-violet-400!');
+    expect(chatButton).toHaveClass('text-nav-chat');
+    expect(modelButton).toHaveClass('text-nav-model');
+    expect(settingButton).toHaveClass('text-nav-setting');
 
     // 检查尺寸和布局类
     expect(chatButton).toHaveClass('w-10', 'h-10');
@@ -138,7 +138,7 @@ describe('Sidebar 组件测试', () => {
   it('应该接受并应用自定义 className', () => {
     const { container } = render(<Sidebar className="custom-class" />);
 
-    const sidebarDiv = container.querySelector('.bg-gray-50');
+    const sidebarDiv = container.querySelector('.bg-sidebar');
     expect(sidebarDiv).toHaveClass('custom-class');
   });
 
@@ -153,8 +153,8 @@ describe('Sidebar 组件测试', () => {
     const chatButton = screen.getByTitle('聊天');
 
     // 检查激活状态样式类
-    expect(chatButton).toHaveClass('bg-blue-100!', 'text-blue-500!');
-    expect(chatButton).not.toHaveClass('hover:text-blue-500!', 'hover:bg-blue-100!');
+    expect(chatButton).toHaveClass('bg-nav-chat-muted', 'text-nav-chat');
+    expect(chatButton).not.toHaveClass('hover:text-nav-chat', 'hover:bg-nav-chat-muted');
   });
 
   /**
@@ -168,8 +168,8 @@ describe('Sidebar 组件测试', () => {
     const modelButton = screen.getByTitle('模型');
 
     // 检查激活状态样式类
-    expect(modelButton).toHaveClass('bg-emerald-100!', 'text-emerald-500!');
-    expect(modelButton).not.toHaveClass('hover:text-emerald-500!', 'hover:bg-emerald-100!');
+    expect(modelButton).toHaveClass('bg-nav-model-muted', 'text-nav-model');
+    expect(modelButton).not.toHaveClass('hover:text-nav-model', 'hover:bg-nav-model-muted');
   });
 
   /**
@@ -183,8 +183,8 @@ describe('Sidebar 组件测试', () => {
     const settingButton = screen.getByTitle('设置');
 
     // 检查激活状态样式类
-    expect(settingButton).toHaveClass('bg-violet-100!', 'text-violet-500!');
-    expect(settingButton).not.toHaveClass('hover:text-violet-500!', 'hover:bg-violet-100!');
+    expect(settingButton).toHaveClass('bg-nav-setting-muted', 'text-nav-setting');
+    expect(settingButton).not.toHaveClass('hover:text-nav-setting', 'hover:bg-nav-setting-muted');
   });
 
   /**
@@ -198,7 +198,7 @@ describe('Sidebar 组件测试', () => {
     const chatButton = screen.getByTitle('聊天');
 
     // 检查激活状态样式类（因为使用 startsWith 判断）
-    expect(chatButton).toHaveClass('bg-blue-100!', 'text-blue-500!');
+    expect(chatButton).toHaveClass('bg-nav-chat-muted', 'text-nav-chat');
   });
 
   /**

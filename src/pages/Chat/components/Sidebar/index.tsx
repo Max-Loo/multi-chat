@@ -44,7 +44,7 @@ const Sidebar: React.FC = () => {
       ref={sidebarRef}
       className="relative flex flex-col items-center justify-start w-full h-full"
     >
-      <div className="w-full h-12 p-2 border-b border-gray-100">
+      <div className="w-full h-12 p-2 border-b border-border">
         <ToolsBar filterText={filterText} onFilterChange={setFilterText} />
       </div>
       <div

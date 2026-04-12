@@ -59,7 +59,7 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
 
       {/* 推理内容 */}
       {expanded && (
-        <div className="pl-4 pb-4 mt-2 border-l-2 border-gray-300">
+        <div className="pl-4 pb-4 mt-2 border-l-2 border-border">
           <div
             className="text-sm text-muted-foreground"
             dangerouslySetInnerHTML={{

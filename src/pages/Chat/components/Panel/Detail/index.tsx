@@ -180,7 +180,7 @@ const Detail: React.FC<DetailProps> = ({
     {needsScrollbar && !isAtBottom && (
       <Button
         onClick={scrollToBottom}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full h-10 w-10 bg-gray-900 text-white shadow-md hover:shadow-lg hover:bg-gray-800 transition-all z-50"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full h-10 w-10 bg-primary text-primary-foreground shadow-md hover:shadow-lg hover:bg-primary/90 transition-all z-50"
         title={t($ => $.chat.scrollToBottom)}
         size="icon"
       >
@@ -188,12 +188,12 @@ const Detail: React.FC<DetailProps> = ({
           <div
             className={`
             absolute inset-0 border-4 rounded-full
-            border-gray-300 border-t-gray-600
-            animate-spin w-full h-full bg-white
+            border-muted border-t-foreground/50
+            animate-spin w-full h-full bg-primary-foreground
           `}
           ></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <ArrowDown className="text-gray-700" />
+            <ArrowDown className="text-foreground" />
           </div>
         </> : <ArrowDown />}
       </Button>

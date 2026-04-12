@@ -169,7 +169,7 @@ describe('Layout 组件', () => {
       const { container } = renderLayout(store);
 
       const layoutDiv = container.firstChild as HTMLElement;
-      expect(layoutDiv).toHaveClass('flex', 'h-screen', 'bg-white');
+      expect(layoutDiv).toHaveClass('flex', 'h-screen', 'bg-background');
     });
 
     it('应该支持自定义 className', () => {
@@ -293,7 +293,7 @@ describe('Layout 组件', () => {
       const { container } = renderLayout(store, { className: '' });
 
       const layoutDiv = container.firstChild as HTMLElement;
-      expect(layoutDiv).toHaveClass('flex', 'h-screen', 'bg-white');
+      expect(layoutDiv).toHaveClass('flex', 'h-screen', 'bg-background');
     });
 
     it('应该处理多个自定义 className', () => {
