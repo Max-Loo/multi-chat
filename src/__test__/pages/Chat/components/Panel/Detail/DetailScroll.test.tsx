@@ -190,6 +190,8 @@ describe('Detail 滚动到底部按钮', () => {
       observe() {}
       unobserve() {}
       disconnect() {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: 自定义 ResizeObserver mock 类与浏览器 API 构造签名不完全匹配
     } as any;
   });
 

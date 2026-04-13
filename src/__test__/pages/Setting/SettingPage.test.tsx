@@ -2,34 +2,9 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import SettingPage from '@/pages/Setting/index';
 import { resetTestState } from '@/__test__/helpers/isolation';
-import chatPageReducer from '@/store/slices/chatPageSlices';
-import settingPageReducer from '@/store/slices/settingPageSlices';
-
-/**
- * 创建测试用的 Redux store
- */
-function createTestStore() {
-  return configureStore({
-    reducer: {
-      chatPage: chatPageReducer,
-      settingPage: settingPageReducer,
-    },
-  });
-}
-
-/**
- * 渲染 SettingPage 组件的辅助函数
- */
-function renderSettingPage(ui: React.ReactElement) {
-  return render(
-    <Provider store={createTestStore()}>
-        <MemoryRouter>{ui}</MemoryRouter>
-    </Provider>
-  );
-}
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
 /**
  * Mock SettingSidebar component
@@ -70,6 +45,17 @@ vi.mock('react-i18next', () => ({
     }) as any,
   }),
 }));
+
+/**
+ * 渲染 SettingPage 组件的辅助函数
+ */
+function renderSettingPage(ui: React.ReactElement) {
+  return render(
+    <Provider store={createTypeSafeTestStore()}>
+        <MemoryRouter>{ui}</MemoryRouter>
+    </Provider>
+  );
+}
 
 /**
  * SettingPage 组件单元测试

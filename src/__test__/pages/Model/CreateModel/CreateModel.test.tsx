@@ -7,14 +7,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import CreateModel from '@/pages/Model/CreateModel';
-import modelReducer from '@/store/slices/modelSlice';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
-import modelPageReducer from '@/store/slices/modelPageSlices';
-import type { RootState } from '@/store';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createModelSliceState, createModelProviderSliceState, createModelPageSliceState } from '@/__test__/helpers/mocks/testState';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
 // Mock react-i18next
@@ -58,7 +55,7 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
       if (typeof keyOrFn === 'function') {
         return keyOrFn(translations);
       }
-      
+
       const keyMap: Record<string, string> = {
         'model.nickname': '模型昵称',
         'model.modelNickname': '模型昵称',
@@ -94,18 +91,40 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-const createTestStore = (state: Partial<RootState>) => {
-  return configureStore({
-    reducer: {
-      models: modelReducer,
-      modelProvider: modelProviderReducer,
-      modelPage: modelPageReducer,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    } as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    preloadedState: state as any,
+const mockProviders = [
+  {
+    providerKey: ModelProviderKeyEnum.DEEPSEEK,
+    providerName: 'DeepSeek',
+    api: 'https://api.deepseek.com/v1',
+    models: [
+      { modelName: 'DeepSeek Chat', modelKey: 'deepseek-chat' },
+      { modelName: 'DeepSeek Coder', modelKey: 'deepseek-coder' },
+    ],
+  },
+  {
+    providerKey: ModelProviderKeyEnum.MOONSHOTAI,
+    providerName: 'Moonshot AI',
+    api: 'https://api.moonshot.cn/v1',
+    models: [
+      { modelName: 'Moonshot v1 8k', modelKey: 'moonshot-v1-8k' },
+      { modelName: 'Moonshot v1 32k', modelKey: 'moonshot-v1-32k' },
+    ],
+  },
+];
+
+/**
+ * 创建测试用 Redux store
+ * @param providerOverrides ModelProvider slice 状态覆盖
+ * @param modelPageOverrides ModelPage slice 状态覆盖
+ */
+const createTestStore = (
+  providerOverrides?: Parameters<typeof createModelProviderSliceState>[0],
+  modelPageOverrides?: Parameters<typeof createModelPageSliceState>[0]
+) => {
+  return createTypeSafeTestStore({
+    models: createModelSliceState(),
+    modelProvider: createModelProviderSliceState(providerOverrides),
+    modelPage: createModelPageSliceState(modelPageOverrides),
   });
 };
 
@@ -120,47 +139,12 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
 };
 
 describe('CreateModel', () => {
-  const mockProviders = [
-    {
-      providerKey: ModelProviderKeyEnum.DEEPSEEK,
-      providerName: 'DeepSeek',
-      api: 'https://api.deepseek.com/v1',
-      models: [
-        { modelName: 'DeepSeek Chat', modelKey: 'deepseek-chat' },
-        { modelName: 'DeepSeek Coder', modelKey: 'deepseek-coder' },
-      ],
-    },
-    {
-      providerKey: ModelProviderKeyEnum.MOONSHOTAI,
-      providerName: 'Moonshot AI',
-      api: 'https://api.moonshot.cn/v1',
-      models: [
-        { modelName: 'Moonshot v1 8k', modelKey: 'moonshot-v1-8k' },
-        { modelName: 'Moonshot v1 32k', modelKey: 'moonshot-v1-32k' },
-      ],
-    },
-  ];
-
   describe('页面布局', () => {
     it('应该渲染侧边栏和表单区域', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -173,24 +157,10 @@ describe('CreateModel', () => {
     });
 
     it('应该显示模型提供商选择侧边栏', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -201,24 +171,10 @@ describe('CreateModel', () => {
     });
 
     it('应该显示模型配置表单', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -230,24 +186,10 @@ describe('CreateModel', () => {
 
   describe('提供商选择', () => {
     it('应该默认选中 DeepSeek 提供商', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -257,24 +199,10 @@ describe('CreateModel', () => {
     });
 
     it('应该支持切换模型提供商', async () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -292,24 +220,10 @@ describe('CreateModel', () => {
 
   describe('表单交互', () => {
     it('应该显示当前提供商的名称', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -319,24 +233,10 @@ describe('CreateModel', () => {
     });
 
     it('应该显示模型选择下拉框', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -347,24 +247,10 @@ describe('CreateModel', () => {
     });
 
     it('应该显示提交按钮', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -377,33 +263,19 @@ describe('CreateModel', () => {
 
   describe('表单提交', () => {
     it('提交成功后应该导航到列表页面', async () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
 
       // 使用 getByRole 找到输入框
-      const nicknameInput = screen.getAllByRole('textbox').find(input => 
+      const nicknameInput = screen.getAllByRole('textbox').find(input =>
         input.getAttribute('name') === 'nickname'
       );
-      const apiKeyInput = screen.getAllByRole('textbox').find(input => 
+      const apiKeyInput = screen.getAllByRole('textbox').find(input =>
         input.getAttribute('name') === 'apiKey'
       );
 
@@ -423,24 +295,10 @@ describe('CreateModel', () => {
 
   describe('表单字段', () => {
     it('应该显示昵称输入框', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -451,24 +309,10 @@ describe('CreateModel', () => {
     });
 
     it('应该显示 API Key 输入框', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -479,24 +323,10 @@ describe('CreateModel', () => {
     });
 
     it('应该显示 API 地址输入框', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -507,24 +337,10 @@ describe('CreateModel', () => {
     });
 
     it('应该显示备注输入框', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });
@@ -537,24 +353,10 @@ describe('CreateModel', () => {
 
   describe('国际化支持', () => {
     it('应该使用 i18n 翻译标签', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-        modelPage: {
-          isDrawerOpen: false,
-        },
-      });
+      const store = createTestStore(
+        { providers: mockProviders },
+        { isDrawerOpen: false }
+      );
 
       const wrapper = createWrapper(store);
       render(<CreateModel />, { wrapper });

@@ -13,21 +13,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
+import type { EnhancedStore } from '@reduxjs/toolkit';
 
 // 被测试的页面组件
 import ChatPage from '@/pages/Chat';
 import SettingPage from '@/pages/Setting';
 import CreateModel from '@/pages/Model/CreateModel';
 
-// Redux reducers
-import chatReducer from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
-import modelReducer from '@/store/slices/modelSlice';
-import appConfigReducer from '@/store/slices/appConfigSlices';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
-import settingPageReducer from '@/store/slices/settingPageSlices';
-import modelPageReducer from '@/store/slices/modelPageSlices';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTestRootState, createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
+import type { RootState } from '@/store';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -61,65 +56,17 @@ vi.mock('@/hooks/useResponsive', () => ({
 /**
  * 创建测试用 Redux Store
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function createTestStore(): any {
-  return configureStore({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    reducer: {
-      chat: chatReducer,
-      chatPage: chatPageReducer,
-      models: modelReducer,
-      appConfig: appConfigReducer,
-      modelProvider: modelProviderReducer,
-      settingPage: settingPageReducer,
-      modelPage: modelPageReducer,
-    } as any,
-    preloadedState: {
-      chat: {
-        chatList: [],
-        selectedChatId: null,
-        loading: false,
-        error: null,
-        initializationError: null,
-        runningChat: {},
-      },
-      chatPage: {
-        isSidebarCollapsed: false,
-        isShowChatPage: true,
-        isDrawerOpen: false,
-      },
-      models: {
-        models: [],
-        loading: false,
-        error: null,
-        initializationError: null,
-      },
-      appConfig: {
-        language: 'zh',
-        includeReasoningContent: true,
-        autoNamingEnabled: true,
-      },
-      modelProvider: {
-        providers: [],
-        loading: false,
-        error: null,
-        lastUpdate: null,
-        backgroundRefreshing: false,
-      },
-      settingPage: {
-        isDrawerOpen: false,
-      },
-      modelPage: {
-        isDrawerOpen: false,
-      },
-    },
-  });
+function createDrawerTestStore(): EnhancedStore<RootState> {
+  return createTypeSafeTestStore(createTestRootState({
+    appConfig: createAppConfigSliceState({ language: 'zh' }),
+    chatPage: createChatPageSliceState({ isShowChatPage: true }),
+  }));
 }
 
 /**
  * 渲染带 ResponsiveProvider 的聊天页面
  */
-function renderChatPage(store: any) {
+function renderChatPage(store: EnhancedStore<RootState>) {
   return render(
     <Provider store={store}>
         <BrowserRouter>
@@ -132,7 +79,7 @@ function renderChatPage(store: any) {
 /**
  * 渲染带 ResponsiveProvider 的设置页面
  */
-function renderSettingPage(store: any) {
+function renderSettingPage(store: EnhancedStore<RootState>) {
   return render(
     <Provider store={store}>
         <BrowserRouter>
@@ -145,7 +92,7 @@ function renderSettingPage(store: any) {
 /**
  * 渲染带 ResponsiveProvider 的创建模型页面
  */
-function renderCreateModelPage(store: any) {
+function renderCreateModelPage(store: EnhancedStore<RootState>) {
   return render(
     <Provider store={store}>
         <BrowserRouter>
@@ -156,10 +103,10 @@ function renderCreateModelPage(store: any) {
 }
 
 describe('抽屉打开/关闭集成测试', () => {
-  let store: any;
+  let store: EnhancedStore<RootState>;
 
   beforeEach(() => {
-    store = createTestStore();
+    store = createDrawerTestStore();
     // 设置移动端窗口尺寸
     global.innerWidth = 600;
     global.dispatchEvent(new Event('resize'));

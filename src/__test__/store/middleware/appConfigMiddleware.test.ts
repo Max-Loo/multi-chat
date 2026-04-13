@@ -35,9 +35,7 @@ const mockToastError = vi.mocked(toastQueue.error);
 const mockToastDismiss = vi.mocked(toastQueue.dismiss);
 
 describe('appConfigMiddleware', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // Reason: Redux Toolkit 严格类型系统限制
-  let store: any;
+  let store: ReturnType<typeof createMiddlewareTestStore>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,7 +52,7 @@ describe('appConfigMiddleware', () => {
     } as unknown as Storage;
 
     // 重置 toast mocks 并设置默认返回值
-    (mockToastLoading as any).mockClear().mockResolvedValue('loading-toast-id');
+    mockToastLoading.mockClear().mockResolvedValue('loading-toast-id');
     mockToastSuccess.mockClear();
     mockToastError.mockClear();
     mockToastDismiss.mockClear();

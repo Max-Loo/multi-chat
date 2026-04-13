@@ -14,24 +14,52 @@ import chatReducer from '@/store/slices/chatSlices';
 import chatPageReducer from '@/store/slices/chatPageSlices';
 import modelsReducer from '@/store/slices/modelSlice';
 import appConfigReducer from '@/store/slices/appConfigSlices';
+import modelProviderReducer from '@/store/slices/modelProviderSlice';
+import settingPageReducer from '@/store/slices/settingPageSlices';
+import modelPageReducer from '@/store/slices/modelPageSlices';
+import { createTestRootState } from '../mocks/testState';
 
 /**
- * 创建测试用的 Redux store
- * @param preloadedState 预加载的状态
- * @returns 配置好的 Redux store
+ * 创建类型安全的测试 Redux store
+ *
+ * 包含完整 7 个 reducer 映射，支持 preloadedState 和 reducerOverrides 参数。
+ * preloadedState 和 reducerOverrides 的 key 类型由 TypeScript 编译期检查，
+ * 拼写错误或类型不匹配会报错。
+ *
+ * @param preloadedState 预加载状态（可选，默认使用各 slice 工厂函数的默认值）
+ * @param options 配置选项
+ * @param options.reducerOverrides 自定义 reducer 替换（可选，用于 stub 掉特定 reducer）
  */
-export const createTestStore = (preloadedState?: Partial<RootState>): EnhancedStore<RootState> => {
+export const createTypeSafeTestStore = (
+  preloadedState?: Partial<RootState>,
+  options?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    reducerOverrides?: { [K in keyof RootState]?: (state: any, action: any) => RootState[K] };
+  }
+): EnhancedStore<RootState> => {
+  // configureStore 的 ReducersMapObject 内部类型签名与 slice reducer 存在 PreloadedState 兼容差异，
+  // 在此边界处使用类型断言确保调用方获得完整的类型安全，而非在各测试文件中使用 as any
+  const reducerMap = {
+    models: modelsReducer,
+    chat: chatReducer,
+    chatPage: chatPageReducer,
+    appConfig: appConfigReducer,
+    modelProvider: modelProviderReducer,
+    settingPage: settingPageReducer,
+    modelPage: modelPageReducer,
+    ...options?.reducerOverrides,
+  };
   return configureStore({
-    reducer: {
-      chat: chatReducer,
-      chatPage: chatPageReducer,
-      models: modelsReducer,
-      appConfig: appConfigReducer,
-      modelProvider: (state = { providers: [], loading: false, error: null, lastUpdate: null }) => state,
-    } as any,
-    preloadedState: preloadedState as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    reducer: reducerMap as any,
+    preloadedState: preloadedState ?? createTestRootState(),
   }) as EnhancedStore<RootState>;
 };
+
+/**
+ * @deprecated 使用 createTypeSafeTestStore 替代
+ */
+export const createTestStore = createTypeSafeTestStore;
 
 /**
  * 渲染选项

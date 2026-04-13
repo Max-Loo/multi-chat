@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { streamChatCompletion, buildMessages, getProvider } from '@/services/chat';
 import { ChatRoleEnum } from '@/types/chat';
 import { ModelProviderKeyEnum } from '@/utils/enums';
@@ -8,7 +9,7 @@ import type { Model } from '@/types/model';
 // Mock providerLoader 模块
 vi.mock('@/services/chat/providerLoader', () => ({
   getProviderSDKLoader: () => ({
-    loadProvider: vi.fn().mockResolvedValue((config: any) => {
+    loadProvider: vi.fn().mockResolvedValue((config: Record<string, unknown>) => {
       // Mock 返回一个工厂函数
       return (modelId: string) => ({
         modelId,
@@ -82,7 +83,7 @@ function createMockAISDKMetadata() {
 function createMockStreamResult(
   events: Array<{ type: string; text?: string }>,
   metadata?: ReturnType<typeof createMockAISDKMetadata>
-): any {
+) {
   const streamGen = (async function* () {
     for (const event of events) {
       yield event;
@@ -90,9 +91,14 @@ function createMockStreamResult(
   })();
 
   // 模拟 AI SDK 的 PromiseLike 接口
-  const mockResult = {
+  const mockResult: {
     // eslint-disable-next-line unicorn/no-thenable
-    then: (resolve: (value: any) => unknown) =>
+    then: (resolve: (value: ReturnType<typeof createMockAISDKMetadata>) => unknown) => Promise<unknown>;
+    fullStream: AsyncGenerator<{ type: string; text?: string }, void, unknown>;
+    [Symbol.asyncIterator]: () => AsyncIterator<{ type: string; text?: string }>;
+  } = {
+    // eslint-disable-next-line unicorn/no-thenable
+    then: (resolve: (value: ReturnType<typeof createMockAISDKMetadata>) => unknown) =>
       Promise.resolve(metadata || createMockAISDKMetadata()).then(resolve),
     fullStream: streamGen,
     [Symbol.asyncIterator]: () => streamGen[Symbol.asyncIterator](),
@@ -105,11 +111,11 @@ function createMockStreamResult(
 // Test Setup
 // ========================================
 
-let mockStreamText: any;
-let mockGenerateId: any;
+let mockStreamText: Mock;
+let mockGenerateId: Mock;
 let dependencies: {
-  streamText: any;
-  generateId: any;
+  streamText: Mock;
+  generateId: Mock;
 };
 
 beforeEach(() => {
@@ -119,7 +125,7 @@ beforeEach(() => {
   mockGenerateId = vi.fn(() => 'test-conversation-id');
 
   dependencies = {
-    streamText: mockStreamText as any,
+    streamText: mockStreamText,
     generateId: mockGenerateId,
   };
 });

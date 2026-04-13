@@ -15,7 +15,7 @@ vi.mock('@/utils/tauriCompat', () => ({
 // Mock providerLoader 模块
 vi.mock('@/services/chat/providerLoader', () => ({
   getProviderSDKLoader: vi.fn(() => ({
-    loadProvider: vi.fn().mockResolvedValue((config: any) => {
+    loadProvider: vi.fn().mockResolvedValue((config: Record<string, unknown>) => {
       // Mock 返回一个工厂函数
       return (modelId: string) => ({
         modelId,
@@ -46,6 +46,11 @@ describe('providerFactory', () => {
 
     vi.mocked(getProviderSDKLoader).mockReturnValueOnce({
       loadProvider: vi.fn().mockRejectedValue(loadError),
+      isProviderLoaded: vi.fn(),
+      getProviderState: vi.fn(),
+      preloadProviders: vi.fn().mockResolvedValue(undefined),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: ProviderSDKLoaderClass 包含 private 成员，测试 mock 只需实现公共接口
     } as any);
 
     try {

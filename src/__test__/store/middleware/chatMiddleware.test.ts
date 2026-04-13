@@ -19,10 +19,17 @@ import modelReducer from '@/store/slices/modelSlice';
 import chatPageReducer from '@/store/slices/chatPageSlices';
 import appConfigReducer from '@/store/slices/appConfigSlices';
 import type { Chat } from '@/types/chat';
+import { ChatRoleEnum } from '@/types/chat';
 import modelProviderReducer from '@/store/slices/modelProviderSlice';
 import settingPageReducer from '@/store/slices/settingPageSlices';
 import modelPageReducer from '@/store/slices/modelPageSlices';
 import { createMiddlewareTestStore } from './createMiddlewareTestStore';
+import {
+  createTestRootState,
+  createChatSliceState,
+  createAppConfigSliceState,
+} from '@/__test__/helpers/mocks';
+import type { RootState } from '@/store';
 
 // Mock 存储层
 vi.mock('@/store/storage', () => ({
@@ -52,73 +59,58 @@ const createFulfilledAction = (chatId: string, modelId: string) => ({
  * 因此初始 chatHistoryList 长度应为 1（用户消息），history 为有效的助手消息。
  * 这样 reducer push 后 chatHistoryList 长度变为 2，满足自动命名的条件 4。
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const createState = (chatOverrides: Partial<Chat> & { id: string }, autoNamingEnabled = true): any => ({
-  chat: {
-    chatList: [
-      {
-        name: '',
-        chatModelList: [
-          {
-            modelId: 'model-auto',
-            chatHistoryList: [
-              { id: 'msg-1', role: 'user', content: 'hi' },
-            ],
+const createState = (chatOverrides: Partial<Chat> & { id: string }, autoNamingEnabled = true): RootState =>
+  createTestRootState({
+    chat: createChatSliceState({
+      chatList: [
+        {
+          name: '',
+          chatModelList: [
+            {
+              modelId: 'model-auto',
+              chatHistoryList: [
+                { id: 'msg-1', role: ChatRoleEnum.USER, content: 'hi', timestamp: 0, modelKey: 'model-auto', finishReason: null },
+              ],
+            },
+          ],
+          ...chatOverrides,
+        },
+      ],
+      selectedChatId: chatOverrides.id,
+      runningChat: {
+        [chatOverrides.id]: {
+          'model-auto': {
+            isSending: false,
+            history: { id: 'msg-2', role: ChatRoleEnum.ASSISTANT, content: 'hello', timestamp: 0, modelKey: 'model-auto', finishReason: null },
           },
-        ],
-        ...chatOverrides,
-      },
-    ],
-    selectedChatId: chatOverrides.id,
-    loading: false,
-    error: null,
-    initializationError: null,
-    runningChat: {
-      [chatOverrides.id]: {
-        'model-auto': {
-          isSending: false,
-          history: { id: 'msg-2', role: 'assistant', content: 'hello' },
         },
       },
-    },
-  },
-  appConfig: {
-    language: 'zh',
-    transmitHistoryReasoning: false,
-    autoNamingEnabled,
-  },
-  models: { models: [] },
-  chatPage: {},
-  modelProvider: {},
-  settingPage: { isDrawerOpen: false },
-  modelPage: { isDrawerOpen: false },
-});
+    }),
+    appConfig: createAppConfigSliceState({
+      language: 'zh',
+      autoNamingEnabled,
+    }),
+  });
 
 /**
  * 辅助函数：统计 dispatchedActions 中 chat/generateName/pending 出现次数
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const countGenerateNamePending = (actions: any[]) =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actions.filter((a: any) => a.type === 'chat/generateName/pending').length;
+const countGenerateNamePending = (actions: Array<{ type: string }>) =>
+  actions.filter((a) => a.type === 'chat/generateName/pending').length;
 
 /**
  * 创建包含自动命名 middleware 和 action 跟踪的测试 store
  * 注意：每个用例需要使用不同的 chatId 隔离模块级 generatingTitleChatIds Set
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const createAutoNamingStore = (preloadedState: any) => {
+const createAutoNamingStore = (preloadedState: RootState) => {
   // 记录所有经过 middleware 链的 action（包括 listener 内部 dispatch 的）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const dispatchedActions: any[] = [];
+  const dispatchedActions: Array<{ type: string; [key: string]: unknown }> = [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const actionTracker = () => (next: any) => (action: any) => {
-    dispatchedActions.push(action);
+  const actionTracker = () => (next: (action: unknown) => unknown) => (action: unknown) => {
+    dispatchedActions.push(action as { type: string; [key: string]: unknown });
     return next(action);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const testStore = configureStore({
     reducer: {
       models: modelReducer,
@@ -128,21 +120,19 @@ const createAutoNamingStore = (preloadedState: any) => {
       modelProvider: modelProviderReducer,
       settingPage: settingPageReducer,
       modelPage: modelPageReducer,
-    } as any,
+    },
     preloadedState,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware()
         .concat(actionTracker)
-        .prepend(saveChatListMiddleware.middleware) as any,
+        .prepend(saveChatListMiddleware.middleware),
   });
 
   return { store: testStore, dispatchedActions };
 };
 
 describe('chatMiddleware', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // Reason: Redux Toolkit 严格类型系统限制
-  let store: any;
+  let store: ReturnType<typeof createMiddlewareTestStore>;
 
   // Mock 聊天数据（符合 Chat 接口）
   const mockChat = {
@@ -332,7 +322,7 @@ describe('chatMiddleware', () => {
       const chatId = 'auto-chat-005';
       const state = createState({ id: chatId }, true);
       // 初始 chatHistoryList 为 0 条，push 后为 1 条（不等于 2）
-      state.chat.chatList[0].chatModelList[0].chatHistoryList = [];
+      state.chat.chatList[0]!.chatModelList![0]!.chatHistoryList = [];
       const { store: autoStore, dispatchedActions } = createAutoNamingStore(state);
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
@@ -359,13 +349,13 @@ describe('chatMiddleware', () => {
 
       // 添加第二个模型，确保第二次 dispatch 的 reducer 能找到对应的 runningChat 条目
       // （第一次 fulfilled 会删除 model-auto 的 runningChat 条目）
-      state.chat.runningChat[chatId]['model-auto-2'] = {
+      state.chat.runningChat[chatId]!['model-auto-2'] = {
         isSending: false,
-        history: { id: 'msg-3', role: 'assistant', content: 'world' },
+        history: { id: 'msg-3', role: ChatRoleEnum.ASSISTANT, content: 'world', timestamp: 0, modelKey: 'model-auto-2', finishReason: null },
       };
-      state.chat.chatList[0].chatModelList.push({
+      state.chat.chatList[0]!.chatModelList!.push({
         modelId: 'model-auto-2',
-        chatHistoryList: [{ id: 'msg-4', role: 'user', content: 'hello' }],
+        chatHistoryList: [{ id: 'msg-4', role: ChatRoleEnum.USER, content: 'hello', timestamp: 0, modelKey: 'model-auto-2', finishReason: null }],
       });
 
       const { store: autoStore, dispatchedActions } = createAutoNamingStore(state);

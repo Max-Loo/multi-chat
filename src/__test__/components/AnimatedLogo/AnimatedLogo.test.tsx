@@ -26,6 +26,8 @@ vi.mock('@/components/AnimatedLogo/canvas-logo', () => ({
     activeKeyIndex: 0,
     floatOffset: 0,
   }),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: mock 函数不需要实现完整的 AnimationState 类型
   updateState: (state: any, dt: number) => ({ ...state, time: state.time + dt }),
   draw: vi.fn(),
   drawStaticFrame: vi.fn(),
@@ -43,6 +45,8 @@ describe('AnimatedLogo', () => {
       clearRect: vi.fn(),
       save: vi.fn(),
       restore: vi.fn(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: CanvasRenderingContext2D 包含 50+ 必填属性和方法，测试 mock 只需实现核心绘制方法
     }) as any;
   });
 

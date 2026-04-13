@@ -6,15 +6,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
 import DetailTitle from '@/pages/Chat/components/Panel/Detail/Title';
 import { ChatModel } from '@/types/chat';
 import { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
-import chatReducer from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
-import modelReducer from '@/store/slices/modelSlice';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -51,34 +49,15 @@ vi.mock('react-i18next', () => ({
  * 创建测试用的 Redux store
  */
 const createTestStore = (models: Model[] = []) => {
-  return configureStore({
-    reducer: {
-      chat: chatReducer,
-      chatPage: chatPageReducer,
-      models: modelReducer,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any,
-    preloadedState: {
-      models: {
-        models,
-        loading: false,
-        error: null,
-        initializationError: null,
-      },
-      chat: {
-        chatList: [],
-        selectedChatId: null,
-        loading: false,
-        error: null,
-        initializationError: null,
-        runningChat: {},
-      },
-      chatPage: {
-        isSidebarCollapsed: false,
-        isShowChatPage: true,
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any,
+  return createTypeSafeTestStore({
+    models: createModelSliceState({
+      models,
+    }),
+    chat: createChatSliceState(),
+    chatPage: createChatPageSliceState({
+      isSidebarCollapsed: false,
+      isShowChatPage: true,
+    }),
   });
 };
 

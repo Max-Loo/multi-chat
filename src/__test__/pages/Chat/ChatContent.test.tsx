@@ -2,11 +2,9 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
-import chatReducer from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
 import ChatContent from '@/pages/Chat/components/Content';
 import { resetTestState } from '@/__test__/helpers/isolation';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
 /**
  * Mock useCurrentSelectedChat hook
@@ -66,33 +64,21 @@ vi.mock('react-i18next', () => ({
 }));
 
 /**
- * 创建测试用的 Redux store
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// Reason: Redux Toolkit 严格类型系统限制
-function createTestStore(preloadedState?: any) {
-  return configureStore({
-    reducer: {
-      chat: chatReducer,
-      chatPage: chatPageReducer,
-    },
-    ...(preloadedState && { preloadedState }),
-  });
-}
-
-/**
  * 渲染 ChatContent 组件的辅助函数
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// Reason: Redux Toolkit 严格类型系统限制
-function renderChatContent(store: any) {
-  return render(
-    <Provider store={store}>
+function renderChatContent() {
+  const store = createTypeSafeTestStore();
+
+  return {
+    store,
+    ...render(
+      <Provider store={store}>
         <BrowserRouter>
           <ChatContent />
         </BrowserRouter>
-    </Provider>
-  );
+      </Provider>
+    ),
+  };
 }
 
 /**
@@ -130,8 +116,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       // 验证渲染了内容（实际组件由 React.lazy 加载，这里只验证容器渲染）
       expect(container.firstChild).toBeInTheDocument();
@@ -140,8 +125,7 @@ describe('ChatContent Component', () => {
     it('应该显示空聊天状态（当没有选中聊天时）', () => {
       mockUseCurrentSelectedChat.mockReturnValue(null);
 
-      const store = createTestStore();
-      renderChatContent(store);
+      renderChatContent();
 
       // 验证显示了占位文本
       expect(screen.getByText('选择一个聊天开始对话')).toBeInTheDocument();
@@ -157,8 +141,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       // 验证渲染了内容（ModelSelect 由 React.lazy 加载）
       expect(container.firstChild).toBeInTheDocument();
@@ -182,8 +165,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -198,8 +180,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -214,8 +195,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -238,8 +218,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -254,8 +233,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -278,8 +256,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -294,8 +271,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -310,8 +286,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -334,8 +309,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -350,8 +324,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });
@@ -374,8 +347,7 @@ describe('ChatContent Component', () => {
 
       mockUseCurrentSelectedChat.mockReturnValue(mockChat);
 
-      const store = createTestStore();
-      const { container } = renderChatContent(store);
+      const { container } = renderChatContent();
 
       expect(container.firstChild).toBeInTheDocument();
     });

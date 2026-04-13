@@ -24,6 +24,8 @@ describe('AI SDK Mock Test', () => {
     vi.mocked(streamText).mockReturnValueOnce(mockResult as unknown as ReturnType<typeof streamText>);
 
     const result = streamText({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: AI SDK LanguageModel 接口包含大量必填属性，mock 只需提供 provider 和 modelId
       model: { provider: 'test', modelId: 'test-model' } as any,
       messages: [],
     });
@@ -46,6 +48,8 @@ describe('AI SDK Mock Test', () => {
     vi.mocked(streamText).mockReturnValueOnce(mockResult as unknown as ReturnType<typeof streamText>);
 
     const result = streamText({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Reason: AI SDK LanguageModel 接口包含大量必填属性，mock 只需提供 provider 和 modelId
       model: { provider: 'test', modelId: 'test-model' } as any,
       messages: [],
     });

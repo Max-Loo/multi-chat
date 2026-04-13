@@ -11,7 +11,8 @@ import ModelSelect from '@/pages/Chat/components/ModelSelect';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 import { ModelProviderKeyEnum } from '@/utils/enums';
-import { createTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createChatSliceState, createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -92,35 +93,21 @@ const createModelSelectStore = () => {
     }),
   ];
 
-  return createTestStore({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    models: {
+  return createTypeSafeTestStore({
+    models: createModelSliceState({
       models: mockModels,
-      loading: false,
-      error: null,
-    } as any,
-    modelProvider: {
+    }),
+    modelProvider: createModelProviderSliceState({
       providers: [
-        { providerKey: 'openai', providerName: 'OpenAI', providerLabel: 'OpenAI' },
-        { providerKey: 'anthropic', providerName: 'Anthropic', providerLabel: 'Anthropic' },
-        { providerKey: 'deepseek', providerName: 'DeepSeek', providerLabel: 'DeepSeek' },
+        { providerKey: 'openai', providerName: 'OpenAI', api: 'https://api.openai.com', models: [] },
+        { providerKey: 'anthropic', providerName: 'Anthropic', api: 'https://api.anthropic.com', models: [] },
+        { providerKey: 'deepseek', providerName: 'DeepSeek', api: 'https://api.deepseek.com', models: [] },
       ],
-      loading: false,
-      error: null,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    } as any,
-    chat: {
+    }),
+    chat: createChatSliceState({
       chatList: [createMockChat({ id: 'chat-1', name: 'Test Chat' })],
       selectedChatId: 'chat-1',
-      loading: false,
-      error: null,
-      initializationError: null,
-      runningChat: {},
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    } as any,
+    }),
   });
 };
 

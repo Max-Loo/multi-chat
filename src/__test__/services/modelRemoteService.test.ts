@@ -50,14 +50,13 @@ describe('modelRemoteService', () => {
     delete: vi.fn().mockResolvedValue(undefined),
     keys: vi.fn().mockResolvedValue([]),
     save: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn(),
     isSupported: vi.fn().mockReturnValue(true),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    mockCreateLazyStore.mockReturnValue(mockStore as any);
+    mockCreateLazyStore.mockReturnValue(mockStore as ReturnType<typeof createLazyStore>);
   });
 
   afterEach(() => {

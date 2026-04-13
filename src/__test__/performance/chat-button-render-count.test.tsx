@@ -10,22 +10,18 @@ import type { ChatButtonProps } from '@/pages/Chat/components/Sidebar/components
 import type { Chat } from '@/types/chat'
 import { createTestStore } from '@/__test__/helpers/render/redux'
 import { createMockChatList } from '@/__test__/helpers/mocks/chatSidebar'
+import { createChatSliceState } from '@/__test__/helpers/mocks/testState'
 import { setSelectedChatId } from '@/store/slices/chatSlices'
 
 /**
- * 创建性能测试用的 store（放宽类型约束）
+ * 创建性能测试用的 store
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createPerfStore(chatList: Chat[], selectedChatId: string) {
   return createTestStore({
-    chat: {
+    chat: createChatSliceState({
       selectedChatId,
       chatList,
-      loading: false,
-      error: null,
-      initializationError: null,
-      runningChat: {},
-    } as any,
+    }),
   })
 }
 
@@ -52,6 +48,7 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: react-i18next 的 TFunction 类型签名过于复杂，mock 中使用简化签名
     t: ((keyOrSelector: string | ((resources: any) => string)) => {
       if (typeof keyOrSelector === 'function') {
         const mockResources = {
@@ -70,6 +67,8 @@ vi.mock('react-i18next', () => ({
         return keyOrSelector(mockResources)
       }
       return keyOrSelector
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: react-i18next TFunction 返回类型与 mock 签名不完全匹配
     }) as any,
     i18n: {
       language: 'zh',

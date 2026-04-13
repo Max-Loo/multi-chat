@@ -20,8 +20,11 @@ vi.mock('@/hooks/redux', () => ({
 import { useSelectedChat } from '@/pages/Chat/hooks/useSelectedChat';
 import { useAppSelector } from '@/hooks/redux';
 import { useIsSending } from '@/pages/Chat/hooks/useIsSending';
+import type { Chat } from '@/types/chat';
 
 describe('useIsSending', () => {
+  const mockChat: Chat = { id: 'chat-1' };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -39,7 +42,7 @@ describe('useIsSending', () => {
 
   it('应该返回 false 当选中聊天无运行数据', () => {
     vi.mocked(useSelectedChat).mockReturnValue({
-      selectedChat: { id: 'chat-1' } as any,
+      selectedChat: mockChat,
       chatModelList: [],
     });
 
@@ -52,7 +55,7 @@ describe('useIsSending', () => {
 
   it('应该返回 true 当任一窗口正在发送', () => {
     vi.mocked(useSelectedChat).mockReturnValue({
-      selectedChat: { id: 'chat-1' } as any,
+      selectedChat: mockChat,
       chatModelList: [],
     });
 
@@ -68,7 +71,7 @@ describe('useIsSending', () => {
 
   it('应该返回 false 当所有窗口均未发送', () => {
     vi.mocked(useSelectedChat).mockReturnValue({
-      selectedChat: { id: 'chat-1' } as any,
+      selectedChat: mockChat,
       chatModelList: [],
     });
 

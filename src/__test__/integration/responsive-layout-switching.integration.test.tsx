@@ -14,18 +14,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
+import type { EnhancedStore } from '@reduxjs/toolkit';
 import Layout from '@/components/Layout';
 import ChatPage from '@/pages/Chat';
-
-// Redux reducers
-import chatReducer from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
-import modelReducer from '@/store/slices/modelSlice';
-import appConfigReducer from '@/store/slices/appConfigSlices';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
-import settingPageReducer from '@/store/slices/settingPageSlices';
-import modelPageReducer from '@/store/slices/modelPageSlices';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTestRootState, createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
+import type { RootState } from '@/store';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -75,65 +69,17 @@ vi.mock('@/hooks/useResponsive', () => ({
 /**
  * 创建测试用 Redux Store
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function createTestStore(): any {
-  return configureStore({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    reducer: {
-      chat: chatReducer,
-      chatPage: chatPageReducer,
-      models: modelReducer,
-      appConfig: appConfigReducer,
-      modelProvider: modelProviderReducer,
-      settingPage: settingPageReducer,
-      modelPage: modelPageReducer,
-    } as any,
-    preloadedState: {
-      chat: {
-        chatList: [],
-        selectedChatId: null,
-        loading: false,
-        error: null,
-        initializationError: null,
-        runningChat: {},
-      },
-      chatPage: {
-        isSidebarCollapsed: false,
-        isShowChatPage: true,
-        isDrawerOpen: false,
-      },
-      models: {
-        models: [],
-        loading: false,
-        error: null,
-        initializationError: null,
-      },
-      appConfig: {
-        language: 'zh',
-        includeReasoningContent: true,
-        autoNamingEnabled: true,
-      },
-      modelProvider: {
-        providers: [],
-        loading: false,
-        error: null,
-        lastUpdate: null,
-        backgroundRefreshing: false,
-      },
-      settingPage: {
-        isDrawerOpen: false,
-      },
-      modelPage: {
-        isDrawerOpen: false,
-      },
-    },
-  });
+function createLayoutTestStore(): EnhancedStore<RootState> {
+  return createTypeSafeTestStore(createTestRootState({
+    appConfig: createAppConfigSliceState({ language: 'zh' }),
+    chatPage: createChatPageSliceState({ isShowChatPage: true }),
+  }));
 }
 
 /**
  * 渲染带 ResponsiveProvider 的布局
  */
-function renderLayoutWithResponsive(store: any) {
+function renderLayoutWithResponsive(store: EnhancedStore<RootState>) {
   return render(
     <Provider store={store}>
         <BrowserRouter>
@@ -146,7 +92,7 @@ function renderLayoutWithResponsive(store: any) {
 /**
  * 渲染完整的聊天页面（包含 Layout）
  */
-function renderChatPageWithResponsive(store: any) {
+function renderChatPageWithResponsive(store: EnhancedStore<RootState>) {
   return render(
     <Provider store={store}>
         <BrowserRouter>
@@ -157,10 +103,10 @@ function renderChatPageWithResponsive(store: any) {
 }
 
 describe('响应式布局模式切换集成测试', () => {
-  let store: any;
+  let store: EnhancedStore<RootState>;
 
   beforeEach(() => {
-    store = createTestStore();
+    store = createLayoutTestStore();
     // 模拟桌面端窗口尺寸
     global.innerWidth = 1280;
     updateResponsiveState(1280);

@@ -7,13 +7,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
 import EditModelModal from '@/pages/Model/ModelTable/components/EditModelModal';
-import modelReducer from '@/store/slices/modelSlice';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
-import type { RootState } from '@/store';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
 // Mock react-i18next
@@ -47,7 +45,7 @@ vi.mock('react-i18next', () => ({
       if (typeof keyOrFn === 'function') {
         return keyOrFn(translations);
       }
-      
+
       const keyMap: Record<string, string> = {
         'model.editModel': '编辑模型',
         'model.editModelDescription': '编辑模型的配置信息',
@@ -75,17 +73,30 @@ vi.mock('sonner', () => ({
   },
 }));
 
-const createTestStore = (state: Partial<RootState>) => {
-  return configureStore({
-    reducer: {
-      models: modelReducer,
-      modelProvider: modelProviderReducer,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    } as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    preloadedState: state as any,
+const mockProviders = [
+  {
+    providerKey: ModelProviderKeyEnum.DEEPSEEK,
+    providerName: 'DeepSeek',
+    api: 'https://api.deepseek.com/v1',
+    models: [
+      { modelName: 'DeepSeek Chat', modelKey: 'deepseek-chat' },
+      { modelName: 'DeepSeek Coder', modelKey: 'deepseek-coder' },
+    ],
+  },
+];
+
+/**
+ * 创建测试用 Redux store
+ * @param modelOverrides Model slice 状态覆盖
+ * @param providerOverrides ModelProvider slice 状态覆盖
+ */
+const createTestStore = (
+  modelOverrides?: Parameters<typeof createModelSliceState>[0],
+  providerOverrides?: Parameters<typeof createModelProviderSliceState>[0]
+) => {
+  return createTypeSafeTestStore({
+    models: createModelSliceState(modelOverrides),
+    modelProvider: createModelProviderSliceState(providerOverrides),
   });
 };
 
@@ -97,21 +108,7 @@ const createWrapper = (store: ReturnType<typeof createTestStore>) => {
 
 describe('EditModelModal', () => {
   let mockModel: ReturnType<typeof createMockModel>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // Reason: 测试错误处理，需要构造无效输入
-  let mockOnModalCancel: any;
-
-  const mockProviders = [
-    {
-      providerKey: ModelProviderKeyEnum.DEEPSEEK,
-      providerName: 'DeepSeek',
-      api: 'https://api.deepseek.com/v1',
-      models: [
-        { modelName: 'DeepSeek Chat', modelKey: 'deepseek-chat' },
-        { modelName: 'DeepSeek Coder', modelKey: 'deepseek-coder' },
-      ],
-    },
-  ];
+  let mockOnModalCancel: () => void;
 
   beforeEach(() => {
     mockModel = createMockModel({
@@ -125,21 +122,10 @@ describe('EditModelModal', () => {
 
   describe('弹窗打开条件', () => {
     it('当 isModalOpen 为 true 时应该显示弹窗', () => {
-      const store = createTestStore({
-        models: {
-          models: [mockModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore(
+        { models: [mockModel] },
+        { providers: mockProviders }
+      );
 
       const wrapper = createWrapper(store);
       render(
@@ -157,28 +143,15 @@ describe('EditModelModal', () => {
     });
 
     it('当有 modelProviderKey 时应该显示弹窗（即使 isModalOpen 未定义）', () => {
-      const store = createTestStore({
-        models: {
-          models: [mockModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore(
+        { models: [mockModel] },
+        { providers: mockProviders }
+      );
 
       const wrapper = createWrapper(store);
       render(
         <EditModelModal
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onModalCancel={mockOnModalCancel as any}
+          onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
@@ -192,21 +165,10 @@ describe('EditModelModal', () => {
 
   describe('弹窗关闭', () => {
     it('点击蒙层应该关闭弹窗', async () => {
-      const store = createTestStore({
-        models: {
-          models: [mockModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore(
+        { models: [mockModel] },
+        { providers: mockProviders }
+      );
 
       const wrapper = createWrapper(store);
       render(
@@ -230,29 +192,16 @@ describe('EditModelModal', () => {
     });
 
     it('点击关闭按钮应该关闭弹窗', async () => {
-      const store = createTestStore({
-        models: {
-          models: [mockModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore(
+        { models: [mockModel] },
+        { providers: mockProviders }
+      );
 
       const wrapper = createWrapper(store);
       render(
         <EditModelModal
           isModalOpen={true}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onModalCancel={mockOnModalCancel as any}
+          onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
@@ -261,7 +210,7 @@ describe('EditModelModal', () => {
 
       const dialog = document.querySelector('[role="dialog"]');
       if (dialog) {
-        const closeButton = Array.from(dialog.querySelectorAll('button')).find(btn => 
+        const closeButton = Array.from(dialog.querySelectorAll('button')).find(btn =>
           btn.getAttribute('aria-label') === 'close' || btn.textContent.includes('close')
         );
         if (closeButton) {
@@ -277,21 +226,10 @@ describe('EditModelModal', () => {
 
   describe('表单渲染', () => {
     it('应该渲染 ModelConfigForm 组件', () => {
-      const store = createTestStore({
-        models: {
-          models: [mockModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore(
+        { models: [mockModel] },
+        { providers: mockProviders }
+      );
 
       const wrapper = createWrapper(store);
       render(
@@ -309,29 +247,16 @@ describe('EditModelModal', () => {
     });
 
     it('应该显示弹窗标题和描述', () => {
-      const store = createTestStore({
-        models: {
-          models: [mockModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore(
+        { models: [mockModel] },
+        { providers: mockProviders }
+      );
 
       const wrapper = createWrapper(store);
       render(
         <EditModelModal
           isModalOpen={true}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onModalCancel={mockOnModalCancel as any}
+          onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
@@ -348,21 +273,10 @@ describe('EditModelModal', () => {
 
   describe('编辑提交', () => {
     it('编辑成功后应该关闭弹窗', async () => {
-      const store = createTestStore({
-        models: {
-          models: [mockModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore(
+        { models: [mockModel] },
+        { providers: mockProviders }
+      );
 
       const wrapper = createWrapper(store);
       render(
@@ -388,29 +302,16 @@ describe('EditModelModal', () => {
 
   describe('Dialog 组件集成', () => {
     it('应该使用 Dialog 组件的正确属性', () => {
-      const store = createTestStore({
-        models: {
-          models: [mockModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore(
+        { models: [mockModel] },
+        { providers: mockProviders }
+      );
 
       const wrapper = createWrapper(store);
       render(
         <EditModelModal
           isModalOpen={true}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onModalCancel={mockOnModalCancel as any}
+          onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
@@ -424,29 +325,16 @@ describe('EditModelModal', () => {
 
   describe('国际化支持', () => {
     it('应该使用 i18n 翻译弹窗标题', () => {
-      const store = createTestStore({
-        models: {
-          models: [mockModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: mockProviders,
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore(
+        { models: [mockModel] },
+        { providers: mockProviders }
+      );
 
       const wrapper = createWrapper(store);
       render(
         <EditModelModal
           isModalOpen={true}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onModalCancel={mockOnModalCancel as any}
+          onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,

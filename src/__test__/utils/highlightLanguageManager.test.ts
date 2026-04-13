@@ -53,8 +53,7 @@ describe('HighlightLanguageManager', () => {
 
   describe('语言别名映射', () => {
     it('应该解析常见别名', () => {
-      // 通过私有方法测试（需要使用 any 访问私有成员）
-      const resolveAlias = (manager as any).resolveAlias.bind(manager);
+      const resolveAlias = manager.testInternals.resolveAlias;
 
       expect(resolveAlias('js')).toBe('javascript');
       expect(resolveAlias('ts')).toBe('typescript');
@@ -67,7 +66,7 @@ describe('HighlightLanguageManager', () => {
     });
 
     it('应该保持未知语言不变', () => {
-      const resolveAlias = (manager as any).resolveAlias.bind(manager);
+      const resolveAlias = manager.testInternals.resolveAlias;
 
       expect(resolveAlias('haskell')).toBe('haskell');
       expect(resolveAlias('rust')).toBe('rust');
@@ -75,7 +74,7 @@ describe('HighlightLanguageManager', () => {
     });
 
     it('应该不区分大小写', () => {
-      const resolveAlias = (manager as any).resolveAlias.bind(manager);
+      const resolveAlias = manager.testInternals.resolveAlias;
 
       expect(resolveAlias('JS')).toBe('javascript');
       expect(resolveAlias('TS')).toBe('typescript');
@@ -90,7 +89,7 @@ describe('HighlightLanguageManager', () => {
     });
 
     it('应该识别已加载的语言', () => {
-      (manager as any).loadedLanguages.add('javascript');
+      manager.testInternals.loadedLanguages.add('javascript');
       expect(manager.isLoaded('javascript')).toBe(true);
       expect(manager.isLoaded('js')).toBe(true); // 别名
     });
@@ -98,7 +97,7 @@ describe('HighlightLanguageManager', () => {
 
   describe('highlightSync() - 同步高亮', () => {
     it('应该为已加载的语言高亮代码', () => {
-      (manager as any).loadedLanguages.add('javascript');
+      manager.testInternals.loadedLanguages.add('javascript');
 
       const code = 'const x = 1;';
       const result = manager.highlightSync(code, 'javascript');
@@ -109,7 +108,7 @@ describe('HighlightLanguageManager', () => {
     });
 
     it('应该支持语言别名', () => {
-      (manager as any).loadedLanguages.add('javascript');
+      manager.testInternals.loadedLanguages.add('javascript');
 
       const code = 'const x = 1;';
       const result = manager.highlightSync(code, 'js'); // 使用别名
@@ -149,6 +148,8 @@ describe('HighlightLanguageManager', () => {
     });
 
     it('应该并发控制：同一语言只加载一次', async () => {
+      // vi.spyOn 需要访问类实例的私有方法，testInternals 缓存对象的 spy 无法拦截类内部调用
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const loadSpy = vi.spyOn(manager as any, 'doLoadLanguage');
 
       // 并发加载同一语言
@@ -182,7 +183,8 @@ describe('HighlightLanguageManager', () => {
     });
 
     it('应该在加载失败时清理缓存', async () => {
-      // Mock doLoadLanguage 抛出错误
+      // vi.spyOn 需要访问类实例的私有方法，testInternals 缓存对象的 spy 无法拦截类内部调用
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.spyOn(manager as any, 'doLoadLanguage').mockRejectedValue(new Error('Network error'));
 
       try {
@@ -192,21 +194,23 @@ describe('HighlightLanguageManager', () => {
       }
 
       // 应该清理 loadingPromises 缓存
-      const loadingPromises = (manager as any).loadingPromises;
+      const loadingPromises = manager.testInternals.loadingPromises;
       expect(loadingPromises.has('javascript')).toBe(false);
 
       // 语言应该未加载
       expect(manager.isLoaded('javascript')).toBe(false);
 
       // 应该记录到失败语言集合
-      const failedLanguages = (manager as any).failedLanguages;
+      const failedLanguages = manager.testInternals.failedLanguages;
       expect(failedLanguages.has('javascript')).toBe(true);
     });
 
     it('应该防止重复加载失败的语言', async () => {
-      // Mock doLoadLanguage 抛出错误
+      // vi.spyOn 需要访问类实例的私有方法，testInternals 缓存对象的 spy 无法拦截类内部调用
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.spyOn(manager as any, 'doLoadLanguage').mockRejectedValue(new Error('Unsupported language'));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const loadSpy = vi.spyOn(manager as any, 'doLoadLanguage');
 
       // 第一次尝试加载
@@ -227,7 +231,7 @@ describe('HighlightLanguageManager', () => {
       expect(loadSpy).toHaveBeenCalledTimes(1);
 
       // 语言应该在失败集合中
-      const failedLanguages = (manager as any).failedLanguages;
+      const failedLanguages = manager.testInternals.failedLanguages;
       expect(failedLanguages.has('cobol')).toBe(true);
     });
   });
@@ -311,6 +315,7 @@ describe('HighlightLanguageManager', () => {
       const code = 'const x = 1;';
 
       // Mock 加载失败
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.spyOn(manager as any, 'doLoadLanguage').mockRejectedValue(new Error('Load failed'));
 
       try {

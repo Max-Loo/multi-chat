@@ -14,6 +14,7 @@ vi.mock('@/hooks/useCurrentSelectedChat', () => ({
 
 import { useCurrentSelectedChat } from '@/hooks/useCurrentSelectedChat';
 import { useSelectedChat } from '@/pages/Chat/hooks/useSelectedChat';
+import type { Chat } from '@/types/chat';
 
 describe('useSelectedChat', () => {
   beforeEach(() => {
@@ -21,14 +22,14 @@ describe('useSelectedChat', () => {
   });
 
   it('应该返回选中聊天的数据 当有选中聊天', () => {
-    const mockChat = {
+    const mockChat: Chat = {
       id: 'chat-1',
       name: 'Test Chat',
       chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
       isDeleted: false,
     };
 
-    vi.mocked(useCurrentSelectedChat).mockReturnValue(mockChat as any);
+    vi.mocked(useCurrentSelectedChat).mockReturnValue(mockChat);
 
     const { result } = renderHook(() => useSelectedChat());
 
@@ -46,13 +47,13 @@ describe('useSelectedChat', () => {
   });
 
   it('应该返回空数组 当 chatModelList 缺失', () => {
-    const mockChat = {
+    const mockChat: Chat = {
       id: 'chat-1',
       name: 'Test Chat',
       isDeleted: false,
     };
 
-    vi.mocked(useCurrentSelectedChat).mockReturnValue(mockChat as any);
+    vi.mocked(useCurrentSelectedChat).mockReturnValue(mockChat);
 
     const { result } = renderHook(() => useSelectedChat());
 

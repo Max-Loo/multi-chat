@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { processStreamEvents } from '@/services/chat/streamProcessor';
 import { StandardMessage } from '@/types/chat';
 import * as metadataCollectorModule from '@/services/chat/metadataCollector';
@@ -65,7 +66,7 @@ const createMockAISDKMetadata = (overrides: Partial<MockAISDKMetadata> = {}): Mo
 });
 
 describe('streamProcessor', () => {
-  let collectAllMetadataSpy: any;
+  let collectAllMetadataSpy: Mock;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -92,13 +93,17 @@ describe('streamProcessor', () => {
 
     // 模拟 AI SDK 的 PromiseLike 接口
     // then 方法返回 AI SDK 原始格式（timestamp 是 Date 对象）
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: Vercel AI SDK StreamTextResult 包含 30+ 必填属性，测试 mock 只需实现 then/fullStream/asyncIterator
     const mockResult = {
       // eslint-disable-next-line unicorn/no-thenable
-      then: (resolve: (value: any) => unknown) =>
+      then: (resolve: (value: MockAISDKMetadata) => unknown) =>
         // 如果提供了 aiSDKMetadata，使用它；否则使用默认值
         Promise.resolve(aiSDKMetadata ?? createMockAISDKMetadata()).then(resolve),
       fullStream: streamGen,
       [Symbol.asyncIterator]: () => streamGen[Symbol.asyncIterator](),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // Reason: AI SDK StreamTextResult 包含 30+ 必填属性，mock 只需实现 then/fullStream/asyncIterator
     } as any;
 
     return mockResult;

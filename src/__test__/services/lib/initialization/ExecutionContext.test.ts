@@ -20,7 +20,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { InitializationManager } from '@/services/initialization/InitializationManager';
 
-import type { InitStep } from '@/services/initialization';
+import type { InitStep, ExecutionContext } from '@/services/initialization';
 
 
 
@@ -60,15 +60,11 @@ describe('ExecutionContext', () => {
 
           critical: false,
 
-          execute: vi.fn().mockImplementation(async (context) => {
+          execute: vi.fn().mockImplementation(async (context: ExecutionContext) => {
 
             // step2 可以访问 step1 的结果
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-            // Reason: 测试错误处理，需要构造无效输入
-
-            const result = (context.getResult as any)('step1');
+            const result = context.getResult<string>('step1');
 
             expect(result).toBe('value1');
 
@@ -130,13 +126,9 @@ describe('ExecutionContext', () => {
 
           critical: false,
 
-          execute: vi.fn().mockImplementation(async (context) => {
+          execute: vi.fn().mockImplementation(async (context: ExecutionContext) => {
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-            // Reason: 测试错误处理，需要构造无效输入
-
-            const result = (context.getResult as any)('step1');
+            const result = context.getResult<{ key: string; count: number }>('step1');
 
             expect(result).toEqual(testObject);
 
@@ -180,13 +172,9 @@ describe('ExecutionContext', () => {
 
           critical: false,
 
-          execute: vi.fn().mockImplementation(async (context) => {
+          execute: vi.fn().mockImplementation(async (context: ExecutionContext) => {
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-            // Reason: 测试错误处理，需要构造无效输入
-
-            const result = (context.getResult as any)('nonExistentStep');
+            const result = context.getResult('nonExistentStep');
 
             expect(result).toBeUndefined();
 
@@ -244,17 +232,13 @@ describe('ExecutionContext', () => {
 
           critical: false,
 
-          execute: vi.fn().mockImplementation(async (context) => {
+          execute: vi.fn().mockImplementation(async (context: ExecutionContext) => {
 
             // 手动设置值，应该会覆盖步骤返回的值
 
             context.setResult('step1', 'value2');
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-            // Reason: 测试错误处理，需要构造无效输入
-
-            const result = (context.getResult as any)('step1');
+            const result = context.getResult<string>('step1');
 
             expect(result).toBe('value2');
 
@@ -622,25 +606,19 @@ describe('ExecutionContext', () => {
 
           critical: false,
 
-          execute: vi.fn().mockImplementation(async (context) => {
+          execute: vi.fn().mockImplementation(async (context: ExecutionContext) => {
 
             // 验证所有步骤
 
             expect(context.isSuccess('step1')).toBe(true);
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-            // Reason: 测试错误处理，需要构造无效输入
-
-            expect((context.getResult as any)('step1')).toBe('result1');
+            expect(context.getResult<string>('step1')).toBe('result1');
 
 
 
             expect(context.isSuccess('step2')).toBe(true);
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            // Reason: 第三方库类型定义不完整
-            expect((context.getResult as any)('step2')).toEqual({
+            expect(context.getResult<{ data: string }>('step2')).toEqual({
 
               data: 'result2',
 
@@ -650,11 +628,7 @@ describe('ExecutionContext', () => {
 
             expect(context.isSuccess('step3')).toBe(true);
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-            // Reason: 测试错误处理，需要构造无效输入
-
-            expect((context.getResult as any)('step3')).toBe(42);
+            expect(context.getResult<number>('step3')).toBe(42);
 
           }),
 
@@ -728,13 +702,9 @@ describe('ExecutionContext', () => {
 
           dependencies: ['complexStep'],
 
-          execute: vi.fn().mockImplementation(async (context) => {
+          execute: vi.fn().mockImplementation(async (context: ExecutionContext) => {
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-            // Reason: 测试错误处理，需要构造无效输入
-
-            const result = (context.getResult as any)('complexStep');
+            const result = context.getResult<typeof complexObject>('complexStep');
 
             expect(result).toEqual(complexObject);
 

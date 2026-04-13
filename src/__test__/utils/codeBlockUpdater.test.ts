@@ -11,8 +11,14 @@ import {
   getPendingUpdatesCount,
 } from '@/utils/codeBlockUpdater';
 
-/** 将数组包装为 NodeListOf<Element> 类型 */
-function asNodeList(elements: any[]): NodeListOf<Element> {
+/** Mock DOM 元素的类型定义，满足 codeBlockUpdater 所需的 innerHTML 和 textContent */
+interface MockElement {
+  textContent: string;
+  innerHTML: string;
+}
+
+/** 将 MockElement 数组包装为 NodeListOf<Element> 类型 */
+function asNodeList(elements: MockElement[]): NodeListOf<Element> {
   return elements as unknown as NodeListOf<Element>;
 }
 
@@ -38,7 +44,7 @@ describe('codeBlockUpdater', () => {
         textContent: 'const x = 1;',
         innerHTML: '',
       };
-      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement as any]));
+      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement]));
       containsSpy = vi.spyOn(document, 'contains').mockReturnValue(true);
 
       updateCodeBlockDOM('const x = 1;', 'javascript', '<span>const</span> x = 1;');
@@ -94,7 +100,7 @@ describe('codeBlockUpdater', () => {
       querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockImplementation((): NodeListOf<Element> => {
         callCount++;
         if (callCount >= 2) {
-          return asNodeList([mockElement as any]);
+          return asNodeList([mockElement]);
         }
         return asNodeList([]);
       });
@@ -118,7 +124,7 @@ describe('codeBlockUpdater', () => {
         textContent: 'different code',
         innerHTML: 'original',
       };
-      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement as any]));
+      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement]));
       containsSpy = vi.spyOn(document, 'contains').mockReturnValue(true);
 
       updateCodeBlockDOM('expected code', 'javascript', '<highlighted>');
@@ -133,7 +139,7 @@ describe('codeBlockUpdater', () => {
         textContent: 'const x = 1;',
         innerHTML: '',
       };
-      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement as any]));
+      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement]));
       containsSpy = vi.spyOn(document, 'contains').mockReturnValue(false);
 
       updateCodeBlockDOM('const x = 1;', 'javascript', '<span>const</span> x = 1;');
@@ -152,7 +158,7 @@ describe('codeBlockUpdater', () => {
         textContent: 'code1',
         innerHTML: '',
       };
-      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement as any]));
+      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement]));
       containsSpy = vi.spyOn(document, 'contains').mockReturnValue(true);
 
       updateCodeBlockDOM('code1', 'js', '<hl>');
@@ -167,7 +173,7 @@ describe('codeBlockUpdater', () => {
         textContent: 'code',
         innerHTML: '',
       };
-      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement as any]));
+      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement]));
       containsSpy = vi.spyOn(document, 'contains').mockReturnValue(true);
 
       updateCodeBlockDOM('code', 'js', '<hl>');
@@ -182,7 +188,7 @@ describe('codeBlockUpdater', () => {
         textContent: 'code',
         innerHTML: '',
       };
-      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement as any]));
+      querySelectorAllSpy = vi.spyOn(document, 'querySelectorAll').mockReturnValue(asNodeList([mockElement]));
       containsSpy = vi.spyOn(document, 'contains').mockReturnValue(true);
 
       updateCodeBlockDOM('code', 'js', '<hl>');

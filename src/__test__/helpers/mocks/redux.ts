@@ -8,6 +8,7 @@ import { vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import type { Model } from '@/types/model';
 import type { ModelSliceState } from '@/store/slices/modelSlice';
+import { createModelSliceState as _createModelSliceState } from './testState';
 
 /**
  * 创建 Mock Redux Store
@@ -63,19 +64,11 @@ export const createMockAbortSignal = (aborted = false) => {
 };
 
 /**
- * 创建 Model Slice 的预配置状态
+ * 创建 Model Slice 的预配置状态（统一导出自 testState.ts）
  * @param overrides 要覆盖的状态字段
  * @returns Model slice 状态对象
  */
-export const createModelSliceState = (overrides?: Partial<ModelSliceState>): ModelSliceState => {
-  return {
-    models: [],
-    loading: false,
-    error: null,
-    initializationError: null,
-    ...overrides,
-  };
-};
+export const createModelSliceState = _createModelSliceState;
 
 /**
  * 创建包含模型的 Redux 预配置状态

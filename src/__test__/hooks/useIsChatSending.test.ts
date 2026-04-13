@@ -7,31 +7,16 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
 import { useIsSending } from '@/pages/Chat/hooks/useIsSending';
-import chatReducer from '@/store/slices/chatSlices';
-import type { RootState } from '@/store';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
 
-const createTestStore = (state: Partial<RootState>) => {
-  return configureStore({
-    reducer: {
-      chat: chatReducer,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    } as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    preloadedState: state as any,
-  });
-};
-
-const createWrapper = (store: ReturnType<typeof createTestStore>) => {
+const createWrapper = (store: ReturnType<typeof createTypeSafeTestStore>) => {
   const WrapperComponent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    return React.createElement(Provider as any, { store }, children);
+    // React.createElement + Provider 的类型签名不兼容，需要边界类型断言
+    return React.createElement(Provider as React.ComponentType<{ store: typeof store; children?: React.ReactNode }>, { store }, children);
   };
   return WrapperComponent;
 };
@@ -41,19 +26,16 @@ describe('useIsSending', () => {
     it('应该返回发送中状态 当单个聊天正在发送', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [mockChat],
           selectedChatId: 'chat-1',
-          loading: false,
-          error: null,
-          initializationError: null,
           runningChat: {
             'chat-1': {
               'model-1': { isSending: true, history: null },
             },
           },
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -67,13 +49,10 @@ describe('useIsSending', () => {
       const chat2 = createMockChat({ id: 'chat-2' });
       const chat3 = createMockChat({ id: 'chat-3' });
 
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [chat1, chat2, chat3],
           selectedChatId: 'chat-2',
-          loading: false,
-          error: null,
-          initializationError: null,
           runningChat: {
             'chat-1': {
               'model-1': { isSending: true, history: null },
@@ -85,7 +64,7 @@ describe('useIsSending', () => {
               'model-3': { isSending: false, history: null },
             },
           },
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -98,13 +77,10 @@ describe('useIsSending', () => {
       const chat1 = createMockChat({ id: 'chat-1' });
       const chat2 = createMockChat({ id: 'chat-2' });
 
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [chat1, chat2],
           selectedChatId: 'chat-2',
-          loading: false,
-          error: null,
-          initializationError: null,
           runningChat: {
             'chat-1': {
               'model-1': { isSending: true, history: null },
@@ -113,7 +89,7 @@ describe('useIsSending', () => {
               'model-2': { isSending: false, history: null },
             },
           },
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -127,20 +103,17 @@ describe('useIsSending', () => {
     it('应该返回非发送中状态 当所有模型完成发送', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [mockChat],
           selectedChatId: 'chat-1',
-          loading: false,
-          error: null,
-          initializationError: null,
           runningChat: {
             'chat-1': {
               'model-1': { isSending: false, history: null },
               'model-2': { isSending: false, history: null },
             },
           },
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -152,15 +125,12 @@ describe('useIsSending', () => {
     it('应该返回非发送中状态 当 runningChat 为空', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [mockChat],
           selectedChatId: 'chat-1',
-          loading: false,
-          error: null,
-          initializationError: null,
           runningChat: {},
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -172,19 +142,16 @@ describe('useIsSending', () => {
     it('应该返回非发送中状态 当当前聊天在 runningChat 中不存在', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [mockChat],
           selectedChatId: 'chat-1',
-          loading: false,
-          error: null,
-          initializationError: null,
           runningChat: {
             'chat-2': {
               'model-1': { isSending: true, history: null },
             },
           },
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -199,13 +166,10 @@ describe('useIsSending', () => {
       const chat1 = createMockChat({ id: 'chat-1' });
       const chat2 = createMockChat({ id: 'chat-2' });
 
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [chat1, chat2],
           selectedChatId: 'chat-1',
-          loading: false,
-          error: null,
-          initializationError: null,
           runningChat: {
             'chat-1': {
               'model-1': { isSending: true, history: null },
@@ -214,7 +178,7 @@ describe('useIsSending', () => {
               'model-2': { isSending: false, history: null },
             },
           },
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -238,19 +202,16 @@ describe('useIsSending', () => {
     it('应该重新计算 当 runningChat 变化时', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [mockChat],
           selectedChatId: 'chat-1',
-          loading: false,
-          error: null,
-          initializationError: null,
           runningChat: {
             'chat-1': {
               'model-1': { isSending: false, history: null },
             },
           },
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);

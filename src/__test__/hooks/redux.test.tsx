@@ -1,37 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
-import modelReducer from '@/store/slices/modelSlice';
-import chatReducer from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
-import appConfigReducer from '@/store/slices/appConfigSlices';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
 import type { RootState, AppDispatch } from '@/store';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
-const createTestStore = (preloadedState?: Partial<RootState>) => {
-  return configureStore({
-    reducer: {
-      models: modelReducer,
-      chat: chatReducer,
-      chatPage: chatPageReducer,
-      appConfig: appConfigReducer,
-      modelProvider: modelProviderReducer,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    } as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    preloadedState: preloadedState as any,
-  });
-};
-
-const createWrapper = (store: ReturnType<typeof createTestStore>) => {
+const createWrapper = (store: ReturnType<typeof createTypeSafeTestStore>) => {
   return ({ children }: { children: React.ReactNode }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    return <Provider store={store as any}>{children}</Provider>;
+    return <Provider store={store}>{children}</Provider>;
   };
 };
 
@@ -39,7 +15,7 @@ describe('Redux Hooks', () => {
 
   describe('useAppDispatch 类型安全测试', () => {
     it('应返回类型安全的 dispatch 函数', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const wrapper = createWrapper(store);
 
       const { result } = renderHook(() => useAppDispatch(), { wrapper });
@@ -52,7 +28,7 @@ describe('Redux Hooks', () => {
     });
 
     it('应能够 dispatch action', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const wrapper = createWrapper(store);
 
       const { result } = renderHook(() => useAppDispatch(), { wrapper });
@@ -66,7 +42,7 @@ describe('Redux Hooks', () => {
 
   describe('useAppSelector 类型安全测试', () => {
     it('应正确推断 RootState 类型', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const wrapper = createWrapper(store);
 
       const { result } = renderHook(() => useAppSelector((state) => state), {
@@ -81,7 +57,7 @@ describe('Redux Hooks', () => {
     });
 
     it('应正确选择 models slice state', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const wrapper = createWrapper(store);
 
       const { result } = renderHook(
@@ -95,7 +71,7 @@ describe('Redux Hooks', () => {
     });
 
     it('应正确选择 chat slice state', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const wrapper = createWrapper(store);
 
       const { result } = renderHook(
@@ -109,7 +85,7 @@ describe('Redux Hooks', () => {
     });
 
     it('应正确选择 chatPage slice state', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const wrapper = createWrapper(store);
 
       const { result } = renderHook(
@@ -123,7 +99,7 @@ describe('Redux Hooks', () => {
     });
 
     it('应正确选择 appConfig slice state', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const wrapper = createWrapper(store);
 
       const { result } = renderHook(
@@ -137,7 +113,7 @@ describe('Redux Hooks', () => {
     });
 
     it('应支持复杂的选择器逻辑', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const wrapper = createWrapper(store);
 
       const { result } = renderHook(

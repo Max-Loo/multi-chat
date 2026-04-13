@@ -7,15 +7,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import ModelTable from '@/pages/Model/ModelTable';
-import modelReducer from '@/store/slices/modelSlice';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
-import type { RootState } from '@/store';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import type { Model } from '@/types/model';
+import { ModelProviderKeyEnum } from '@/utils/enums';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -77,17 +76,18 @@ vi.mock('react-i18next', () => ({
   I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-const createTestStore = (state: Partial<RootState>) => {
-  return configureStore({
-    reducer: {
-      models: modelReducer,
-      modelProvider: modelProviderReducer,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    } as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    preloadedState: state as any,
+/**
+ * 创建测试用 Redux store
+ * @param modelOverrides Model slice 状态覆盖
+ * @param providerOverrides ModelProvider slice 状态覆盖
+ */
+const createTestStore = (
+  modelOverrides?: Parameters<typeof createModelSliceState>[0],
+  providerOverrides?: Parameters<typeof createModelProviderSliceState>[0]
+) => {
+  return createTypeSafeTestStore({
+    models: createModelSliceState(modelOverrides),
+    modelProvider: createModelProviderSliceState(providerOverrides),
   });
 };
 
@@ -109,24 +109,20 @@ describe('ModelTable', () => {
       createMockModel({
         id: '1',
         nickname: 'DeepSeek Chat',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试错误处理，需要构造无效输入
-        providerKey: 'deepseek' as any,
+        providerKey: ModelProviderKeyEnum.DEEPSEEK,
         modelKey: 'deepseek-chat',
       }),
       createMockModel({
         id: '2',
         nickname: 'Kimi Chat',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试错误处理，需要构造无效输入
-        providerKey: 'moonshotai' as any,
+        providerKey: ModelProviderKeyEnum.MOONSHOTAI,
         modelKey: 'moonshot-v1-8k',
       }),
       createMockModel({
         id: '3',
         nickname: 'Zhipu Chat',
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试错误处理，需要构造无效输入
+        // Reason: 测试非枚举值的降级处理
         providerKey: 'zhipu' as any,
         modelKey: 'glm-4',
       }),
@@ -140,21 +136,7 @@ describe('ModelTable', () => {
 
   describe('基础渲染', () => {
     it('应该渲染模型列表', () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -165,21 +147,7 @@ describe('ModelTable', () => {
     });
 
     it('应该显示添加模型按钮', () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -189,21 +157,7 @@ describe('ModelTable', () => {
     });
 
     it('应该显示过滤输入框', () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -215,21 +169,7 @@ describe('ModelTable', () => {
 
   describe('加载状态', () => {
     it('应该显示加载状态', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: true,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: [], loading: true });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -241,21 +181,7 @@ describe('ModelTable', () => {
   describe('错误状态', () => {
     it('应该显示初始化错误', () => {
       const errorMessage = 'Failed to load models';
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: errorMessage,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: [], initializationError: errorMessage });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -265,21 +191,7 @@ describe('ModelTable', () => {
 
     it('应该显示操作错误', () => {
       const errorMessage = 'Operation failed';
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: errorMessage,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels, error: errorMessage });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -290,21 +202,7 @@ describe('ModelTable', () => {
 
   describe('过滤功能', () => {
     it('应该根据昵称过滤模型列表', async () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -320,21 +218,7 @@ describe('ModelTable', () => {
     });
 
     it('应该支持不区分大小写的过滤', async () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -349,21 +233,7 @@ describe('ModelTable', () => {
     });
 
     it('清空过滤条件应该显示所有模型', async () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -385,21 +255,7 @@ describe('ModelTable', () => {
 
   describe('空数据状态', () => {
     it('应该显示空数据提示', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore();
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -410,21 +266,7 @@ describe('ModelTable', () => {
 
   describe('编辑操作', () => {
     it('点击编辑按钮应该打开编辑弹窗', async () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -446,21 +288,7 @@ describe('ModelTable', () => {
 
   describe('删除操作', () => {
     it('点击删除按钮应该显示确认对话框', async () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -479,21 +307,7 @@ describe('ModelTable', () => {
     });
 
     it('取消删除应该关闭确认对话框', async () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -519,21 +333,7 @@ describe('ModelTable', () => {
     });
 
     it('确认删除应该触发删除操作', async () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });
@@ -561,21 +361,7 @@ describe('ModelTable', () => {
 
   describe('导航操作', () => {
     it('点击添加模型按钮应该导航到创建页面', () => {
-      const store = createTestStore({
-        models: {
-          models: mockModels,
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createTestStore({ models: mockModels });
 
       const wrapper = createWrapper(store);
       render(<ModelTable />, { wrapper });

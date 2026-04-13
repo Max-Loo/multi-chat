@@ -65,9 +65,7 @@ const mockSaveCachedProviderData = vi.mocked(saveCachedProviderData);
 const mockLoadCachedProviderData = vi.mocked(loadCachedProviderData);
 
 describe("modelProviderSlice", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // Reason: Redux Toolkit 严格类型系统限制
-  let store: any;
+  let store: ReturnType<typeof createTestStore>;
 
   // 创建测试用的 Redux store
   const createTestStore = () => {
@@ -454,7 +452,9 @@ describe("modelProviderSlice", () => {
           });
         }, 100);
       });
-      mockFetchRemoteData.mockReturnValue(promise as any);
+      mockFetchRemoteData.mockReturnValue(
+        promise as Promise<Awaited<ReturnType<typeof fetchRemoteData>>>
+      );
       mockSaveCachedProviderData.mockResolvedValue(undefined);
 
       // Dispatch Thunk（不等待）

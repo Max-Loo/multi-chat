@@ -64,7 +64,7 @@ class HighlightLanguageManager {
    * @internal
    */
   static _resetInstance(): void {
-    (HighlightLanguageManager as any).instance = undefined;
+    HighlightLanguageManager.instance = undefined as unknown as HighlightLanguageManager;
   }
 
   /**
@@ -73,7 +73,7 @@ class HighlightLanguageManager {
    */
   static _clearFailedLanguages(): void {
     const instance = HighlightLanguageManager.getInstance();
-    (instance as any).failedLanguages.clear();
+    instance.testInternals.failedLanguages.clear();
   }
 
   /**
@@ -230,6 +230,42 @@ class HighlightLanguageManager {
    */
   markAsLoaded(lang: string): void {
     this.loadedLanguages.add(lang);
+  }
+
+  /** 缓存的测试内部访问对象（惰性初始化） */
+  private _testInternalsCache: {
+    loadedLanguages: Set<string>;
+    resolveAlias: (lang: string) => string;
+    loadingPromises: Map<string, Promise<void>>;
+    failedLanguages: Set<string>;
+    doLoadLanguage: (lang: string) => Promise<void>;
+  } | null = null;
+
+  /**
+   * 测试内部状态访问器
+   *
+   * 暴露私有成员供单元测试使用，替代 `(manager as any).xxx` 模式。
+   * **仅供测试使用，不属于公共 API。**
+   * 返回对象在实例生命周期内保持稳定，支持 vi.spyOn。
+   *
+   * @internal
+   */
+  get testInternals() {
+    if (!this._testInternalsCache) {
+      this._testInternalsCache = {
+        /** 已加载的语言集合 */
+        loadedLanguages: this.loadedLanguages,
+        /** 解析语言别名 */
+        resolveAlias: this.resolveAlias.bind(this),
+        /** 正在加载中的语言 Promise 缓存 */
+        loadingPromises: this.loadingPromises,
+        /** 加载失败的语言集合 */
+        failedLanguages: this.failedLanguages,
+        /** 实际加载语言包的方法 */
+        doLoadLanguage: this.doLoadLanguage.bind(this),
+      };
+    }
+    return this._testInternalsCache;
   }
 }
 

@@ -14,6 +14,7 @@ vi.mock('@/pages/Chat/hooks/useSelectedChat', () => ({
 
 import { useSelectedChat } from '@/pages/Chat/hooks/useSelectedChat';
 import { useBoard } from '@/pages/Chat/hooks/useBoard';
+import type { Chat } from '@/types/chat';
 
 describe('useBoard', () => {
   const mockModels = [
@@ -24,10 +25,12 @@ describe('useBoard', () => {
     { modelId: 'model-5', chatHistoryList: [] },
   ];
 
+  const mockChat: Chat = { id: 'chat-1' };
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useSelectedChat).mockReturnValue({
-      selectedChat: { id: 'chat-1' } as any,
+      selectedChat: mockChat,
       chatModelList: mockModels,
     });
   });
@@ -57,7 +60,7 @@ describe('useBoard', () => {
   it('应该在模型数量等于 columnCount 时正确切分', () => {
     const twoModels = [mockModels[0], mockModels[1]];
     vi.mocked(useSelectedChat).mockReturnValue({
-      selectedChat: { id: 'chat-1' } as any,
+      selectedChat: mockChat,
       chatModelList: twoModels,
     });
 
@@ -80,7 +83,7 @@ describe('useBoard', () => {
 
   it('应该在模型数量 <= 1 时不使用 Splitter 布局', () => {
     vi.mocked(useSelectedChat).mockReturnValue({
-      selectedChat: { id: 'chat-1' } as any,
+      selectedChat: mockChat,
       chatModelList: [mockModels[0]],
     });
 

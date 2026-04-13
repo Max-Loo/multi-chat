@@ -284,6 +284,8 @@ describe('MobileDrawer 组件', () => {
     it('应该处理 undefined children', () => {
       render(
         <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {/* Reason: 测试 undefined children 的降级处理 */}
           {undefined as any}
         </MobileDrawer>
       );

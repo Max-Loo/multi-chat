@@ -7,14 +7,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
 import ChatPanelContentDetail from '@/pages/Chat/components/Panel/Detail';
 import type { ChatModel } from '@/types/chat';
 import { ChatRoleEnum } from '@/types/chat';
-import chatReducer from '@/store/slices/chatSlices';
-import modelReducer from '@/store/slices/modelSlice';
-import chatPageReducer from '@/store/slices/chatPageSlices';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
 
 // Mock react-i18next for internationalization
 vi.mock('react-i18next', () => ({
@@ -90,42 +88,26 @@ describe('ChatPanelContentDetail', () => {
       },
     ];
 
-    return configureStore({
-      reducer: {
-        chat: chatReducer,
-        chatPage: chatPageReducer,
-        models: modelReducer,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: Redux Toolkit 严格类型系统限制
-      } as any,
-      preloadedState: {
-        chat: {
-          chatList: [
-            {
-              id: 'test-chat-1',
-              name: 'Test Chat',
-              chatModelList: [chatModel],
-              isDeleted: false,
-            },
-          ],
-          selectedChatId: 'test-chat-1',
-          loading: false,
-          error: null,
-          initializationError: null,
-          runningChat: overrides?.runningChat || {},
-        },
-        chatPage: {
-          isSidebarCollapsed: false,
-          isShowChatPage: true,
-        },
-        models: {
-          models: overrides?.models || defaultModels,
-          loading: false,
-          error: null,
-        },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: Redux Toolkit 严格类型系统限制
-      } as any,
+    return createTypeSafeTestStore({
+      chat: createChatSliceState({
+        chatList: [
+          {
+            id: 'test-chat-1',
+            name: 'Test Chat',
+            chatModelList: [chatModel],
+            isDeleted: false,
+          },
+        ],
+        selectedChatId: 'test-chat-1',
+        runningChat: overrides?.runningChat || {},
+      }),
+      chatPage: createChatPageSliceState({
+        isSidebarCollapsed: false,
+        isShowChatPage: true,
+      }),
+      models: createModelSliceState({
+        models: overrides?.models || defaultModels,
+      }),
     });
   };
 

@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import { useExistingModels } from '@/hooks/useExistingModels';
-import modelReducer from '@/store/slices/modelSlice';
-import type { RootState } from '@/store';
 import type { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createModelSliceState } from '@/__test__/helpers/mocks/testState';
 
 const createMockModel = (id: string, isDeleted: boolean = false): Model => ({
   id,
@@ -23,24 +22,9 @@ const createMockModel = (id: string, isDeleted: boolean = false): Model => ({
   isDeleted,
 });
 
-const createTestStore = (state: Partial<RootState>) => {
-  return configureStore({
-    reducer: {
-      models: modelReducer,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    } as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    preloadedState: state as any,
-  });
-};
-
-const createWrapper = (store: ReturnType<typeof createTestStore>) => {
+const createWrapper = (store: ReturnType<typeof createTypeSafeTestStore>) => {
   return ({ children }: { children: React.ReactNode }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    return <Provider store={store as any}>{children}</Provider>;
+    return <Provider store={store}>{children}</Provider>;
   };
 };
 
@@ -52,13 +36,10 @@ describe('useExistingModels', () => {
       const model2 = createMockModel('model-2', false);
       const model3 = createMockModel('model-3', false);
 
-      const store = createTestStore({
-        models: {
+      const store = createTypeSafeTestStore({
+        models: createModelSliceState({
           models: [model1, model2, model3],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -74,13 +55,10 @@ describe('useExistingModels', () => {
       const model3 = createMockModel('model-3', false);
       const model4 = createMockModel('model-4', true);
 
-      const store = createTestStore({
-        models: {
+      const store = createTypeSafeTestStore({
+        models: createModelSliceState({
           models: [model1, model2, model3, model4],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -96,13 +74,10 @@ describe('useExistingModels', () => {
       const model2 = createMockModel('model-2', false);
       const model3 = createMockModel('model-3', false);
 
-      const store = createTestStore({
-        models: {
+      const store = createTypeSafeTestStore({
+        models: createModelSliceState({
           models: [model1, model2, model3],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -116,13 +91,10 @@ describe('useExistingModels', () => {
 
   describe('空列表和特殊情况', () => {
     it('应该返回空数组 当存储中没有模型', () => {
-      const store = createTestStore({
-        models: {
+      const store = createTypeSafeTestStore({
+        models: createModelSliceState({
           models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -137,13 +109,10 @@ describe('useExistingModels', () => {
       const model2 = createMockModel('model-2', true);
       const model3 = createMockModel('model-3', true);
 
-      const store = createTestStore({
-        models: {
+      const store = createTypeSafeTestStore({
+        models: createModelSliceState({
           models: [model1, model2, model3],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
@@ -158,13 +127,10 @@ describe('useExistingModels', () => {
     it('应该返回相同引用 当模型列表未变化时', () => {
       const model1 = createMockModel('model-1', false);
 
-      const store = createTestStore({
-        models: {
+      const store = createTypeSafeTestStore({
+        models: createModelSliceState({
           models: [model1],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
+        }),
       });
 
       const wrapper = createWrapper(store);
