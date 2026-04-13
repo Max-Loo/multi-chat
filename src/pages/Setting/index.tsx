@@ -42,7 +42,7 @@ const SettingPage: React.FC = () => {
 
       {/* 桌面端：直接显示侧边栏（无折叠功能） */}
       {!isMobile && (
-        <div className="w-64 h-full border-r border-border shrink-0">
+        <div className="w-64 h-full border-r border-border shrink-0 bg-sidebar">
           <SettingSidebar />
         </div>
       )}

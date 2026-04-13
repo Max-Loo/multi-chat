@@ -87,9 +87,8 @@ export const ProviderLogo = React.memo<ProviderLogoProps>(
               key={providerKey} // 确保 providerKey 变化时重新渲染 img 元素
               src={getProviderLogoUrl(providerKey)}
               alt={`${providerName} logo`}
-              className="object-contain"
+              className="object-contain provider-logo"
               style={{
-                filter: 'drop-shadow(0 1px 2px rgb(0 0 0 / 0.1))',
                 maxWidth: size * 0.8,
                 maxHeight: size * 0.8
               }}
