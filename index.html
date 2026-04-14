@@ -8,6 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Multi Chat</title>
+    <script>!function(){var t=localStorage.getItem("multi-chat-theme"),d=matchMedia("(prefers-color-scheme:dark)").matches;(t==="dark"||(!t&&d)||(t==="system"&&d))&&document.documentElement.classList.add("dark")}()</script>
     <script type="text/javascript">
       // SPA 路由恢复脚本 - GitHub Pages 支持
       // 当 404.html 将用户重定向到根路径时，此脚本会恢复原始路径
@@ -26,11 +27,22 @@
     <div id="root">
       <!-- HTML Spinner - 在 JavaScript 加载完成前显示，消除白屏 -->
       <style>
+        :root {
+          --spinner-track: #e5e5e5;
+          --spinner-bar: #4269C4;
+          --spinner-bg: #ffffff;
+        }
+        .dark {
+          --spinner-track: #444444;
+          --spinner-bar: #6b8dd8;
+          --spinner-bg: #1c1c1c;
+        }
+        body { background: var(--spinner-bg); }
         .init-spinner {
           width: 40px;
           height: 40px;
-          border: 3px solid #f3f3f3;
-          border-top: 3px solid #4269C4;
+          border: 3px solid var(--spinner-track);
+          border-top: 3px solid var(--spinner-bar);
           border-radius: 50%;
           animation: spin 1s linear infinite;
         }

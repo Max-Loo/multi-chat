@@ -15,6 +15,31 @@
 - **THEN** 必须在 React 渲染之前同步读取 localStorage 并设置 `.dark` class
 - **AND** 首次渲染即使用正确的主题
 
+#### Scenario: 纯 HTML 阶段响应系统暗色偏好
+
+- **WHEN** 浏览器解析 `index.html`（JS 模块尚未加载）
+- **AND** 操作系统偏好为暗色模式
+- **THEN** inline script 必须在 Spinner 渲染前同步执行 `matchMedia("(prefers-color-scheme: dark)")`
+- **AND** 检测到暗色偏好时必须在 `<html>` 元素上设置 `.dark` class
+- **AND** `<body>` 背景必须显示为暗色（与 `main.css` 中 `--background` 暗色值一致）
+- **AND** Spinner 的轨道和旋转条颜色必须适配暗色背景
+
+#### Scenario: 纯 HTML 阶段浅色系统偏好
+
+- **WHEN** 浏览器解析 `index.html`（JS 模块尚未加载）
+- **AND** 操作系统偏好为浅色模式
+- **THEN** `<html>` 元素不得有 `.dark` class
+- **AND** `<body>` 背景必须为白色
+- **AND** Spinner 显示浅色配色方案
+
+#### Scenario: main.tsx 加载后覆盖 inline script 结果
+
+- **WHEN** main.tsx 加载并执行同步初始化
+- **AND** 用户在 localStorage 中存储了明确的主题偏好（如 "light"）
+- **AND** 系统偏好为暗色
+- **THEN** main.tsx 必须根据 localStorage 偏好重新计算并设置 `.dark` class
+- **AND** 最终显示浅色主题（覆盖 inline script 设置的暗色）
+
 #### Scenario: 主题偏好持久化
 
 - **WHEN** 用户切换主题
