@@ -8,25 +8,32 @@
 /** 逻辑坐标系尺寸 */
 const LOGICAL_SIZE = 200;
 
-/** 配色方案 */
-export const COLORS = {
-  /** 机器人轮廓 */
+/** 浅色调色板 */
+export const LIGHT_COLORS = {
   outline: "#333333",
-  /** 机器人填充 */
   fill: "#FFFFFF",
-  /** LED 眼睛 / 品牌蓝 */
   accent: "#4269C4",
-  /** 桌面线条 */
   desk: "#666666",
-  /** 键盘 */
   keyboard: "#E5E5E5",
-  /** 按键 */
   key: "#FFFFFF",
-  /** 聊天气泡 */
   bubble: "#4269C4",
-  /** 气泡内文字 */
   bubbleText: "#FFFFFF",
 } as const;
+
+/** 暗色调色板 */
+export const DARK_COLORS = {
+  outline: "#CCCCCC",
+  fill: "#454545",
+  accent: "#6b8dd8",
+  desk: "#999999",
+  keyboard: "#3a3a3a",
+  key: "#4a4a4a",
+  bubble: "#6b8dd8",
+  bubbleText: "#FFFFFF",
+} as const;
+
+/** 调色板类型（从 LIGHT_COLORS 推导键名，值类型放宽为 string） */
+export type ColorsType = { [K in keyof typeof LIGHT_COLORS]: string };
 
 // ============== 类型定义 ==============
 
@@ -169,9 +176,9 @@ function drawRoundedRect(
 /**
  * 绘制桌面和键盘
  */
-function drawDesk(ctx: CanvasRenderingContext2D): void {
+function drawDesk(ctx: CanvasRenderingContext2D, colors: ColorsType = LIGHT_COLORS): void {
   // 桌面
-  ctx.strokeStyle = COLORS.desk;
+  ctx.strokeStyle = colors.desk;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(20, 145);
@@ -179,8 +186,8 @@ function drawDesk(ctx: CanvasRenderingContext2D): void {
   ctx.stroke();
 
   // 键盘底座 (带圆角)
-  ctx.fillStyle = COLORS.keyboard;
-  ctx.strokeStyle = COLORS.outline;
+  ctx.fillStyle = colors.keyboard;
+  ctx.strokeStyle = colors.outline;
   ctx.lineWidth = 1.5;
   drawRoundedRect(ctx, 45, 148, 110, 30, 4);
   ctx.fill();
@@ -192,7 +199,8 @@ function drawDesk(ctx: CanvasRenderingContext2D): void {
  */
 function drawKeyboard(
   ctx: CanvasRenderingContext2D,
-  activeKeyIndex: number
+  activeKeyIndex: number,
+  colors: ColorsType = LIGHT_COLORS
 ): void {
   const keyWidth = 12;
   const keyHeight = 10;
@@ -210,8 +218,8 @@ function drawKeyboard(
     // 判断是否是当前激活的按键
     const isActive = i === activeKeyIndex;
 
-    ctx.fillStyle = isActive ? COLORS.accent : COLORS.key;
-    ctx.strokeStyle = COLORS.outline;
+    ctx.fillStyle = isActive ? colors.accent : colors.key;
+    ctx.strokeStyle = colors.outline;
     ctx.lineWidth = 1;
 
     drawRoundedRect(ctx, x, y, keyWidth, keyHeight, 2);
@@ -225,12 +233,13 @@ function drawKeyboard(
  */
 function drawBody(
   ctx: CanvasRenderingContext2D,
-  breathOffset: number
+  breathOffset: number,
+  colors: ColorsType = LIGHT_COLORS
 ): void {
   const y = 95 + breathOffset;
 
-  ctx.fillStyle = COLORS.fill;
-  ctx.strokeStyle = COLORS.outline;
+  ctx.fillStyle = colors.fill;
+  ctx.strokeStyle = colors.outline;
   ctx.lineWidth = 2;
 
   drawRoundedRect(ctx, 75, y, 50, 30, 5);
@@ -244,9 +253,10 @@ function drawBody(
 function drawTypingArms(
   ctx: CanvasRenderingContext2D,
   leftKeyY: number,
-  rightKeyY: number
+  rightKeyY: number,
+  colors: ColorsType = LIGHT_COLORS
 ): void {
-  ctx.strokeStyle = COLORS.outline;
+  ctx.strokeStyle = colors.outline;
   ctx.lineWidth = 3;
   ctx.lineCap = "round";
 
@@ -257,7 +267,7 @@ function drawTypingArms(
   ctx.stroke();
 
   // 左手指 (圆点)
-  ctx.fillStyle = COLORS.outline;
+  ctx.fillStyle = colors.outline;
   ctx.beginPath();
   ctx.arc(60 + leftKeyY, 155, 4, 0, Math.PI * 2);
   ctx.fill();
@@ -280,14 +290,15 @@ function drawTypingArms(
 function drawHead(
   ctx: CanvasRenderingContext2D,
   headTilt: number,
-  breathOffset: number
+  breathOffset: number,
+  colors: ColorsType = LIGHT_COLORS
 ): void {
   ctx.save();
   ctx.translate(100, 65 + breathOffset);
   ctx.rotate(headTilt);
 
-  ctx.fillStyle = COLORS.fill;
-  ctx.strokeStyle = COLORS.outline;
+  ctx.fillStyle = colors.fill;
+  ctx.strokeStyle = colors.outline;
   ctx.lineWidth = 2;
 
   // 头部轮廓
@@ -305,7 +316,8 @@ function drawEyes(
   ctx: CanvasRenderingContext2D,
   eyeBrightness: number,
   headTilt: number,
-  breathOffset: number
+  breathOffset: number,
+  colors: ColorsType = LIGHT_COLORS
 ): void {
   ctx.save();
   ctx.translate(100, 65 + breathOffset);
@@ -322,7 +334,8 @@ function drawEyes(
     [4, 3], [8, 3], [12, 3],
   ];
 
-  ctx.fillStyle = `rgba(66, 105, 196, ${eyeBrightness})`;
+  ctx.globalAlpha = eyeBrightness;
+  ctx.fillStyle = colors.accent;
   eyePixels.forEach(([px, py]) => {
     ctx.fillRect(px - pixelSize / 2, py - pixelSize / 2, pixelSize, pixelSize);
   });
@@ -336,13 +349,14 @@ function drawEyes(
 function drawMouth(
   ctx: CanvasRenderingContext2D,
   headTilt: number,
-  breathOffset: number
+  breathOffset: number,
+  colors: ColorsType = LIGHT_COLORS
 ): void {
   ctx.save();
   ctx.translate(100, 65 + breathOffset);
   ctx.rotate(headTilt);
 
-  ctx.strokeStyle = COLORS.outline;
+  ctx.strokeStyle = colors.outline;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(-10, 10);
@@ -358,12 +372,13 @@ function drawMouth(
 function drawAntenna(
   ctx: CanvasRenderingContext2D,
   antennaAngle: number,
-  breathOffset: number
+  breathOffset: number,
+  colors: ColorsType = LIGHT_COLORS
 ): void {
   ctx.save();
   ctx.translate(100, 45 + breathOffset);
 
-  ctx.strokeStyle = COLORS.outline;
+  ctx.strokeStyle = colors.outline;
   ctx.lineWidth = 2;
   ctx.lineCap = "round";
 
@@ -374,7 +389,7 @@ function drawAntenna(
   ctx.moveTo(0, 0);
   ctx.lineTo(-15, -20);
   ctx.stroke();
-  ctx.fillStyle = COLORS.accent;
+  ctx.fillStyle = colors.accent;
   ctx.beginPath();
   ctx.arc(-15, -20, 3, 0, Math.PI * 2);
   ctx.fill();
@@ -387,7 +402,7 @@ function drawAntenna(
   ctx.moveTo(0, 0);
   ctx.lineTo(15, -20);
   ctx.stroke();
-  ctx.fillStyle = COLORS.accent;
+  ctx.fillStyle = colors.accent;
   ctx.beginPath();
   ctx.arc(15, -20, 3, 0, Math.PI * 2);
   ctx.fill();
@@ -403,7 +418,8 @@ function drawAntenna(
 function drawChatBubble(
   ctx: CanvasRenderingContext2D,
   bubbleDots: [number, number, number],
-  floatOffset: number
+  floatOffset: number,
+  colors: ColorsType = LIGHT_COLORS
 ): void {
   // 右上角位置
   const bubbleX = 130;
@@ -415,7 +431,7 @@ function drawChatBubble(
   ctx.save();
 
   // 气泡主体 (圆角矩形)
-  ctx.fillStyle = COLORS.bubble;
+  ctx.fillStyle = colors.bubble;
   drawRoundedRect(ctx, bubbleX, bubbleY, bubbleWidth, bubbleHeight, bubbleRadius);
   ctx.fill();
 
@@ -433,7 +449,7 @@ function drawChatBubble(
   const dotsStartX = bubbleX + (bubbleWidth - dotSpacing * 2) / 2;
   const dotBaseY = bubbleY + bubbleHeight / 2;
 
-  ctx.fillStyle = COLORS.bubbleText;
+  ctx.fillStyle = colors.bubbleText;
   [0, 1, 2].forEach((i) => {
     const scale = 0.8 + bubbleDots[i] * 0.4;
     const yOffset = bubbleDots[i] * -3;
@@ -454,7 +470,7 @@ function drawChatBubble(
 /**
  * 主绘制函数
  */
-export function draw(drawCtx: DrawContext, state: AnimationState): void {
+export function draw(drawCtx: DrawContext, state: AnimationState, colors: ColorsType = LIGHT_COLORS): void {
   const { ctx, scale } = drawCtx;
 
   ctx.save();
@@ -468,15 +484,15 @@ export function draw(drawCtx: DrawContext, state: AnimationState): void {
   ctx.translate(0, state.floatOffset);
 
   // 按层次绘制各元素
-  drawDesk(ctx);
-  drawKeyboard(ctx, state.activeKeyIndex);
-  drawBody(ctx, state.breathOffset);
-  drawTypingArms(ctx, state.leftKeyY, state.rightKeyY);
-  drawHead(ctx, state.headTilt, state.breathOffset);
-  drawEyes(ctx, state.eyeBrightness, state.headTilt, state.breathOffset);
-  drawMouth(ctx, state.headTilt, state.breathOffset);
-  drawAntenna(ctx, state.antennaAngle, state.breathOffset);
-  drawChatBubble(ctx, state.bubbleDots, state.floatOffset);
+  drawDesk(ctx, colors);
+  drawKeyboard(ctx, state.activeKeyIndex, colors);
+  drawBody(ctx, state.breathOffset, colors);
+  drawTypingArms(ctx, state.leftKeyY, state.rightKeyY, colors);
+  drawHead(ctx, state.headTilt, state.breathOffset, colors);
+  drawEyes(ctx, state.eyeBrightness, state.headTilt, state.breathOffset, colors);
+  drawMouth(ctx, state.headTilt, state.breathOffset, colors);
+  drawAntenna(ctx, state.antennaAngle, state.breathOffset, colors);
+  drawChatBubble(ctx, state.bubbleDots, state.floatOffset, colors);
 
   ctx.restore();
   ctx.restore();
@@ -485,7 +501,7 @@ export function draw(drawCtx: DrawContext, state: AnimationState): void {
 /**
  * 绘制静态帧 (用于 prefers-reduced-motion)
  */
-export function drawStaticFrame(drawCtx: DrawContext): void {
+export function drawStaticFrame(drawCtx: DrawContext, colors: ColorsType = LIGHT_COLORS): void {
   const staticState: AnimationState = {
     time: 0,
     bubbleDots: [0.5, 0.5, 0.5],
@@ -499,7 +515,7 @@ export function drawStaticFrame(drawCtx: DrawContext): void {
     floatOffset: 0,
   };
 
-  draw(drawCtx, staticState);
+  draw(drawCtx, staticState, colors);
 }
 
 /**

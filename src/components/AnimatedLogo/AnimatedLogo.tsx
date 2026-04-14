@@ -5,6 +5,8 @@ import {
   draw,
   drawStaticFrame,
   calculateScale,
+  LIGHT_COLORS,
+  DARK_COLORS,
   type AnimationState,
 } from "./canvas-logo";
 
@@ -21,6 +23,33 @@ const AnimatedLogo: React.FC = () => {
   const prefersReducedMotionRef = useRef<boolean>(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [canvasSupported, setCanvasSupported] = useState(true);
+
+  /**
+   * 根据当前主题选择调色板
+   * 初始化阶段 ThemeProvider 尚未加载，直接检测 .dark class
+   * （main.tsx 在 React 渲染前已同步设置该 class）
+   */
+  const colorsRef = useRef(
+    document.documentElement.classList.contains("dark") ? DARK_COLORS : LIGHT_COLORS
+  );
+
+  /**
+   * 监听主题切换，动态更新调色板
+   * 使用 MutationObserver 监听 <html> 的 class 变化，
+   * 无需 React 重渲染，动画循环自动读取最新值
+   */
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      colorsRef.current = document.documentElement.classList.contains("dark")
+        ? DARK_COLORS
+        : LIGHT_COLORS;
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   /**
    * 动画循环
@@ -48,7 +77,8 @@ const AnimatedLogo: React.FC = () => {
     // 绘制
     draw(
       { ctx, scale, width: cssWidth, height: cssHeight },
-      stateRef.current
+      stateRef.current,
+      colorsRef.current
     );
 
     // 继续动画循环
@@ -99,7 +129,7 @@ const AnimatedLogo: React.FC = () => {
         const cssWidth = canvas.width / dpr;
         const cssHeight = canvas.height / dpr;
         const scale = calculateScale(cssWidth, cssHeight);
-        drawStaticFrame({ ctx, scale, width: cssWidth, height: cssHeight });
+        drawStaticFrame({ ctx, scale, width: cssWidth, height: cssHeight }, colorsRef.current);
       } else if (!animationRef.current) {
         // 如果动画未运行，触发一次绘制
         const cssWidth = canvas.width / dpr;
@@ -107,7 +137,8 @@ const AnimatedLogo: React.FC = () => {
         const scale = calculateScale(cssWidth, cssHeight);
         draw(
           { ctx, scale, width: cssWidth, height: cssHeight },
-          stateRef.current
+          stateRef.current,
+          colorsRef.current
         );
       }
     };
@@ -151,7 +182,7 @@ const AnimatedLogo: React.FC = () => {
 
     if (prefersReducedMotion) {
       // 静态帧模式
-      drawStaticFrame(drawCtx);
+      drawStaticFrame(drawCtx, colorsRef.current);
     } else {
       // 启动动画
       lastTimeRef.current = 0;
