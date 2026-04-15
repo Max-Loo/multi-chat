@@ -164,9 +164,8 @@ function renderChatSidebar(store: ReturnType<typeof createTypeSafeTestStore>) {
  * - 测试聊天列表渲染、搜索过滤、新建聊天等功能
  */
 describe('ChatSidebar Component', () => {
-  beforeEach(() => {
-    resetTestState();
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    await resetTestState();
   });
 
   afterEach(() => {

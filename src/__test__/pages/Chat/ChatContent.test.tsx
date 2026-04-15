@@ -25,7 +25,7 @@ vi.mock('react-i18next', () => ({
     t: ((keyOrSelector: string | ((resources: any) => string)) => {
       if (typeof keyOrSelector === 'function') {
         const mockResources = {
-          common: { loading: '加载中' },
+          common: { loading: '加载中', remark: '备注' },
           chat: {
             selectChatToStart: '选择一个聊天开始对话',
             createChat: '创建聊天',
@@ -44,6 +44,13 @@ vi.mock('react-i18next', () => ({
           },
           model: {
             openProviderList: '打开模型供应商列表',
+          },
+          table: {
+            nickname: '昵称',
+            modelProvider: '模型供应商',
+            modelName: '模型名称',
+            lastUpdateTime: '最后更新时间',
+            createTime: '创建时间',
           },
         };
         return keyOrSelector(mockResources);
@@ -92,9 +99,8 @@ function renderChatContent() {
  * - 不测试 React.lazy 的加载行为（由 Suspense 处理）
  */
 describe('ChatContent Component', () => {
-  beforeEach(() => {
-    resetTestState();
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    await resetTestState();
     mockUseCurrentSelectedChat.mockReset();
   });
 

@@ -1,10 +1,4 @@
-# test-environment-isolation Spec
-
-## Purpose
-
-提供测试环境隔离机制，确保每个测试用例独立运行，提供统一的测试前后清理钩子、状态重置工具，防止测试间相互影响。
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: 测试状态重置函数
 
@@ -60,39 +54,6 @@
 
 ---
 
-### Requirement: IndexedDB 隔离
-
-系统 SHALL 为每个测试提供独立的 IndexedDB 实例，防止数据污染。
-
-#### Scenario: 创建独立 IndexedDB
-
-- **WHEN** 测试需要使用 IndexedDB
-- **THEN** 系统为该测试创建独立的 `fake-indexeddb` 实例
-
-#### Scenario: 清理 IndexedDB
-
-- **WHEN** 调用 `resetTestState()`
-- **THEN** 系统 IndexedDB 数据被清空
-
----
-
-### Requirement: 环境变量隔离
-
-系统 SHALL 支持测试级环境变量隔离，防止环境变量污染。
-
-#### Scenario: 设置测试环境变量
-
-- **WHEN** 调用 `setTestEnv('API_KEY', 'test-key')`
-- **THEN** 系统 `import.meta.env.API_KEY` 返回 `'test-key'`
-- **AND** 其他测试不受影响
-
-#### Scenario: 重置环境变量
-
-- **WHEN** 测试结束
-- **THEN** 系统环境变量恢复原值
-
----
-
 ### Requirement: 隔离验证工具
 
 系统 SHALL 提供异步的 `verifyIsolation()` 函数，返回 `Promise<boolean>`，用于验证测试是否正确隔离，覆盖 localStorage 和 IndexedDB 两个维度。
@@ -116,15 +77,3 @@
 
 - **WHEN** 调用 `await verifyIsolation()` 时 localStorage 为空且 IndexedDB 为空
 - **THEN** 系统返回 `true` 且无警告输出
-
----
-
-### Requirement: 并发测试隔离
-
-系统 SHALL 确保并发执行的测试互不影响。
-
-#### Scenario: 并发测试独立性
-
-- **WHEN** 多个测试并发执行并修改相同 Mock
-- **THEN** 每个测试看到自己配置的 Mock 状态
-- **AND** 测试结果不因执行顺序改变

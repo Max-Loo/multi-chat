@@ -132,9 +132,8 @@ function renderChatButton(chat: Chat, store?: EnhancedStore, isSelected = true) 
  * - 测试渲染、导航、重命名、删除、下拉菜单等功能
  */
 describe('ChatButton Component', () => {
-  beforeEach(() => {
-    resetTestState();
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    await resetTestState();
   });
 
   afterEach(() => {

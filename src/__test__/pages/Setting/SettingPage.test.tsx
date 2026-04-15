@@ -73,8 +73,8 @@ function renderSettingPage(ui: React.ReactElement) {
  * - 通过用户可见行为验证功能
  */
 describe('SettingPage Component', () => {
-  beforeEach(() => {
-    resetTestState();
+  beforeEach(async () => {
+    await resetTestState();
     vi.clearAllMocks();
   });
 

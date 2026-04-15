@@ -77,8 +77,8 @@ vi.mock("@/services/i18n", () => ({
 }))
 
 describe("GeneralSetting 组件", () => {
-  beforeEach(() => {
-    resetTestState()
+  beforeEach(async () => {
+    await resetTestState()
   })
 
   afterEach(() => {

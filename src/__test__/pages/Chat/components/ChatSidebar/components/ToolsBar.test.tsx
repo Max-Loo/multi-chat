@@ -125,9 +125,8 @@ function renderToolsBar(props?: {
  * - 测试默认工具栏、创建新聊天、搜索功能、侧边栏折叠等功能
  */
 describe('ToolsBar Component', () => {
-  beforeEach(() => {
-    resetTestState();
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    await resetTestState();
   });
 
   afterEach(() => {

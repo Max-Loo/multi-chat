@@ -106,8 +106,8 @@ vi.mock("@/components/ui/select", () => ({
 }))
 
 describe("LanguageSetting 组件", () => {
-  beforeEach(() => {
-    resetTestState()
+  beforeEach(async () => {
+    await resetTestState()
     mockDispatch.mockClear()
     mockSetAppLanguage.mockClear()
   })
