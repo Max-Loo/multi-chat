@@ -13,6 +13,7 @@ import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -69,18 +70,14 @@ const createModelSelectStore = () => {
     createMockModel({
       id: 'model-1',
       nickname: 'GPT-4',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 测试错误处理，需要构造无效输入
-      providerKey: 'deepseek' as any,
+      providerKey: asTestType<ModelProviderKeyEnum>('deepseek'),
       modelName: 'gpt-4',
       providerName: 'OpenAI',
     }),
     createMockModel({
       id: 'model-2',
       nickname: 'Claude 3',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 测试错误处理，需要构造无效输入
-      providerKey: 'moonshotai' as any,
+      providerKey: asTestType<ModelProviderKeyEnum>('moonshotai'),
       modelName: 'claude-3-opus',
       providerName: 'Anthropic',
     }),

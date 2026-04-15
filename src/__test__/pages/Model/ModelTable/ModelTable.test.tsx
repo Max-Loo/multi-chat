@@ -15,6 +15,7 @@ import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import type { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -121,9 +122,7 @@ describe('ModelTable', () => {
       createMockModel({
         id: '3',
         nickname: 'Zhipu Chat',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试非枚举值的降级处理
-        providerKey: 'zhipu' as any,
+        providerKey: asTestType<ModelProviderKeyEnum>('zhipu'),
         modelKey: 'glm-4',
       }),
     ];

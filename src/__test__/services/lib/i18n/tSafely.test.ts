@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { resetInitI18nForTest, tSafely } from '@/services/i18n';
 import i18n from 'i18next';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 describe('tSafely', () => {
   beforeEach(() => {
@@ -84,9 +85,8 @@ describe('tSafely', () => {
         resources: { en: { translation: {} } }
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 测试 tSafely 对 null key 的降级处理，函数签名要求 string 但运行时应支持 null
-      const result = tSafely(null as any, 'Fallback text');
+      const result = tSafely(asTestType<string>(null), 'Fallback text');
       expect(result).toBe('Fallback text');
     });
 
@@ -97,9 +97,8 @@ describe('tSafely', () => {
         resources: { en: { translation: {} } }
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 测试 tSafely 对 undefined key 的降级处理
-      const result = tSafely(undefined as any, 'Fallback text');
+      const result = tSafely(asTestType<string>(undefined), 'Fallback text');
       expect(result).toBe('Fallback text');
     });
   });
@@ -112,9 +111,8 @@ describe('tSafely', () => {
         resources: { en: { translation: {} } }
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 测试 tSafely 对 null fallback 的降级处理
-      const result = tSafely('error.test.key', null as any);
+      const result = tSafely('error.test.key', asTestType<string>(null));
       expect(result).toBe('');
     });
 
@@ -125,9 +123,8 @@ describe('tSafely', () => {
         resources: { en: { translation: {} } }
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 测试 tSafely 对 undefined fallback 的降级处理
-      const result = tSafely('error.test.key', undefined as any);
+      const result = tSafely('error.test.key', asTestType<string>(undefined));
       expect(result).toBe('');
     });
 
@@ -151,9 +148,8 @@ describe('tSafely', () => {
         resources: { en: { translation: {} } }
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 测试 tSafely 对两个参数都为 null 的降级处理
-      const result = tSafely(null as any, null as any);
+      const result = tSafely(asTestType<string>(null), asTestType<string>(null));
       expect(result).toBe('');
     });
   });

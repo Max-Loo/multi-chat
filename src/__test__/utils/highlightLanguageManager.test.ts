@@ -1,9 +1,16 @@
 /**
  * Highlight.js 语言加载管理器单元测试
+ *
+ * 测试策略：
+ * - Mock 外部依赖（highlight.js、highlightLanguageIndex）而非内部私有方法
+ * - 通过公共 API（isLoaded、hasFailedToLoad）验证结果
+ * - 并发控制通过 spy 外部库 API（hljs.registerLanguage）间接验证
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { HighlightLanguageManager } from '@/utils/highlightLanguageManager';
+import hljs from 'highlight.js/lib/core';
+import { loadLanguageModule } from '@/utils/highlightLanguageIndex';
 
 // Mock highlight.js
 vi.mock('highlight.js/lib/core', () => ({
@@ -21,6 +28,14 @@ vi.mock('highlight.js/lib/core', () => ({
   },
 }));
 
+// Mock highlightLanguageIndex 模块（外部依赖）
+// 通过 mock loadLanguageModule 控制成功/失败场景
+vi.mock('@/utils/highlightLanguageIndex', () => ({
+  loadLanguageModule: vi.fn().mockResolvedValue({
+    default: { /* mock language definition */ },
+  }),
+}));
+
 describe('HighlightLanguageManager', () => {
   let manager: HighlightLanguageManager;
 
@@ -33,6 +48,11 @@ describe('HighlightLanguageManager', () => {
 
     // 重置所有 mock
     vi.clearAllMocks();
+
+    // 重置 loadLanguageModule 为默认成功行为
+    vi.mocked(loadLanguageModule).mockResolvedValue({
+      default: { /* mock language definition */ },
+    });
   });
 
   describe('单例模式', () => {
@@ -89,7 +109,7 @@ describe('HighlightLanguageManager', () => {
     });
 
     it('应该识别已加载的语言', () => {
-      manager.testInternals.loadedLanguages.add('javascript');
+      manager.markAsLoaded('javascript');
       expect(manager.isLoaded('javascript')).toBe(true);
       expect(manager.isLoaded('js')).toBe(true); // 别名
     });
@@ -97,18 +117,17 @@ describe('HighlightLanguageManager', () => {
 
   describe('highlightSync() - 同步高亮', () => {
     it('应该为已加载的语言高亮代码', () => {
-      manager.testInternals.loadedLanguages.add('javascript');
+      manager.markAsLoaded('javascript');
 
       const code = 'const x = 1;';
       const result = manager.highlightSync(code, 'javascript');
 
       expect(result).toContain('hljs-keyword');
-      // 注意：mock 返回的是简化结果，不包含 hljs-title
       expect(result).toContain('highlighted');
     });
 
     it('应该支持语言别名', () => {
-      manager.testInternals.loadedLanguages.add('javascript');
+      manager.markAsLoaded('javascript');
 
       const code = 'const x = 1;';
       const result = manager.highlightSync(code, 'js'); // 使用别名
@@ -148,9 +167,8 @@ describe('HighlightLanguageManager', () => {
     });
 
     it('应该并发控制：同一语言只加载一次', async () => {
-      // vi.spyOn 需要访问类实例的私有方法，testInternals 缓存对象的 spy 无法拦截类内部调用
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const loadSpy = vi.spyOn(manager as any, 'doLoadLanguage');
+      // 通过 spy 外部库 API（hljs.registerLanguage）间接验证并发控制
+      const registerSpy = vi.spyOn(hljs, 'registerLanguage');
 
       // 并发加载同一语言
       await Promise.all([
@@ -159,8 +177,8 @@ describe('HighlightLanguageManager', () => {
         manager.loadLanguageAsync('javascript'),
       ]);
 
-      // 应该只调用一次 doLoadLanguage
-      expect(loadSpy).toHaveBeenCalledTimes(1);
+      // registerLanguage 应该只被调用一次（并发控制生效）
+      expect(registerSpy).toHaveBeenCalledTimes(1);
       expect(manager.isLoaded('javascript')).toBe(true);
     });
 
@@ -168,7 +186,7 @@ describe('HighlightLanguageManager', () => {
       const loadPromise1 = manager.loadLanguageAsync('javascript');
       const loadPromise2 = manager.loadLanguageAsync('javascript');
 
-      // 应该返回同一个 Promise（使用 toStrictEqual）
+      // 应该返回同一个 Promise
       expect(loadPromise1).toStrictEqual(loadPromise2);
     });
 
@@ -183,9 +201,8 @@ describe('HighlightLanguageManager', () => {
     });
 
     it('应该在加载失败时清理缓存', async () => {
-      // vi.spyOn 需要访问类实例的私有方法，testInternals 缓存对象的 spy 无法拦截类内部调用
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.spyOn(manager as any, 'doLoadLanguage').mockRejectedValue(new Error('Network error'));
+      // 通过 mock 外部依赖使其失败
+      vi.mocked(loadLanguageModule).mockRejectedValue(new Error('Network error'));
 
       try {
         await manager.loadLanguageAsync('javascript');
@@ -193,25 +210,18 @@ describe('HighlightLanguageManager', () => {
         // 预期失败
       }
 
-      // 应该清理 loadingPromises 缓存
+      // 通过公共 API 验证状态
+      expect(manager.isLoaded('javascript')).toBe(false);
+      expect(manager.hasFailedToLoad('javascript')).toBe(true);
+
+      // 验证 loadingPromises 缓存已清理
       const loadingPromises = manager.testInternals.loadingPromises;
       expect(loadingPromises.has('javascript')).toBe(false);
-
-      // 语言应该未加载
-      expect(manager.isLoaded('javascript')).toBe(false);
-
-      // 应该记录到失败语言集合
-      const failedLanguages = manager.testInternals.failedLanguages;
-      expect(failedLanguages.has('javascript')).toBe(true);
     });
 
     it('应该防止重复加载失败的语言', async () => {
-      // vi.spyOn 需要访问类实例的私有方法，testInternals 缓存对象的 spy 无法拦截类内部调用
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.spyOn(manager as any, 'doLoadLanguage').mockRejectedValue(new Error('Unsupported language'));
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const loadSpy = vi.spyOn(manager as any, 'doLoadLanguage');
+      // 通过 mock 外部依赖使其失败
+      vi.mocked(loadLanguageModule).mockRejectedValue(new Error('Unsupported language'));
 
       // 第一次尝试加载
       try {
@@ -220,19 +230,15 @@ describe('HighlightLanguageManager', () => {
         // 预期失败
       }
 
-      // 第二次尝试加载（应该直接抛出错误，不调用 doLoadLanguage）
-      try {
-        await manager.loadLanguageAsync('cobol');
-      } catch {
-        // 预期失败
-      }
+      // 通过公共 API 验证失败状态
+      expect(manager.hasFailedToLoad('cobol')).toBe(true);
 
-      // doLoadLanguage 应该只被调用一次
-      expect(loadSpy).toHaveBeenCalledTimes(1);
+      // 第二次尝试应该直接抛出错误（不调用外部依赖）
+      // Reason: 验证失败语言不会被重复尝试加载
+      await expect(manager.loadLanguageAsync('cobol')).rejects.toThrow();
 
-      // 语言应该在失败集合中
-      const failedLanguages = manager.testInternals.failedLanguages;
-      expect(failedLanguages.has('cobol')).toBe(true);
+      // loadLanguageModule 应该只被调用一次
+      expect(vi.mocked(loadLanguageModule)).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -311,12 +317,11 @@ describe('HighlightLanguageManager', () => {
       expect(duration).toBeLessThan(1000); // 宽松的假设
     });
 
-    it('应该在加载失败时降级到 highlightAuto', async () => {
+    it('应该在加载失败时保持一致状态', async () => {
       const code = 'const x = 1;';
 
-      // Mock 加载失败
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.spyOn(manager as any, 'doLoadLanguage').mockRejectedValue(new Error('Load failed'));
+      // 通过 mock 外部依赖使其失败
+      vi.mocked(loadLanguageModule).mockRejectedValue(new Error('Load failed'));
 
       try {
         await manager.loadLanguageAsync('haskell');
@@ -324,8 +329,9 @@ describe('HighlightLanguageManager', () => {
         // 预期失败
       }
 
-      // 语言应该未加载
+      // 通过公共 API 验证状态
       expect(manager.isLoaded('haskell')).toBe(false);
+      expect(manager.hasFailedToLoad('haskell')).toBe(true);
 
       // highlightSync 应该抛出错误
       expect(() => {

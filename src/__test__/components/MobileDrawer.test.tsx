@@ -7,13 +7,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { MobileDrawer } from '@/components/MobileDrawer';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
+    t: ((keyOrSelector: string | ((resources: any) => string) | ((resources: Record<string, unknown>) => string)) => {
       if (typeof keyOrSelector === 'function') {
         const mockResources = {
           navigation: {
@@ -27,9 +28,7 @@ vi.mock('react-i18next', () => ({
         return keyOrSelector(mockResources);
       }
       return keyOrSelector;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    }) as any,
+    }) as unknown,
     i18n: {
       language: 'zh',
       changeLanguage: vi.fn(),
@@ -284,9 +283,8 @@ describe('MobileDrawer 组件', () => {
     it('应该处理 undefined children', () => {
       render(
         <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {/* Reason: 测试 undefined children 的降级处理 */}
-          {undefined as any}
+          {asTestType<React.ReactNode>(undefined)}
         </MobileDrawer>
       );
 

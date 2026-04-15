@@ -5,6 +5,7 @@ import { useCurrentSelectedChat } from '@/hooks/useCurrentSelectedChat';
 import type { Chat } from '@/types/chat';
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 const createMockChat = (id: string, name: string): Chat => ({
   id,
@@ -80,9 +81,7 @@ describe('useCurrentSelectedChat', () => {
       const store = createTypeSafeTestStore({
         chat: createChatSliceState({
           chatList: [],
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          selectedChatId: undefined as any,
+          selectedChatId: asTestType<string>(undefined),
         }),
       });
 

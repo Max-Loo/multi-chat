@@ -12,6 +12,7 @@ import ModelProviderDisplay from '@/pages/Model/ModelTable/components/ModelProvi
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 import { createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import { ModelProviderKeyEnum } from '@/utils/enums';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -115,9 +116,7 @@ describe('ModelProviderDisplay', () => {
       const wrapper = createWrapper(store);
 
       render(<ModelProviderDisplay
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试非枚举值的降级处理
-        providerKey={"test-provider" as any}
+        providerKey={asTestType<ModelProviderKeyEnum>("test-provider")}
       />, { wrapper });
 
       const img = screen.getByAltText('Test Provider');
@@ -135,9 +134,7 @@ describe('ModelProviderDisplay', () => {
       const wrapper = createWrapper(store);
 
       render(<ModelProviderDisplay
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试非枚举值的降级处理
-        providerKey={"non-existent" as any}
+        providerKey={asTestType<ModelProviderKeyEnum>("non-existent")}
       />, { wrapper });
 
       expect(screen.getByText('non-existent')).toBeInTheDocument();
@@ -157,9 +154,7 @@ describe('ModelProviderDisplay', () => {
       const wrapper = createWrapper(store);
 
       render(<ModelProviderDisplay
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试非枚举值的降级处理
-        providerKey={"unknown-provider" as any}
+        providerKey={asTestType<ModelProviderKeyEnum>("unknown-provider")}
       />, { wrapper });
 
       expect(screen.getByText('unknown-provider')).toBeInTheDocument();
@@ -170,9 +165,7 @@ describe('ModelProviderDisplay', () => {
       const wrapper = createWrapper(store);
 
       render(<ModelProviderDisplay
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试非枚举值的降级处理
-        providerKey={"any-provider" as any}
+        providerKey={asTestType<ModelProviderKeyEnum>("any-provider")}
       />, { wrapper });
 
       expect(screen.getByText('any-provider')).toBeInTheDocument();

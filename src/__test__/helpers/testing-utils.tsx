@@ -1,11 +1,20 @@
 /**
  * 通用测试工具函数
- * 
+ *
  * 提供可复用的测试辅助函数，简化测试代码编写
  * 此文件重新导出项目中已有的测试工具函数，并提供额外的组合工具函数
  */
 
 import type { Chat, StandardMessage } from '@/types/chat';
+
+/**
+ * 用于测试的类型强制转换，替代 as unknown as 模式
+ * @param value 需要转换的值
+ * @returns 强制转换为目标类型的值
+ */
+export function asTestType<T>(value: unknown): T {
+  return value as T;
+}
 import { ChatRoleEnum } from '@/types/chat';
 import { createIdGenerator } from 'ai';
 import { createMockMessage as _createMockMessage } from '@/__test__/fixtures/chat';

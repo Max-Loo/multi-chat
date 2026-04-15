@@ -13,6 +13,7 @@ import type { ChatModel } from '@/types/chat';
 import { ChatRoleEnum } from '@/types/chat';
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // Mock react-i18next for internationalization
 vi.mock('react-i18next', () => ({
@@ -281,9 +282,7 @@ describe('ChatPanelContentDetail', () => {
     it('应该处理 null 或 undefined 的 chatHistoryList', () => {
       const chatModel1: ChatModel = {
         modelId: 'model-1',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试错误处理，需要构造无效输入
-        chatHistoryList: null as any,
+        chatHistoryList: asTestType<ChatModel['chatHistoryList']>(null),
       };
 
       const store = createTestStore({ chatModel: chatModel1 });
@@ -298,9 +297,7 @@ describe('ChatPanelContentDetail', () => {
 
       const chatModel2: ChatModel = {
         modelId: 'model-1',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试错误处理，需要构造无效输入
-        chatHistoryList: undefined as any,
+        chatHistoryList: asTestType<ChatModel['chatHistoryList']>(undefined),
       };
 
       const { container: container2 } = render(
