@@ -1,8 +1,6 @@
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Sidebar from '@/components/Sidebar';
-import { asTestType } from '@/__test__/helpers/testing-utils';
-import type { ChatModel } from '@/types/chat';
 
 /**
  * Mock react-router-dom for routing
@@ -289,7 +287,7 @@ describe('Sidebar 组件测试', () => {
    */
   it('selectedChat 为 undefined 时，点击聊天导航应直接导航到 /chat', () => {
     mockLocation = { pathname: '/model' };
-    mockSelectedChat = asTestType<ChatModel>(null); // null 和 undefined 行为一致
+    mockSelectedChat = null; // null 和 undefined 行为一致
 
     render(<Sidebar />);
 

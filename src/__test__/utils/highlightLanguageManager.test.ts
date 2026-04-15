@@ -51,7 +51,7 @@ describe('HighlightLanguageManager', () => {
 
     // 重置 loadLanguageModule 为默认成功行为
     vi.mocked(loadLanguageModule).mockResolvedValue({
-      default: { /* mock language definition */ },
+      default: () => ({ contains: [] }), /* mock language definition */
     });
   });
 
