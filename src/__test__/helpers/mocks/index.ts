@@ -5,6 +5,7 @@
  */
 
 export * from './tauri';
+export * from './toast';
 export * from './crypto';
 export * from './storage';
 export * from './types';

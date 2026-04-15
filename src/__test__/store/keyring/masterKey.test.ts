@@ -11,6 +11,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { keyring } from '@/utils/tauriCompat/keyring';
 import * as tauriEnv from '@/utils/tauriCompat/env';
+import { toastQueue } from '@/services/toast';
+import { createToastSpies } from '@/__test__/helpers/mocks/toast';
 import {
   generateMasterKey,
   isMasterKeyExists,
@@ -35,7 +37,7 @@ describe('masterKey 完整测试套件', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    
+
     // Mock keyring 实例方法
     vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
     vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
@@ -46,6 +48,9 @@ describe('masterKey 完整测试套件', () => {
 
     // Mock isTauri（默认为 false）
     vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
+
+    // Mock toastQueue
+    createToastSpies(toastQueue);
   });
 
   afterEach(() => {
@@ -253,30 +258,38 @@ describe('masterKey 完整测试套件', () => {
 
     it('应该在 Web 环境显示安全警告', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
-      
+
       await handleSecurityWarning();
-      
-      // 函数应该执行不抛错
-      expect(true).toBe(true);
+
+      // 验证 toastQueue.warning 被调用且包含安全提示消息
+      expect(toastQueue.warning).toHaveBeenCalledWith(
+        expect.stringContaining('web version has a lower security level'),
+        expect.objectContaining({
+          duration: Infinity,
+          action: expect.objectContaining({
+            label: 'OK',
+          }),
+        }),
+      );
     });
 
     it('应该在 Tauri 环境不显示警告', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      
+
       await handleSecurityWarning();
-      
-      // 在 Tauri 环境下，函数应该提前返回
-      expect(true).toBe(true);
+
+      // Tauri 环境下 toastQueue.warning 不应被调用
+      expect(toastQueue.warning).not.toHaveBeenCalled();
     });
 
     it('不应该显示警告 当用户已确认过', async () => {
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
       localStorage.setItem('multi-chat-security-warning-dismissed', 'true');
-      
+
       await handleSecurityWarning();
-      
-      // 用户已确认，不应该显示警告
-      expect(true).toBe(true);
+
+      // 用户已确认，toastQueue.warning 不应被调用
+      expect(toastQueue.warning).not.toHaveBeenCalled();
     });
   });
 

@@ -8,47 +8,7 @@ import { describe, it, expect } from 'vitest';
 
 import router from '@/router/index';
 import { getAllRoutes, getRedirectRules } from '@/__test__/fixtures/router';
-
-/**
- * React 元素的类型信息（用于测试中访问组件名和 props）
- *
- * React Router 内部路由节点携带的 React 元素包含 type 和 props，
- * 但这些不在 RouteObject 公开类型中，此处补充测试所需的类型定义。
- */
-interface ReactElementLike {
-  type?: { name?: string; _payload?: unknown; _ctor?: unknown };
-  props?: Record<string, unknown>;
-}
-
-/**
- * 测试用路由节点类型，包含测试所需的全部字段
- *
- * Reason: createBrowserRouter 返回的 router.routes 是 @remix-run/router
- * 内部类型 AggressiveRouteObject，不完整暴露 children、element 等属性。
- * RouteObject 是 IndexRouteObject | NonIndexRouteObject 联合类型，
- * 不能用 interface extends，因此独立定义测试所需的类型替代 as any。
- */
-interface TestRouteObject {
-  path?: string;
-  index?: boolean;
-  element?: ReactElementLike;
-  children?: TestRouteObject[];
-}
-
-/**
- * 获取根路由配置
- * 将 router.routes[0] 转为 TestRouteObject 类型
- */
-function getRootRoute(): TestRouteObject {
-  return router.routes[0] as TestRouteObject;
-}
-
-/**
- * 获取根路由的子路由列表
- */
-function getRootChildren(): TestRouteObject[] {
-  return getRootRoute().children ?? [];
-}
+import { getRootRoute, getRootChildren } from '@/__test__/helpers/mocks/router';
 
 describe('Router 配置结构测试', () => {
   describe('路由实例验证', () => {
@@ -78,14 +38,14 @@ describe('Router 配置结构测试', () => {
 
   describe('路由组件导入测试', () => {
     it('应该正确导入 Layout 组件作为根元素', () => {
-      const rootRoute = getRootRoute();
+      const rootRoute = getRootRoute(router);
 
       expect(rootRoute.element).toBeDefined();
       expect(rootRoute.element?.type?.name).toBe('Layout');
     });
 
     it('应该为所有页面组件使用懒加载', () => {
-      const childRoutes = getRootChildren();
+      const childRoutes = getRootChildren(router);
 
       // 检查主要页面路由是否使用懒加载（chat, model, setting）
       const lazyRoutePaths = ['chat', 'model', 'setting'];
@@ -100,7 +60,7 @@ describe('Router 配置结构测试', () => {
 
   describe('嵌套路由结构测试', () => {
     it('应该为 /model 路由配置子路由', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
       const modelRoute = routes.find((r) => r.path === 'model');
 
       expect(modelRoute).toBeDefined();
@@ -109,7 +69,7 @@ describe('Router 配置结构测试', () => {
     });
 
     it('应该为 /setting 路由配置子路由', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
       const settingRoute = routes.find((r) => r.path === 'setting');
 
       expect(settingRoute).toBeDefined();
@@ -118,7 +78,7 @@ describe('Router 配置结构测试', () => {
     });
 
     it('应该正确配置 model 子路由', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
       const modelRoute = routes.find((r) => r.path === 'model');
 
       expect(modelRoute).toBeDefined();
@@ -131,7 +91,7 @@ describe('Router 配置结构测试', () => {
     });
 
     it('应该正确配置 setting 子路由', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
       const settingRoute = routes.find((r) => r.path === 'setting');
 
       expect(settingRoute).toBeDefined();
@@ -149,7 +109,7 @@ describe('Router 配置结构测试', () => {
     it.each(Object.entries(redirectRules))(
       '应该配置重定向: %s -> %s',
       (from, _to) => {
-        const routes = getRootChildren();
+        const routes = getRootChildren(router);
 
         // 查找源路由
         const sourceRoute = routes.find((r) => {
@@ -181,7 +141,7 @@ describe('Router 配置结构测试', () => {
     );
 
     it('应该将根路由重定向到 /chat', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
       const indexRoute = routes.find((r) => r.index === true);
 
       expect(indexRoute).toBeDefined();
@@ -190,7 +150,7 @@ describe('Router 配置结构测试', () => {
     });
 
     it('应该为 /model 的索引路由重定向到 /model/table', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
       const modelRoute = routes.find((r) => r.path === 'model');
 
       expect(modelRoute).toBeDefined();
@@ -202,7 +162,7 @@ describe('Router 配置结构测试', () => {
     });
 
     it('应该为 /setting 的索引路由重定向到 /setting/common', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
       const settingRoute = routes.find((r) => r.path === 'setting');
 
       expect(settingRoute).toBeDefined();
@@ -216,7 +176,7 @@ describe('Router 配置结构测试', () => {
 
   describe('404 错误处理测试', () => {
     it('应该配置兜底路由处理未匹配的路径', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
       const catchAllRoute = routes.find((r) => r.path === '*');
 
       expect(catchAllRoute).toBeDefined();
@@ -225,7 +185,7 @@ describe('Router 配置结构测试', () => {
     });
 
     it('应该定义 404 页面路由', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
       const notFoundRoute = routes.find((r) => r.path === '404');
 
       expect(notFoundRoute).toBeDefined();
@@ -235,7 +195,7 @@ describe('Router 配置结构测试', () => {
 
   describe('路由层级结构测试', () => {
     it('应该有正确的路由层级深度', () => {
-      const rootRoute = getRootRoute();
+      const rootRoute = getRootRoute(router);
 
       // 根路由
       expect(rootRoute.path).toBe('/');
@@ -253,7 +213,7 @@ describe('Router 配置结构测试', () => {
     });
 
     it('应该保持路由层级的一致性', () => {
-      const routes = getRootChildren();
+      const routes = getRootChildren(router);
 
       // 验证所有嵌套路由都有父路由
       const nestedRoutePaths = ['/model/table', '/model/add', '/setting/common'];

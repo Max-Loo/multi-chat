@@ -50,17 +50,14 @@ describe('resetTestState', () => {
 });
 
 describe('useIsolatedTest', () => {
-  it('应该自动配置 beforeEach 和 afterEach 钩子', () => {
+  it('应该不抛错地配置 beforeEach 和 afterEach 钩子', () => {
     const beforeSpy = vi.fn();
     const afterSpy = vi.fn();
 
-    useIsolatedTest({
+    expect(() => useIsolatedTest({
       onBeforeEach: beforeSpy,
       onAfterEach: afterSpy,
-    });
-
-    // 钩子已注册，测试本身证明函数不抛错
-    expect(true).toBe(true);
+    })).not.toThrow();
   });
 });
 

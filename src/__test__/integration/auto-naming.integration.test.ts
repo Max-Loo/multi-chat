@@ -178,15 +178,19 @@ describe('自动命名功能集成测试', () => {
       }));
     });
 
-    // 等待可能的异步操作
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // 等待消息处理完成
+    await waitFor(() => {
+      const s = store.getState();
+      const chatItem = s.chat.chatList.find((item) => item.id === chat.id);
+      expect(chatItem?.chatModelList?.[0]?.chatHistoryList?.length).toBeGreaterThan(0);
+    });
 
     // Assert: 验证 generateChatTitleService 未被调用
     expect(generateChatTitleService).not.toHaveBeenCalled();
 
     // 验证标题保持手动设置的值
     state = store.getState();
-    updatedChat = state.chat.chatList.find((c) => c.id === chat.id);
+    updatedChat = state.chat.chatList.find((item) => item.id === chat.id);
     expect(updatedChat?.name).toBe('我的手动标题');
     expect(updatedChat?.isManuallyNamed).toBe(true);
   });
@@ -219,8 +223,12 @@ describe('自动命名功能集成测试', () => {
       }));
     });
 
-    // 等待可能的异步操作
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // 等待消息处理完成
+    await waitFor(() => {
+      const s = store.getState();
+      const chatItem = s.chat.chatList.find((item) => item.id === chat.id);
+      expect(chatItem?.chatModelList?.[0]?.chatHistoryList?.length).toBeGreaterThan(0);
+    });
 
     // Assert: 验证 generateChatTitleService 未被调用
     expect(generateChatTitleService).not.toHaveBeenCalled();
