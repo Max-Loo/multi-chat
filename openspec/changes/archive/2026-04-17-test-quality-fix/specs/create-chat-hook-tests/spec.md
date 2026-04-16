@@ -1,21 +1,4 @@
-# Spec: useCreateChat Hook 单元测试
-
-## Purpose
-
-验证 useCreateChat Hook 的返回值、创建聊天功能以及依赖稳定性。
-
-## Requirements
-
-### Requirement: useCreateChat Hook 返回值
-
-useCreateChat Hook SHALL 返回包含 `createNewChat` 方法的对象。
-
-#### Scenario: Hook 返回 createNewChat 方法
-
-- **WHEN** 使用 `renderHookWithProviders` 调用 `useCreateChat()`
-- **THEN** 返回对象包含 `createNewChat` 方法
-
----
+## MODIFIED Requirements
 
 ### Requirement: useCreateChat 创建聊天
 
@@ -40,16 +23,11 @@ useCreateChat 的 `createNewChat` 方法 SHALL 创建新聊天并导航到聊天
 - **THEN** 文件 SHALL NOT 包含 `vi.mock('@/hooks/redux')`
 - **AND** 文件 SHALL 从 `@/__test__/helpers/render/redux` 导入 `renderHookWithProviders`
 
----
+### Requirement: useCreateChat Hook 返回值
 
-### Requirement: useCreateChat Hook 依赖稳定
+useCreateChat Hook SHALL 返回包含 `createNewChat` 方法的对象。
 
-useCreateChat Hook SHALL 使用 `useCallback` 保持 `createNewChat` 方法的引用稳定。
+#### Scenario: Hook 返回 createNewChat 方法
 
-#### Scenario: createNewChat 引用稳定
-- **WHEN** 在相同依赖下多次渲染组件
-- **THEN** `createNewChat` 方法引用保持不变
-
-#### Scenario: createNewChat 依赖正确
-- **WHEN** dispatch 或 navigateToChat 改变时
-- **THEN** `createNewChat` 方法使用新的依赖值
+- **WHEN** 使用 `renderHookWithProviders` 调用 `useCreateChat()`
+- **THEN** 返回对象包含 `createNewChat` 方法

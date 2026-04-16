@@ -10,6 +10,7 @@ import { useSelectedChat } from '@/pages/Chat/hooks/useSelectedChat';
 import { createMockChat, createMockChatWithModels } from '@/__test__/helpers/mocks/chatSidebar';
 import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
+import { setSelectedChatId } from '@/store/slices/chatSlices';
 
 describe('useSelectedChat', () => {
 
@@ -106,12 +107,7 @@ describe('useSelectedChat', () => {
 
       // 切换到 chat-2
       act(() => {
-        store.dispatch({
-          type: 'chat/setSelectedChatId',
-          payload: 'chat-2',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 使用内联 action 对象而非 action creator
-        } as any);
+        store.dispatch(setSelectedChatId('chat-2'));
       });
 
       expect(result.current.selectedChat?.id).toBe('chat-2');

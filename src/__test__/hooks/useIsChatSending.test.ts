@@ -10,6 +10,7 @@ import { useIsSending } from '@/pages/Chat/hooks/useIsSending';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
+import { setSelectedChatId } from '@/store/slices/chatSlices';
 
 describe('useIsSending', () => {
   describe('基础场景', () => {
@@ -171,12 +172,7 @@ describe('useIsSending', () => {
 
       // 切换到不同的聊天
       act(() => {
-        store.dispatch({
-          type: 'chat/setSelectedChatId',
-          payload: 'chat-2',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 第三方库类型定义不完整
-        } as any);
+        store.dispatch(setSelectedChatId('chat-2'));
       });
 
       expect(result.current.isSending).toBe(false);
@@ -203,6 +199,8 @@ describe('useIsSending', () => {
 
       // 模拟 runningChat 状态变化：通过 sendMessage.pending 更新 runningChat
       act(() => {
+        // sendMessage 未导出，无法使用 sendMessage.pending action creator
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         store.dispatch({
           type: 'chatModel/sendMessage/pending',
           meta: {
@@ -213,8 +211,6 @@ describe('useIsSending', () => {
             requestId: 'test-request-id',
             requestStatus: 'pending',
           },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 第三方库类型定义不完整
         } as any);
       });
       // dispatch 后 act 触发重新渲染，result.current 已更新

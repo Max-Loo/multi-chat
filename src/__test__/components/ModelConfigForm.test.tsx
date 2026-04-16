@@ -12,6 +12,7 @@ import { createDeepSeekProvider, createKimiProvider } from '@/__test__/helpers/f
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
+import type { Model } from '@/types/model';
 
 vi.mock('react-i18next', () => {
   const R = { model: { modelNickname: '模型昵称', apiKey: 'API 密钥', apiAddress: 'API 地址', model: '模型', modelNicknameRequired: '请输入模型昵称', apiKeyRequired: '请输入 API 密钥', apiAddressRequired: '请输入 API 地址', modelRequired: '请选择模型' }, common: { remark: '备注', submit: '提交' } };
@@ -29,12 +30,10 @@ const createStore = (
 };
 
 describe('ModelConfigForm', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // Reason: 测试错误处理，需要构造无效输入
-  let mockOnFinish: any;
+  let mockOnFinish: ReturnType<typeof vi.fn<(model: Model) => void>>;
 
   beforeEach(() => {
-    mockOnFinish = vi.fn();
+    mockOnFinish = vi.fn<(model: Model) => void>();
   });
 
   afterEach(() => {
@@ -225,9 +224,7 @@ describe('ModelConfigForm', () => {
       const { rerender: testRerender } = renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onFinish={mockOnFinish as any}
+          onFinish={mockOnFinish}
         />,
         { store }
       );
@@ -235,9 +232,7 @@ describe('ModelConfigForm', () => {
       testRerender(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.MOONSHOTAI}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onFinish={mockOnFinish as any}
+          onFinish={mockOnFinish}
         />
       );
 
@@ -257,9 +252,7 @@ describe('ModelConfigForm', () => {
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={existingModel}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onFinish={mockOnFinish as any}
+          onFinish={mockOnFinish}
         />,
         { store }
       );
@@ -268,9 +261,7 @@ describe('ModelConfigForm', () => {
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.MOONSHOTAI}
           modelParams={existingModel}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onFinish={mockOnFinish as any}
+          onFinish={mockOnFinish}
         />
       );
 
