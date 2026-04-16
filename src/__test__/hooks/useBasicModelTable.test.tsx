@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
+import { act, waitFor } from '@testing-library/react';
 import { useBasicModelTable } from '@/hooks/useBasicModelTable';
 import type { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelSliceState, createChatSliceState } from '@/__test__/helpers/mocks/testState';
 
 const createMockModel = (id: string, nickname: string, providerKey: ModelProviderKeyEnum): Model => ({
@@ -21,26 +20,15 @@ const createMockModel = (id: string, nickname: string, providerKey: ModelProvide
   updateAt: '2024-01-01 00:00:00',
 });
 
-const createWrapper = (store: ReturnType<typeof createTypeSafeTestStore>) => {
-  return ({ children }: { children: React.ReactNode }) => {
-    return (
-      <Provider store={store}>
-        {children}
-      </Provider>
-    );
-  };
-};
-
 describe('useBasicModelTable', () => {
   describe('表格列配置测试', () => {
     it('应返回正确的列定义数组', () => {
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({ models: [] }),
-        chat: createChatSliceState(),
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useBasicModelTable(), { wrapper });
 
       expect(result.current.tableColumns).toBeDefined();
       expect(Array.isArray(result.current.tableColumns)).toBe(true);
@@ -48,13 +36,12 @@ describe('useBasicModelTable', () => {
     });
 
     it('应包含所有必需的列', () => {
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({ models: [] }),
-        chat: createChatSliceState(),
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useBasicModelTable(), { wrapper });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 第三方库类型定义不完整
@@ -69,13 +56,12 @@ describe('useBasicModelTable', () => {
     });
 
     it('每列应包含正确的属性', () => {
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({ models: [] }),
-        chat: createChatSliceState(),
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useBasicModelTable(), { wrapper });
 
       result.current.tableColumns.forEach((column) => {
         expect(column).toHaveProperty('accessorKey');
@@ -91,13 +77,12 @@ describe('useBasicModelTable', () => {
       const model1 = createMockModel('model-1', 'GPT-4', ModelProviderKeyEnum.DEEPSEEK);
       const model2 = createMockModel('model-2', 'Claude', ModelProviderKeyEnum.MOONSHOTAI);
 
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({ models: [model1, model2] }),
-        chat: createChatSliceState(),
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1, model2] }),
+          chat: createChatSliceState(),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useBasicModelTable(), { wrapper });
 
       expect(result.current.filteredModels).toBeDefined();
       expect(result.current.filteredModels).toHaveLength(2);
@@ -107,13 +92,12 @@ describe('useBasicModelTable', () => {
       const model1 = createMockModel('model-1', 'GPT-4', ModelProviderKeyEnum.DEEPSEEK);
       const model2 = createMockModel('model-2', 'Claude', ModelProviderKeyEnum.MOONSHOTAI);
 
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({ models: [model1, model2] }),
-        chat: createChatSliceState(),
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1, model2] }),
+          chat: createChatSliceState(),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useBasicModelTable(), { wrapper });
 
       const initialCount = result.current.filteredModels.length;
 
@@ -129,13 +113,12 @@ describe('useBasicModelTable', () => {
       const model1 = createMockModel('model-1', 'GPT-4', ModelProviderKeyEnum.DEEPSEEK);
       const model2 = { ...createMockModel('model-2', 'Claude', ModelProviderKeyEnum.MOONSHOTAI), isDeleted: true };
 
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({ models: [model1 as Model, model2 as Model] }),
-        chat: createChatSliceState(),
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1 as Model, model2 as Model] }),
+          chat: createChatSliceState(),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useBasicModelTable(), { wrapper });
 
       expect(result.current.filteredModels).toHaveLength(1);
       expect(result.current.filteredModels[0].id).toBe('model-1');
@@ -151,13 +134,12 @@ describe('useBasicModelTable', () => {
         createMockModel('test-3', 'Test Model 3', ModelProviderKeyEnum.ZHIPUAI),
       ];
 
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({ models: mockModels as Model[] }),
-        chat: createChatSliceState(),
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: mockModels as Model[] }),
+          chat: createChatSliceState(),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useBasicModelTable(), { wrapper });
 
       expect(result.current.filteredModels).toHaveLength(3);
       expect(result.current.filteredModels[0].nickname).toBe('Test Model 1');
@@ -167,13 +149,12 @@ describe('useBasicModelTable', () => {
 
   describe('过滤文本状态测试', () => {
     it('应返回过滤文本状态', async () => {
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({ models: [] }),
-        chat: createChatSliceState(),
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useBasicModelTable(), { wrapper });
 
       expect(result.current.filterText).toBe('');
 
@@ -187,13 +168,12 @@ describe('useBasicModelTable', () => {
     });
 
     it('应支持更新过滤文本', async () => {
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({ models: [] }),
-        chat: createChatSliceState(),
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useBasicModelTable(), { wrapper });
 
       act(() => {
         result.current.setFilterText('openai');

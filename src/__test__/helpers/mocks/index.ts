@@ -17,6 +17,7 @@ export * from './chatSidebar';
 export * from './aiSdk';
 // testState 中的 createModelSliceState 已通过 ./redux 导出，此处使用具名导出避免重复
 export {
+  createMockModel,
   createChatSliceState,
   createChatPageSliceState,
   createAppConfigSliceState,

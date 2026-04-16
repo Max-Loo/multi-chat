@@ -4,7 +4,8 @@
  * 提供创建测试数据的工厂函数
  */
 
-export * from './model';
+// createMockModel 通过 ./mocks 统一导出，此处仅导出其他工厂函数
+export { createMockModels, createDeepSeekModel, createKimiModel, createEncryptedModel } from './model';
 export * from './crypto';
 export * from './modelProvider';
 export * from './reduxState';

@@ -1,10 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { Provider } from 'react-redux';
 import { useExistingModels } from '@/hooks/useExistingModels';
 import type { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelSliceState } from '@/__test__/helpers/mocks/testState';
 
 const createMockModel = (id: string, isDeleted: boolean = false): Model => ({
@@ -22,12 +20,6 @@ const createMockModel = (id: string, isDeleted: boolean = false): Model => ({
   isDeleted,
 });
 
-const createWrapper = (store: ReturnType<typeof createTypeSafeTestStore>) => {
-  return ({ children }: { children: React.ReactNode }) => {
-    return <Provider store={store}>{children}</Provider>;
-  };
-};
-
 describe('useExistingModels', () => {
 
   describe('模型列表返回行为', () => {
@@ -36,14 +28,13 @@ describe('useExistingModels', () => {
       const model2 = createMockModel('model-2', false);
       const model3 = createMockModel('model-3', false);
 
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({
-          models: [model1, model2, model3],
-        }),
+      const { result } = renderHookWithProviders(() => useExistingModels(), {
+        preloadedState: {
+          models: createModelSliceState({
+            models: [model1, model2, model3],
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingModels(), { wrapper });
 
       expect(result.current).toEqual([model1, model2, model3]);
       expect(result.current).toHaveLength(3);
@@ -55,14 +46,13 @@ describe('useExistingModels', () => {
       const model3 = createMockModel('model-3', false);
       const model4 = createMockModel('model-4', true);
 
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({
-          models: [model1, model2, model3, model4],
-        }),
+      const { result } = renderHookWithProviders(() => useExistingModels(), {
+        preloadedState: {
+          models: createModelSliceState({
+            models: [model1, model2, model3, model4],
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingModels(), { wrapper });
 
       expect(result.current).toEqual([model1, model3]);
       expect(result.current).toHaveLength(2);
@@ -74,14 +64,13 @@ describe('useExistingModels', () => {
       const model2 = createMockModel('model-2', false);
       const model3 = createMockModel('model-3', false);
 
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({
-          models: [model1, model2, model3],
-        }),
+      const { result } = renderHookWithProviders(() => useExistingModels(), {
+        preloadedState: {
+          models: createModelSliceState({
+            models: [model1, model2, model3],
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingModels(), { wrapper });
 
       expect(result.current[0].id).toBe('model-1');
       expect(result.current[1].id).toBe('model-2');
@@ -91,14 +80,13 @@ describe('useExistingModels', () => {
 
   describe('空列表和特殊情况', () => {
     it('应该返回空数组 当存储中没有模型', () => {
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({
-          models: [],
-        }),
+      const { result } = renderHookWithProviders(() => useExistingModels(), {
+        preloadedState: {
+          models: createModelSliceState({
+            models: [],
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingModels(), { wrapper });
 
       expect(result.current).toEqual([]);
       expect(result.current).toHaveLength(0);
@@ -109,14 +97,13 @@ describe('useExistingModels', () => {
       const model2 = createMockModel('model-2', true);
       const model3 = createMockModel('model-3', true);
 
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({
-          models: [model1, model2, model3],
-        }),
+      const { result } = renderHookWithProviders(() => useExistingModels(), {
+        preloadedState: {
+          models: createModelSliceState({
+            models: [model1, model2, model3],
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingModels(), { wrapper });
 
       expect(result.current).toEqual([]);
       expect(result.current).toHaveLength(0);
@@ -127,14 +114,13 @@ describe('useExistingModels', () => {
     it('应该返回相同引用 当模型列表未变化时', () => {
       const model1 = createMockModel('model-1', false);
 
-      const store = createTypeSafeTestStore({
-        models: createModelSliceState({
-          models: [model1],
-        }),
+      const { result, rerender } = renderHookWithProviders(() => useExistingModels(), {
+        preloadedState: {
+          models: createModelSliceState({
+            models: [model1],
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result, rerender } = renderHook(() => useExistingModels(), { wrapper });
 
       const firstResult = result.current;
 

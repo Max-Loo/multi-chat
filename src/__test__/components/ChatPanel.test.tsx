@@ -15,6 +15,7 @@ import {
   createChatPageSliceState,
   createAppConfigSliceState,
 } from '@/__test__/helpers/mocks/testState';
+import { setSelectedChatId, editChat } from '@/store/slices/chatSlices';
 
 // 每个测试后清理 DOM
 afterEach(() => {
@@ -355,13 +356,8 @@ describe('ChatPanel', () => {
         fireEvent.click(splitterSwitch);
         expect(splitterSwitch).toHaveAttribute('data-state', 'checked');
 
-        // 切换到不同的聊天（使用正确的 action）
-        store.dispatch({
-          type: 'chat/setSelectedChatId',
-          payload: 'chat-2',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 第三方库类型定义不完整
-        } as any);
+        // 切换到不同的聊天（使用 action creator）
+        store.dispatch(setSelectedChatId('chat-2'));
 
         // 等待状态更新和重新渲染
         await waitFor(() => {
@@ -391,12 +387,7 @@ describe('ChatPanel', () => {
 
         // 模型数量变化：通过 dispatch 更新 Redux state
         const updatedChat = createMockChatWithModels(3, { id: 'chat-1' });
-        store.dispatch({
-          type: 'chat/editChat',
-          payload: { chat: updatedChat },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 第三方库类型定义不完整
-        } as any);
+        store.dispatch(editChat({ chat: updatedChat }));
 
         // 等待 useEffect 触发并重置分割模式
         await waitFor(() => {

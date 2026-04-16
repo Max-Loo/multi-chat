@@ -5,18 +5,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { Provider } from 'react-redux';
 import { useSelectedChat } from '@/pages/Chat/hooks/useSelectedChat';
 import { createMockChat, createMockChatWithModels } from '@/__test__/helpers/mocks/chatSidebar';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
-
-const createWrapper = (store: ReturnType<typeof createTypeSafeTestStore>) => {
-  return ({ children }: { children: React.ReactNode }) => {
-    return <Provider store={store}>{children}</Provider>;
-  };
-};
 
 describe('useSelectedChat', () => {
 
@@ -25,15 +17,14 @@ describe('useSelectedChat', () => {
       const chat1 = createMockChat({ id: 'chat-1', name: 'Chat 1' });
       const chat2 = createMockChat({ id: 'chat-2', name: 'Chat 2' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [chat1, chat2],
-          selectedChatId: 'chat-2',
-        }),
+      const { result } = renderHookWithProviders(() => useSelectedChat(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1, chat2],
+            selectedChatId: 'chat-2',
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
       expect(result.current.selectedChat).toBeDefined();
       expect(result.current.selectedChat?.id).toBe('chat-2');
@@ -45,15 +36,14 @@ describe('useSelectedChat', () => {
       // 确保没有 chatModelList
       chat.chatModelList = undefined;
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [chat],
-          selectedChatId: 'chat-1',
-        }),
+      const { result } = renderHookWithProviders(() => useSelectedChat(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat],
+            selectedChatId: 'chat-1',
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
       expect(result.current.selectedChat).toBeDefined();
       expect(result.current.chatModelList).toEqual([]);
@@ -62,15 +52,14 @@ describe('useSelectedChat', () => {
     it('测试包含模型的聊天', () => {
       const chat = createMockChatWithModels(3, { id: 'chat-1', name: 'Chat with models' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [chat],
-          selectedChatId: 'chat-1',
-        }),
+      const { result } = renderHookWithProviders(() => useSelectedChat(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat],
+            selectedChatId: 'chat-1',
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
       expect(result.current.selectedChat).toBeDefined();
       expect(result.current.chatModelList).toBeDefined();
@@ -80,15 +69,14 @@ describe('useSelectedChat', () => {
     });
 
     it('测试选中聊天未定义时的默认行为', () => {
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [],
-          selectedChatId: null,
-        }),
+      const { result } = renderHookWithProviders(() => useSelectedChat(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [],
+            selectedChatId: null,
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
       // 当 selectedChat 为 null 时，useSelectedChat 会将其转换为 Chat 类型
       expect(result.current.selectedChat).toBeDefined();
@@ -102,15 +90,14 @@ describe('useSelectedChat', () => {
       const chat1 = createMockChat({ id: 'chat-1', name: 'Chat 1' });
       const chat2 = createMockChat({ id: 'chat-2', name: 'Chat 2' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [chat1, chat2],
-          selectedChatId: 'chat-1',
-        }),
+      const { result, store } = renderHookWithProviders(() => useSelectedChat(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1, chat2],
+            selectedChatId: 'chat-1',
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
       // 初始状态：选中 chat-1
       expect(result.current.selectedChat?.id).toBe('chat-1');
@@ -125,7 +112,7 @@ describe('useSelectedChat', () => {
       } as any);
 
       // 重新渲染 hook
-      const { result: newResult } = renderHook(() => useSelectedChat(), { wrapper });
+      const { result: newResult } = renderHookWithProviders(() => useSelectedChat(), { store });
 
       expect(newResult.current.selectedChat?.id).toBe('chat-2');
       expect(newResult.current.selectedChat?.name).toBe('Chat 2');
@@ -134,15 +121,14 @@ describe('useSelectedChat', () => {
     it('测试 chatModelList 的 memoization', () => {
       const chat = createMockChatWithModels(3, { id: 'chat-1' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [chat],
-          selectedChatId: 'chat-1',
-        }),
+      const { result, rerender } = renderHookWithProviders(() => useSelectedChat(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat],
+            selectedChatId: 'chat-1',
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result, rerender } = renderHook(() => useSelectedChat(), { wrapper });
 
       const firstModelList = result.current.chatModelList;
 
@@ -159,15 +145,14 @@ describe('useSelectedChat', () => {
 
   describe('边界情况', () => {
     it('测试聊天列表为空的情况', () => {
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [],
-          selectedChatId: null,
-        }),
+      const { result } = renderHookWithProviders(() => useSelectedChat(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [],
+            selectedChatId: null,
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
       expect(result.current.selectedChat).toBeDefined();
       expect(result.current.chatModelList).toEqual([]);
@@ -176,15 +161,14 @@ describe('useSelectedChat', () => {
     it('测试选中的聊天 ID 不存在', () => {
       const chat1 = createMockChat({ id: 'chat-1', name: 'Chat 1' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [chat1],
-          selectedChatId: 'non-existent-chat',
-        }),
+      const { result } = renderHookWithProviders(() => useSelectedChat(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1],
+            selectedChatId: 'non-existent-chat',
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useSelectedChat(), { wrapper });
 
       // 当找不到聊天时，useCurrentSelectedChat 返回 undefined
       // useSelectedChat 应该返回 null

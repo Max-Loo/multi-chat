@@ -5,41 +5,30 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import React from 'react';
+import { act } from '@testing-library/react';
 import { useIsSending } from '@/pages/Chat/hooks/useIsSending';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
-
-const createWrapper = (store: ReturnType<typeof createTypeSafeTestStore>) => {
-  const WrapperComponent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // React.createElement + Provider 的类型签名不兼容，需要边界类型断言
-    return React.createElement(Provider as React.ComponentType<{ store: typeof store; children?: React.ReactNode }>, { store }, children);
-  };
-  return WrapperComponent;
-};
 
 describe('useIsSending', () => {
   describe('基础场景', () => {
     it('应该返回发送中状态 当单个聊天正在发送', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [mockChat],
-          selectedChatId: 'chat-1',
-          runningChat: {
-            'chat-1': {
-              'model-1': { isSending: true, history: null },
+      const { result } = renderHookWithProviders(() => useIsSending(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [mockChat],
+            selectedChatId: 'chat-1',
+            runningChat: {
+              'chat-1': {
+                'model-1': { isSending: true, history: null },
+              },
             },
-          },
-        }),
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useIsSending(), { wrapper });
 
       expect(result.current.isSending).toBe(true);
     });
@@ -49,26 +38,25 @@ describe('useIsSending', () => {
       const chat2 = createMockChat({ id: 'chat-2' });
       const chat3 = createMockChat({ id: 'chat-3' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [chat1, chat2, chat3],
-          selectedChatId: 'chat-2',
-          runningChat: {
-            'chat-1': {
-              'model-1': { isSending: true, history: null },
+      const { result } = renderHookWithProviders(() => useIsSending(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1, chat2, chat3],
+            selectedChatId: 'chat-2',
+            runningChat: {
+              'chat-1': {
+                'model-1': { isSending: true, history: null },
+              },
+              'chat-2': {
+                'model-2': { isSending: true, history: null },
+              },
+              'chat-3': {
+                'model-3': { isSending: false, history: null },
+              },
             },
-            'chat-2': {
-              'model-2': { isSending: true, history: null },
-            },
-            'chat-3': {
-              'model-3': { isSending: false, history: null },
-            },
-          },
-        }),
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useIsSending(), { wrapper });
 
       expect(result.current.isSending).toBe(true);
     });
@@ -77,23 +65,22 @@ describe('useIsSending', () => {
       const chat1 = createMockChat({ id: 'chat-1' });
       const chat2 = createMockChat({ id: 'chat-2' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [chat1, chat2],
-          selectedChatId: 'chat-2',
-          runningChat: {
-            'chat-1': {
-              'model-1': { isSending: true, history: null },
+      const { result } = renderHookWithProviders(() => useIsSending(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1, chat2],
+            selectedChatId: 'chat-2',
+            runningChat: {
+              'chat-1': {
+                'model-1': { isSending: true, history: null },
+              },
+              'chat-2': {
+                'model-2': { isSending: false, history: null },
+              },
             },
-            'chat-2': {
-              'model-2': { isSending: false, history: null },
-            },
-          },
-        }),
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useIsSending(), { wrapper });
 
       expect(result.current.isSending).toBe(false);
     });
@@ -103,21 +90,20 @@ describe('useIsSending', () => {
     it('应该返回非发送中状态 当所有模型完成发送', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [mockChat],
-          selectedChatId: 'chat-1',
-          runningChat: {
-            'chat-1': {
-              'model-1': { isSending: false, history: null },
-              'model-2': { isSending: false, history: null },
+      const { result } = renderHookWithProviders(() => useIsSending(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [mockChat],
+            selectedChatId: 'chat-1',
+            runningChat: {
+              'chat-1': {
+                'model-1': { isSending: false, history: null },
+                'model-2': { isSending: false, history: null },
+              },
             },
-          },
-        }),
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useIsSending(), { wrapper });
 
       expect(result.current.isSending).toBe(false);
     });
@@ -125,16 +111,15 @@ describe('useIsSending', () => {
     it('应该返回非发送中状态 当 runningChat 为空', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [mockChat],
-          selectedChatId: 'chat-1',
-          runningChat: {},
-        }),
+      const { result } = renderHookWithProviders(() => useIsSending(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [mockChat],
+            selectedChatId: 'chat-1',
+            runningChat: {},
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useIsSending(), { wrapper });
 
       expect(result.current.isSending).toBe(false);
     });
@@ -142,20 +127,19 @@ describe('useIsSending', () => {
     it('应该返回非发送中状态 当当前聊天在 runningChat 中不存在', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [mockChat],
-          selectedChatId: 'chat-1',
-          runningChat: {
-            'chat-2': {
-              'model-1': { isSending: true, history: null },
+      const { result } = renderHookWithProviders(() => useIsSending(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [mockChat],
+            selectedChatId: 'chat-1',
+            runningChat: {
+              'chat-2': {
+                'model-1': { isSending: true, history: null },
+              },
             },
-          },
-        }),
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useIsSending(), { wrapper });
 
       expect(result.current.isSending).toBe(false);
     });
@@ -166,56 +150,54 @@ describe('useIsSending', () => {
       const chat1 = createMockChat({ id: 'chat-1' });
       const chat2 = createMockChat({ id: 'chat-2' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [chat1, chat2],
-          selectedChatId: 'chat-1',
-          runningChat: {
-            'chat-1': {
-              'model-1': { isSending: true, history: null },
+      const { result, store } = renderHookWithProviders(() => useIsSending(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1, chat2],
+            selectedChatId: 'chat-1',
+            runningChat: {
+              'chat-1': {
+                'model-1': { isSending: true, history: null },
+              },
+              'chat-2': {
+                'model-2': { isSending: false, history: null },
+              },
             },
-            'chat-2': {
-              'model-2': { isSending: false, history: null },
-            },
-          },
-        }),
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useIsSending(), { wrapper });
 
       expect(result.current.isSending).toBe(true);
 
       // 切换到不同的聊天
-      store.dispatch({
-        type: 'chat/setSelectedChatId',
-        payload: 'chat-2',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 第三方库类型定义不完整
-      } as any);
+      act(() => {
+        store.dispatch({
+          type: 'chat/setSelectedChatId',
+          payload: 'chat-2',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
+        } as any);
+      });
 
-      // 重新渲染 hook
-      const { result: newResult } = renderHook(() => useIsSending(), { wrapper });
-      expect(newResult.current.isSending).toBe(false);
+      expect(result.current.isSending).toBe(false);
     });
 
     it('应该重新计算 当 runningChat 变化时', () => {
       const mockChat = createMockChat({ id: 'chat-1' });
 
-      const store = createTypeSafeTestStore({
-        chat: createChatSliceState({
-          chatList: [mockChat],
-          selectedChatId: 'chat-1',
-          runningChat: {
-            'chat-1': {
-              'model-1': { isSending: false, history: null },
+      const { result, store } = renderHookWithProviders(() => useIsSending(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [mockChat],
+            selectedChatId: 'chat-1',
+            runningChat: {
+              'chat-1': {
+                'model-1': { isSending: false, history: null },
+              },
             },
-          },
-        }),
+          }),
+        },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useIsSending(), { wrapper });
 
       expect(result.current.isSending).toBe(false);
 

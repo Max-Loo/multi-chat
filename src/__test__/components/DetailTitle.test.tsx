@@ -6,11 +6,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { screen, cleanup } from '@testing-library/react';
 import DetailTitle from '@/pages/Chat/components/Panel/Detail/Title';
-import { ChatModel } from '@/types/chat';
-import { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
-import { createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
+import { createMockModel, createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
+import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
 
 vi.mock('react-i18next', () => {
   const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用' }, common: { confirm: '确认', cancel: '取消' } };
@@ -20,7 +19,7 @@ vi.mock('react-i18next', () => {
 /**
  * 创建测试用的 Redux store
  */
-const createTestStore = (models: Model[] = []) => {
+const createTestStore = (models: ReturnType<typeof createMockModel>[] = []) => {
   return createTypeSafeTestStore({
     models: createModelSliceState({
       models,
@@ -33,38 +32,6 @@ const createTestStore = (models: Model[] = []) => {
   });
 };
 
-/**
- * 创建测试用的 Model 对象
- */
-const createTestModel = (overrides?: Partial<Model>): Model => {
-  const now = new Date().toISOString();
-  return {
-    id: 'test-model-1',
-    nickname: 'Test Model',
-    apiKey: 'test-api-key',
-    apiAddress: 'https://api.test.com/v1',
-    remark: 'Test remark',
-    modelKey: 'test-model-key',
-    modelName: 'Test Model Name',
-    providerName: 'TestProvider',
-    providerKey: ModelProviderKeyEnum.DEEPSEEK,
-    isEnable: true,
-    createdAt: now,
-    updateAt: now,
-    ...overrides,
-  };
-};
-
-/**
- * 创建测试用的 ChatModel 对象
- */
-const createTestChatModel = (modelId: string): ChatModel => {
-  return {
-    modelId,
-    chatHistoryList: [],
-  };
-};
-
 describe('DetailTitle', () => {
   afterEach(() => {
     cleanup();
@@ -72,12 +39,12 @@ describe('DetailTitle', () => {
 
   describe('6.1 测试正常状态渲染（Logo + 昵称）', () => {
     it('应该显示「昵称 (模型名)」格式', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         providerName: 'DeepSeek',
         modelName: 'deepseek-chat',
         nickname: '我的 DeepSeek 模型',
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -87,11 +54,11 @@ describe('DetailTitle', () => {
     });
 
     it('应该显示 ProviderLogo 组件', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         providerName: 'DeepSeek',
         providerKey: ModelProviderKeyEnum.DEEPSEEK,
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -102,11 +69,11 @@ describe('DetailTitle', () => {
     });
 
     it('应该正确渲染包含 emoji 的昵称', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         nickname: '🚀 DeepSeek 🌟',
         modelName: 'deepseek-chat',
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -118,11 +85,11 @@ describe('DetailTitle', () => {
 
   describe('6.2 测试昵称为空时显示模型名称', () => {
     it('当昵称为空时应该显示模型名称', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         modelName: 'deepseek-chat',
         nickname: '',
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -134,11 +101,11 @@ describe('DetailTitle', () => {
 
   describe('6.3 测试长文本截断样式', () => {
     it('应该为显示名称容器添加 truncate 类', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         nickname: '这是一个非常长的昵称用于测试截断效果',
         modelName: 'very-long-model-name-for-testing',
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -150,12 +117,12 @@ describe('DetailTitle', () => {
 
   describe('6.4 测试 Tooltip 内容正确性', () => {
     it('Tooltip 应该包含完整的模型信息', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         providerName: 'DeepSeek',
         modelName: 'deepseek-chat',
         nickname: '我的模型',
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -170,10 +137,10 @@ describe('DetailTitle', () => {
 
   describe('6.5 测试异常状态 Badge 显示', () => {
     it('应该在模型被删除时显示"已删除"徽章', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         isDeleted: true,
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -183,10 +150,10 @@ describe('DetailTitle', () => {
     });
 
     it('应该在模型被禁用时显示"已禁用"徽章', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         isEnable: false,
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -196,11 +163,11 @@ describe('DetailTitle', () => {
     });
 
     it('正常状态不应该显示任何 Badge', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         isEnable: true,
         isDeleted: false,
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -213,7 +180,7 @@ describe('DetailTitle', () => {
 
   describe('6.6 测试模型不存在时的错误提示', () => {
     it('应该在模型列表中找不到对应模型时显示"模型已删除"', () => {
-      const chatModel = createTestChatModel('non-existent-model-id');
+      const chatModel = createMockPanelChatModel('non-existent-model-id');
       const store = createTestStore([]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -225,13 +192,13 @@ describe('DetailTitle', () => {
 
   describe('不同 providerKey 的显示', () => {
     it('应该正确显示 DeepSeek 提供商', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         providerName: 'DeepSeek',
         providerKey: ModelProviderKeyEnum.DEEPSEEK,
         modelName: 'deepseek-chat',
         nickname: 'DeepSeek Chat',
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -241,13 +208,13 @@ describe('DetailTitle', () => {
     });
 
     it('应该正确显示 Moonshot 提供商', () => {
-      const testModel = createTestModel({
+      const testModel = createMockModel({
         providerName: 'Moonshot AI',
         providerKey: ModelProviderKeyEnum.MOONSHOTAI,
         modelName: 'moonshot-v1-8k',
         nickname: 'Moonshot 8K',
       });
-      const chatModel = createTestChatModel(testModel.id);
+      const chatModel = createMockPanelChatModel(testModel.id);
       const store = createTestStore([testModel]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
@@ -257,17 +224,17 @@ describe('DetailTitle', () => {
     });
 
     it('应该正确处理多个模型的情况', () => {
-      const model1 = createTestModel({
+      const model1 = createMockModel({
         id: 'model-1',
         modelName: 'deepseek-chat',
         nickname: 'DeepSeek Chat',
       });
-      const model2 = createTestModel({
+      const model2 = createMockModel({
         id: 'model-2',
         modelName: 'moonshot-v1-8k',
         nickname: 'Moonshot 8K',
       });
-      const chatModel = createTestChatModel(model2.id);
+      const chatModel = createMockPanelChatModel(model2.id);
       const store = createTestStore([model1, model2]);
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });

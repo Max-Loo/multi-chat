@@ -23,9 +23,6 @@ export function asTestType<T>(value: unknown): T {
 // render/redux 不在此处重新导出：它导入 react-redux 会在全局 setup 阶段触发 CJS/ESM 兼容性问题
 // 需要的测试文件请直接 import from '@/__test__/helpers/render/redux'
 
-// 重新导出 Model fixtures
-export { createMockModel } from './fixtures/model';
-
 // 重新导出 Chat fixtures (从 @/__test__/fixtures/chat 导入)
 export { createMockMessage } from '@/__test__/fixtures/chat';
 

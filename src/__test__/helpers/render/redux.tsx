@@ -4,7 +4,7 @@
  * 提供带有 Redux store、Router、i18n 和 ConfirmProvider 的组件渲染函数
  */
 
-import { render, type RenderOptions } from '@testing-library/react';
+import { render, renderHook, type RenderOptions, type RenderHookOptions } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import { configureStore, type EnhancedStore } from '@reduxjs/toolkit';
@@ -105,5 +105,40 @@ export const renderWithProviders = (
   return {
     store,
     ...render(ui, { wrapper: AllTheProviders, ...renderOptions }),
+  };
+};
+
+/**
+ * Hook 测试渲染选项
+ */
+interface RenderHookWithProvidersOptions extends Omit<RenderHookOptions<unknown>, 'wrapper'> {
+  store?: EnhancedStore<RootState>;
+  preloadedState?: Partial<RootState>;
+}
+
+/**
+ * 带有 Redux Provider 的 hook 渲染函数
+ *
+ * 用于测试自定义 hook，自动包裹 Provider。
+ * @param hook 要渲染的 hook 函数
+ * @param options 渲染选项
+ * @returns renderHook 结果和 store 实例
+ */
+export const renderHookWithProviders = <T,>(
+  hook: () => T,
+  options: RenderHookWithProvidersOptions = {}
+) => {
+  const {
+    store = createTestStore(options.preloadedState),
+    ...renderHookOptions
+  } = options;
+
+  const Wrapper = ({ children }: { children: React.ReactNode }) => {
+    return <Provider store={store}>{children}</Provider>;
+  };
+
+  return {
+    store,
+    ...renderHook(hook, { wrapper: Wrapper, ...renderHookOptions as RenderHookOptions<T> }),
   };
 };

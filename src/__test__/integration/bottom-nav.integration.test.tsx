@@ -38,44 +38,11 @@ vi.mock('@/hooks/useResponsive', () => ({
   }),
 }));
 
-// Mock navigation配置
-vi.mock('@/config/navigation', () => ({
-  NAVIGATION_ITEMS: [
-    {
-      id: 'chat',
-      path: '/chat',
-      i18nKey: 'nav.chat',
-      IconComponent: () => <svg data-testid="chat-icon" />,
-      theme: {
-        base: 'text-blue-400',
-        active: 'bg-blue-100 text-blue-500',
-        inactive: 'hover:text-blue-500 hover:bg-blue-100',
-      },
-    },
-    {
-      id: 'model',
-      path: '/model',
-      i18nKey: 'nav.model',
-      IconComponent: () => <svg data-testid="model-icon" />,
-      theme: {
-        base: 'text-emerald-400',
-        active: 'bg-emerald-100 text-emerald-500',
-        inactive: 'hover:text-emerald-500 hover:bg-emerald-100',
-      },
-    },
-    {
-      id: 'setting',
-      path: '/setting',
-      i18nKey: 'nav.setting',
-      IconComponent: () => <svg data-testid="setting-icon" />,
-      theme: {
-        base: 'text-violet-400',
-        inactive: 'hover:text-violet-500 hover:bg-violet-100',
-        active: 'bg-violet-100 text-violet-500',
-      },
-    },
-  ],
-}));
+// Mock navigation配置（使用共享 mock）
+vi.mock('@/config/navigation', async () => {
+  const { createNavigationItemsMock } = await import('@/__test__/helpers/mocks/navigation');
+  return { NAVIGATION_ITEMS: createNavigationItemsMock() };
+});
 
 /**
  * 创建测试用 Redux Store

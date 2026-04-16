@@ -7,7 +7,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, waitFor, cleanup } from '@testing-library/react';
 import ModelConfigForm from '@/pages/Model/components/ModelConfigForm';
-import { createMockModel, createDeepSeekProvider, createKimiProvider } from '@/__test__/helpers/fixtures';
+import { createMockModel } from '@/__test__/helpers/mocks/testState';
+import { createDeepSeekProvider, createKimiProvider } from '@/__test__/helpers/fixtures';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
