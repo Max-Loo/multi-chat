@@ -1,24 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { act, waitFor } from '@testing-library/react';
 import { useBasicModelTable } from '@/hooks/useBasicModelTable';
-import type { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelSliceState, createChatSliceState } from '@/__test__/helpers/mocks/testState';
-
-const createMockModel = (id: string, nickname: string, providerKey: ModelProviderKeyEnum): Model => ({
-  id,
-  nickname,
-  providerKey,
-  providerName: providerKey,
-  modelName: `Model-${id}`,
-  modelKey: `model-key-${id}`,
-  apiAddress: 'https://api.example.com',
-  apiKey: 'key',
-  isEnable: true,
-  createdAt: '2024-01-01 00:00:00',
-  updateAt: '2024-01-01 00:00:00',
-});
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
 
 describe('useBasicModelTable', () => {
   describe('表格列配置测试', () => {
@@ -74,8 +60,8 @@ describe('useBasicModelTable', () => {
 
   describe('表格数据格式化测试', () => {
     it('应返回格式化后的模型数据', () => {
-      const model1 = createMockModel('model-1', 'GPT-4', ModelProviderKeyEnum.DEEPSEEK);
-      const model2 = createMockModel('model-2', 'Claude', ModelProviderKeyEnum.MOONSHOTAI);
+      const model1 = createMockModel({ id: 'model-1', nickname: 'GPT-4', providerKey: ModelProviderKeyEnum.DEEPSEEK });
+      const model2 = createMockModel({ id: 'model-2', nickname: 'Claude', providerKey: ModelProviderKeyEnum.MOONSHOTAI });
 
       const { result } = renderHookWithProviders(() => useBasicModelTable(), {
         preloadedState: {
@@ -89,8 +75,8 @@ describe('useBasicModelTable', () => {
     });
 
     it('应支持过滤功能', async () => {
-      const model1 = createMockModel('model-1', 'GPT-4', ModelProviderKeyEnum.DEEPSEEK);
-      const model2 = createMockModel('model-2', 'Claude', ModelProviderKeyEnum.MOONSHOTAI);
+      const model1 = createMockModel({ id: 'model-1', nickname: 'GPT-4', providerKey: ModelProviderKeyEnum.DEEPSEEK });
+      const model2 = createMockModel({ id: 'model-2', nickname: 'Claude', providerKey: ModelProviderKeyEnum.MOONSHOTAI });
 
       const { result } = renderHookWithProviders(() => useBasicModelTable(), {
         preloadedState: {
@@ -110,12 +96,12 @@ describe('useBasicModelTable', () => {
     });
 
     it('应过滤掉已删除的模型', () => {
-      const model1 = createMockModel('model-1', 'GPT-4', ModelProviderKeyEnum.DEEPSEEK);
-      const model2 = { ...createMockModel('model-2', 'Claude', ModelProviderKeyEnum.MOONSHOTAI), isDeleted: true };
+      const model1 = createMockModel({ id: 'model-1', nickname: 'GPT-4', providerKey: ModelProviderKeyEnum.DEEPSEEK });
+      const model2 = createMockModel({ id: 'model-2', nickname: 'Claude', providerKey: ModelProviderKeyEnum.MOONSHOTAI, isDeleted: true });
 
       const { result } = renderHookWithProviders(() => useBasicModelTable(), {
         preloadedState: {
-          models: createModelSliceState({ models: [model1 as Model, model2 as Model] }),
+          models: createModelSliceState({ models: [model1, model2] }),
           chat: createChatSliceState(),
         },
       });
@@ -129,14 +115,14 @@ describe('useBasicModelTable', () => {
   describe('使用 createMockModel 创建测试模型数据', () => {
     it('应使用 createMockModel 创建测试数据', () => {
       const mockModels = [
-        createMockModel('test-1', 'Test Model 1', ModelProviderKeyEnum.DEEPSEEK),
-        createMockModel('test-2', 'Test Model 2', ModelProviderKeyEnum.MOONSHOTAI),
-        createMockModel('test-3', 'Test Model 3', ModelProviderKeyEnum.ZHIPUAI),
+        createMockModel({ id: 'test-1', nickname: 'Test Model 1', providerKey: ModelProviderKeyEnum.DEEPSEEK }),
+        createMockModel({ id: 'test-2', nickname: 'Test Model 2', providerKey: ModelProviderKeyEnum.MOONSHOTAI }),
+        createMockModel({ id: 'test-3', nickname: 'Test Model 3', providerKey: ModelProviderKeyEnum.ZHIPUAI }),
       ];
 
       const { result } = renderHookWithProviders(() => useBasicModelTable(), {
         preloadedState: {
-          models: createModelSliceState({ models: mockModels as Model[] }),
+          models: createModelSliceState({ models: mockModels }),
           chat: createChatSliceState(),
         },
       });

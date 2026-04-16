@@ -43,7 +43,7 @@ import {
 import { storeMasterKey, getMasterKey } from '@/store/keyring/masterKey';
 import * as masterKeyModule from '@/store/keyring/masterKey';
 import { WebKeyringCompat } from '@/utils/tauriCompat/keyring';
-import { createMockModel } from '@/__test__/fixtures/models';
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // 导入 fake-indexeddb（必须在其他导入之前）

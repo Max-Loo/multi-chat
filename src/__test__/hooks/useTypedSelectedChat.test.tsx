@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { act } from '@testing-library/react';
 import { useSelectedChat } from '@/pages/Chat/hooks/useSelectedChat';
 import { createMockChat, createMockChatWithModels } from '@/__test__/helpers/mocks/chatSidebar';
 import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
@@ -104,18 +105,17 @@ describe('useSelectedChat', () => {
       expect(result.current.selectedChat?.name).toBe('Chat 1');
 
       // 切换到 chat-2
-      store.dispatch({
-        type: 'chat/setSelectedChatId',
-        payload: 'chat-2',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 第三方库类型定义不完整
-      } as any);
+      act(() => {
+        store.dispatch({
+          type: 'chat/setSelectedChatId',
+          payload: 'chat-2',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 使用内联 action 对象而非 action creator
+        } as any);
+      });
 
-      // 重新渲染 hook
-      const { result: newResult } = renderHookWithProviders(() => useSelectedChat(), { store });
-
-      expect(newResult.current.selectedChat?.id).toBe('chat-2');
-      expect(newResult.current.selectedChat?.name).toBe('Chat 2');
+      expect(result.current.selectedChat?.id).toBe('chat-2');
+      expect(result.current.selectedChat?.name).toBe('Chat 2');
     });
 
     it('测试 chatModelList 的 memoization', () => {

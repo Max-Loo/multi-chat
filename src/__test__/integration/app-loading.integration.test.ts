@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import { Model } from '@/types/model';
-import { createMockModel } from '@/__test__/fixtures/models';
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
 
 // Mock storage 模块
 vi.mock('@/store/storage/modelStorage', () => ({

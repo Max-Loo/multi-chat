@@ -14,31 +14,8 @@ import type { ModelPageSliceState } from '@/store/slices/modelPageSlices';
 import type { ModelSliceState } from '@/store/slices/modelSlice';
 import type { RootState } from '@/store';
 import type { StandardMessage } from '@/types/chat';
-import type { Model } from '@/types/model';
-import { ModelProviderKeyEnum } from '@/utils/enums';
-
-/**
- * 创建 Mock Model 对象
- * @param overrides 覆盖默认属性
- */
-export const createMockModel = (overrides?: Partial<Model>): Model => {
-  const now = new Date().toISOString();
-  return {
-    id: 'test-model-1',
-    nickname: 'Test Model',
-    apiKey: 'test-api-key',
-    apiAddress: 'https://api.test.com/v1',
-    remark: 'Test remark',
-    modelKey: 'test-model-key',
-    modelName: 'Test Model Name',
-    providerName: 'TestProvider',
-    providerKey: ModelProviderKeyEnum.DEEPSEEK,
-    isEnable: true,
-    createdAt: now,
-    updateAt: now,
-    ...overrides,
-  };
-};
+// 从统一来源重导出 createMockModel
+export { createMockModel } from '@/__test__/helpers/fixtures/model';
 
 /**
  * 创建 Model slice 默认状态

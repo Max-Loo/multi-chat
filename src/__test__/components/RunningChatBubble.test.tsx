@@ -89,12 +89,12 @@ describe('RunningChatBubble', () => {
     it('当 history 为 nil 时，应该显示加载动画', () => {
       const chatModel = createMockPanelChatModel('model-1');
 
-      // 设置 runningChat 状态：isSending=true，但 history 为 undefined
+      // 设置 runningChat 状态：isSending=true，但 history 为 null
       mockStore = createTypeSafeTestStore({
         chat: createChatSliceState({
           runningChat: createRunningChatEntry(mockSelectedChat.id, chatModel.modelId, {
             isSending: true,
-            history: undefined,
+            history: null,
           }),
         }),
       });
