@@ -22,27 +22,10 @@ vi.mock('@/hooks/redux', () => ({
   }),
 }));
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (keyOrSelector: string | ((r: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        return keyOrSelector({
-          chat: {
-            modelDeleted: '模型已删除',
-            deleted: '已删除',
-            disabled: '已禁用',
-            supplier: '供应商',
-            model: '模型',
-            nickname: '昵称',
-          },
-        });
-      }
-      return keyOrSelector;
-    },
-    i18n: { language: 'zh' },
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // Mock ProviderLogo
 vi.mock('@/components/ProviderLogo', () => ({

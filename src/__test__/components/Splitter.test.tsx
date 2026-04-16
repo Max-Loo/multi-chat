@@ -6,7 +6,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, cleanup, screen } from '@testing-library/react';
-import React from 'react';
 import Splitter from '@/pages/Chat/components/Panel/Splitter';
 import type { ChatModel } from '@/types/chat';
 import {
@@ -22,13 +21,10 @@ globalThis.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
-// 设置通用 Mock
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('react-i18next', () => {
+  const R = {};
+  return globalThis.__createI18nMockReturn(R);
+});
 
 vi.mock('@/pages/Chat/components/Panel/Detail', () => ({
   default: ({ chatModel }: { chatModel: ChatModel }) => (

@@ -15,60 +15,14 @@ vi.mock('@/hooks/useCurrentSelectedChat', () => ({
   useCurrentSelectedChat: () => mockUseCurrentSelectedChat(),
 }));
 
-/**
- * Mock react-i18next
- */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          common: { loading: '加载中', remark: '备注' },
-          chat: {
-            selectChatToStart: '选择一个聊天开始对话',
-            createChat: '创建聊天',
-          },
-          navigation: {
-            chat: '聊天',
-            model: '模型',
-            setting: '设置',
-            openChatList: '打开聊天列表',
-            createChat: '新建聊天',
-            mobileDrawer: {
-              title: '侧边栏',
-              description: '侧边栏',
-              ariaDescription: '抽屉内容',
-            },
-          },
-          model: {
-            openProviderList: '打开模型供应商列表',
-          },
-          table: {
-            nickname: '昵称',
-            modelProvider: '模型供应商',
-            modelName: '模型名称',
-            lastUpdateTime: '最后更新时间',
-            createTime: '创建时间',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = {
+    chat: { selectChatToStart: '选择一个聊天开始对话' },
+    table: { nickname: '昵称', modelProvider: '模型提供商', modelName: '模型名称', lastUpdateTime: '最后更新时间', createTime: '创建时间' },
+    common: { remark: '备注' },
+  };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 渲染 ChatContent 组件的辅助函数

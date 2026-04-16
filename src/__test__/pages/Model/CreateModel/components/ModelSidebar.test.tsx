@@ -5,14 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { render, screen, waitFor, cleanup } from '@testing-library/react'
+import { screen, waitFor, cleanup } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
-import { Provider } from 'react-redux'
-import { configureStore } from '@reduxjs/toolkit'
-import { MemoryRouter } from 'react-router-dom'
 import ModelSidebar from '@/pages/Model/CreateModel/components/ModelSidebar'
-import modelProviderReducer from '@/store/slices/modelProviderSlice'
+import { renderWithProviders, createTypeSafeTestStore } from '@/__test__/helpers/render/redux'
 import { createMockRemoteProviders } from '@/__test__/helpers/fixtures'
+import { createModelProviderSliceState } from '@/__test__/helpers/mocks/testState'
 import { ModelProviderKeyEnum } from '@/utils/enums'
 
 // 每个测试后清理
@@ -21,67 +19,23 @@ afterEach(() => {
 })
 
 // Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (keyOrFn: string | ((_: any) => string)) => {
-      if (typeof keyOrFn === 'function') {
-        return keyOrFn({
-          model: {
-            modelProvider: '模型供应商',
-            searchModel: '搜索模型...',
-          },
-        })
-      }
-      const translations: Record<string, string> = {
-        'model.modelProvider': '模型供应商',
-        'model.searchModel': '搜索模型...',
-      }
-      return translations[keyOrFn] || keyOrFn
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
+vi.mock('react-i18next', () => {
+  const R = { model: { modelProvider: '模型供应商', searchModel: '搜索模型...' }, common: { confirm: '确认', cancel: '取消' } };
+  return globalThis.__createI18nMockReturn(R);
+})
 
 /**
  * 创建测试用 Redux store
  * @param providers 供应商列表
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// Reason: Redux Toolkit 严格类型系统限制
-const createTestStore = (providers?: any[]) => {
-  return configureStore({
-    reducer: {
-      modelProvider: modelProviderReducer,
-    },
-    preloadedState: {
-      modelProvider: {
-        providers: providers || createMockRemoteProviders(),
-        loading: false,
-        error: null,
-        lastUpdate: null,
-        backgroundRefreshing: false,
-      },
-    },
+const createTestStore = (providers?: ReturnType<typeof createMockRemoteProviders>) => {
+  return createTypeSafeTestStore({
+    modelProvider: createModelProviderSliceState({
+      providers: providers || createMockRemoteProviders(),
+    }),
   })
 }
 
-/**
- * 创建测试包装器
- * @param store Redux store
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// Reason: Redux Toolkit 严格类型系统限制
-const createWrapper = (store: any) => {
-  return function({ children }: { children: React.ReactNode }) {
-    return (
-      <Provider store={store}>
-          <MemoryRouter>{children}</MemoryRouter>
-      </Provider>
-    )
-  }
-}
 
 describe('ModelSidebar 组件测试', () => {
   let store: ReturnType<typeof createTestStore>
@@ -96,14 +50,12 @@ describe('ModelSidebar 组件测试', () => {
   describe('4.1 供应商列表渲染', () => {
     it('应该渲染所有供应商', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       expect(screen.getByText('DeepSeek')).toBeInTheDocument()
       expect(screen.getByText('Kimi')).toBeInTheDocument()
@@ -111,30 +63,17 @@ describe('ModelSidebar 组件测试', () => {
     })
 
     it('应该渲染空供应商列表', () => {
-      const emptyStore = configureStore({
-        reducer: {
-          modelProvider: modelProviderReducer,
-        },
-        preloadedState: {
-          modelProvider: {
-            providers: [],
-            loading: false,
-            error: null,
-            lastUpdate: null,
-            backgroundRefreshing: false,
-          },
-        },
+      const emptyStore = createTypeSafeTestStore({
+        modelProvider: createModelProviderSliceState({ providers: [] }),
       })
       const onChange = vi.fn()
-      const wrapper = createWrapper(emptyStore)
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store: emptyStore })
 
       // 验证没有渲染供应商按钮
       const buttons = container.querySelectorAll('button[title]')
@@ -143,15 +82,13 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该显示选中状态', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
 
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       // 查找包含 DeepSeek 文本的按钮
       const deepseekButton = screen.getAllByText('DeepSeek')[0].closest('button')
@@ -160,15 +97,13 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该只显示一个选中状态', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
 
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       // 验证 DeepSeek 被选中
       const deepseekButton = screen.getAllByText('DeepSeek')[0].closest('button')
@@ -185,14 +120,12 @@ describe('ModelSidebar 组件测试', () => {
   describe('4.2 文本搜索过滤功能', () => {
     it('应该渲染搜索输入框', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       // 验证搜索框存在（使用 getAll 并检查长度）
       const filterInputs = screen.getAllByPlaceholderText('搜索模型...')
@@ -201,14 +134,12 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该允许在搜索框中输入文本', async () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       const filterInput = screen.getAllByPlaceholderText('搜索模型...')[0]
       await user.type(filterInput, 'deep')
@@ -219,14 +150,12 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该允许清空搜索框', async () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       const filterInput = screen.getAllByPlaceholderText('搜索模型...')[0]
 
@@ -241,14 +170,12 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该支持搜索框输入', async () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       const filterInput = screen.getAllByPlaceholderText('搜索模型...')[0]
       await user.type(filterInput, 'xyz')
@@ -261,14 +188,12 @@ describe('ModelSidebar 组件测试', () => {
   describe('4.3 选中状态切换', () => {
     it('应该调用 onChange 回调', async () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       // 查找 Kimi 按钮并点击
       const kimiButton = Array.from(container.querySelectorAll('button[title]')).find(
@@ -285,14 +210,12 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该允许重复选择同一供应商', async () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       const deepseekButton = Array.from(container.querySelectorAll('button[title]')).find(
         btn => btn.getAttribute('title') === 'DeepSeek'
@@ -314,14 +237,12 @@ describe('ModelSidebar 组件测试', () => {
   describe('4.4 返回按钮导航', () => {
     it('应该渲染返回按钮', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       // 查找所有按钮
       const buttons = screen.getAllByRole('button')
@@ -331,14 +252,12 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该显示正确的标题', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       expect(screen.getAllByText('模型供应商')[0]).toBeInTheDocument()
     })
@@ -352,15 +271,13 @@ describe('ModelSidebar 组件测试', () => {
       ])
       const customStore = createTestStore(customProviders)
       const onChange = vi.fn()
-      const wrapper = createWrapper(customStore)
-      
-      render(
+
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store: customStore })
 
       expect(screen.getByText('Test Provider 1')).toBeInTheDocument()
       expect(screen.getByText('Test Provider 2')).toBeInTheDocument()
@@ -368,14 +285,12 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该响应 Redux store 变化', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       // 初始状态验证
       expect(screen.getAllByText('DeepSeek')[0]).toBeInTheDocument()
@@ -387,28 +302,24 @@ describe('ModelSidebar 组件测试', () => {
   describe('4.6 边界情况', () => {
     it('应该处理组件卸载', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      const { unmount } = render(
+      const { unmount } = renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       expect(() => unmount()).not.toThrow()
     })
 
     it('应该处理重新渲染', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      const { rerender } = render(
+      const { rerender } = renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       rerender(
         <ModelSidebar
@@ -420,14 +331,12 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该处理空搜索输入', async () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       const filterInput = screen.getAllByPlaceholderText('搜索模型...')[0]
       
@@ -447,14 +356,12 @@ describe('ModelSidebar 组件测试', () => {
   describe('4.7 可访问性', () => {
     it('应该为供应商按钮提供 title 属性', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       const deepseekButton = screen.getAllByText('DeepSeek')[0].closest('button')
       expect(deepseekButton).toHaveAttribute('title', 'DeepSeek')
@@ -462,14 +369,12 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该显示搜索框占位符', () => {
       const onChange = vi.fn()
-      const wrapper = createWrapper(store)
-      render(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
-        { wrapper }
-      )
+        { store })
 
       const filterInput = screen.getAllByPlaceholderText('搜索模型...')[0]
       expect(filterInput).toBeInTheDocument()

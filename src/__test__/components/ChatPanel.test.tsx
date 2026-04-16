@@ -5,13 +5,10 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import React from 'react';
+import { screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import ChatPanel from '@/pages/Chat/components/Panel';
 import { createMockChatWithModels } from '@/__test__/helpers/mocks/chatSidebar';
-import { BrowserRouter } from 'react-router-dom';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import {
   createChatSliceState,
   createModelSliceState,
@@ -24,38 +21,10 @@ afterEach(() => {
   cleanup();
 });
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (keyOrFn: string | ((_: any) => string)) => {
-      const translations = {
-        chat: {
-          showSidebar: '显示侧边栏',
-          unnamed: '未命名',
-          enableSplitter: '启用分割模式',
-          maxPerRow: '每行最多',
-          itemsUnit: '项',
-        },
-      };
-
-      if (typeof keyOrFn === 'function') {
-        return keyOrFn(translations);
-      }
-
-      const keyMap: Record<string, string> = {
-        'chat.showSidebar': '显示侧边栏',
-        'chat.unnamed': '未命名',
-        'chat.enableSplitter': '启用分割模式',
-        'chat.maxPerRow': '每行最多',
-        'chat.itemsUnit': '项',
-      };
-      return keyMap[keyOrFn] || keyOrFn;
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { showSidebar: '显示侧边栏', unnamed: '未命名', enableSplitter: '启用分割模式', maxPerRow: '每行最多', itemsUnit: '项', modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称', sendMessage: '发送消息', stopSending: '停止发送', typeMessage: '输入消息...', transmitHistoryReasoning: '包含推理内容', transmitHistoryReasoningHint: '是否在聊天历史中传输推理内容', createChat: '创建聊天' }, navigation: { openChatList: '打开聊天列表', createChat: '创建聊天' }, common: { cancel: '取消' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 创建测试用 store
@@ -70,17 +39,6 @@ const createStore = (chatOverrides?: Parameters<typeof createChatSliceState>[0])
   });
 };
 
-const createWrapper = (store: ReturnType<typeof createStore>) => {
-  return function({ children }: { children: React.ReactNode }) {
-    return (
-      <Provider store={store}>
-        <BrowserRouter>
-          {children}
-        </BrowserRouter>
-      </Provider>
-    );
-  };
-};
 
 describe('ChatPanel', () => {
   describe('4.1.1 测试单模型聊天面板渲染', () => {
@@ -92,8 +50,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 应该渲染 ChatPanel 组件的主容器
       const panel = document.querySelector('.relative.flex.flex-col');
@@ -116,8 +73,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 不应该显示分割模式开关（只有多模型时才显示）
       const splitterSwitch = document.querySelector('[role="switch"]');
@@ -134,8 +90,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       const panel = document.querySelector('.relative.flex.flex-col');
       expect(panel).toBeInTheDocument();
@@ -153,8 +108,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 应该显示聊天名称
       expect(screen.getByText('Test Chat Name')).toBeInTheDocument();
@@ -168,8 +122,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 应该显示增加和减少列数的按钮
       const buttons = document.querySelectorAll('button');
@@ -190,8 +143,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      const { container } = render(<ChatPanel />, { wrapper });
+      const { container } = renderWithProviders(<ChatPanel />, { store });
 
       // 点击分割模式开关（使用 role="switch"）
       const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
@@ -217,8 +169,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 默认情况下，分割模式是关闭的（useState 初始值为 false）
       const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
@@ -240,8 +191,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // columnCount 应该初始化为模型数量（3）
       const columnInput = document.querySelector('input[type="number"]') as HTMLInputElement;
@@ -257,8 +207,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       const columnInput = document.querySelector('input[type="number"]') as HTMLInputElement;
       const initialValue = parseInt(columnInput.value);
@@ -283,8 +232,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       const columnInput = document.querySelector('input[type="number"]') as HTMLInputElement;
       const initialValue = parseInt(columnInput.value);
@@ -309,8 +257,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      const { unmount } = render(<ChatPanel />, { wrapper });
+      const { unmount } = renderWithProviders(<ChatPanel />, { store });
 
       // 单模型时，columnCount 应该初始化为 1
       // 注意：单模型可能不显示列数控制，所以这个测试验证初始化逻辑
@@ -329,8 +276,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       const columnInput = document.querySelector('input[type="number"]') as HTMLInputElement;
       expect(columnInput.value).toBe('2');
@@ -346,8 +292,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
       expect(splitterSwitch).toBeInTheDocument();
@@ -376,8 +321,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      const { container } = render(<ChatPanel />, { wrapper });
+      const { container } = renderWithProviders(<ChatPanel />, { store });
 
       // 启用分割模式
       const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
@@ -403,8 +347,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 启用分割模式
       const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
@@ -438,8 +381,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 启用分割模式
       const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
@@ -474,8 +416,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 验证初始状态
       const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
@@ -502,8 +443,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 主容器应该存在
       const mainContainer = document.querySelector('.relative.flex.flex-col.items-center.justify-start.w-full.h-full');
@@ -518,8 +458,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // ChatPanelContent 应该存在（包含内容区域）
       const contentContainer = document.querySelector('.absolute.top-0.left-0.w-full');
@@ -534,8 +473,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // ChatPanelSender 应该存在（发送框）
       const senderContainer = document.querySelector('.relative.z-10.w-full');
@@ -552,8 +490,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 即使没有模型，组件也应该正常渲染
       const panel = document.querySelector('.relative.flex.flex-col');
@@ -568,8 +505,7 @@ describe('ChatPanel', () => {
         selectedChatId: 'chat-1',
       });
 
-      const wrapper = createWrapper(store);
-      render(<ChatPanel />, { wrapper });
+      renderWithProviders(<ChatPanel />, { store });
 
       // 应该显示"未命名"的文本
       const panel = document.querySelector('.relative.flex.flex-col');

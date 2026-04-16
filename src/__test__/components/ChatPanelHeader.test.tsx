@@ -4,52 +4,22 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import React from 'react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import ChatPanelHeader from '@/pages/Chat/components/Panel/Header';
 import type { Chat } from '@/types/chat';
-import { BrowserRouter } from 'react-router-dom';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import {
   createChatSliceState,
   createChatPageSliceState,
 } from '@/__test__/helpers/mocks/testState';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (keyOrFn: string | ((_: any) => string)) => {
-      // 创建完整的翻译对象
-      const translations = {
-        chat: {
-          showSidebar: '显示侧边栏',
-          unnamed: '未命名',
-          enableSplitter: '启用分割模式',
-          maxPerRow: '每行最多',
-          itemsUnit: '项',
-        },
-      };
-
-      if (typeof keyOrFn === 'function') {
-        return keyOrFn(translations);
-      }
-
-      // 如果是字符串 key，返回对应的翻译
-      const keyMap: Record<string, string> = {
-        'chat.showSidebar': '显示侧边栏',
-        'chat.unnamed': '未命名',
-        'chat.enableSplitter': '启用分割模式',
-        'chat.maxPerRow': '每行最多',
-        'chat.itemsUnit': '项',
-      };
-      return keyMap[keyOrFn] || keyOrFn;
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('react-i18next', () => {
+  const R = {
+    chat: { showSidebar: '显示侧边栏', unnamed: '未命名', enableSplitter: '启用分割模式', maxPerRow: '每行最多', itemsUnit: '项' },
+    common: { confirm: '确认', cancel: '取消' },
+  };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 创建测试用 store
@@ -78,15 +48,6 @@ const createStore = (chat?: Chat, isSidebarCollapsed = false) => {
   });
 };
 
-const createWrapper = (store: ReturnType<typeof createStore>) => {
-  return ({ children }: { children: React.ReactNode }) => (
-    <Provider store={store}>
-      <BrowserRouter>
-        {children}
-      </BrowserRouter>
-    </Provider>
-  );
-};
 
 describe('ChatPanelHeader', () => {
   beforeEach(() => {
@@ -100,14 +61,14 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={setColumnCount}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const input = container.querySelector('input[type="number"]');
@@ -119,14 +80,14 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={setColumnCount}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const input = container.querySelector('input[type="number"]');
@@ -142,14 +103,14 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={setColumnCount}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const input = container.querySelector('input[type="number"]');
@@ -160,14 +121,14 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelHeader
           columnCount={1}
           setColumnCount={setColumnCount}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const input = container.querySelector('input[type="number"]');
@@ -177,14 +138,14 @@ describe('ChatPanelHeader', () => {
     it('应该显示每行最大数标签', () => {
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.getByText(/每行最多/i)).toBeInTheDocument();
@@ -193,14 +154,14 @@ describe('ChatPanelHeader', () => {
     it('应该显示单位标签', () => {
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.getByText(/项/i)).toBeInTheDocument();
@@ -211,14 +172,14 @@ describe('ChatPanelHeader', () => {
     it('应该显示分割模式开关', () => {
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.getByRole('switch')).toBeInTheDocument();
@@ -228,14 +189,14 @@ describe('ChatPanelHeader', () => {
       const setIsSplitter = vi.fn();
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={setIsSplitter}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const switchButton = screen.getByRole('switch');
@@ -249,14 +210,14 @@ describe('ChatPanelHeader', () => {
     it('应该正确显示开关的当前状态 - 未开启', () => {
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const switchButton = screen.getByRole('switch');
@@ -266,14 +227,14 @@ describe('ChatPanelHeader', () => {
     it('应该正确显示开关的当前状态 - 已开启', () => {
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={true}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const switchButton = screen.getByRole('switch');
@@ -284,14 +245,14 @@ describe('ChatPanelHeader', () => {
       const setIsSplitter = vi.fn();
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={true}
           setIsSplitter={setIsSplitter}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const switchButton = screen.getByRole('switch');
@@ -305,14 +266,14 @@ describe('ChatPanelHeader', () => {
     it('应该显示分割模式标签', () => {
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.getByText(/启用分割模式/i)).toBeInTheDocument();
@@ -330,14 +291,14 @@ describe('ChatPanelHeader', () => {
 
       const store = createStore(singleModelChat);
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={1}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.queryByRole('switch')).not.toBeInTheDocument();
@@ -346,14 +307,14 @@ describe('ChatPanelHeader', () => {
     it('应该在多个模型时显示分割控制', () => {
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.getByRole('switch')).toBeInTheDocument();
@@ -373,14 +334,14 @@ describe('ChatPanelHeader', () => {
 
       const store = createStore(threeModelsChat);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const input = container.querySelector('input[type="number"]');
@@ -392,14 +353,14 @@ describe('ChatPanelHeader', () => {
     it('应该在侧边栏折叠时显示展开按钮', () => {
       const store = createStore(undefined, true);
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.getByTitle('显示侧边栏')).toBeInTheDocument();
@@ -408,14 +369,14 @@ describe('ChatPanelHeader', () => {
     it('应该在侧边栏未折叠时不显示展开按钮', () => {
       const store = createStore(undefined, false);
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.queryByTitle('显示侧边栏')).not.toBeInTheDocument();
@@ -431,14 +392,14 @@ describe('ChatPanelHeader', () => {
 
       const store = createStore(namedChat);
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={1}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.getByText(/My Awesome Chat/i)).toBeInTheDocument();
@@ -454,14 +415,14 @@ describe('ChatPanelHeader', () => {
 
       const store = createStore(unnamedChat);
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={1}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(screen.getByText('未命名')).toBeInTheDocument();
@@ -470,14 +431,14 @@ describe('ChatPanelHeader', () => {
     it('应该正确渲染头部容器元素', () => {
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const header = document.querySelector('.relative.z-10');
@@ -488,14 +449,14 @@ describe('ChatPanelHeader', () => {
     it('应该包含边框样式', () => {
       const store = createStore();
 
-      render(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       const header = document.querySelector('.relative');
@@ -506,14 +467,14 @@ describe('ChatPanelHeader', () => {
       const store = createStore();
       const dispatchSpy = vi.spyOn(store, 'dispatch');
 
-      const { unmount } = render(
+      const { unmount } = renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
           isSplitter={false}
           setIsSplitter={vi.fn()}
         />,
-        { wrapper: createWrapper(store) }
+        { store }
       );
 
       expect(dispatchSpy).toHaveBeenCalled();

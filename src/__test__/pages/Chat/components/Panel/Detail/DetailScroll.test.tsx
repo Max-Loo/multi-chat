@@ -54,17 +54,10 @@ vi.mock('@/components/chat/ChatBubble', () => ({
   ),
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (keyOrSelector: string | ((r: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        return keyOrSelector({ chat: { scrollToBottom: '滚动到底部' } });
-      }
-      return keyOrSelector;
-    },
-    i18n: { language: 'zh' },
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { scrollToBottom: '滚动到底部' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 创建带历史的 ChatModel

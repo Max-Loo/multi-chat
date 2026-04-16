@@ -4,6 +4,7 @@ import { processStreamEvents } from '@/services/chat/streamProcessor';
 import { StandardMessage } from '@/types/chat';
 import * as metadataCollectorModule from '@/services/chat/metadataCollector';
 import type { StandardMessageRawResponse } from '@/types/chat';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // 创建默认的 mock metadata（移到外部作用域）
 // 注意：这里返回的是转换后的 StandardMessageRawResponse 格式（timestamp 是 string）
@@ -455,7 +456,7 @@ describe('streamProcessor', () => {
 
   describe('边界情况', () => {
     it('应该正确处理 text-delta text 为 undefined 的事件', async () => {
-      const events = [{ type: 'text-delta', text: undefined as unknown as string }];
+      const events = [{ type: 'text-delta', text: asTestType<string>(undefined) }];
 
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
@@ -472,7 +473,7 @@ describe('streamProcessor', () => {
     });
 
     it('应该正确处理 reasoning-delta text 为 null 的事件', async () => {
-      const events = [{ type: 'reasoning-delta', text: null as unknown as string }];
+      const events = [{ type: 'reasoning-delta', text: asTestType<string>(null) }];
 
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
@@ -491,7 +492,7 @@ describe('streamProcessor', () => {
     it('应该忽略不支持的事件类型且不修改 content', async () => {
       const events = [
         { type: 'text-delta', text: 'Hello' },
-        { type: 'tool-call', data: 'ignored' } as unknown as { type: string; text?: string },
+        asTestType<{ type: string; text?: string }>({ type: 'tool-call', data: 'ignored' }),
       ];
 
       const mockMetadata = createDefaultMetadata();

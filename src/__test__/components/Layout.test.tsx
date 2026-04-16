@@ -11,27 +11,15 @@ import { Provider } from 'react-redux';
 import Layout from '@/components/Layout';
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: {
-      language: 'en',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
-// 创建测试用 Redux Store
-const createTestStore = () => {
-  return createTypeSafeTestStore();
-};
+vi.mock('react-i18next', () => {
+  const R = {};
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 渲染 Layout 组件的辅助函数
  */
-function renderLayout(store: ReturnType<typeof createTestStore>, props?: { className?: string }) {
+function renderLayout(store: ReturnType<typeof createTypeSafeTestStore>, props?: { className?: string }) {
   return render(
     <Provider store={store}>
         <BrowserRouter>
@@ -49,14 +37,14 @@ afterEach(() => {
 describe('Layout 组件', () => {
   describe('渲染测试', () => {
     it('应该正确渲染 Layout 组件', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       expect(container.firstChild).toBeDefined();
     });
 
     it('应该渲染主内容区域', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       const mainContent = container.querySelector('.flex-1');
@@ -64,7 +52,7 @@ describe('Layout 组件', () => {
     });
 
     it('应该应用正确的 CSS 类名', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       const layoutDiv = container.firstChild as HTMLElement;
@@ -72,7 +60,7 @@ describe('Layout 组件', () => {
     });
 
     it('应该支持自定义 className', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store, { className: 'custom-class' });
 
       const layoutDiv = container.firstChild as HTMLElement;
@@ -82,7 +70,7 @@ describe('Layout 组件', () => {
 
   describe('布局结构测试', () => {
     it('应该有正确的 Flexbox 布局结构', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       const layoutDiv = container.firstChild as HTMLElement;
@@ -96,7 +84,7 @@ describe('Layout 组件', () => {
     });
 
     it('应该占满整个屏幕高度', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       const layoutDiv = container.firstChild as HTMLElement;
@@ -104,7 +92,7 @@ describe('Layout 组件', () => {
     });
 
     it('主内容区域应该占据剩余空间', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       const mainContent = container.querySelector('.flex-1');
@@ -114,7 +102,7 @@ describe('Layout 组件', () => {
 
   describe('Suspense 处理测试', () => {
     it('应该使用 Suspense 包裹 Outlet', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       // 组件应该正常渲染
@@ -124,7 +112,7 @@ describe('Layout 组件', () => {
 
   describe('子组件位置测试', () => {
     it('应该正确渲染 Sidebar 组件', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       // Sidebar 应该被渲染（不使用 mock）
@@ -132,7 +120,7 @@ describe('Layout 组件', () => {
     });
 
     it('Sidebar 应该位于主内容区域之前', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       const layoutDiv = container.firstChild as HTMLElement;
@@ -148,14 +136,14 @@ describe('Layout 组件', () => {
 
   describe('响应式行为', () => {
     it('应该在移动端和桌面端都正确渲染', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       expect(container.firstChild).toBeDefined();
     });
 
     it('应该保持固定高度布局不受视口影响', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       const layoutDiv = container.firstChild as HTMLElement;
@@ -166,7 +154,7 @@ describe('Layout 组件', () => {
     });
 
     it('主内容区域应该占满父容器高度', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store);
 
       const mainContent = container.querySelector('.flex-1') as HTMLElement;
@@ -178,7 +166,7 @@ describe('Layout 组件', () => {
 
   describe('边界情况测试', () => {
     it('应该处理空 className', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store, { className: '' });
 
       const layoutDiv = container.firstChild as HTMLElement;
@@ -186,7 +174,7 @@ describe('Layout 组件', () => {
     });
 
     it('应该处理多个自定义 className', () => {
-      const store = createTestStore();
+      const store = createTypeSafeTestStore();
       const { container } = renderLayout(store, { className: 'class1 class2 class3' });
 
       const layoutDiv = container.firstChild as HTMLElement;

@@ -16,31 +16,14 @@ import { MemoryRouter } from 'react-router-dom';
 import type { EnhancedStore } from '@reduxjs/toolkit';
 import { BottomNav } from '@/components/BottomNav';
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
-import { createTestRootState, createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
+import { createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { RootState } from '@/store';
 
 // Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'nav.chat': '聊天',
-        'nav.model': '模型',
-        'nav.setting': '设置',
-      };
-      return translations[key] || key;
-    },
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = { nav: { chat: '聊天', model: '模型', setting: '设置' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // Mock useResponsive 为移动端模式（底部导航栏才显示）
 vi.mock('@/hooks/useResponsive', () => ({
@@ -98,10 +81,10 @@ vi.mock('@/config/navigation', () => ({
  * 创建测试用 Redux Store
  */
 function createBottomNavTestStore(): EnhancedStore<RootState> {
-  return createTypeSafeTestStore(createTestRootState({
+  return createTypeSafeTestStore({
     appConfig: createAppConfigSliceState({ language: 'zh' }),
     chatPage: createChatPageSliceState({ isShowChatPage: true }),
-  }));
+  });
 }
 
 /**

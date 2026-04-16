@@ -43,49 +43,10 @@ vi.mock('virtua', () => ({
   Virtualizer: ({ children, ...props }: any) => <div {...props}>{children}</div>,
 }));
 
-/**
- * Mock react-i18next for internationalization
- */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            createChat: '新建聊天',
-            hideSidebar: '隐藏侧边栏',
-            unnamed: '未命名',
-            delete: '删除',
-            rename: '重命名',
-            confirmDelete: '确认删除',
-            deleteChatConfirm: '确定要删除这个聊天吗？',
-            deleteChatSuccess: '删除成功',
-            deleteChatFailed: '删除失败',
-            editChatSuccess: '编辑成功',
-            editChatFailed: '编辑失败',
-          },
-          common: {
-            search: '搜索',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = { common: { search: '搜索', confirm: '确认', cancel: '取消' }, chat: { hideSidebar: '隐藏侧边栏', showSidebar: '显示侧边栏', createChat: '创建聊天', unnamed: '未命名', rename: '重命名', delete: '删除', confirmDelete: '确认删除', deleteChatConfirm: '确定删除该聊天？', deleteChatSuccess: '删除成功', deleteChatFailed: '删除失败', editChatSuccess: '编辑成功', editChatFailed: '编辑失败' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * Mock useConfirm hook because it requires ConfirmProvider context which is complex to set up in tests

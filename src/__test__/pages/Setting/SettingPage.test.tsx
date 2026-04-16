@@ -26,31 +26,10 @@ vi.mock('@/hooks/useResponsive', () => ({
   }),
 }));
 
-const { createI18nMock: _createI18nMock } = vi.hoisted(() => {
-  function createI18nMockReturn<T extends Record<string, unknown>>(zhResources: T) {
-    return {
-      useTranslation: () => ({
-        t: ((keyOrSelector: string | ((resources: T) => string)) =>
-          typeof keyOrSelector === 'function' ? keyOrSelector(zhResources) : keyOrSelector
-        ) as unknown,
-        i18n: { language: 'zh', changeLanguage: vi.fn() },
-      }),
-      initReactI18next: { type: '3rdParty' as const, init: vi.fn() },
-    };
-  }
-  return { createI18nMock: createI18nMockReturn };
+vi.mock('react-i18next', () => {
+  const R = { setting: { generalSetting: '通用设置' } };
+  return globalThis.__createI18nMockReturn(R);
 });
-
-vi.mock('react-i18next', () =>
-  _createI18nMock({
-    setting: {
-      title: '设置',
-      openMenu: '打开菜单',
-      generalSetting: '通用设置',
-      toastTest: 'Toast 测试',
-    },
-  })
-);
 
 /**
  * 渲染 SettingPage 组件的辅助函数

@@ -20,14 +20,10 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
-// Mock i18n - 支持函数式调用 t($ => $.key)
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (fn: (arg: any) => string) => fn?.({ common: { pageNotFound: 'common.pageNotFound', pageNotFoundDescription: 'common.pageNotFoundDescription', goBack: 'common.goBack' } }) || '',
-  }),
-}))
+vi.mock('react-i18next', () => {
+  const R = { common: { pageNotFound: 'common.pageNotFound', pageNotFoundDescription: 'common.pageNotFoundDescription', goBack: 'common.goBack' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 describe('NotFound', () => {
   beforeEach(() => {

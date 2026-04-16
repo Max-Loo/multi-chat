@@ -23,43 +23,10 @@ vi.mock("@/hooks/useAdaptiveScrollbar", () => ({
   }),
 }))
 
-const { createI18nMock: _createI18nMock } = vi.hoisted(() => {
-  function createI18nMockReturn<T extends Record<string, unknown>>(zhResources: T) {
-    return {
-      useTranslation: () => ({
-        t: ((keyOrSelector: string | ((resources: T) => string)) =>
-          typeof keyOrSelector === 'function' ? keyOrSelector(zhResources) : keyOrSelector
-        ) as unknown,
-        i18n: { language: 'zh', changeLanguage: vi.fn() },
-      }),
-      initReactI18next: { type: '3rdParty' as const, init: vi.fn() },
-    };
-  }
-  return { createI18nMock: createI18nMockReturn };
+vi.mock('react-i18next', () => {
+  const R = { common: { language: '语言' }, setting: { autoNaming: { title: '自动命名', description: '自动为聊天生成标题，默认开启' }, modelProvider: { refreshButton: '刷新模型供应商' } } };
+  return globalThis.__createI18nMockReturn(R);
 });
-
-vi.mock("react-i18next", () =>
-  _createI18nMock({
-    common: {
-      language: "语言",
-    },
-    setting: {
-      autoNaming: {
-        title: "自动命名",
-        description: "自动为聊天生成标题，默认开启",
-      },
-      modelProvider: {
-        title: "模型供应商",
-        description: "从远程服务器获取最新的模型供应商信息",
-        refreshButton: "刷新模型供应商",
-        refreshing: "刷新中...",
-        lastUpdateLabel: "最后更新:",
-        refreshSuccess: "模型供应商数据已更新",
-        refreshFailed: "刷新失败",
-      },
-    },
-  })
-)
 
 // Mock toastQueue（子组件 LanguageSetting 和 ModelProviderSetting 依赖）
 vi.mock("@/services/toast", () => ({

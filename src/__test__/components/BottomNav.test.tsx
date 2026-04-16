@@ -24,19 +24,10 @@ vi.mock('@/hooks/useResponsive', () => ({
   }),
 }));
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'nav.chat': '聊天',
-        'nav.model': '模型',
-        'nav.setting': '设置',
-      };
-      return translations[key] || key;
-    },
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const R = { nav: { chat: '聊天', model: '模型', setting: '设置' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // Mock navigation配置
 vi.mock('@/config/navigation', () => ({

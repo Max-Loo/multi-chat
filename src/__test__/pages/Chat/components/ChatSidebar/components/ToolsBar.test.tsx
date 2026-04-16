@@ -20,37 +20,10 @@ vi.mock('@/hooks/useResponsive', () => ({
   }),
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            hideSidebar: '隐藏侧边栏',
-            createChat: '新建聊天',
-          },
-          common: {
-            search: '搜索',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { hideSidebar: '隐藏侧边栏', createChat: '新建聊天' }, common: { search: '搜索' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * Mock useNavigateToPage hook
@@ -133,9 +106,6 @@ describe('ToolsBar Component', () => {
     cleanup();
   });
 
-  /**
-   * 测试默认工具栏渲染
-   */
   describe('默认工具栏渲染', () => {
     it('应该渲染工具栏容器', () => {
       const { container } = renderToolsBar();
@@ -196,9 +166,6 @@ describe('ToolsBar Component', () => {
     });
   });
 
-  /**
-   * 测试创建新聊天功能
-   */
   describe('创建新聊天功能', () => {
     it('点击新建聊天按钮应该创建新聊天', () => {
       const store = createTypeSafeTestStore({
@@ -246,9 +213,6 @@ describe('ToolsBar Component', () => {
     });
   });
 
-  /**
-   * 测试搜索功能
-   */
   describe('搜索功能', () => {
     it('点击搜索按钮应该进入搜索模式', () => {
       renderToolsBar({ filterText: '' });
@@ -335,9 +299,7 @@ describe('ToolsBar Component', () => {
     });
 
     it('输入框应该存在', () => {
-      renderToolsBar({ filterText: '' });
-
-      // 点击搜索按钮
+      // 先渲染并点击搜索按钮进入搜索模式
       const { container } = renderToolsBar({ filterText: '' });
       const searchButton = container.querySelector('button[title="搜索"]');
 
@@ -377,9 +339,6 @@ describe('ToolsBar Component', () => {
     });
   });
 
-  /**
-   * 测试侧边栏折叠功能
-   */
   describe('侧边栏折叠功能', () => {
     it('点击隐藏侧边栏按钮应该设置折叠状态', () => {
       const store = createTypeSafeTestStore({
@@ -438,9 +397,6 @@ describe('ToolsBar Component', () => {
     });
   });
 
-  /**
-   * 测试响应式布局
-   */
   describe('响应式布局', () => {
     it('工具栏应该使用 flex 布局', () => {
       const { container } = renderToolsBar();
@@ -455,9 +411,6 @@ describe('ToolsBar Component', () => {
     });
   });
 
-  /**
-   * 测试按钮样式
-   */
   describe('按钮样式', () => {
     it('所有按钮应该有固定的尺寸', () => {
       const { container } = renderToolsBar();
@@ -479,9 +432,6 @@ describe('ToolsBar Component', () => {
     });
   });
 
-  /**
-   * 测试搜索模式下的布局
-   */
   describe('搜索模式布局', () => {
     it('搜索模式下应该显示输入框', () => {
       const { container } = renderToolsBar({ filterText: '' });

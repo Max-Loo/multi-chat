@@ -9,6 +9,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import * as InitializationModule from '@/services/initialization';
 import { InitializationController } from '@/components/InitializationController';
 import type { InitResult, InitConfig, InitStep } from '@/services/initialization';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // Mock Progress component（shadcn/ui 第三方 UI 组件，属于例外）
 vi.mock('@/components/ui/progress', () => ({
@@ -35,36 +36,10 @@ vi.mock('lucide-react', async (importOriginal) => {
   };
 });
 
-const { createI18nMock: _createInitI18nMock } = vi.hoisted(() => {
-  function createI18nMockReturn<T extends Record<string, unknown>>(zhResources: T) {
-    return {
-      useTranslation: () => ({
-        t: ((keyOrSelector: string | ((resources: T) => string)) =>
-          typeof keyOrSelector === 'function' ? keyOrSelector(zhResources) : keyOrSelector
-        ) as unknown,
-        i18n: { language: 'zh', changeLanguage: vi.fn() },
-      }),
-      initReactI18next: { type: '3rdParty' as const, init: vi.fn() },
-    };
-  }
-  return { createI18nMock: createI18nMockReturn };
+vi.mock('react-i18next', () => {
+  const R = { common: { initializationFailed: '初始化失败', refreshPage: '刷新页面', noProvidersAvailable: '无可用的模型供应商', noProvidersDescription: '应用无法连接到模型数据服务器，且本地无可用缓存。', noProvidersHint: '请检查网络连接后点击下方按钮重试。', reload: '重新加载' } };
+  return globalThis.__createI18nMockReturn(R);
 });
-
-vi.mock('react-i18next', () =>
-  _createInitI18nMock({
-    common: {
-      initializationFailed: '初始化失败',
-      initializationFailedDescription: '应用初始化过程中发生错误，无法继续运行。',
-      refreshPage: '刷新页面',
-      showErrorDetails: '显示错误详情',
-      hideErrorDetails: '隐藏错误详情',
-      noProvidersAvailable: '无可用的模型供应商',
-      noProvidersDescription: '应用无法连接到模型数据服务器，且本地无可用缓存。',
-      noProvidersHint: '请检查网络连接后点击下方按钮重试。',
-      reload: '重新加载',
-    },
-  })
-);
 
 // 创建一个可控制的 mock runInitialization 函数
 let mockRunInitialization: ReturnType<typeof vi.fn>;
@@ -82,10 +57,12 @@ describe('InitializationController', () => {
 
     // Mock InitializationManager 类
     vi.spyOn(InitializationModule, 'InitializationManager').mockImplementation(
-      function (this: { runInitialization: typeof mockRunInitialization }) {
-        this.runInitialization = mockRunInitialization;
-        return this;
-      } as unknown as typeof InitializationModule.InitializationManager
+      asTestType<typeof InitializationModule.InitializationManager>(
+        function (this: { runInitialization: typeof mockRunInitialization }) {
+          this.runInitialization = mockRunInitialization;
+          return this;
+        }
+      )
     );
   });
 

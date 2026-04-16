@@ -25,20 +25,10 @@ import { createTestRootState, createAppConfigSliceState, createChatPageSliceStat
 import type { RootState } from '@/store';
 
 // Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = { common: { search: '搜索' }, chat: { hideSidebar: '隐藏侧边栏', showSidebar: '显示侧边栏', createChat: '创建聊天', unnamed: '未命名', rename: '重命名', delete: '删除' }, navigation: { chat: '聊天', model: '模型', setting: '设置', mobileDrawer: { title: '侧边栏', description: '侧边栏', ariaDescription: '抽屉内容' } }, setting: { openMenu: '打开菜单' }, model: { openMenu: '打开菜单' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // Mock useResponsive 为移动端模式（抽屉才显示）
 vi.mock('@/hooks/useResponsive', () => ({

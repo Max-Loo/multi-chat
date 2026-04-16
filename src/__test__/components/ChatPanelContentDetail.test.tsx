@@ -5,32 +5,18 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import React from 'react';
+import { screen, cleanup } from '@testing-library/react';
 import ChatPanelContentDetail from '@/pages/Chat/components/Panel/Detail';
 import type { ChatModel } from '@/types/chat';
 import { ChatRoleEnum } from '@/types/chat';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
-// Mock react-i18next for internationalization
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      // 简单的 mock，返回一些可读的文本
-      const translations: Record<string, string> = {
-        'chat.scrollToBottom': 'Scroll to bottom',
-        'chat.modelDeleted': 'Model Deleted',
-        'chat.deleted': 'Deleted',
-        'chat.disabled': 'Disabled',
-      };
-      return translations[key] || key;
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称', thinking: '思考中......', thinkingComplete: '思考完毕' }, common: { loading: 'Loading...' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // Mock useSelectedChat hook because it requires complex Redux store setup
 vi.mock('@/pages/Chat/hooks/useSelectedChat', () => ({
@@ -112,15 +98,6 @@ describe('ChatPanelContentDetail', () => {
     });
   };
 
-  /**
-   * 创建测试包装器
-   */
-  const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-    return function({ children }: { children: React.ReactNode }) {
-      return <Provider store={store}>{children}</Provider>;
-    };
-  };
-
   beforeEach(() => {
     cleanup();
     vi.clearAllMocks();
@@ -134,11 +111,10 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
       // 验证组件成功渲染
@@ -153,11 +129,10 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
       // 验证滚动容器存在
@@ -172,13 +147,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
       // 组件应该能够渲染而不抛错
       expect(() => {
-        render(
+        renderWithProviders(
           <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
+          { store }
         );
       }).not.toThrow();
     });
@@ -190,13 +164,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
       // 组件应该能够渲染而不抛错
       expect(() => {
-        render(
+        renderWithProviders(
           <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
+          { store }
         );
       }).not.toThrow();
     });
@@ -228,13 +201,12 @@ describe('ChatPanelContentDetail', () => {
       ];
 
       const store = createTestStore({ chatModel, models: customModels });
-      const wrapper = createWrapper(store);
 
       // 组件应该能够渲染而不抛错
       expect(() => {
-        render(
+        renderWithProviders(
           <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
+          { store }
         );
       }).not.toThrow();
     });
@@ -249,13 +221,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
       // 组件应该能够渲染而不抛错
       expect(() => {
-        render(
+        renderWithProviders(
           <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
+          { store }
         );
       }).not.toThrow();
     });
@@ -267,11 +238,10 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
       // 验证组件在没有历史记录时也能正常渲染
@@ -286,11 +256,10 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel: chatModel1 });
-      const wrapper = createWrapper(store);
 
-      const { container: container1 } = render(
+      const { container: container1 } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel1} />,
-        { wrapper }
+        { store }
       );
 
       expect(container1.firstChild).toBeDefined();
@@ -300,9 +269,9 @@ describe('ChatPanelContentDetail', () => {
         chatHistoryList: asTestType<ChatModel['chatHistoryList']>(undefined),
       };
 
-      const { container: container2 } = render(
+      const { container: container2 } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel2} />,
-        { wrapper }
+        { store }
       );
 
       expect(container2.firstChild).toBeDefined();
@@ -324,13 +293,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
       // 组件应该能够渲染而不抛错
       expect(() => {
-        render(
+        renderWithProviders(
           <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
+          { store }
         );
       }).not.toThrow();
     });
@@ -347,13 +315,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
       // 组件应该能够渲染而不抛错
       expect(() => {
-        render(
+        renderWithProviders(
           <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
+          { store }
         );
       }).not.toThrow();
     });
@@ -376,11 +343,10 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel, runningChat });
-      const wrapper = createWrapper(store);
 
-      render(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
       // 验证错误消息显示
@@ -394,11 +360,10 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      render(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
       // 验证没有错误提示显示
@@ -414,11 +379,10 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
       const scrollContainer = container.querySelector('div.overflow-y-auto');
@@ -446,11 +410,10 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel, runningChat });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
       // 验证组件在发送状态下正常渲染

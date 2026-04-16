@@ -6,59 +6,27 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
-  render,
   screen,
   fireEvent,
   waitFor,
   cleanup,
 } from "@testing-library/react";
-import { Provider } from "react-redux";
 import React from "react";
 import ChatPanelSender from "@/pages/Chat/components/Panel/Sender";
 import { createMockChat } from "@/__test__/helpers/mocks/chatSidebar";
 import {
   createTypeSafeTestStore,
+  renderWithProviders,
 } from "@/__test__/helpers/render/redux";
 import {
   createChatSliceState,
   createAppConfigSliceState,
 } from "@/__test__/helpers/mocks/testState";
 
-// Mock react-i18next
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (keyOrFn: string | ((_: any) => string)) => {
-      if (typeof keyOrFn === "function") {
-        return keyOrFn({
-          chat: {
-            sendMessage: "发送消息",
-            stopSending: "停止发送",
-            typeMessage: "输入消息...",
-            transmitHistoryReasoning: "包含推理内容",
-            transmitHistoryReasoningHint: "是否在聊天历史中传输推理内容",
-          },
-          common: {
-            cancel: "取消",
-          },
-        });
-      }
-      const translations: Record<string, string> = {
-        "chat.sendMessage": "发送消息",
-        "chat.stopSending": "停止发送",
-        "chat.typeMessage": "输入消息...",
-        "chat.transmitHistoryReasoning": "包含推理内容",
-        "chat.transmitHistoryReasoningHint": "是否在聊天历史中传输推理内容",
-        "common.cancel": "取消",
-      };
-      return translations[keyOrFn] || keyOrFn;
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { sendMessage: "发送消息", stopSending: "停止发送", typeMessage: "输入消息...", transmitHistoryReasoning: "包含推理内容" }, common: { confirm: "确认", cancel: "取消" } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 const createStore = (
   chatOverrides?: Parameters<typeof createChatSliceState>[0],
@@ -68,12 +36,6 @@ const createStore = (
     chat: createChatSliceState(chatOverrides),
     appConfig: createAppConfigSliceState(appConfigOverrides),
   });
-};
-
-const createWrapper = (store: ReturnType<typeof createStore>) => {
-  return function ({ children }: { children: React.ReactNode }) {
-    return <Provider store={store}>{children}</Provider>;
-  };
 };
 
 describe("ChatPanelSender", () => {
@@ -93,8 +55,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(/输入消息/i);
       const sendButton = screen.getByTitle(/发送消息/i);
@@ -108,8 +69,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -127,8 +87,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -146,8 +105,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -180,8 +138,7 @@ describe("ChatPanelSender", () => {
         },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -207,8 +164,7 @@ describe("ChatPanelSender", () => {
         },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const stopButton = screen.getByTitle(/停止发送/i);
 
@@ -229,8 +185,7 @@ describe("ChatPanelSender", () => {
         },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const stopButton = screen.getByTitle(/停止发送/i);
 
@@ -248,8 +203,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -267,8 +221,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -308,8 +261,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -342,8 +294,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -369,8 +320,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       // 推理内容开关应该存在于 DOM 中
       const reasoningButton = screen.queryByText(/包含推理内容/i);
@@ -384,8 +334,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const reasoningButton = screen.getByText(/包含推理内容/i);
       
@@ -409,8 +358,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const sendButton = screen.getByTitle(/发送消息/i);
 
@@ -422,8 +370,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -444,8 +391,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -458,10 +404,7 @@ describe("ChatPanelSender", () => {
       expect(textarea.value).toBe("");
     });
 
-    it("应该在发送失败时保持输入框内容", () => {
-      // 这个测试需要模拟发送失败的情况
-      // TODO: 添加错误处理测试
-    });
+    it.todo("应该在发送失败时保持输入框内容");
   });
 
   describe("输入框值变化和清空", () => {
@@ -470,8 +413,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -491,8 +433,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -513,8 +454,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -535,8 +475,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
         /输入消息/i,
@@ -557,8 +496,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(/输入消息/i);
       const flexContainer = textarea.closest(".flex.flex-col");
@@ -571,8 +509,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(/输入消息/i);
       // Textarea 不应该有边框
@@ -591,8 +528,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(/输入消息/i);
       const reasoningButton = screen.getByText(/包含推理内容/i);
@@ -612,8 +548,7 @@ describe("ChatPanelSender", () => {
         { chatList: [mockChat], selectedChatId: "chat-1" },
       );
 
-      const wrapper = createWrapper(store);
-      render(React.createElement(ChatPanelSender), { wrapper });
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const sendButton = screen.getByTitle(/发送消息/i);
 

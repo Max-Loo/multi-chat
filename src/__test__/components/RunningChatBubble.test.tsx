@@ -8,27 +8,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 import RunningChatBubble from '@/pages/Chat/components/Panel/Detail/RunningBubble';
 import { createMockPanelMessage } from '@/__test__/helpers/mocks/chatPanel';
 import { ChatRoleEnum, type ChatModel } from '@/types/chat';
 
-// Mock useTranslation hook
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'chat.thinking': 'Thinking...',
-        'chat.thinkingComplete': 'Thinking Complete',
-      };
-      return translations[key] || key;
-    },
-    i18n: {
-      language: 'en',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
+vi.mock('react-i18next', () => {
+  const R = { common: { loading: 'Loading...' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 创建 Mock ChatModel（简化版本）
@@ -72,14 +60,7 @@ describe('RunningChatBubble', () => {
 
   beforeEach(() => {
     // 创建一个 fresh 的 Redux store
-    mockStore = configureStore({
-      reducer: {
-        models: (state = { models: [] }) => state,
-        chat: (state = {
-          runningChat: {},
-        }) => state,
-      },
-    });
+    mockStore = createTypeSafeTestStore();
   });
 
   describe('4.5.1 测试显示加载动画', () => {

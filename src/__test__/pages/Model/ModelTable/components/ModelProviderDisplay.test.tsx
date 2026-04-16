@@ -5,22 +5,17 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import React from 'react';
+import { screen, cleanup } from '@testing-library/react';
 import ModelProviderDisplay from '@/pages/Model/ModelTable/components/ModelProviderDisplay';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('react-i18next', () => {
+  const R = { common: { confirm: '确认', cancel: '取消' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 创建测试用 Redux store
@@ -34,11 +29,6 @@ const createTestStore = (
   });
 };
 
-const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-  return function({ children }: { children: React.ReactNode }) {
-    return <Provider store={store}>{children}</Provider>;
-  };
-};
 
 describe('ModelProviderDisplay', () => {
   beforeEach(() => {
@@ -61,9 +51,8 @@ describe('ModelProviderDisplay', () => {
           },
         ],
       });
-      const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { wrapper });
+      renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
 
       expect(screen.getByAltText('DeepSeek')).toBeInTheDocument();
       expect(screen.getByText('DeepSeek')).toBeInTheDocument();
@@ -86,14 +75,13 @@ describe('ModelProviderDisplay', () => {
           },
         ],
       });
-      const wrapper = createWrapper(store);
 
-      render(
+      renderWithProviders(
         <>
           <ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />
           <ModelProviderDisplay providerKey={ModelProviderKeyEnum.MOONSHOTAI} />
         </>,
-        { wrapper }
+        { store }
       );
 
       expect(screen.getByAltText('DeepSeek')).toBeInTheDocument();
@@ -113,11 +101,10 @@ describe('ModelProviderDisplay', () => {
           },
         ],
       });
-      const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay
+      renderWithProviders(<ModelProviderDisplay
         providerKey={asTestType<ModelProviderKeyEnum>("test-provider")}
-      />, { wrapper });
+      />, { store });
 
       const img = screen.getByAltText('Test Provider');
       expect(img).toBeInTheDocument();
@@ -131,11 +118,10 @@ describe('ModelProviderDisplay', () => {
   describe('降级状态渲染', () => {
     it('应该仅显示供应商名称当供应商不存在', () => {
       const store = createTestStore({ providers: [] });
-      const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay
+      renderWithProviders(<ModelProviderDisplay
         providerKey={asTestType<ModelProviderKeyEnum>("non-existent")}
-      />, { wrapper });
+      />, { store });
 
       expect(screen.getByText('non-existent')).toBeInTheDocument();
     });
@@ -151,22 +137,20 @@ describe('ModelProviderDisplay', () => {
           },
         ],
       });
-      const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay
+      renderWithProviders(<ModelProviderDisplay
         providerKey={asTestType<ModelProviderKeyEnum>("unknown-provider")}
-      />, { wrapper });
+      />, { store });
 
       expect(screen.getByText('unknown-provider')).toBeInTheDocument();
     });
 
     it('应该处理空供应商列表', () => {
       const store = createTestStore({ providers: [] });
-      const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay
+      renderWithProviders(<ModelProviderDisplay
         providerKey={asTestType<ModelProviderKeyEnum>("any-provider")}
-      />, { wrapper });
+      />, { store });
 
       expect(screen.getByText('any-provider')).toBeInTheDocument();
     });
@@ -184,9 +168,8 @@ describe('ModelProviderDisplay', () => {
           },
         ],
       });
-      const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.MOONSHOTAI} />, { wrapper });
+      renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.MOONSHOTAI} />, { store });
 
       expect(screen.getByAltText('Kimi')).toBeInTheDocument();
       expect(screen.getByText('Kimi')).toBeInTheDocument();
@@ -209,9 +192,8 @@ describe('ModelProviderDisplay', () => {
           },
         ],
       });
-      const wrapper = createWrapper(store);
 
-      render(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { wrapper });
+      renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
 
       expect(screen.getByText('DeepSeek')).toBeInTheDocument();
       expect(screen.queryByText('OpenAI')).not.toBeInTheDocument();
@@ -230,9 +212,8 @@ describe('ModelProviderDisplay', () => {
           },
         ],
       });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { wrapper });
+      const { container } = renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
 
       const flexContainer = container.querySelector('.flex.items-center.gap-2');
       expect(flexContainer).toBeInTheDocument();
@@ -249,9 +230,8 @@ describe('ModelProviderDisplay', () => {
           },
         ],
       });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { wrapper });
+      const { container } = renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
 
       const avatar = container.querySelector('.h-6.w-6');
       expect(avatar).toBeInTheDocument();

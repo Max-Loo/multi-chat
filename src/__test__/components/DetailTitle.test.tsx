@@ -4,46 +4,18 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import React from 'react';
+import { screen, cleanup } from '@testing-library/react';
 import DetailTitle from '@/pages/Chat/components/Panel/Detail/Title';
 import { ChatModel } from '@/types/chat';
 import { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    t: (keyOrFn: string | ((_: any) => string)) => {
-      if (typeof keyOrFn === 'function') {
-        return keyOrFn({
-          chat: {
-            modelDeleted: '模型已删除',
-            deleted: '已删除',
-            disabled: '已禁用',
-            supplier: '供应商',
-            model: '模型',
-            nickname: '昵称',
-          },
-        });
-      }
-      const translations: Record<string, string> = {
-        'chat.modelDeleted': '模型已删除',
-        'chat.deleted': '已删除',
-        'chat.disabled': '已禁用',
-        'chat.supplier': '供应商',
-        'chat.model': '模型',
-        'chat.nickname': '昵称',
-      };
-      return translations[keyOrFn] || keyOrFn;
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用' }, common: { confirm: '确认', cancel: '取消' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 创建测试用的 Redux store
@@ -93,15 +65,6 @@ const createTestChatModel = (modelId: string): ChatModel => {
   };
 };
 
-/**
- * 创建测试包装器
- */
-const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-  return function ({ children }: { children: React.ReactNode }) {
-    return <Provider store={store}>{children}</Provider>;
-  };
-};
-
 describe('DetailTitle', () => {
   afterEach(() => {
     cleanup();
@@ -116,9 +79,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const nicknameElement = screen.getByText('我的 DeepSeek 模型 (deepseek-chat)');
       expect(nicknameElement).toBeInTheDocument();
@@ -131,9 +93,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       // 验证 Logo 容器存在（通过查询 alt 属性包含 "logo" 的元素）
       const logoElements = screen.getAllByAltText(/logo/i);
@@ -147,9 +108,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const nicknameElement = screen.getByText(/🚀 DeepSeek 🌟 \(deepseek-chat\)/);
       expect(nicknameElement).toBeInTheDocument();
@@ -164,9 +124,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const modelNameElement = screen.getByText('deepseek-chat');
       expect(modelNameElement).toBeInTheDocument();
@@ -181,9 +140,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const displayNameElement = screen.getByText(/这是一个非常长的昵称用于测试截断效果/);
       expect(displayNameElement).toHaveClass('truncate');
@@ -199,9 +157,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       // 验证 Tooltip 内容存在（即使不可见）
       // 注意：Tooltip 内容在 Radix UI 中可能不在 DOM 中直到触发
@@ -218,9 +175,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const deletedBadge = screen.getByText('已删除');
       expect(deletedBadge).toBeInTheDocument();
@@ -232,9 +188,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const disabledBadge = screen.getByText('已禁用');
       expect(disabledBadge).toBeInTheDocument();
@@ -247,9 +202,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       // 只应该有昵称，没有 Badge
       expect(screen.queryByText('已删除')).not.toBeInTheDocument();
@@ -261,9 +215,8 @@ describe('DetailTitle', () => {
     it('应该在模型列表中找不到对应模型时显示"模型已删除"', () => {
       const chatModel = createTestChatModel('non-existent-model-id');
       const store = createTestStore([]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const deletedBadge = screen.getByText('模型已删除');
       expect(deletedBadge).toBeInTheDocument();
@@ -280,9 +233,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const nicknameElement = screen.getByText('DeepSeek Chat (deepseek-chat)');
       expect(nicknameElement).toBeInTheDocument();
@@ -297,9 +249,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(testModel.id);
       const store = createTestStore([testModel]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const nicknameElement = screen.getByText('Moonshot 8K (moonshot-v1-8k)');
       expect(nicknameElement).toBeInTheDocument();
@@ -318,9 +269,8 @@ describe('DetailTitle', () => {
       });
       const chatModel = createTestChatModel(model2.id);
       const store = createTestStore([model1, model2]);
-      const wrapper = createWrapper(store);
 
-      render(<DetailTitle chatModel={chatModel} />, { wrapper });
+      renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
       const nicknameElement = screen.getByText('Moonshot 8K (moonshot-v1-8k)');
       expect(nicknameElement).toBeInTheDocument();

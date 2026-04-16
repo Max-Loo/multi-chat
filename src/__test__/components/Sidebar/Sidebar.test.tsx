@@ -33,41 +33,10 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 /**
  * Mock react-i18next for internationalization
  */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          navigation: {
-            chat: '聊天',
-            model: '模型',
-            setting: '设置',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      // 支持字符串键（用于新的配置化导航）
-      const keyMap: Record<string, string> = {
-        'navigation.chat': '聊天',
-        'navigation.model': '模型',
-        'navigation.setting': '设置',
-      };
-      return keyMap[keyOrSelector] || keyOrSelector;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = { navigation: { chat: '聊天', model: '模型', setting: '设置' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 可变的 mock 函数和变量

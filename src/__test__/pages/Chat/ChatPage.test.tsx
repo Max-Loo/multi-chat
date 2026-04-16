@@ -60,70 +60,9 @@ vi.mock("@/hooks/useNavigateToPage", () => ({
   }),
 }));
 
-/**
- * Mock react-i18next
- * 使用正确的翻译函数签名，支持 t($ => $.namespace.key) 语法
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// Reason: 测试错误处理，需要构造无效输入
-const mockT = (key: string | ((s: any) => string)): string => {
-  if (typeof key === "function") {
-    return key({
-      common: {
-        search: "搜索",
-        hideSidebar: "隐藏侧边栏",
-        createChat: "创建聊天",
-        loading: "加载中",
-      },
-      chat: {
-        sendMessage: "发送消息",
-        stopSending: "停止发送",
-        transmitHistoryReasoningHint: "包含推理内容提示",
-        showSidebar: "显示侧边栏",
-        scrollToBottom: "滚动到底部",
-        thinking: "思考中...",
-        thinkingComplete: "思考完毕",
-        createChat: "创建聊天",
-        selectChatToStart: "选择聊天开聊！",
-      },
-      model: { openProviderList: "打开模型供应商列表" },
-      navigation: {
-        chat: "聊天",
-        model: "模型",
-        setting: "设置",
-        mobileDrawer: {
-          title: "侧边栏",
-          description: "侧边栏",
-          ariaDescription: "抽屉内容",
-        },
-        openChatList: "打开聊天列表",
-        createChat: "新建聊天",
-      },
-      table: {
-        nickname: "昵称",
-        modelProvider: "模型供应商",
-        modelName: "模型名称",
-        lastUpdateTime: "最后更新时间",
-      },
-    });
-  }
-  return key;
-};
-
-vi.mock("react-i18next", () => {
-  return {
-    useTranslation: () => ({
-      t: mockT,
-      i18n: {
-        language: "zh",
-        changeLanguage: vi.fn(),
-      },
-    }),
-    initReactI18next: {
-      type: "3rdParty",
-      init: vi.fn(),
-    },
-  };
+vi.mock('react-i18next', () => {
+  const R = { common: { confirm: '确认', cancel: '取消', search: '搜索' }, chat: { hideSidebar: '隐藏侧边栏', showSidebar: '显示侧边栏', createChat: '创建聊天', sendMessage: '发送消息', stopSending: '停止发送', selectChatToStart: '选择聊天开聊！', scrollToBottom: '滚动到底部', thinking: '思考中...', thinkingComplete: '思考完毕', unnamed: '未命名', rename: '重命名', delete: '删除' }, model: { openProviderList: '打开模型供应商列表' }, navigation: { chat: '聊天', model: '模型', setting: '设置', mobileDrawer: { title: '侧边栏', description: '侧边栏', ariaDescription: '抽屉内容' }, openChatList: '打开聊天列表', createChat: '新建聊天' }, table: { nickname: '昵称', modelProvider: '模型供应商', modelName: '模型名称', lastUpdateTime: '最后更新时间' } };
+  return globalThis.__createI18nMockReturn(R);
 });
 
 /**

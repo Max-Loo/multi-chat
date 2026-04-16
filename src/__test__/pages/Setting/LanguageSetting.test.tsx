@@ -57,17 +57,10 @@ vi.mock("sonner", () => ({
   },
 }))
 
-// Mock react-i18next
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (callback: (t: any) => string) => callback({
-      common: { language: "语言" },
-      setting: { languageSwitchFailed: "语言切换失败" },
-    }),
-  }),
-}))
+vi.mock('react-i18next', () => {
+  const R = { common: { language: '语言' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // 简化 Mock UI 组件，但保留 onValueChange 回调执行
 vi.mock("@/components/ui/select", () => ({

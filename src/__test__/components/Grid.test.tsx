@@ -6,7 +6,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
-import React from 'react';
 import Grid from '@/pages/Chat/components/Panel/Grid';
 import type { ChatModel } from '@/types/chat';
 import {
@@ -15,13 +14,10 @@ import {
   createPanelLayoutWrapper,
 } from '@/__test__/helpers/mocks/panelLayout';
 
-// 设置通用 Mock
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('react-i18next', () => {
+  const R = {};
+  return globalThis.__createI18nMockReturn(R);
+});
 
 vi.mock('@/pages/Chat/components/Panel/Detail', () => ({
   default: ({ chatModel }: { chatModel: ChatModel }) => (

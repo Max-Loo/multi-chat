@@ -1,33 +1,33 @@
 /**
  * react-i18next mock 工厂函数
  *
- * 为测试提供类型安全的 i18n mock，支持字符串键和选择器函数两种调用方式。
+ * 用于 vi.mock('react-i18next') 的统一 mock 创建。
+ * 由于 vitest 的 hoisting 限制，vi.mock 工厂无法使用常规 import，
+ * 因此此函数通过 setup.ts 注册到 globalThis.__createI18nMockReturn。
  *
- * 注意：由于 vi.hoisted 不支持 require 路径别名（@/），需要在测试文件中
- * 通过 vi.hoisted 内联定义工厂函数。此文件作为参考实现，展示正确的工厂函数签名。
+ * 支持三种 t() 调用模式：
+ * - 选择器函数：t((r) => r.common.title) → 从 R 中解析
+ * - 字符串键：t('common.title') → 通过 dot-notation 从 R 中查找
+ * - 模板插值：t('common.count', { count: 5 }) → 替换 {{count}} 占位符
+ *
+ * R 对象只保留测试断言实际使用的翻译键，避免冗余。
  *
  * @example
  * ```typescript
- * const { createI18nMock } = vi.hoisted(() => {
- *   function createI18nMockReturn<T extends Record<string, unknown>>(zhResources: T) {
- *     return {
- *       useTranslation: () => ({
- *         t: ((keyOrSelector: string | ((resources: T) => string)) =>
- *           typeof keyOrSelector === 'function' ? keyOrSelector(zhResources) : keyOrSelector
- *         ) as unknown,
- *         i18n: { language: 'zh', changeLanguage: vi.fn() },
- *       }),
- *       initReactI18next: { type: '3rdParty' as const, init: vi.fn() },
- *     };
- *   }
- *   return { createI18nMock: createI18nMockReturn };
+ * // 标准用法（通过 globalThis，在 vi.mock 工厂中使用）
+ * vi.mock('react-i18next', () => {
+ *   const R = { nav: { chat: '聊天' } };
+ *   return globalThis.__createI18nMockReturn(R);
  * });
+ * ```
  *
- * vi.mock('react-i18next', () =>
- *   createI18nMock({
- *     common: { title: '标题' },
- *   })
- * );
+ * @example
+ * ```typescript
+ * // 模板插值用法
+ * vi.mock('react-i18next', () => {
+ *   const R = { setting: { count: '共 {{count}} 个模型' } };
+ *   return globalThis.__createI18nMockReturn(R);
+ * });
  * ```
  */
 
@@ -41,9 +41,17 @@ import { vi } from 'vitest';
 export function createI18nMockReturn<T extends Record<string, unknown>>(zhResources: T) {
   return {
     useTranslation: () => ({
-      t: ((keyOrSelector: string | ((resources: T) => string)) =>
-        typeof keyOrSelector === 'function' ? keyOrSelector(zhResources) : keyOrSelector
-      ) as unknown,
+      t: ((keyOrSelector: string | ((resources: T) => string), options?: Record<string, unknown>) => {
+        let result = typeof keyOrSelector === 'function'
+          ? keyOrSelector(zhResources)
+          : (keyOrSelector as string).split('.').reduce((o: any, p: string) => o?.[p], zhResources) || keyOrSelector;
+        if (options && typeof result === 'string') {
+          Object.entries(options).forEach(([key, val]) => {
+            result = result.replace(`{{${key}}}`, String(val));
+          });
+        }
+        return result;
+      }) as unknown,
       i18n: {
         language: 'zh',
         changeLanguage: vi.fn(),
@@ -53,5 +61,6 @@ export function createI18nMockReturn<T extends Record<string, unknown>>(zhResour
       type: '3rdParty' as const,
       init: vi.fn(),
     },
+    I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
   };
 }

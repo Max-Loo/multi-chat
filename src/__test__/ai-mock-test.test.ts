@@ -1,15 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { streamText, generateId } from 'ai';
 import { createMockStreamResult } from '@/__test__/helpers';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 describe('AI SDK Mock Test', () => {
   it('应该确认 streamText 是 mock 函数', () => {
-    console.log('Is streamText a mock function?', vi.isMockFunction(streamText));
     expect(vi.isMockFunction(streamText)).toBe(true);
   });
 
   it('应该确认 generateId 是 mock 函数', () => {
-    console.log('Is generateId a mock function?', vi.isMockFunction(generateId));
     expect(vi.isMockFunction(generateId)).toBe(true);
   });
 
@@ -21,7 +20,7 @@ describe('AI SDK Mock Test', () => {
     ]);
 
     // 设置 mock 返回值
-    vi.mocked(streamText).mockReturnValueOnce(mockResult as unknown as ReturnType<typeof streamText>);
+    vi.mocked(streamText).mockReturnValueOnce(asTestType<ReturnType<typeof streamText>>(mockResult));
 
     const result = streamText({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,7 +44,7 @@ describe('AI SDK Mock Test', () => {
 
   it('应该能够 await streamText 获取元数据', async () => {
     const mockResult = createMockStreamResult([]);
-    vi.mocked(streamText).mockReturnValueOnce(mockResult as unknown as ReturnType<typeof streamText>);
+    vi.mocked(streamText).mockReturnValueOnce(asTestType<ReturnType<typeof streamText>>(mockResult));
 
     const result = streamText({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

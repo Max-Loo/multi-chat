@@ -6,6 +6,10 @@
  */
 
 import type { Chat, StandardMessage } from '@/types/chat';
+import { ChatRoleEnum } from '@/types/chat';
+import { createIdGenerator } from 'ai';
+import { createMockMessage as _createMockMessage } from '@/__test__/fixtures/chat';
+import { createMockChat as _createMockChat } from './mocks/chatSidebar';
 
 /**
  * 用于测试的类型强制转换，替代 as unknown as 模式
@@ -15,10 +19,6 @@ import type { Chat, StandardMessage } from '@/types/chat';
 export function asTestType<T>(value: unknown): T {
   return value as T;
 }
-import { ChatRoleEnum } from '@/types/chat';
-import { createIdGenerator } from 'ai';
-import { createMockMessage as _createMockMessage } from '@/__test__/fixtures/chat';
-import { createMockChat as _createMockChat } from './mocks/chatSidebar';
 
 // render/redux 不在此处重新导出：它导入 react-redux 会在全局 setup 阶段触发 CJS/ESM 兼容性问题
 // 需要的测试文件请直接 import from '@/__test__/helpers/render/redux'

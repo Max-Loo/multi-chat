@@ -45,37 +45,10 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
   }),
 }))
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: react-i18next 的 TFunction 类型签名过于复杂，mock 中使用简化签名
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            unnamed: '未命名',
-            rename: '重命名',
-            delete: '删除',
-            confirmDelete: '确认删除',
-            deleteChatConfirm: '确定要删除这个聊天吗？',
-            deleteChatSuccess: '删除成功',
-            deleteChatFailed: '删除失败',
-            editChatSuccess: '重命名成功',
-            editChatFailed: '重命名失败',
-          },
-        }
-        return keyOrSelector(mockResources)
-      }
-      return keyOrSelector
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: react-i18next TFunction 返回类型与 mock 签名不完全匹配
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-}))
+vi.mock('react-i18next', () => {
+  const R = { chat: { unnamed: '未命名', rename: '重命名', delete: '删除' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 vi.mock('@/hooks/useConfirm', () => ({
   useConfirm: () => ({

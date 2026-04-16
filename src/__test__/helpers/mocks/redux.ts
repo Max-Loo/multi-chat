@@ -6,9 +6,8 @@
 
 import { vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
-import type { Model } from '@/types/model';
-import type { ModelSliceState } from '@/store/slices/modelSlice';
 import { createModelSliceState as _createModelSliceState } from './testState';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 /**
  * 创建 Mock Redux Store
@@ -53,12 +52,12 @@ export const createMockAbortController = () => {
  * @returns AbortSignal 的 Mock 实现
  */
 export const createMockAbortSignal = (aborted = false) => {
-  const mockSignal = {
+  const mockSignal = asTestType<AbortSignal>({
     aborted,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
-  } as unknown as AbortSignal;
+  });
 
   return mockSignal;
 };
@@ -69,68 +68,3 @@ export const createMockAbortSignal = (aborted = false) => {
  * @returns Model slice 状态对象
  */
 export const createModelSliceState = _createModelSliceState;
-
-/**
- * 创建包含模型的 Redux 预配置状态
- * @param models 模型列表
- * @param overrides 其他要覆盖的状态字段
- * @returns Model slice 状态对象，包含指定的模型列表
- */
-export const createModelSliceWithModels = (
-  models: Model[],
-  overrides?: Partial<ModelSliceState>
-): ModelSliceState => {
-  return createModelSliceState({
-    models,
-    ...overrides,
-  });
-};
-
-/**
- * 创建加载中的 Model slice 状态
- * @param overrides 要覆盖的状态字段
- * @returns 加载状态的 Model slice
- */
-export const createLoadingModelSliceState = (overrides?: Partial<ModelSliceState>): ModelSliceState => {
-  return createModelSliceState({
-    loading: true,
-    initializationError: null,
-    ...overrides,
-  });
-};
-
-/**
- * 创建带错误的 Model slice 状态
- * @param errorMessage 错误消息
- * @param overrides 要覆盖的状态字段
- * @returns 带错误的 Model slice
- */
-export const createErrorModelSliceState = (
-  errorMessage: string,
-  overrides?: Partial<ModelSliceState>
-): ModelSliceState => {
-  return createModelSliceState({
-    loading: false,
-    error: errorMessage,
-    initializationError: null,
-    ...overrides,
-  });
-};
-
-/**
- * 创建带初始化错误的 Model slice 状态
- * @param errorMessage 初始化错误消息
- * @param overrides 要覆盖的状态字段
- * @returns 带初始化错误的 Model slice
- */
-export const createInitErrorModelSliceState = (
-  errorMessage: string,
-  overrides?: Partial<ModelSliceState>
-): ModelSliceState => {
-  return createModelSliceState({
-    loading: false,
-    error: null,
-    initializationError: errorMessage,
-    ...overrides,
-  });
-};

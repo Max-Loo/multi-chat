@@ -12,18 +12,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import FilterInput from '@/components/FilterInput';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (keyOrSelector: string | ((r: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        return keyOrSelector({ common: { search: '搜索...' } });
-      }
-      return keyOrSelector;
-    },
-    i18n: { language: 'zh' },
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const R = { common: { search: '搜索...' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 describe('FilterInput', () => {
   it('应该渲染输入框和搜索图标', () => {

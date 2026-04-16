@@ -44,6 +44,7 @@ import { storeMasterKey, getMasterKey } from '@/store/keyring/masterKey';
 import * as masterKeyModule from '@/store/keyring/masterKey';
 import { WebKeyringCompat } from '@/utils/tauriCompat/keyring';
 import { createMockModel } from '@/__test__/fixtures/models';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // 导入 fake-indexeddb（必须在其他导入之前）
 import 'fake-indexeddb/auto';
@@ -239,7 +240,7 @@ describe('modelStorage (Integration Test)', () => {
     it('应该处理 undefined 的 API key', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 测试边界条件，需要构造 apiKey 为 undefined 的 Model
-      const model = createMockModel({ apiKey: undefined as unknown as string });
+      const model = createMockModel({ apiKey: asTestType<string>(undefined) });
 
       await saveModelsToJson([model]);
 

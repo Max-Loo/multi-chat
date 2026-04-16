@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // Mock toastQueue and i18n before importing middleware
 vi.mock('@/services/toast', () => ({
@@ -42,14 +43,14 @@ describe('appConfigMiddleware', () => {
     store = createMiddlewareTestStore(saveDefaultAppLanguage.middleware);
 
     // 重置 localStorage mock
-    global.localStorage = {
+    global.localStorage = asTestType<Storage>({
       getItem: vi.fn(),
       setItem: vi.fn(),
       removeItem: vi.fn(),
       clear: vi.fn(),
       length: 0,
       key: vi.fn(),
-    } as unknown as Storage;
+    });
 
     // 重置 toast mocks 并设置默认返回值
     mockToastLoading.mockClear().mockResolvedValue('loading-toast-id');

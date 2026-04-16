@@ -5,65 +5,17 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import React from 'react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import EditModelModal from '@/pages/Model/ModelTable/components/EditModelModal';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (keyOrFn: string | ((_: any) => string)) => {
-      // 创建完整的翻译对象，包含所有嵌套属性
-      const translations = {
-        model: {
-          editModel: '编辑模型',
-          editModelDescription: '编辑模型的配置信息',
-          editModelSuccess: '编辑模型成功',
-          editModelFailed: '编辑模型失败',
-          nickname: '模型昵称',
-          apiKey: 'API 密钥',
-          apiAddress: 'API 地址',
-          modelName: '模型名称',
-          submit: '提交',
-          cancel: '取消',
-          required: '必填',
-        },
-        common: {
-          submit: '提交',
-          cancel: '取消',
-          required: '必填',
-        },
-      };
-
-      if (typeof keyOrFn === 'function') {
-        return keyOrFn(translations);
-      }
-
-      const keyMap: Record<string, string> = {
-        'model.editModel': '编辑模型',
-        'model.editModelDescription': '编辑模型的配置信息',
-        'model.editModelSuccess': '编辑模型成功',
-        'model.editModelFailed': '编辑模型失败',
-        'model.nickname': '模型昵称',
-        'model.apiKey': 'API 密钥',
-        'model.apiAddress': 'API 地址',
-        'model.modelName': '模型名称',
-        'common.submit': '提交',
-        'common.cancel': '取消',
-        'common.required': '必填',
-      };
-      return keyMap[keyOrFn] || keyOrFn;
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('react-i18next', () => {
+  const R = { model: { editModel: '编辑模型', editModelDescription: '编辑模型描述', editModelSuccess: '编辑成功', editModelFailed: '编辑失败', modelNickname: '模型昵称', apiKey: 'API 密钥', apiAddress: 'API 地址', model: '模型' }, common: { remark: '备注', submit: '提交' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // Mock sonner
 vi.mock('sonner', () => ({
@@ -100,12 +52,6 @@ const createTestStore = (
   });
 };
 
-const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-  return function({ children }: { children: React.ReactNode }) {
-    return <Provider store={store}>{children}</Provider>;
-  };
-};
-
 describe('EditModelModal', () => {
   let mockModel: ReturnType<typeof createMockModel>;
   let mockOnModalCancel: () => void;
@@ -127,15 +73,14 @@ describe('EditModelModal', () => {
         { providers: mockProviders }
       );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <EditModelModal
           isModalOpen={true}
           onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
-        { wrapper }
+        { store }
       );
 
       const dialog = document.querySelector('[role="dialog"]');
@@ -148,14 +93,13 @@ describe('EditModelModal', () => {
         { providers: mockProviders }
       );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <EditModelModal
           onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
-        { wrapper }
+        { store }
       );
 
       const dialog = document.querySelector('[role="dialog"]');
@@ -170,15 +114,14 @@ describe('EditModelModal', () => {
         { providers: mockProviders }
       );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <EditModelModal
           isModalOpen={true}
           onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
-        { wrapper }
+        { store }
       );
 
       const overlay = document.querySelector('[class*="overlay"]');
@@ -197,15 +140,14 @@ describe('EditModelModal', () => {
         { providers: mockProviders }
       );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <EditModelModal
           isModalOpen={true}
           onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
-        { wrapper }
+        { store }
       );
 
       const dialog = document.querySelector('[role="dialog"]');
@@ -231,15 +173,14 @@ describe('EditModelModal', () => {
         { providers: mockProviders }
       );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <EditModelModal
           isModalOpen={true}
           onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
-        { wrapper }
+        { store }
       );
 
       const form = document.querySelector('form');
@@ -252,15 +193,14 @@ describe('EditModelModal', () => {
         { providers: mockProviders }
       );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <EditModelModal
           isModalOpen={true}
           onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
-        { wrapper }
+        { store }
       );
 
       const dialog = document.querySelector('[role="dialog"]');
@@ -278,15 +218,14 @@ describe('EditModelModal', () => {
         { providers: mockProviders }
       );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <EditModelModal
           isModalOpen={true}
           onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
-        { wrapper }
+        { store }
       );
 
       const submitButton = screen.queryByText(/submit|update/i);
@@ -307,15 +246,14 @@ describe('EditModelModal', () => {
         { providers: mockProviders }
       );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <EditModelModal
           isModalOpen={true}
           onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
-        { wrapper }
+        { store }
       );
 
       const dialog = document.querySelector('[role="dialog"]');
@@ -330,15 +268,14 @@ describe('EditModelModal', () => {
         { providers: mockProviders }
       );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <EditModelModal
           isModalOpen={true}
           onModalCancel={mockOnModalCancel}
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={mockModel}
         />,
-        { wrapper }
+        { store }
       );
 
       const dialog = document.querySelector('[role="dialog"]');

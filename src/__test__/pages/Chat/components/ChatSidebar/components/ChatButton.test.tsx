@@ -26,44 +26,10 @@ vi.mock('@/hooks/useResponsive', () => ({
 import * as useResponsiveModule from '@/hooks/useResponsive';
 const mockUseResponsive = vi.mocked(useResponsiveModule.useResponsive);
 
-/**
- * Mock react-i18next
- */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            unnamed: '未命名',
-            rename: '重命名',
-            delete: '删除',
-            confirmDelete: '确认删除',
-            deleteChatConfirm: '确定要删除这个聊天吗？',
-            deleteChatSuccess: '删除成功',
-            deleteChatFailed: '删除失败',
-            editChatSuccess: '重命名成功',
-            editChatFailed: '重命名失败',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { unnamed: '未命名' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * Mock useNavigateToPage hook
@@ -140,9 +106,6 @@ describe('ChatButton Component', () => {
     cleanup();
   });
 
-  /**
-   * 测试组件渲染
-   */
   describe('组件渲染', () => {
     it('应该渲染聊天按钮', () => {
       const chat = createMockChat({ name: '测试聊天' });
@@ -193,9 +156,6 @@ describe('ChatButton Component', () => {
     });
   });
 
-  /**
-   * 测试点击导航功能
-   */
   describe('点击导航', () => {
     it('点击聊天按钮应该触发导航', () => {
       const chat = createMockChat({ name: '测试聊天' });
@@ -220,9 +180,6 @@ describe('ChatButton Component', () => {
     });
   });
 
-  /**
-   * 测试重命名功能
-   */
   describe('重命名功能', () => {
     it('应该渲染下拉菜单按钮', () => {
       const chat = createMockChat({ name: '测试聊天' });
@@ -242,9 +199,6 @@ describe('ChatButton Component', () => {
     });
   });
 
-  /**
-   * 测试删除功能
-   */
   describe('删除功能', () => {
     it('应该有删除功能的钩子（通过 mockModalWarning 验证）', () => {
       expect(mockModalWarning).toBeDefined();
@@ -262,9 +216,6 @@ describe('ChatButton Component', () => {
     });
   });
 
-  /**
-   * 测试组件结构和样式
-   */
   describe('组件结构和样式', () => {
     it('聊天按钮应该有正确的样式类', () => {
       const chat = createMockChat({ name: '测试聊天' });
@@ -291,9 +242,6 @@ describe('ChatButton Component', () => {
     });
   });
 
-  /**
-   * 测试 memo 优化
-   */
   describe('组件 memo 优化', () => {
     it('当聊天 ID 和名称未改变时，不应该重新渲染', () => {
       const chat = createMockChat({ name: '测试聊天' });
@@ -347,9 +295,6 @@ describe('ChatButton Component', () => {
     });
   });
 
-  /**
-   * 测试响应式布局模式
-   */
   describe('响应式布局模式', () => {
     it('桌面模式（desktop）：正常字体（text-sm）和图标（h-8 w-8）', () => {
       mockUseResponsive.mockReturnValue({
