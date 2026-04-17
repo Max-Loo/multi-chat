@@ -83,22 +83,22 @@ const KeyManagementSetting: React.FC = () => {
       `}
     >
       {/* 密钥导出 */}
-      <div className="w-full p-3 my-4 bg-white rounded-xl flex flex-col justify-start items-center">
-        <div className="w-full">
+      <div className="w-full p-3 my-4 bg-white rounded-xl flex flex-row items-center justify-between">
+        <div className="flex-1 min-w-0">
           <h3 className="text-base font-medium mb-1">
             {t($ => $.setting.keyManagement.exportKey)}
           </h3>
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-muted-foreground">
             {t($ => $.setting.keyManagement.exportKeyDescription)}
           </p>
-          <Button
-            onClick={handleExportKey}
-            disabled={exportState !== null}
-            className="w-full sm:w-auto"
-          >
-            {t($ => $.setting.keyManagement.exportKey)}
-          </Button>
         </div>
+        <Button
+          onClick={handleExportKey}
+          disabled={exportState !== null}
+          className="shrink-0 ml-3"
+        >
+          {t($ => $.setting.keyManagement.exportKey)}
+        </Button>
       </div>
 
       {/* 导出密钥对话框 */}
@@ -144,23 +144,23 @@ const KeyManagementSetting: React.FC = () => {
       </AlertDialog>
 
       {/* 重置所有数据 */}
-      <div className="w-full p-3 my-4 bg-white rounded-xl flex flex-col justify-start items-center">
-        <div className="w-full">
+      <div className="w-full p-3 my-4 bg-white rounded-xl flex flex-row items-center justify-between">
+        <div className="flex-1 min-w-0">
           <h3 className="text-base font-medium mb-1">
             {t($ => $.setting.keyManagement.resetAllData)}
           </h3>
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-muted-foreground">
             {t($ => $.setting.keyManagement.resetAllDataDescription)}
           </p>
-          <Button
-            variant="destructive"
-            onClick={() => setIsResetDialogOpen(true)}
-            disabled={isResetting}
-            className="w-full sm:w-auto"
-          >
-            {t($ => $.setting.keyManagement.resetAllData)}
-          </Button>
         </div>
+        <Button
+          variant="destructive"
+          onClick={() => setIsResetDialogOpen(true)}
+          disabled={isResetting}
+          className="shrink-0 ml-3"
+        >
+          {t($ => $.setting.keyManagement.resetAllData)}
+        </Button>
       </div>
 
       {/* 重置确认对话框 */}
