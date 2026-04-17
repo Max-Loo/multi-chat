@@ -3,7 +3,7 @@
  *
  * 包含重型依赖（Redux store、Router、Toast 等），通过动态导入实现按需加载
  */
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Provider } from "react-redux";
 import { RouterProvider } from "react-router-dom";
 import { store } from "@/store";
@@ -11,9 +11,12 @@ import router from "@/router";
 import { ConfirmProvider } from "@/hooks/useConfirm";
 import { ToasterWrapper } from "@/services/toast/ToasterWrapper";
 import { handleSecurityWarning } from "@/store/keyring/masterKey";
+import { hasEncryptedModels } from "@/store/storage/modelStorage";
 import { triggerSilentRefreshIfNeeded } from "@/store/slices/modelProviderSlice";
 import { toastQueue } from "@/services/toast";
 import type { InitResult } from "@/services/initialization";
+import { useTranslation } from "react-i18next";
+import { KeyRecoveryDialog } from "@/components/KeyRecoveryDialog";
 
 /**
  * 创建主应用组件的工厂函数
@@ -22,33 +25,21 @@ import type { InitResult } from "@/services/initialization";
  */
 export function createMainApp(result: InitResult) {
   return function MainApp() {
-    /**
-     * 主应用挂载后执行副作用
-     */
+    const { t } = useTranslation();
+    const notifiedRef = useRef(false);
+    const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
+
     useEffect(() => {
-      // 后台静默刷新 modelProvider 数据，保持数据新鲜度
       triggerSilentRefreshIfNeeded(store);
     }, []);
 
-    /**
-     * 处理安全性警告（现在可以使用 Toast）
-     * 注意：这个副作用在 MainApp 挂载后执行，而不是在初始化完成后立即执行
-     */
     useEffect(() => {
-      const runSecurityWarning = async () => {
-        await handleSecurityWarning();
-      };
-      runSecurityWarning();
+      handleSecurityWarning();
     }, []);
 
-    /**
-     * 显示初始化过程中的警告错误
-     * 注意：result 是通过闭包传入的，组件创建时确定，不需要作为依赖
-     */
     useEffect(() => {
       if (result.warnings.length > 0) {
         result.warnings.forEach((warning) => {
-          // 在开发环境下显示详细错误信息，生产环境下只显示简化消息
           toastQueue.warning(warning.message, {
             description: import.meta.env.DEV
               ? String(warning.originalError)
@@ -58,11 +49,66 @@ export function createMainApp(result: InitResult) {
       }
     }, []);
 
+    useEffect(() => {
+      if (notifiedRef.current) return;
+
+      // 解密失败通知优先于密钥重新生成通知
+      if (result.decryptionFailureCount && result.decryptionFailureCount > 0) {
+        notifiedRef.current = true;
+        toastQueue.warning(
+          t(($) => $.common.decryptionFailureMessage, { count: result.decryptionFailureCount }),
+          {
+            duration: Infinity,
+            action: {
+              label: t(($) => $.common.decryptionFailureImport),
+              onClick: () => {
+                setIsRecoveryDialogOpen(true);
+              },
+            },
+            cancel: {
+              label: t(($) => $.common.decryptionFailureDismiss),
+              onClick: () => {},
+            },
+          },
+        );
+        return;
+      }
+
+      if (!result.masterKeyRegenerated) return;
+
+      notifiedRef.current = true;
+
+      const checkAndNotify = async () => {
+        const hasEncryptedData = await hasEncryptedModels();
+        if (!hasEncryptedData) return;
+
+        toastQueue.warning(
+          t(($) => $.common.masterKeyRegeneratedMessage),
+          {
+            duration: Infinity,
+            action: {
+              label: t(($) => $.common.masterKeyRegeneratedImport),
+              onClick: () => {
+                setIsRecoveryDialogOpen(true);
+              },
+            },
+            cancel: {
+              label: t(($) => $.common.masterKeyRegeneratedDismiss),
+              onClick: () => {},
+            },
+          },
+        );
+      };
+
+      checkAndNotify();
+    }, [t]);
+
     return (
       <Provider store={store}>
         <ConfirmProvider>
           <RouterProvider router={router} />
           <ToasterWrapper />
+          <KeyRecoveryDialog open={isRecoveryDialogOpen} onOpenChange={setIsRecoveryDialogOpen} />
         </ConfirmProvider>
       </Provider>
     );

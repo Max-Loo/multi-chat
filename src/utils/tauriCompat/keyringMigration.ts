@@ -34,8 +34,8 @@ const SEED_STORAGE_KEY = 'multi-chat-keyring-seed';
 /**
  * IndexedDB 数据库名称
  */
-const KEYRING_DB_NAME = 'multi-chat-keyring';
-const STORE_DB_NAME = 'multi-chat-store';
+export const KEYRING_DB_NAME = 'multi-chat-keyring';
+export const STORE_DB_NAME = 'multi-chat-store';
 
 /**
  * 迁移结果类型

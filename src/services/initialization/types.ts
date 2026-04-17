@@ -31,6 +31,8 @@ export interface InitError {
   severity: ErrorSeverity;
   /** 错误消息 */
   message: string;
+  /** 产生错误的步骤名称（可选） */
+  stepName?: string;
   /** 原始错误对象（可选） */
   originalError?: unknown;
 }
@@ -83,4 +85,8 @@ export interface InitResult {
   completedSteps: string[];
   /** 模型供应商状态（由 modelProvider 步骤设置） */
   modelProviderStatus?: ModelProviderStatus;
+  /** 主密钥是否为新生成的（由 masterKey 步骤设置） */
+  masterKeyRegenerated?: boolean;
+  /** 解密失败的模型数量（由 models 步骤设置） */
+  decryptionFailureCount?: number;
 }

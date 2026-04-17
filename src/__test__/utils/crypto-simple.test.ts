@@ -21,7 +21,7 @@ beforeEach(async () => {
 
 test('simple integration test', async () => {
   // 初始化密钥
-  const masterKey = await initializeMasterKey();
+  const { key: masterKey } = await initializeMasterKey();
   expect(masterKey).toHaveLength(64);
   
   // 加密和解密

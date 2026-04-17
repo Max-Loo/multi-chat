@@ -8,6 +8,18 @@
     "description": "Automatically generate titles for chats, enabled by default"
   },
   "languageSwitchFailed": "Failed to switch language",
+  "keyManagement": {
+    "title": "Key Management",
+    "description": "Manage encryption keys, support export for backup and import for recovery",
+    "exportKey": "Export Key",
+    "exportKeyDescription": "Export the current master key for backup. The key is sensitive, please keep it safe",
+    "exportKeyDialogDescription": "Your encryption key has been generated. Please copy and save it securely. Never share it with others",
+    "exportSuccess": "Key copied to clipboard",
+    "exportFailed": "Failed to export key",
+    "copyToClipboard": "Copy to Clipboard",
+    "resetAllData": "Reset All Data",
+    "resetAllDataDescription": "Clear all model configurations and chat records, generate a new encryption key"
+  },
   "modelProvider": {
     "title": "Model Provider",
     "description": "Fetch the latest model provider information from remote server",

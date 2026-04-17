@@ -36,6 +36,7 @@ export const initSteps: InitStep[] = [
       severity: 'warning',
       message: 'Keyring migration failed',
       originalError: error,
+      stepName: 'keyringMigration',
     }),
   },
   {
@@ -48,6 +49,7 @@ export const initSteps: InitStep[] = [
       severity: 'fatal',
       message: I18N_INIT_FAILED,
       originalError: error,
+      stepName: 'i18n',
     }),
   },
   {
@@ -55,14 +57,17 @@ export const initSteps: InitStep[] = [
     critical: true,
     dependencies: ['keyringMigration'],
     execute: async (context) => {
-      const key = await initializeMasterKey();
-      context.setResult('masterKey', key);
-      return key;
+      const result = await initializeMasterKey();
+      context.setResult('masterKeyRegenerated', result.isNewlyGenerated);
+      return result.key;
     },
     onError: (error) => ({
       severity: 'fatal',
-      message: tSafely('error.initialization.masterKeyFailed', 'Failed to initialize master key'),
+      message: error instanceof Error
+        ? error.message
+        : tSafely('error.initialization.masterKeyFailed', 'Failed to initialize master key'),
       originalError: error,
+      stepName: 'masterKey',
     }),
   },
   {
@@ -70,14 +75,16 @@ export const initSteps: InitStep[] = [
     critical: false,
     dependencies: ['masterKey'],
     execute: async (context) => {
-      const models = await store.dispatch(initializeModels()).unwrap();
+      const { models, decryptionFailureCount } = await store.dispatch(initializeModels()).unwrap();
       context.setResult('models', models);
+      context.setResult('decryptionFailureCount', decryptionFailureCount);
       return models;
     },
     onError: (error) => ({
       severity: 'warning',
       message: tSafely('error.initialization.modelsFailed', 'Failed to load model data'),
       originalError: error,
+      stepName: 'models',
     }),
   },
   {
@@ -92,6 +99,7 @@ export const initSteps: InitStep[] = [
       severity: 'warning',
       message: tSafely('error.initialization.chatListFailed', 'Failed to load chat list'),
       originalError: error,
+      stepName: 'chatList',
     }),
   },
   {
@@ -107,6 +115,7 @@ export const initSteps: InitStep[] = [
       severity: 'warning',
       message: tSafely('error.initialization.appLanguageFailed', 'Failed to load application language configuration'),
       originalError: error,
+      stepName: 'appLanguage',
     }),
   },
   {
@@ -121,6 +130,7 @@ export const initSteps: InitStep[] = [
       severity: 'ignorable',
       message: tSafely('error.initialization.transmitHistoryReasoningFailed', 'Failed to load transmit history reasoning configuration'),
       originalError: error,
+      stepName: 'transmitHistoryReasoning',
     }),
   },
   {
@@ -135,6 +145,7 @@ export const initSteps: InitStep[] = [
       severity: 'ignorable',
       message: tSafely('error.initialization.autoNamingEnabledFailed', 'Failed to load auto naming configuration'),
       originalError: error,
+      stepName: 'autoNamingEnabled',
     }),
   },
   {
@@ -175,6 +186,7 @@ export const initSteps: InitStep[] = [
       severity: 'warning',
       message: tSafely('error.initialization.modelProviderFailed', 'Failed to load model provider data'),
       originalError: error,
+      stepName: 'modelProvider',
     }),
   },
 ];

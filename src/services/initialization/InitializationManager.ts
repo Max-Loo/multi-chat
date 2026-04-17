@@ -104,6 +104,18 @@ export class InitializationManager {
       if (modelProviderStatus) {
         result.modelProviderStatus = modelProviderStatus;
       }
+
+      // 从 context 中提取 masterKeyRegenerated（如果已设置）
+      const masterKeyRegenerated = context.getResult<boolean>('masterKeyRegenerated');
+      if (masterKeyRegenerated !== undefined) {
+        result.masterKeyRegenerated = masterKeyRegenerated;
+      }
+
+      // 从 context 中提取 decryptionFailureCount（如果已设置）
+      const decryptionFailureCount = context.getResult<number>('decryptionFailureCount');
+      if (decryptionFailureCount !== undefined) {
+        result.decryptionFailureCount = decryptionFailureCount;
+      }
     } catch (error) {
       // 捕获未处理的错误
       if (error instanceof Object && 'severity' in error) {

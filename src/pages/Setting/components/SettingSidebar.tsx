@@ -38,6 +38,10 @@ const SettingSidebar: React.FC = () => {
         name: t(($) => $.setting.generalSetting),
         path: "common",
       },
+      {
+        name: t(($) => $.setting.keyManagement.title),
+        path: "key-management",
+      },
     ];
 
     // 仅开发环境显示 Toast 测试按钮

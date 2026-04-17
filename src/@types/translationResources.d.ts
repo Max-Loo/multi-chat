@@ -65,6 +65,29 @@ interface Resources {
       showErrorDetails: string;
       hideErrorDetails: string;
       loading: string;
+      resetAllData: string;
+      resetConfirmTitle: string;
+      resetConfirmDescription: string;
+      resetConfirmAction: string;
+      resetSuccess: string;
+      masterKeyRegeneratedMessage: string;
+      masterKeyRegeneratedImport: string;
+      masterKeyRegeneratedDismiss: string;
+      decryptionFailureMessage: string;
+      decryptionFailureImport: string;
+      decryptionFailureDismiss: string;
+      keyRecovery: {
+        title: string;
+        description: string;
+        placeholder: string;
+        importButton: string;
+        importing: string;
+        importSuccess: string;
+        securityWarning: string;
+        mismatchWarning: string;
+        forceImport: string;
+        cancel: string;
+      };
     };
     error: {
       initialization: {
@@ -139,6 +162,18 @@ interface Resources {
         description: string;
       };
       languageSwitchFailed: string;
+      keyManagement: {
+        title: string;
+        description: string;
+        exportKey: string;
+        exportKeyDescription: string;
+        exportKeyDialogDescription: string;
+        exportSuccess: string;
+        exportFailed: string;
+        copyToClipboard: string;
+        resetAllData: string;
+        resetAllDataDescription: string;
+      };
       modelProvider: {
         title: string;
         description: string;

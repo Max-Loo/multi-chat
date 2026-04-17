@@ -8,6 +8,18 @@
     "description": "Générer automatiquement des titres pour les chats, activé par défaut"
   },
   "languageSwitchFailed": "Échec du changement de langue",
+  "keyManagement": {
+    "title": "Gestion des clés",
+    "description": "Gérer les clés de chiffrement, exporter pour sauvegarde et importer pour restauration",
+    "exportKey": "Exporter la clé",
+    "exportKeyDescription": "Exporter la clé principale actuelle pour sauvegarde. La clé est sensible, veuillez la garder en sécurité",
+    "exportKeyDialogDescription": "Votre clé de chiffrement a été générée. Veuillez la copier et la sauvegarder en toute sécurité. Ne la partagez jamais avec qui que ce soit",
+    "exportSuccess": "Clé copiée dans le presse-papiers",
+    "exportFailed": "Échec de l'exportation de la clé",
+    "copyToClipboard": "Copier dans le presse-papiers",
+    "resetAllData": "Réinitialiser toutes les données",
+    "resetAllDataDescription": "Effacer toutes les configurations de modèles et les enregistrements de chat, générer une nouvelle clé de chiffrement"
+  },
   "modelProvider": {
     "title": "Fournisseur de modèles",
     "description": "Récupérer les dernières informations du fournisseur de modèles à partir du serveur distant",

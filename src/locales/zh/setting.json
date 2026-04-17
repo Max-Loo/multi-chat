@@ -8,6 +8,18 @@
     "description": "自动为聊天生成标题，默认开启"
   },
   "languageSwitchFailed": "语言切换失败",
+  "keyManagement": {
+    "title": "密钥管理",
+    "description": "管理加密密钥，支持导出备份和导入恢复",
+    "exportKey": "导出密钥",
+    "exportKeyDescription": "导出当前主密钥用于备份，密钥是敏感信息请妥善保管",
+    "exportKeyDialogDescription": "您的加密密钥已生成，请复制并安全保存。切勿将密钥分享给他人",
+    "exportSuccess": "密钥已复制到剪贴板",
+    "exportFailed": "导出密钥失败",
+    "copyToClipboard": "复制到剪贴板",
+    "resetAllData": "重置所有数据",
+    "resetAllDataDescription": "清除所有模型配置和聊天记录，生成新的加密密钥"
+  },
   "modelProvider": {
     "title": "模型供应商",
     "description": "从远程服务器获取最新的模型供应商信息",

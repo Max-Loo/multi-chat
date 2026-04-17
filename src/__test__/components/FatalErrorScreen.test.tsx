@@ -206,4 +206,61 @@ describe('FatalErrorScreen 组件', () => {
       expect(details).not.toBeInTheDocument();
     });
   });
+
+  describe('密钥恢复入口', () => {
+    it('应该显示导入密钥按钮 当错误来自 masterKey 步骤', () => {
+      const masterKeyError: InitError = {
+        severity: 'fatal',
+        message: '密钥初始化失败',
+        stepName: 'masterKey',
+        originalError: new Error('Key error'),
+      };
+
+      const { container } = render(<FatalErrorScreen errors={[masterKeyError]} />);
+
+      // masterKey 错误时应渲染 3 个按钮：刷新、导入密钥、重置
+      const buttons = container.querySelectorAll('button');
+      expect(buttons.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('应该不显示导入密钥按钮 当错误不来自 masterKey 步骤', () => {
+      const i18nError: InitError = {
+        severity: 'fatal',
+        message: 'i18n 初始化失败',
+        stepName: 'i18n',
+        originalError: new Error('i18n error'),
+      };
+
+      const { container } = render(<FatalErrorScreen errors={[i18nError]} />);
+
+      // 非 masterKey 错误时只渲染 2 个按钮：刷新、重置
+      const buttons = container.querySelectorAll('button');
+      expect(buttons.length).toBe(2);
+    });
+
+    it('应该不显示导入密钥按钮 当错误没有 stepName', () => {
+      const unknownError: InitError = {
+        severity: 'fatal',
+        message: '未知错误',
+        originalError: new Error('unknown'),
+      };
+
+      const { container } = render(<FatalErrorScreen errors={[unknownError]} />);
+
+      const buttons = container.querySelectorAll('button');
+      expect(buttons.length).toBe(2);
+    });
+
+    it('应该显示导入密钥按钮 当多个错误中包含 masterKey 错误', () => {
+      const errors: InitError[] = [
+        { severity: 'warning', message: '警告', stepName: 'models' },
+        { severity: 'fatal', message: '密钥错误', stepName: 'masterKey', originalError: new Error('key') },
+      ];
+
+      const { container } = render(<FatalErrorScreen errors={errors} />);
+
+      const buttons = container.querySelectorAll('button');
+      expect(buttons.length).toBeGreaterThanOrEqual(3);
+    });
+  });
 });

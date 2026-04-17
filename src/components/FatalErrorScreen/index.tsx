@@ -1,8 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { AlertOctagon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useTranslation } from "react-i18next";
 import type { InitError } from "@/services/initialization";
+import { useResetDataDialog } from "@/hooks/useResetDataDialog";
+import { KeyRecoveryDialog } from "@/components/KeyRecoveryDialog";
+import { useState } from "react";
 
 /**
  * 致命错误屏幕组件属性
@@ -35,6 +48,11 @@ const formatErrorDetails = (error: unknown): string => {
  */
 export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) => {
   const { t } = useTranslation();
+  const { isDialogOpen: isResetDialogOpen, setIsDialogOpen: setIsResetDialogOpen, isResetting, handleConfirmReset } = useResetDataDialog();
+  const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
+
+  /** 检测是否有 masterKey 步骤的 fatal 错误 */
+  const hasMasterKeyError = errors.some((error) => error.stepName === 'masterKey');
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background p-4">
@@ -79,13 +97,60 @@ export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) =>
           })}
         </div>
 
-        {/* 刷新按钮 */}
-        <div className="flex justify-center">
-          <Button onClick={handleRefresh} size="lg">
+        {/* 操作按钮 */}
+        <div className="flex flex-col items-center gap-2">
+          <Button onClick={handleRefresh} size="lg" disabled={isResetting}>
             {t($ => $.common.refreshPage)}
+          </Button>
+          {hasMasterKeyError && (
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setIsRecoveryDialogOpen(true)}
+              disabled={isResetting}
+            >
+              {t($ => $.common.masterKeyRegeneratedImport)}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setIsResetDialogOpen(true)}
+            disabled={isResetting}
+          >
+            {t($ => $.common.resetAllData)}
           </Button>
         </div>
       </div>
+
+      {/* 重置确认对话框 */}
+      <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t($ => $.common.resetConfirmTitle)}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t($ => $.common.resetConfirmDescription)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isResetting}>
+              {t($ => $.common.cancel)}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmReset}
+              disabled={isResetting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t($ => $.common.resetConfirmAction)}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 密钥恢复对话框 */}
+      <KeyRecoveryDialog open={isRecoveryDialogOpen} onOpenChange={setIsRecoveryDialogOpen} />
     </div>
   );
 };
