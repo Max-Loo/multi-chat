@@ -11,7 +11,6 @@ import router from "@/router";
 import { ConfirmProvider } from "@/hooks/useConfirm";
 import { ToasterWrapper } from "@/services/toast/ToasterWrapper";
 import { handleSecurityWarning } from "@/store/keyring/masterKey";
-import { hasEncryptedModels } from "@/store/storage/modelStorage";
 import { triggerSilentRefreshIfNeeded } from "@/store/slices/modelProviderSlice";
 import { toastQueue } from "@/services/toast";
 import type { InitResult } from "@/services/initialization";
@@ -73,34 +72,6 @@ export function createMainApp(result: InitResult) {
         );
         return;
       }
-
-      if (!result.masterKeyRegenerated) return;
-
-      notifiedRef.current = true;
-
-      const checkAndNotify = async () => {
-        const hasEncryptedData = await hasEncryptedModels();
-        if (!hasEncryptedData) return;
-
-        toastQueue.warning(
-          t(($) => $.common.masterKeyRegeneratedMessage),
-          {
-            duration: Infinity,
-            action: {
-              label: t(($) => $.common.masterKeyRegeneratedImport),
-              onClick: () => {
-                setIsRecoveryDialogOpen(true);
-              },
-            },
-            cancel: {
-              label: t(($) => $.common.masterKeyRegeneratedDismiss),
-              onClick: () => {},
-            },
-          },
-        );
-      };
-
-      checkAndNotify();
     }, [t]);
 
     return (

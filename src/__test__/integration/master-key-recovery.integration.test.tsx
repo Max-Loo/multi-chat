@@ -21,24 +21,38 @@ vi.mock('@/utils/resetAllData', () => ({
 // Mock useResetDataDialog Hook
 vi.mock('@/hooks/useResetDataDialog', () => ({
   useResetDataDialog: () => {
-    const { useState } = require('react');
+    const { useState, createElement: h } = require('react');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
+
+    const handleConfirmReset = async () => {
+      setIsResetting(true);
+      try {
+        await mockResetAllData();
+        window.location.reload();
+      } catch (error) {
+        console.error('重置数据失败:', error);
+        setIsResetting(false);
+        setIsDialogOpen(false);
+      }
+    };
+
+    const renderResetDialog = () => {
+      if (!isDialogOpen) return null;
+      return h('div', { 'data-testid': 'reset-dialog' },
+        h('h2', null, '确认重置所有数据'),
+        h('p', null, '将清除所有已保存的模型配置和聊天记录，生成新的加密密钥。此操作不可撤销。'),
+        h('button', { onClick: () => setIsDialogOpen(false), disabled: isResetting }, '取消'),
+        h('button', { onClick: handleConfirmReset, disabled: isResetting }, '确认重置'),
+      );
+    };
+
     return {
       isDialogOpen,
       setIsDialogOpen,
       isResetting,
-      handleConfirmReset: async () => {
-        setIsResetting(true);
-        try {
-          await mockResetAllData();
-          window.location.reload();
-        } catch (error) {
-          console.error('重置数据失败:', error);
-          setIsResetting(false);
-          setIsDialogOpen(false);
-        }
-      },
+      handleConfirmReset,
+      renderResetDialog,
     };
   },
 }));

@@ -85,6 +85,7 @@ interface Resources {
         importSuccess: string;
         securityWarning: string;
         mismatchWarning: string;
+        importFailed: string;
         forceImport: string;
         cancel: string;
       };

@@ -12,6 +12,9 @@ import { verifyMasterKey } from "@/store/keyring/keyVerification";
 export const KEYRING_SERVICE_NAME = "com.multichat.app";
 export const KEYRING_ACCOUNT_NAME = "master-key";
 
+/** 安全警告已关闭标记的 localStorage key */
+export const SECURITY_WARNING_DISMISSED_KEY = 'multi-chat-security-warning-dismissed';
+
 /** 密钥格式无效错误 */
 export class InvalidKeyFormatError extends Error {
   constructor() {
@@ -167,7 +170,7 @@ export const handleSecurityWarning = async (): Promise<void> => {
   }
 
   // 检查用户是否已经确认过
-  const dismissed = localStorage.getItem('multi-chat-security-warning-dismissed');
+  const dismissed = localStorage.getItem(SECURITY_WARNING_DISMISSED_KEY);
   if (dismissed === 'true') {
     return;
   }
@@ -184,7 +187,7 @@ export const handleSecurityWarning = async (): Promise<void> => {
     action: {
       label: 'OK',
       onClick: () => {
-        localStorage.setItem('multi-chat-security-warning-dismissed', 'true');
+        localStorage.setItem(SECURITY_WARNING_DISMISSED_KEY, 'true');
       }
     },
   });

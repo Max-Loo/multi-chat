@@ -7,13 +7,13 @@ import { KEYRING_VERSION_KEY } from '@/utils/tauriCompat/keyringMigration';
 import { KEYRING_DB_NAME, STORE_DB_NAME } from '@/utils/tauriCompat/keyringMigration';
 import { isTauri } from '@/utils/tauriCompat/env';
 import { createLazyStore } from '@/utils/tauriCompat';
-import { KEYRING_SERVICE_NAME, KEYRING_ACCOUNT_NAME } from '@/store/keyring/masterKey';
+import { KEYRING_SERVICE_NAME, KEYRING_ACCOUNT_NAME, SECURITY_WARNING_DISMISSED_KEY } from '@/store/keyring/masterKey';
 
 /** 需要清除的 localStorage key（Web 环境安全基础设施） */
 const KEYRING_LOCAL_STORAGE_KEYS = [
   SEED_STORAGE_KEY,
   KEYRING_VERSION_KEY,
-  'multi-chat-security-warning-dismissed',
+  SECURITY_WARNING_DISMISSED_KEY,
 ];
 
 /** 需要删除的 IndexedDB 数据库名（Web 环境） */
@@ -70,6 +70,7 @@ const clearTauriStore = async (filename: string): Promise<void> => {
     const keys = await store.keys();
     await Promise.all(keys.map((key) => store.delete(key)));
     await store.save();
+    await store.close();
   } catch (error) {
     console.error(`清空 Tauri Store "${filename}" 失败:`, error);
   }

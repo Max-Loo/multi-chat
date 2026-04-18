@@ -42,20 +42,25 @@ export const resetVerificationStore = (): void => {
  * @returns true=匹配，false=不匹配，null=无加密数据
  */
 export const verifyMasterKey = async (key: string): Promise<boolean | null> => {
-  const models = await loadFromStore<Model[]>(getVerificationStore(), 'models', []);
-
-  const encryptedModel = models.find(
-    (model) => model.apiKey && typeof model.apiKey === 'string' && isEncrypted(model.apiKey)
-  );
-
-  if (!encryptedModel || !encryptedModel.apiKey) {
-    return null;
-  }
-
   try {
-    await decryptField(encryptedModel.apiKey, key);
-    return true;
-  } catch {
-    return false;
+    const models = await loadFromStore<Model[]>(getVerificationStore(), 'models', []);
+
+    const encryptedModel = models.find(
+      (model) => model.apiKey && typeof model.apiKey === 'string' && isEncrypted(model.apiKey)
+    );
+
+    if (!encryptedModel || !encryptedModel.apiKey) {
+      return null;
+    }
+
+    try {
+      await decryptField(encryptedModel.apiKey, key);
+      return true;
+    } catch {
+      return false;
+    }
+  } finally {
+    verificationStore?.close();
+    verificationStore = null;
   }
 };

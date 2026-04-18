@@ -8,7 +8,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { createMainApp } from '@/MainApp';
 import type { InitResult } from '@/services/initialization';
-import { hasEncryptedModels } from '@/store/storage/modelStorage';
 
 // Mock toastQueue
 vi.mock('@/services/toast', () => ({
@@ -75,14 +74,6 @@ vi.mock('@/store/keyring/masterKey', async (importOriginal) => {
   return {
     ...actual,
     handleSecurityWarning: vi.fn(),
-  };
-});
-
-vi.mock('@/store/storage/modelStorage', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/store/storage/modelStorage')>();
-  return {
-    ...actual,
-    hasEncryptedModels: vi.fn().mockResolvedValue(true),
   };
 });
 
@@ -164,23 +155,13 @@ describe('MainApp', () => {
     );
   });
 
-  it('应该显示 masterKeyRegenerated Toast 当只有 masterKeyRegenerated 为 true', async () => {
-    vi.mocked(hasEncryptedModels).mockResolvedValue(true);
-
+  it('不应该显示通知 当密钥新生成但无解密失败（首次使用场景）', () => {
     const MainApp = createMainApp(
       createMockResult({ masterKeyRegenerated: true }),
     );
     render(<MainApp />);
 
-    // 等待异步的 hasEncryptedModels
-    await vi.waitFor(() => {
-      expect(toastQueue.warning).toHaveBeenCalledWith(
-        '密钥已重新生成',
-        expect.objectContaining({
-          duration: Infinity,
-        }),
-      );
-    });
+    expect(toastQueue.warning).not.toHaveBeenCalled();
   });
 
   it('不应该显示任何通知 当没有解密失败且没有重新生成密钥', () => {

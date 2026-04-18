@@ -80,6 +80,7 @@ export class InitializationManager {
               result.completedSteps.push(step.name);
             } catch (error) {
               const initError = step.onError(error);
+              initError.stepName = step.name;
               this.handleError(result, initError);
 
               // 如果是关键步骤失败，抛出错误以终止初始化

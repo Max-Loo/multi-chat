@@ -50,7 +50,7 @@
 - **THEN** `InitResult.decryptionFailureCount` SHALL 为 0
 
 ### Requirement: 解密失败时显示恢复通知
-当 `InitResult.decryptionFailureCount > 0` 时，系统 SHALL 显示持续通知引导用户恢复。
+当 `InitResult.decryptionFailureCount > 0` 时，系统 SHALL 显示持续通知引导用户恢复，并在通知中附带密钥恢复操作按钮。
 
 #### Scenario: 检测到解密失败
 - **GIVEN** 应用初始化完成且 `InitResult.decryptionFailureCount > 0`
@@ -59,9 +59,11 @@
 - **AND** 通知 SHALL 包含失败模型数量信息
 - **AND** 通知 SHALL 设为不自动消失（`duration: Infinity`）
 - **AND** 通知 SHALL 提供"导入密钥"操作按钮
+- **AND** 点击"导入密钥"按钮 SHALL 打开 `KeyRecoveryDialog`
 
 #### Scenario: 同时存在密钥重新生成和解密失败
 - **GIVEN** `InitResult.masterKeyRegenerated = true` 且 `InitResult.decryptionFailureCount > 0`
 - **WHEN** `MainApp` 渲染
-- **THEN** 系统 SHALL 只显示解密失败通知（包含密钥重新生成的情况）
-- **AND** 不重复显示 `masterKeyRegenerated` 的通知
+- **THEN** 系统 SHALL 只显示解密失败通知
+- **AND** 解密失败通知中的"导入密钥"按钮 SHALL 同时覆盖密钥重新生成的恢复需求
+- **AND** 系统 SHALL 不再调用 `hasEncryptedModels()`（该检查在 `decryptionFailureCount > 0` 条件下为冗余死代码）

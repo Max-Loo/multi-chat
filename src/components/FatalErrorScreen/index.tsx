@@ -1,18 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { AlertOctagon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useTranslation } from "react-i18next";
 import type { InitError } from "@/services/initialization";
+import { MASTER_KEY_STEP_NAME } from "@/config/initSteps";
 import { useResetDataDialog } from "@/hooks/useResetDataDialog";
 import { KeyRecoveryDialog } from "@/components/KeyRecoveryDialog";
 import { useState } from "react";
@@ -48,11 +39,11 @@ const formatErrorDetails = (error: unknown): string => {
  */
 export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) => {
   const { t } = useTranslation();
-  const { isDialogOpen: isResetDialogOpen, setIsDialogOpen: setIsResetDialogOpen, isResetting, handleConfirmReset } = useResetDataDialog();
+  const { setIsDialogOpen: setIsResetDialogOpen, isResetting, renderResetDialog } = useResetDataDialog();
   const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
 
   /** 检测是否有 masterKey 步骤的 fatal 错误 */
-  const hasMasterKeyError = errors.some((error) => error.stepName === 'masterKey');
+  const hasMasterKeyError = errors.some((error) => error.stepName === MASTER_KEY_STEP_NAME);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background p-4">
@@ -127,30 +118,7 @@ export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) =>
       </div>
 
       {/* 重置确认对话框 */}
-      <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t($ => $.common.resetConfirmTitle)}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t($ => $.common.resetConfirmDescription)}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isResetting}>
-              {t($ => $.common.cancel)}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmReset}
-              disabled={isResetting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t($ => $.common.resetConfirmAction)}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {renderResetDialog()}
 
       {/* 密钥恢复对话框 */}
       <KeyRecoveryDialog open={isRecoveryDialogOpen} onOpenChange={setIsRecoveryDialogOpen} />

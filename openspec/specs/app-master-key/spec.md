@@ -70,7 +70,7 @@
 - **AND** 系统 SHALL 按需从存储读取密钥，不长期保留在内存中
 
 ### Requirement: 跨环境主密钥存储策略
-系统 SHALL 根据运行环境自动选择主密钥存储策略，对开发者透明。
+系统 SHALL 根据运行环境自动选择主密钥存储策略，对开发者透明。所有临时创建的 Store 实例 MUST 在使用完毕后关闭，防止文件句柄泄漏和连接冲突。
 
 #### Scenario: 自动选择存储策略
 - **WHEN** 应用初始化主密钥存储
@@ -78,6 +78,13 @@
 - **AND** Tauri 环境使用 `@tauri-plugin-keyring-api` 原生实现
 - **AND** Web 环境使用 Keyring 兼容层（IndexedDB + 加密）
 - **AND** 调用者无需关心底层实现差异
+
+#### Scenario: 密钥验证的 Store 生命周期
+- **WHEN** `verifyMasterKey()` 执行密钥验证操作
+- **THEN** 系统 SHALL 创建独立的 Store 实例读取模型数据
+- **AND** 验证完成后（无论成功或失败）SHALL 关闭该 Store 实例
+- **AND** 系统 SHALL 使用 try/finally 确保 Store 在异常时也被关闭
+- **AND** 验证期间 SHALL 不影响 `modelStorage` 的模块级单例
 
 #### Scenario: 统一的 API 接口
 - **WHEN** 应用代码需要存储或读取主密钥
@@ -107,7 +114,7 @@
 - **AND** 应用关闭时，内存中的主密钥 SHALL 被清除
 
 ### Requirement: 主密钥存储错误处理
-系统 SHALL 提供健壮的错误处理机制，确保主密钥存储失败时的优雅降级。
+系统 SHALL 提供健壮的错误处理机制，确保主密钥存储失败时的优雅降级。初始化步骤的 `onError` 回调 SHALL NOT 手动设置 `stepName`——`InitializationManager` SHALL 在调用 `onError` 后自动注入 `stepName = step.name`。
 
 #### Scenario: Tauri 环境 keyring 访问失败
 - **GIVEN** 应用运行在 Tauri 桌面环境
@@ -122,6 +129,18 @@
 - **THEN** 系统 SHALL 在 FatalErrorScreen 中显示错误提示"浏览器不支持安全存储或存储空间不足"
 - **AND** 系统 SHALL 在 FatalErrorScreen 中提供"导入密钥"按钮作为恢复选项
 - **AND** 应用 SHALL 阻断启动，不允许用户进入主界面
+
+#### Scenario: 初始化步骤错误自动关联步骤名
+- **GIVEN** 初始化步骤定义了 `onError` 回调
+- **WHEN** 步骤执行失败且 `onError` 被调用
+- **THEN** `InitializationManager` SHALL 自动设置返回的 `InitError.stepName = step.name`
+- **AND** 各步骤的 `onError` 回调 SHALL NOT 包含 `stepName` 字段
+
+#### Scenario: FatalErrorScreen 使用步骤名常量
+- **GIVEN** `FatalErrorScreen` 需要检测 masterKey 步骤的错误
+- **WHEN** 代码引用步骤名进行比较
+- **THEN** 系统 SHALL 使用从 `initSteps.ts` 导出的常量（如 `MASTER_KEY_STEP_NAME`）
+- **AND** 严禁使用硬编码字符串 `'masterKey'`
 
 #### Scenario: Web 环境加密/解密失败（seed 丢失）
 - **GIVEN** 应用运行在 Web 浏览器环境
@@ -169,42 +188,31 @@
 - **AND** 获取失败后对话框 SHALL 展示错误提示并自动关闭
 
 ### Requirement: 密钥重新生成时通知用户
-当初始化过程中检测到主密钥为新生成，且存储中存在因密钥变更而无法解密的加密数据时，系统 SHALL 在初始化完成后向用户显示通知。如果密钥为新生成但存储中不存在加密数据（首次使用），系统 SHALL 不显示通知。通知 MUST 仅在组件挂载时触发一次，不响应语言切换等后续变化。
+当初始化过程中检测到主密钥为新生成，且存储中存在因密钥变更而无法解密的加密数据时，系统 SHALL 通过 `decryptionFailureCount > 0` 的解密失败通知附带恢复按钮来引导用户。系统 SHALL 不再使用独立的 `hasEncryptedModels()` 调用检查加密数据。通知 MUST 仅在组件挂载时触发一次，不响应语言切换等后续变化。
 
-#### Scenario: 密钥重新生成且存在加密数据时显示通知
+#### Scenario: 密钥重新生成且存在加密数据时通过解密失败通知恢复
 - **GIVEN** 应用初始化完成
 - **AND** `initializeMasterKey()` 返回 `isNewlyGenerated: true`
-- **AND** 存储中存在 `enc:` 前缀的加密模型数据（说明是密钥丢失而非首次使用）
+- **AND** 存在加密模型数据导致 `decryptionFailureCount > 0`
 - **WHEN** 主界面加载完成
-- **THEN** 系统 SHALL 显示通知："检测到加密密钥已重新生成，之前保存的 API 密钥无法解密。如有备份密钥请先导入恢复，在此之前请勿修改模型配置，否则加密数据将无法恢复。"
-- **AND** 通知 SHALL 提供"导入密钥"操作跳转到密钥导入流程（作为主要操作，视觉优先级高于关闭按钮）
+- **THEN** 系统 SHALL 显示解密失败通知（包含恢复操作按钮）
+- **AND** 通知 SHALL 提供"导入密钥"操作跳转到密钥导入流程
 - **AND** 通知 SHALL 提供"我知道了"操作关闭通知
-- **AND** 通知 SHALL 持续显示直到用户主动操作（不自动消失）
+- **AND** 通知 SHALL 持续显示直到用户主动操作
 
 #### Scenario: 首次使用（密钥新生成但无加密数据）时不显示通知
 - **GIVEN** 应用初始化完成
 - **AND** `initializeMasterKey()` 返回 `isNewlyGenerated: true`
-- **AND** 存储中不存在 `enc:` 前缀的加密数据（首次使用）
+- **AND** `decryptionFailureCount === 0`（首次使用，无旧加密数据）
 - **WHEN** 主界面加载完成
-- **THEN** 系统 SHALL 不显示密钥变更通知
+- **THEN** 系统 SHALL 不显示任何密钥相关通知
 
 #### Scenario: 密钥未重新生成时不显示通知
 - **GIVEN** 应用初始化完成
 - **AND** `initializeMasterKey()` 返回 `isNewlyGenerated: false`
+- **AND** `decryptionFailureCount === 0`
 - **WHEN** 主界面加载完成
 - **THEN** 系统 SHALL 不显示密钥变更通知
-
-#### Scenario: React Strict Mode 双重 effect 调用
-- **GIVEN** 应用运行在 React 18/19 Strict Mode 下
-- **AND** 密钥为新生成且存在加密数据
-- **WHEN** 组件挂载时 React 严格模式双重调用 useEffect
-- **THEN** 系统 SHALL 仅显示一次通知
-- **AND** 系统 SHALL 通过同步守卫防止第二次异步调用通过检查
-
-#### Scenario: 语言切换不触发通知
-- **GIVEN** 通知已显示或已被用户关闭
-- **WHEN** 用户切换界面语言
-- **THEN** 系统 SHALL 不重新检查加密数据或显示通知
 
 ### Requirement: 检查加密数据存在的函数归属模型存储模块
 系统 SHALL 在模型存储模块（而非密钥管理模块）中提供检查存储中是否存在加密数据的函数，复用已有的模型存储单例。

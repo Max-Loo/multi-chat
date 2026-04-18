@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -31,12 +30,11 @@ const KeyManagementSetting: React.FC = () => {
   const { scrollbarClassname, onScrollEvent } = useAdaptiveScrollbar();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // 导出密钥相关状态：null 对话框关闭，string 密钥值（展示+复制）
+  // 导出密钥相关状态：null 对话框关闭，"" 加载中，string 密钥值（展示+复制）
   const [exportState, setExportState] = useState<null | string>(null);
-  const [isFetchingKey, setIsFetchingKey] = useState(false);
 
   // 重置数据相关状态
-  const { isDialogOpen: isResetDialogOpen, setIsDialogOpen: setIsResetDialogOpen, isResetting, handleConfirmReset } = useResetDataDialog();
+  const { setIsDialogOpen: setIsResetDialogOpen, isResetting, renderResetDialog } = useResetDataDialog();
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -50,14 +48,11 @@ const KeyManagementSetting: React.FC = () => {
   const handleExportKey = async () => {
     try {
       setExportState("");
-      setIsFetchingKey(true);
       const key = await exportMasterKey();
       setExportState(key);
     } catch {
       toastQueue.error(t($ => $.setting.keyManagement.exportFailed));
       setExportState(null);
-    } finally {
-      setIsFetchingKey(false);
     }
   };
 
@@ -76,7 +71,7 @@ const KeyManagementSetting: React.FC = () => {
   return (
     <div
       ref={scrollContainerRef}
-      className={`flex flex-col items-center justify-start
+      className={`flex flex-col justify-start
         w-full h-full px-4
         overflow-y-auto bg-gray-100
         ${scrollbarClassname}
@@ -112,7 +107,7 @@ const KeyManagementSetting: React.FC = () => {
               {t($ => $.setting.keyManagement.exportKeyDialogDescription)}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {isFetchingKey ? (
+          {exportState === "" ? (
             <Input
               readOnly
               disabled
@@ -128,11 +123,11 @@ const KeyManagementSetting: React.FC = () => {
           ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel>
-              {typeof exportState === "string" && !isFetchingKey
+              {typeof exportState === "string" && exportState !== ""
                 ? t($ => $.common.hide)
                 : t($ => $.common.cancel)}
             </AlertDialogCancel>
-            {isFetchingKey ? (
+            {exportState === "" ? (
               <Button disabled>...</Button>
             ) : typeof exportState === "string" ? (
               <Button onClick={handleCopyKey}>
@@ -164,30 +159,7 @@ const KeyManagementSetting: React.FC = () => {
       </div>
 
       {/* 重置确认对话框 */}
-      <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t($ => $.common.resetConfirmTitle)}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t($ => $.common.resetConfirmDescription)}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isResetting}>
-              {t($ => $.common.cancel)}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmReset}
-              disabled={isResetting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t($ => $.common.resetConfirmAction)}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {renderResetDialog()}
     </div>
   );
 };

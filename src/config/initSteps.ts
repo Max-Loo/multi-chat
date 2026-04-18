@@ -17,6 +17,9 @@ import { migrateKeyringV1ToV2 } from '@/utils/tauriCompat';
 /** "无可用供应商"错误的标识字符串 */
 const NO_PROVIDERS_ERROR_MESSAGE = "无法获取模型供应商数据，请检查网络连接";
 
+/** masterKey 步骤名常量，供外部引用 */
+export const MASTER_KEY_STEP_NAME = 'masterKey';
+
 // i18n 初始化失败的错误消息（使用英文常量，因为此时 i18n 肯定未就绪）
 const I18N_INIT_FAILED = 'Failed to initialize internationalization';
 
@@ -36,7 +39,6 @@ export const initSteps: InitStep[] = [
       severity: 'warning',
       message: 'Keyring migration failed',
       originalError: error,
-      stepName: 'keyringMigration',
     }),
   },
   {
@@ -49,7 +51,6 @@ export const initSteps: InitStep[] = [
       severity: 'fatal',
       message: I18N_INIT_FAILED,
       originalError: error,
-      stepName: 'i18n',
     }),
   },
   {
@@ -67,7 +68,6 @@ export const initSteps: InitStep[] = [
         ? error.message
         : tSafely('error.initialization.masterKeyFailed', 'Failed to initialize master key'),
       originalError: error,
-      stepName: 'masterKey',
     }),
   },
   {
@@ -84,7 +84,6 @@ export const initSteps: InitStep[] = [
       severity: 'warning',
       message: tSafely('error.initialization.modelsFailed', 'Failed to load model data'),
       originalError: error,
-      stepName: 'models',
     }),
   },
   {
@@ -99,7 +98,6 @@ export const initSteps: InitStep[] = [
       severity: 'warning',
       message: tSafely('error.initialization.chatListFailed', 'Failed to load chat list'),
       originalError: error,
-      stepName: 'chatList',
     }),
   },
   {
@@ -115,7 +113,6 @@ export const initSteps: InitStep[] = [
       severity: 'warning',
       message: tSafely('error.initialization.appLanguageFailed', 'Failed to load application language configuration'),
       originalError: error,
-      stepName: 'appLanguage',
     }),
   },
   {
@@ -130,7 +127,6 @@ export const initSteps: InitStep[] = [
       severity: 'ignorable',
       message: tSafely('error.initialization.transmitHistoryReasoningFailed', 'Failed to load transmit history reasoning configuration'),
       originalError: error,
-      stepName: 'transmitHistoryReasoning',
     }),
   },
   {
@@ -145,7 +141,6 @@ export const initSteps: InitStep[] = [
       severity: 'ignorable',
       message: tSafely('error.initialization.autoNamingEnabledFailed', 'Failed to load auto naming configuration'),
       originalError: error,
-      stepName: 'autoNamingEnabled',
     }),
   },
   {
@@ -186,7 +181,6 @@ export const initSteps: InitStep[] = [
       severity: 'warning',
       message: tSafely('error.initialization.modelProviderFailed', 'Failed to load model provider data'),
       originalError: error,
-      stepName: 'modelProvider',
     }),
   },
 ];
