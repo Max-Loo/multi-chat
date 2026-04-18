@@ -27,7 +27,7 @@ let modelsStore: StoreCompat | null = null;
  * 获取或创建 modelsStore 实例
  * @returns StoreCompat 实例
  */
-const getModelsStore = (): StoreCompat => {
+export const getModelsStore = (): StoreCompat => {
   if (!modelsStore) {
     modelsStore = createLazyStore('models.json');
   }
@@ -63,7 +63,7 @@ const encryptModelSensitiveFields = async (
 
   if (model.apiKey && model.apiKey.length > 0) {
     try {
-      if (!model.apiKey.startsWith("enc:")) {
+      if (!isEncrypted(model.apiKey)) {
         encryptedModel.apiKey = await encryptField(model.apiKey, masterKey);
       }
     } catch (error) {
@@ -89,7 +89,7 @@ const decryptModelSensitiveFields = async (
 ): Promise<{ model: Model; decryptionFailed: boolean }> => {
   const decryptedModel = { ...model };
 
-  if (model.apiKey && model.apiKey.startsWith("enc:")) {
+  if (model.apiKey && isEncrypted(model.apiKey)) {
     try {
       decryptedModel.apiKey = await decryptField(model.apiKey, masterKey);
     } catch (error) {
@@ -139,7 +139,7 @@ export const loadModelsFromJson = async (): Promise<LoadModelsResult> => {
     return {
       models: storedModels.map((model) => ({
         ...model,
-        apiKey: model.apiKey?.startsWith("enc:") ? "" : model.apiKey,
+        apiKey: model.apiKey && isEncrypted(model.apiKey) ? "" : model.apiKey,
       })),
       // 主密钥不存在时未尝试解密，不算失败
       decryptionFailureCount: 0,
@@ -159,6 +159,13 @@ export const loadModelsFromJson = async (): Promise<LoadModelsResult> => {
 };
 
 /**
+ * 检测模型是否有加密的 apiKey
+ */
+export const isModelEncrypted = (model: Model): boolean => {
+  return !!(model.apiKey && typeof model.apiKey === 'string' && isEncrypted(model.apiKey));
+};
+
+/**
  * 检查持久化存储中是否存在加密的模型数据
  * 用于判断密钥重新生成后是否有可恢复的加密数据
  */
@@ -168,9 +175,7 @@ export const hasEncryptedModels = async (): Promise<boolean> => {
     if (models.length === 0) {
       return false;
     }
-    return models.some(
-      (model) => model.apiKey && typeof model.apiKey === 'string' && isEncrypted(model.apiKey)
-    );
+    return models.some(isModelEncrypted);
   } catch {
     return false;
   }
