@@ -26,28 +26,7 @@ export const deepSeekHandlers = [
 
   /**
    * Mock DeepSeek 聊天完成接口
-   */
-  http.post('https://api.deepseek.com/chat/completions', () => {
-    return HttpResponse.json({
-      id: 'chatcmpl-test',
-      object: 'chat.completion',
-      created: Date.now(),
-      model: 'deepseek-chat',
-      choices: [
-        {
-          index: 0,
-          message: {
-            role: 'assistant',
-            content: '这是 Mock 的响应内容',
-          },
-          finish_reason: 'stop',
-        },
-      ],
-    })
-  }),
-
-  /**
-   * Mock DeepSeek 流式响应接口
+   * body.stream === true → SSE 流式响应，默认 → JSON 响应
    */
   http.post('https://api.deepseek.com/chat/completions', async ({ request }) => {
     const body = await request.json() as { stream?: boolean }
@@ -107,22 +86,6 @@ export const deepSeekHandlers = [
         },
       ],
     })
-  }),
-
-  /**
-   * Mock DeepSeek API 错误响应
-   */
-  http.post('https://api.deepseek.com/chat/completions', () => {
-    return HttpResponse.json(
-      {
-        error: {
-          message: 'Invalid API key',
-          type: 'invalid_request_error',
-          code: 'invalid_api_key',
-        },
-      },
-      { status: 401 }
-    )
   }),
 ]
 

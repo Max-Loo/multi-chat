@@ -14,7 +14,8 @@ vi.mock('react-i18next', () => {
   return globalThis.__createI18nMockReturn(R);
 });
 
-// Mock shadcn/ui Sheet 组件
+// Mock shadcn/ui Sheet 组件（底层依赖 radix-ui Dialog，涉及 Portal/Overlay/FocusTrap 等 DOM 结构，
+// 在 happy-dom 中缺少 DOMPortal 支持，不 mock 会导致渲染失败，保留此 mock）
 vi.mock('@/components/ui/sheet', () => ({
   Sheet: ({ open, children }: any) => (
     <div data-open={open} data-testid="sheet">

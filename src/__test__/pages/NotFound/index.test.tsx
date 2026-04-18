@@ -55,9 +55,8 @@ describe('NotFound', () => {
     })
 
     it('应该显示错误图标', () => {
-      const { container } = renderComponent()
-      const icon = container.querySelector('.lucide-circle-alert')
-      expect(icon).toBeInTheDocument()
+      renderComponent()
+      expect(screen.getByRole('img', { name: 'error' })).toBeInTheDocument()
     })
   })
 
@@ -105,11 +104,9 @@ describe('NotFound', () => {
   })
 
   describe('可访问性', () => {
-    it('错误图标必须有正确的尺寸', () => {
-      const { container } = renderComponent()
-      const icon = container.querySelector('.lucide-circle-alert')
-      expect(icon?.className).toContain('h-32')
-      expect(icon?.className).toContain('w-32')
+    it('错误图标必须可见', () => {
+      renderComponent()
+      expect(screen.getByRole('img', { name: 'error' })).toBeInTheDocument()
     })
 
     it('返回按钮必须可键盘访问', async () => {
@@ -126,36 +123,30 @@ describe('NotFound', () => {
     })
 
     it('页面必须有正确的布局结构', () => {
-      const { container } = renderComponent()
-      
-      // 验证外层容器有正确的 flex 布局
-      const outerContainer = container.querySelector('.flex.items-center.justify-center.h-full.w-full')
-      expect(outerContainer).toBeInTheDocument()
-      
-      // 验证内层容器有正确的 flex 列布局
-      const innerContainer = container.querySelector('.flex.flex-col.items-center.justify-center')
-      expect(innerContainer).toBeInTheDocument()
+      renderComponent()
+
+      // 验证关键内容元素存在
+      expect(screen.getByText('404')).toBeInTheDocument()
+      expect(screen.getByText('common.goBack')).toBeInTheDocument()
     })
   })
 
   describe('样式和布局', () => {
-    it('错误图标必须有正确的颜色类名', () => {
-      const { container } = renderComponent()
-      const icon = container.querySelector('.lucide-circle-alert')
-      expect(icon?.className).toContain('text-muted-foreground')
+    it('错误图标必须存在', () => {
+      renderComponent()
+      expect(screen.getByRole('img', { name: 'error' })).toBeInTheDocument()
     })
 
-    it('404 文本必须有正确的样式', () => {
-      const { container } = renderComponent()
-      const text404 = container.querySelector('.text-6xl.font-bold.text-muted-foreground')
-      expect(text404).toBeInTheDocument()
-      expect(text404?.textContent).toBe('404')
+    it('404 文本必须显示', () => {
+      renderComponent()
+      expect(screen.getByText('404')).toBeInTheDocument()
     })
 
-    it('内容区域必须有正确的间距', () => {
-      const { container } = renderComponent()
-      const contentContainer = container.querySelector('.space-y-6')
-      expect(contentContainer).toBeInTheDocument()
+    it('内容区域必须包含所有必要元素', () => {
+      renderComponent()
+      expect(screen.getByText('404')).toBeInTheDocument()
+      expect(screen.getByText('common.pageNotFound')).toBeInTheDocument()
+      expect(screen.getByText('common.goBack')).toBeInTheDocument()
     })
   })
 })

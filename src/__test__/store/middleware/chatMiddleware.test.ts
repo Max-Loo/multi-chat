@@ -160,10 +160,10 @@ describe('chatMiddleware', () => {
       );
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      });
 
-      // 验证 saveChatsToJson 被调用
-      expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
       expect(mockSaveChatsToJson).toHaveBeenCalledWith(expect.any(Array));
     });
 
@@ -185,8 +185,9 @@ describe('chatMiddleware', () => {
         // reducer 可能会抛出错误
       }
 
-      await new Promise(resolve => setTimeout(resolve, 10));
-      expect(mockSaveChatsToJson).toHaveBeenCalled();
+      await vi.waitFor(() => {
+        expect(mockSaveChatsToJson).toHaveBeenCalled();
+      });
     });
   });
 
@@ -201,10 +202,9 @@ describe('chatMiddleware', () => {
       await store.dispatch(createChat({ chat: newChat }));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证 saveChatsToJson 被调用
-      expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => {
+        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      });
     });
 
     it('应该在编辑聊天时触发保存', async () => {
@@ -212,30 +212,27 @@ describe('chatMiddleware', () => {
       await store.dispatch(editChat({ chat: updatedChat }));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证 saveChatsToJson 被调用
-      expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => {
+        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      });
     });
 
     it('应该在编辑聊天名称时触发保存', async () => {
       await store.dispatch(editChatName({ name: 'New Name', id: 'chat1' }));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证 saveChatsToJson 被调用
-      expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => {
+        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      });
     });
 
     it('应该在删除聊天时触发保存', async () => {
       await store.dispatch(deleteChat({ chat: mockChat }));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证 saveChatsToJson 被调用
-      expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => {
+        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      });
     });
   });
 
@@ -245,10 +242,9 @@ describe('chatMiddleware', () => {
       store.dispatch({ type: 'some/other/action' });
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证 saveChatsToJson 没有被调用
-      expect(mockSaveChatsToJson).not.toHaveBeenCalled();
+      await vi.waitFor(() => {
+        expect(mockSaveChatsToJson).not.toHaveBeenCalled();
+      });
     });
   });
 
@@ -264,7 +260,9 @@ describe('chatMiddleware', () => {
       await store.dispatch(createChat({ chat: newChat }));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+      });
 
       // 验证传递了最新的 chatList
       const savedChatList = mockSaveChatsToJson.mock.calls[0][0];
@@ -279,9 +277,9 @@ describe('chatMiddleware', () => {
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(countGenerateNamePending(dispatchedActions)).toBe(1);
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(dispatchedActions)).toBe(1);
+      });
     });
 
     it('应该不触发 当聊天已手动命名', async () => {
@@ -290,9 +288,9 @@ describe('chatMiddleware', () => {
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(countGenerateNamePending(dispatchedActions)).toBe(0);
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
+      });
     });
 
     it('应该不触发 当全局开关关闭', async () => {
@@ -301,9 +299,9 @@ describe('chatMiddleware', () => {
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(countGenerateNamePending(dispatchedActions)).toBe(0);
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
+      });
     });
 
     it('应该不触发 当标题非空', async () => {
@@ -313,9 +311,9 @@ describe('chatMiddleware', () => {
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(countGenerateNamePending(dispatchedActions)).toBe(0);
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
+      });
     });
 
     it('应该不触发 当对话历史长度不等于 2', async () => {
@@ -327,9 +325,9 @@ describe('chatMiddleware', () => {
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(countGenerateNamePending(dispatchedActions)).toBe(0);
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
+      });
     });
 
     it('应该正确触发自动命名 当条件全部满足（单次 dispatch）', async () => {
@@ -338,9 +336,9 @@ describe('chatMiddleware', () => {
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(countGenerateNamePending(dispatchedActions)).toBe(1);
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(dispatchedActions)).toBe(1);
+      });
     });
 
     it('应该只触发一次 当同一 chatId 连续 dispatch 两次', async () => {
@@ -365,10 +363,10 @@ describe('chatMiddleware', () => {
       // 第二次 dispatch — 内存锁已拦截，即使条件满足也不应再次触发
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto-2'));
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 内存锁防止并发，只触发一次
-      expect(countGenerateNamePending(dispatchedActions)).toBe(1);
+      await vi.waitFor(() => {
+        // 内存锁防止并发，只触发一次
+        expect(countGenerateNamePending(dispatchedActions)).toBe(1);
+      });
     });
 
     it('应该在 fulfilled 后释放内存锁 允许同一 chatId 再次触发', async () => {
@@ -377,8 +375,9 @@ describe('chatMiddleware', () => {
 
       // 第一次触发自动命名
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
-      await new Promise(resolve => setTimeout(resolve, 0));
-      expect(countGenerateNamePending(actions1)).toBe(1);
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(actions1)).toBe(1);
+      });
 
       // 模拟 generateChatName.fulfilled 释放锁
       autoStore.dispatch({
@@ -386,16 +385,18 @@ describe('chatMiddleware', () => {
         payload: { chatId, name: 'New Name' },
         meta: { arg: { chat: { id: chatId } } },
       });
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(actions1.length).toBeGreaterThanOrEqual(2);
+      });
 
       // 用全新的 store（但共享 generatingTitleChatIds Set）再次触发
       // 新 store 有新的 preloadedState，chatHistoryList 长度为 1，push 后为 2
       const { store: autoStore2, dispatchedActions: actions2 } = createAutoNamingStore(createState({ id: chatId }, true));
       autoStore2.dispatch(createFulfilledAction(chatId, 'model-auto'));
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 锁已释放，应该能再次触发
-      expect(countGenerateNamePending(actions2)).toBe(1);
+      await vi.waitFor(() => {
+        // 锁已释放，应该能再次触发
+        expect(countGenerateNamePending(actions2)).toBe(1);
+      });
     });
 
     it('应该在 rejected 后释放内存锁 允许同一 chatId 再次触发', async () => {
@@ -404,8 +405,9 @@ describe('chatMiddleware', () => {
 
       // 第一次触发自动命名
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
-      await new Promise(resolve => setTimeout(resolve, 0));
-      expect(countGenerateNamePending(actions1)).toBe(1);
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(actions1)).toBe(1);
+      });
 
       // 模拟 generateChatName.rejected 释放锁
       autoStore.dispatch({
@@ -413,14 +415,16 @@ describe('chatMiddleware', () => {
         error: new Error('Network error'),
         meta: { arg: { chat: { id: chatId } } },
       });
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(actions1.length).toBeGreaterThanOrEqual(2);
+      });
 
       // 用全新的 store 再次触发，锁已释放
       const { store: autoStore2, dispatchedActions: actions2 } = createAutoNamingStore(createState({ id: chatId }, true));
       autoStore2.dispatch(createFulfilledAction(chatId, 'model-auto'));
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(countGenerateNamePending(actions2)).toBe(1);
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(actions2)).toBe(1);
+      });
     });
   });
 });

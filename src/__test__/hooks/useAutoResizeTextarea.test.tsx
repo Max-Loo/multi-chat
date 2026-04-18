@@ -136,16 +136,144 @@ describe('useAutoResizeTextarea', () => {
       expect(isScrollable).toBe(false);
     });
 
-    it('4.8 应该不抛出错误 当 textareaRef 为 null', () => {
-      // 这个测试验证 hook 在 ref 为 null 时不会崩溃
-      expect(() => {
-        render(
-          <TestTextarea
-            value="测试文本"
-            options={{ minHeight: 60, maxHeight: 240 }}
-          />
-        );
-      }).not.toThrow();
+    it('应该在 scrollHeight > maxHeight 时设置 isScrollable 为 true', () => {
+      let isScrollable = false;
+
+      const { rerender } = render(
+        <TestTextarea
+          value="短内容"
+          options={{ minHeight: 60, maxHeight: 240 }}
+          onScrollableChange={(scrollable) => {
+            isScrollable = scrollable;
+          }}
+        />,
+        { container }
+      );
+
+      const textarea = screen.getByTestId('test-textarea') as HTMLTextAreaElement;
+
+      // Mock scrollHeight 超过最大高度
+      Object.defineProperty(textarea, 'scrollHeight', {
+        writable: true,
+        value: 300,
+      });
+
+      // 用不同的 value 触发 effect 重新执行
+      rerender(
+        <TestTextarea
+          value="很长的多行内容触发重算"
+          options={{ minHeight: 60, maxHeight: 240 }}
+          onScrollableChange={(scrollable) => {
+            isScrollable = scrollable;
+          }}
+        />
+      );
+
+      expect(isScrollable).toBe(true);
+      expect(textarea.style.height).toBe('240px');
+    });
+
+    it('应该在值从多行变为单行时高度回缩', () => {
+      let currentHeight = '';
+
+      const { rerender } = render(
+        <TestTextarea
+          value="初始"
+          options={{ minHeight: 60, maxHeight: 240 }}
+          onHeightChange={(height) => {
+            currentHeight = height;
+          }}
+        />,
+        { container }
+      );
+
+      const textarea = screen.getByTestId('test-textarea') as HTMLTextAreaElement;
+
+      // Mock 多行时的高 scrollHeight，用不同的 value 触发 effect
+      Object.defineProperty(textarea, 'scrollHeight', {
+        writable: true,
+        value: 180,
+      });
+
+      rerender(
+        <TestTextarea
+          value="多行\n文本\n内容"
+          options={{ minHeight: 60, maxHeight: 240 }}
+          onHeightChange={(height) => {
+            currentHeight = height;
+          }}
+        />
+      );
+
+      expect(currentHeight).toBe('180px');
+
+      // Mock 单行时的低 scrollHeight，再次用不同的 value 触发 effect
+      Object.defineProperty(textarea, 'scrollHeight', {
+        writable: true,
+        value: 30,
+      });
+
+      rerender(
+        <TestTextarea
+          value="单行"
+          options={{ minHeight: 60, maxHeight: 240 }}
+          onHeightChange={(height) => {
+            currentHeight = height;
+          }}
+        />
+      );
+
+      // 高度应回缩到 minHeight
+      expect(currentHeight).toBe('60px');
+    });
+
+    it('应该在动态改变 maxHeight 后重新计算 isScrollable', () => {
+      let isScrollable = false;
+
+      const { rerender } = render(
+        <TestTextarea
+          value="固定内容"
+          options={{ minHeight: 60, maxHeight: 240 }}
+          onScrollableChange={(scrollable) => {
+            isScrollable = scrollable;
+          }}
+        />,
+        { container }
+      );
+
+      const textarea = screen.getByTestId('test-textarea') as HTMLTextAreaElement;
+
+      // Mock scrollHeight = 150，在 maxHeight=240 以下
+      Object.defineProperty(textarea, 'scrollHeight', {
+        writable: true,
+        value: 150,
+      });
+
+      rerender(
+        <TestTextarea
+          value="固定内容"
+          options={{ minHeight: 60, maxHeight: 240 }}
+          onScrollableChange={(scrollable) => {
+            isScrollable = scrollable;
+          }}
+        />
+      );
+
+      expect(isScrollable).toBe(false);
+
+      // 降低 maxHeight 到 100，现在 scrollHeight(150) > maxHeight(100)
+      rerender(
+        <TestTextarea
+          value="固定内容"
+          options={{ minHeight: 60, maxHeight: 100 }}
+          onScrollableChange={(scrollable) => {
+            isScrollable = scrollable;
+          }}
+        />
+      );
+
+      expect(isScrollable).toBe(true);
+      expect(textarea.style.height).toBe('100px');
     });
   });
 

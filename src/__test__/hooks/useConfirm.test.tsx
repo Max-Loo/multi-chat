@@ -132,10 +132,6 @@ describe('useConfirm', () => {
           onOk,
         });
       }).not.toThrow();
-
-      // 验证回调函数被定义
-      expect(onOk).toBeDefined();
-      expect(typeof onOk).toBe('function');
     });
 
     it('应该支持 onCancel 回调函数 当传入 onCancel 参数', () => {
@@ -149,10 +145,6 @@ describe('useConfirm', () => {
           onCancel,
         });
       }).not.toThrow();
-
-      // 验证回调函数被定义
-      expect(onCancel).toBeDefined();
-      expect(typeof onCancel).toBe('function');
     });
 
     it('应该在点击确认按钮时调用 onOk 回调', async () => {

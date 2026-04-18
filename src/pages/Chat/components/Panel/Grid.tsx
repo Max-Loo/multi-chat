@@ -13,10 +13,10 @@ interface GridProps {
 
 const Grid: React.FC<GridProps> = ({ board }) => {
   return (
-    <div className="absolute top-0 left-0 w-full h-full pt-12 pb-30">
+    <div className="absolute top-0 left-0 w-full h-full pt-12 pb-30" data-testid="grid-container">
       <div className="flex flex-col w-full h-full">
         {board.map((row, idx) => (
-          <div className="flex w-full flex-1 overflow-y-hidden" key={idx}>
+          <div className="flex w-full flex-1 overflow-y-hidden" key={idx} data-testid="grid-row">
             {row.map((chatModel, cellIdx) => (
               <div
                 key={chatModel.modelId}

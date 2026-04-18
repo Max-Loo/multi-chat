@@ -110,10 +110,7 @@ describe("modelProviderSlice", () => {
   describe("clearError", () => {
     it("应该清除错误信息", () => {
       // 先设置一个错误状态
-      store.dispatch({
-        type: "modelProvider/initializeModelProvider/rejected",
-        payload: { error: "Test error" },
-      });
+      store.dispatch(initializeModelProvider.rejected(new Error("Test error"), "test-req-clear"));
 
       // 清除错误
       store.dispatch(clearError());
@@ -313,10 +310,7 @@ describe("modelProviderSlice", () => {
       const initialState = store.getState().modelProvider;
 
       // Dispatch action (设置一个 error 然后清除，确保 state 实际发生变化)
-      store.dispatch({
-        type: "modelProvider/initializeModelProvider/rejected",
-        payload: { error: "test error" },
-      });
+      store.dispatch(initializeModelProvider.rejected(new Error("test error"), "test-req-immutability"));
       store.dispatch(clearError());
 
       const newState = store.getState().modelProvider;
@@ -332,12 +326,7 @@ describe("modelProviderSlice", () => {
   describe("silentRefreshModelProvider", () => {
     it("应该成功刷新并静默更新 store", async () => {
       // 设置初始状态（有错误）
-      store.dispatch({
-        type: "modelProvider/initialize/rejected",
-        payload: {
-          error: "无法获取模型供应商数据，请检查网络连接",
-        },
-      });
+      store.dispatch(initializeModelProvider.rejected(new Error("init error"), "test-req-silent-1"));
 
       const stateBefore = store.getState().modelProvider;
 
@@ -367,12 +356,7 @@ describe("modelProviderSlice", () => {
 
     it("应该在失败时保持所有状态不变（静默失败）", async () => {
       // 先设置初始状态（有错误）
-      store.dispatch({
-        type: "modelProvider/initialize/rejected",
-        payload: {
-          error: "无法获取模型供应商数据，请检查网络连接",
-        },
-      });
+      store.dispatch(initializeModelProvider.rejected(new Error("init error"), "test-req-silent-2"));
 
       const stateBefore = store.getState().modelProvider;
 
@@ -398,9 +382,7 @@ describe("modelProviderSlice", () => {
 
     it("应该在 loading 为 true 时正常执行（并发控制由调用方负责）", async () => {
       // 设置 loading 为 true
-      store.dispatch({
-        type: "modelProvider/refresh/pending",
-      });
+      store.dispatch(refreshModelProvider.pending("test-req-loading"));
 
       // Mock fetchRemoteData
       mockFetchRemoteData.mockResolvedValue({
@@ -421,9 +403,7 @@ describe("modelProviderSlice", () => {
 
     it("应该在 backgroundRefreshing 为 true 时正常执行（并发控制由调用方负责）", async () => {
       // 设置 backgroundRefreshing 为 true
-      store.dispatch({
-        type: "modelProvider/silentRefresh/pending",
-      });
+      store.dispatch(silentRefreshModelProvider.pending("test-req-bg-1"));
 
       // Mock fetchRemoteData
       mockFetchRemoteData.mockResolvedValue({
@@ -474,9 +454,7 @@ describe("modelProviderSlice", () => {
 
     it("应该在 fulfilled 时释放 backgroundRefreshing 锁", async () => {
       // 设置初始状态
-      store.dispatch({
-        type: "modelProvider/silentRefresh/pending",
-      });
+      store.dispatch(silentRefreshModelProvider.pending("test-req-bg-2"));
 
       // Mock fetchRemoteData 成功返回
       mockFetchRemoteData.mockResolvedValue({
@@ -495,9 +473,7 @@ describe("modelProviderSlice", () => {
 
     it("应该在 rejected 时释放 backgroundRefreshing 锁", async () => {
       // 设置初始状态
-      store.dispatch({
-        type: "modelProvider/silentRefresh/pending",
-      });
+      store.dispatch(silentRefreshModelProvider.pending("test-req-bg-3"));
 
       // Mock fetchRemoteData 失败
       mockFetchRemoteData.mockRejectedValue(
@@ -514,12 +490,7 @@ describe("modelProviderSlice", () => {
 
     it("应该在失败时不清除现有的 error", async () => {
       // 先设置初始状态（有错误）
-      store.dispatch({
-        type: "modelProvider/initialize/rejected",
-        payload: {
-          error: "无法获取模型供应商数据，请检查网络连接",
-        },
-      });
+      store.dispatch(initializeModelProvider.rejected(new Error("init error"), "test-req-no-clear"));
 
       const errorBefore = store.getState().modelProvider.error;
 

@@ -68,10 +68,10 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage(lang));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      });
 
-      // 验证 localStorage.setItem 被调用
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
         LOCAL_STORAGE_LANGUAGE_KEY,
         lang
@@ -90,10 +90,10 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage(lang));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      });
 
-      // 验证 localStorage.setItem 被调用
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
         LOCAL_STORAGE_LANGUAGE_KEY,
         lang
@@ -122,10 +122,9 @@ describe('appConfigMiddleware', () => {
       }).not.toThrow();
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证 state 仍然被更新（action 正常传递）
-      expect(store.getState().appConfig.language).toBe(lang);
+      await vi.waitFor(() => {
+        expect(store.getState().appConfig.language).toBe(lang);
+      });
     });
   });
 
@@ -135,10 +134,10 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setTransmitHistoryReasoning(includeReasoning));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      });
 
-      // 验证 localStorage.setItem 被调用
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
         LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY,
         String(includeReasoning)
@@ -153,10 +152,10 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setTransmitHistoryReasoning(includeReasoning));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      });
 
-      // 验证 localStorage.setItem 被调用
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
         LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY,
         String(includeReasoning)
@@ -173,10 +172,10 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAutoNamingEnabled(enabled));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      });
 
-      // 验证 localStorage.setItem 被调用
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
         LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
         String(enabled)
@@ -191,10 +190,10 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAutoNamingEnabled(enabled));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      });
 
-      // 验证 localStorage.setItem 被调用
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
         LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
         String(enabled)
@@ -211,13 +210,12 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage(lang));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证监听器执行了持久化逻辑
-      expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_LANGUAGE_KEY,
-        lang
-      );
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledWith(
+          LOCAL_STORAGE_LANGUAGE_KEY,
+          lang
+        );
+      });
 
       // 验证监听器调用了 i18n 更新函数
       expect(mockChangeAppLanguage).toHaveBeenCalledWith(lang);
@@ -228,13 +226,12 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setTransmitHistoryReasoning(includeReasoning));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证监听器执行了持久化逻辑
-      expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY,
-        String(includeReasoning)
-      );
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledWith(
+          LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY,
+          String(includeReasoning)
+        );
+      });
 
       // 验证没有调用 i18n 更新函数
       expect(mockChangeAppLanguage).not.toHaveBeenCalled();
@@ -245,10 +242,10 @@ describe('appConfigMiddleware', () => {
       store.dispatch({ type: 'some/other/action' });
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).not.toHaveBeenCalled();
+      });
 
-      // 验证没有执行任何副作用
-      expect(global.localStorage.setItem).not.toHaveBeenCalled();
       expect(mockChangeAppLanguage).not.toHaveBeenCalled();
     });
   });
@@ -263,10 +260,10 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage('zh'));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalled();
+      });
 
-      // 验证中间件执行了副作用
-      expect(global.localStorage.setItem).toHaveBeenCalled();
       expect(mockChangeAppLanguage).toHaveBeenCalled();
     });
 
@@ -283,14 +280,14 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage('en'));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(3);
+      });
 
       // 验证所有 action 都被处理
       expect(store.getState().appConfig.language).toBe('en');
       expect(store.getState().appConfig.transmitHistoryReasoning).toBe(true);
 
-      // 验证副作用被执行了多次（每个 action）
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(3);
       expect(mockChangeAppLanguage).toHaveBeenCalledTimes(2);
     });
   });
@@ -301,13 +298,12 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage(lang));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证仍然会执行持久化
-      expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_LANGUAGE_KEY,
-        lang
-      );
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledWith(
+          LOCAL_STORAGE_LANGUAGE_KEY,
+          lang
+        );
+      });
 
       // 验证 state 被更新
       expect(store.getState().appConfig.language).toBe(lang);
@@ -320,10 +316,10 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage('zh'));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(3);
+      });
 
-      // 验证每次切换都触发了持久化和 i18n 更新
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(3);
       expect(mockChangeAppLanguage).toHaveBeenCalledTimes(3);
 
       // 验证最终状态
@@ -337,10 +333,9 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setTransmitHistoryReasoning(true));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证每次切换都触发了持久化
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(3);
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(3);
+      });
 
       // 验证最终状态
       expect(store.getState().appConfig.transmitHistoryReasoning).toBe(true);
@@ -355,7 +350,9 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage(lang));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(mockToastSuccess).toHaveBeenCalledTimes(1);
+      });
 
       // 验证 loading Toast 被显示
       expect(mockToastLoading).toHaveBeenCalledTimes(1);
@@ -365,8 +362,6 @@ describe('appConfigMiddleware', () => {
       expect(mockToastDismiss).toHaveBeenCalledTimes(1);
       expect(mockToastDismiss).toHaveBeenCalledWith('loading-toast-id');
 
-      // 验证成功 Toast 被显示
-      expect(mockToastSuccess).toHaveBeenCalledTimes(1);
       expect(mockToastSuccess).toHaveBeenCalledWith('语言切换成功');
     });
 
@@ -377,7 +372,9 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage(lang));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(mockToastError).toHaveBeenCalledTimes(1);
+      });
 
       // 验证 loading Toast 被显示
       expect(mockToastLoading).toHaveBeenCalledTimes(1);
@@ -385,8 +382,6 @@ describe('appConfigMiddleware', () => {
       // 验证 loading Toast 被 dismiss
       expect(mockToastDismiss).toHaveBeenCalledTimes(1);
 
-      // 验证错误 Toast 被显示
-      expect(mockToastError).toHaveBeenCalledTimes(1);
       expect(mockToastError).toHaveBeenCalledWith(`语言切换失败: ${lang}`);
     });
 
@@ -397,7 +392,9 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage(lang));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(mockToastError).toHaveBeenCalledTimes(1);
+      });
 
       // 验证 loading Toast 被显示
       expect(mockToastLoading).toHaveBeenCalledTimes(1);
@@ -405,8 +402,6 @@ describe('appConfigMiddleware', () => {
       // 验证 loading Toast 被 dismiss
       expect(mockToastDismiss).toHaveBeenCalledTimes(1);
 
-      // 验证通用错误 Toast 被显示
-      expect(mockToastError).toHaveBeenCalledTimes(1);
       expect(mockToastError).toHaveBeenCalledWith('语言切换失败，请重试');
     });
 
@@ -416,16 +411,16 @@ describe('appConfigMiddleware', () => {
       // 测试成功情况
       mockChangeAppLanguage.mockResolvedValue({ success: true });
       store.dispatch(setAppLanguage(lang));
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(mockChangeAppLanguage).toHaveBeenCalledWith(lang);
+      await vi.waitFor(() => {
+        expect(mockChangeAppLanguage).toHaveBeenCalledWith(lang);
+      });
 
       // 测试失败情况
       mockChangeAppLanguage.mockResolvedValue({ success: false });
       store.dispatch(setAppLanguage('en'));
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(mockChangeAppLanguage).toHaveBeenCalledWith('en');
+      await vi.waitFor(() => {
+        expect(mockChangeAppLanguage).toHaveBeenCalledWith('en');
+      });
     });
 
     it('应该正确处理 Promise 异步', async () => {
@@ -449,10 +444,9 @@ describe('appConfigMiddleware', () => {
 
       // 解析 Promise
       resolvePromise!({ success: true });
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证成功 Toast 已显示
-      expect(mockToastSuccess).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => {
+        expect(mockToastSuccess).toHaveBeenCalledTimes(1);
+      });
     });
   });
 
@@ -467,10 +461,10 @@ describe('appConfigMiddleware', () => {
       });
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      });
 
-      // 验证 localStorage.setItem 被调用
-      expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
       expect(global.localStorage.setItem).toHaveBeenCalledWith(
         LOCAL_STORAGE_LANGUAGE_KEY,
         lang
@@ -487,13 +481,12 @@ describe('appConfigMiddleware', () => {
       });
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证使用的是 action.payload 而不是 store 中的值
-      expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_LANGUAGE_KEY,
-        lang // 应该使用 payload 的值
-      );
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledWith(
+          LOCAL_STORAGE_LANGUAGE_KEY,
+          lang
+        );
+      });
 
       // 验证 store 状态也被 extraReducers 更新
       expect(store.getState().appConfig.language).toBe(lang);
@@ -509,7 +502,9 @@ describe('appConfigMiddleware', () => {
       });
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledTimes(1);
+      });
 
       // 验证没有显示 Toast
       expect(mockToastLoading).not.toHaveBeenCalled();
@@ -525,11 +520,12 @@ describe('appConfigMiddleware', () => {
       store.dispatch(setAppLanguage(lang));
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.waitFor(() => {
+        expect(mockToastSuccess).toHaveBeenCalledTimes(1);
+      });
 
       // 验证显示 Toast
       expect(mockToastLoading).toHaveBeenCalledTimes(1);
-      expect(mockToastSuccess).toHaveBeenCalledTimes(1);
     });
 
     it('应该验证降级语言被正确持久化到 localStorage', async () => {
@@ -542,13 +538,12 @@ describe('appConfigMiddleware', () => {
       });
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证降级语言被持久化
-      expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_LANGUAGE_KEY,
-        fallbackLang
-      );
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledWith(
+          LOCAL_STORAGE_LANGUAGE_KEY,
+          fallbackLang
+        );
+      });
     });
 
     it('应该验证即使 extraReducers 未更新 store，middleware 仍能正确持久化', async () => {
@@ -563,13 +558,12 @@ describe('appConfigMiddleware', () => {
       });
 
       // 等待异步 effect 完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // 验证使用的是 action.payload（不依赖 store 状态）
-      expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_LANGUAGE_KEY,
-        lang
-      );
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledWith(
+          LOCAL_STORAGE_LANGUAGE_KEY,
+          lang
+        );
+      });
     });
   });
 
@@ -577,23 +571,23 @@ describe('appConfigMiddleware', () => {
     it('应该持久化到 localStorage 当启用自动命名', async () => {
       store.dispatch(setAutoNamingEnabled(true));
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
-        'true'
-      );
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledWith(
+          LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
+          'true'
+        );
+      });
     });
 
     it('应该持久化到 localStorage 当禁用自动命名', async () => {
       store.dispatch(setAutoNamingEnabled(false));
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(global.localStorage.setItem).toHaveBeenCalledWith(
-        LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
-        'false'
-      );
+      await vi.waitFor(() => {
+        expect(global.localStorage.setItem).toHaveBeenCalledWith(
+          LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY,
+          'false'
+        );
+      });
     });
   });
 });

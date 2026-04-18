@@ -1,26 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { useExistingChatList } from '@/hooks/useExistingChatList';
-import type { Chat } from '@/types/chat';
 import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
-
-const createMockChat = (id: string, isDeleted: boolean = false): Chat => ({
-  id,
-  name: `Chat ${id}`,
-  chatModelList: [{
-    modelId: 'model-1',
-    chatHistoryList: [],
-  }],
-  isDeleted,
-});
+import { createMockChat } from '@/__test__/helpers/testing-utils';
 
 describe('useExistingChatList', () => {
 
   describe('获取聊天列表测试', () => {
     it('应返回完整的聊天数组（无删除标记）', () => {
-      const chat1 = createMockChat('chat-1', false);
-      const chat2 = createMockChat('chat-2', false);
-      const chat3 = createMockChat('chat-3', false);
+      const chat1 = createMockChat({ id: 'chat-1' });
+      const chat2 = createMockChat({ id: 'chat-2' });
+      const chat3 = createMockChat({ id: 'chat-3' });
 
       const { result } = renderHookWithProviders(() => useExistingChatList(), {
         preloadedState: {
@@ -36,10 +26,10 @@ describe('useExistingChatList', () => {
     });
 
     it('应过滤掉已删除的聊天', () => {
-      const chat1 = createMockChat('chat-1', false);
-      const chat2 = createMockChat('chat-2', true);
-      const chat3 = createMockChat('chat-3', false);
-      const chat4 = createMockChat('chat-4', true);
+      const chat1 = createMockChat({ id: 'chat-1' });
+      const chat2 = createMockChat({ id: 'chat-2', isDeleted: true });
+      const chat3 = createMockChat({ id: 'chat-3' });
+      const chat4 = createMockChat({ id: 'chat-4', isDeleted: true });
 
       const { result } = renderHookWithProviders(() => useExistingChatList(), {
         preloadedState: {
@@ -56,9 +46,9 @@ describe('useExistingChatList', () => {
     });
 
     it('应保留聊天顺序', () => {
-      const chat1 = createMockChat('chat-1', false);
-      const chat2 = createMockChat('chat-2', false);
-      const chat3 = createMockChat('chat-3', false);
+      const chat1 = createMockChat({ id: 'chat-1' });
+      const chat2 = createMockChat({ id: 'chat-2' });
+      const chat3 = createMockChat({ id: 'chat-3' });
 
       const { result } = renderHookWithProviders(() => useExistingChatList(), {
         preloadedState: {
@@ -91,9 +81,9 @@ describe('useExistingChatList', () => {
     });
 
     it('当所有聊天都已删除时应返回空数组', () => {
-      const chat1 = createMockChat('chat-1', true);
-      const chat2 = createMockChat('chat-2', true);
-      const chat3 = createMockChat('chat-3', true);
+      const chat1 = createMockChat({ id: 'chat-1', isDeleted: true });
+      const chat2 = createMockChat({ id: 'chat-2', isDeleted: true });
+      const chat3 = createMockChat({ id: 'chat-3', isDeleted: true });
 
       const { result } = renderHookWithProviders(() => useExistingChatList(), {
         preloadedState: {
@@ -111,7 +101,7 @@ describe('useExistingChatList', () => {
 
   describe('Memoization 测试', () => {
     it('应在 chatList 不变时返回相同的引用', () => {
-      const chat1 = createMockChat('chat-1', false);
+      const chat1 = createMockChat({ id: 'chat-1' });
 
       const { result, rerender } = renderHookWithProviders(() => useExistingChatList(), {
         preloadedState: {

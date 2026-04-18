@@ -16,9 +16,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createIdGenerator } from 'ai';
-import { Chat, ChatRoleEnum, StandardMessage } from '@/types/chat';
+import { Chat } from '@/types/chat';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
+import { createMockChat } from '@/__test__/helpers/testing-utils';
+import { createMockMessage } from '@/__test__/fixtures/chat';
 
 // Mock 依赖 - 必须在导入 slice 之前执行
 // 使用 vi.hoisted 确保变量在 vi.mock 之前被定义
@@ -66,33 +67,16 @@ import chatReducer, {
   clearError,
   clearInitializationError,
   createChat,
+  editChatName,
   setSelectedChatIdWithPreload,
+  sendMessage,
+  pushRunningChatHistory,
+  pushChatHistory,
+  initializeChatList,
+  generateChatName,
+  startSendChatMessage,
 } from '@/store/slices/chatSlices';
 import modelReducer from '@/store/slices/modelSlice';
-
-// 生成测试消息 ID 的工具函数
-const generateMessageId = createIdGenerator({ prefix: 'test-msg-' });
-const generateChatId = createIdGenerator({ prefix: 'test-chat-' });
-
-// 创建 Mock Chat 对象
-const createMockChat = (overrides?: Partial<Chat>): Chat => ({
-  id: generateChatId(),
-  name: 'Test Chat',
-  chatModelList: [],
-  isDeleted: false,
-  ...overrides,
-});
-
-// 创建 Mock StandardMessage 对象
-const createMockMessage = (overrides?: Partial<StandardMessage>): StandardMessage => ({
-  id: generateMessageId(),
-  timestamp: Math.floor(Date.now() / 1000),
-  modelKey: 'test-model',
-  role: ChatRoleEnum.ASSISTANT,
-  content: 'Test message',
-  finishReason: 'stop',
-  ...overrides,
-});
 
 describe('chatSlices', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,12 +136,10 @@ describe('chatSlices', () => {
       });
       const model = createMockModel({ id: 'model-1' });
       const message = 'Hello';
+      const arg = { chat, model, message, historyList: [] };
 
       // Dispatch pending action
-      store.dispatch({
-        type: 'chatModel/sendMessage/pending',
-        meta: { arg: { chat, model, message, historyList: [] } },
-      });
+      store.dispatch(sendMessage.pending('test-req-1', arg));
 
       // 验证 runningChat 状态
       const state = store.getState().chat;
@@ -171,29 +153,20 @@ describe('chatSlices', () => {
       });
       const model = createMockModel({ id: 'model-1' });
       const message = 'Hello';
+      const arg = { chat, model, message, historyList: [] };
       const responseMessage = createMockMessage();
 
       // 先创建聊天到 store
       store.dispatch(createChat({ chat }));
 
       // 初始化 runningChat
-      store.dispatch({
-        type: 'chatModel/sendMessage/pending',
-        meta: { arg: { chat, model, message, historyList: [] } },
-      });
+      store.dispatch(sendMessage.pending('test-req-2', arg));
 
-      // 设置运行中的历史记录（通过 action）
-      store.dispatch({
-        type: 'chat/pushRunningChatHistory',
-        payload: { chat, model, message: responseMessage },
-      });
+      // 设置运行中的历史记录（通过 action creator）
+      store.dispatch(pushRunningChatHistory({ chat, model, message: responseMessage }));
 
       // Dispatch fulfilled action
-      store.dispatch({
-        type: 'chatModel/sendMessage/fulfilled',
-        meta: { arg: { chat, model, message, historyList: [] } },
-        payload: undefined,
-      });
+      store.dispatch(sendMessage.fulfilled(undefined, 'test-req-2', arg));
 
       // 验证 runningChat 被清理
       const state = store.getState().chat;
@@ -209,25 +182,19 @@ describe('chatSlices', () => {
         chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
       });
       const model = createMockModel({ id: 'model-1' });
-      const errorMessage = 'Network error';
+      const arg = { chat, model, message: 'test', historyList: [] };
+      const error = new Error('Network error');
 
       // 先初始化 runningChat
-      store.dispatch({
-        type: 'chatModel/sendMessage/pending',
-        meta: { arg: { chat, model, message: 'test', historyList: [] } },
-      });
+      store.dispatch(sendMessage.pending('test-req-3', arg));
 
       // Dispatch rejected action
-      store.dispatch({
-        type: 'chatModel/sendMessage/rejected',
-        meta: { arg: { chat, model, message: 'test', historyList: [] } },
-        error: { message: errorMessage },
-      });
+      store.dispatch(sendMessage.rejected(error, 'test-req-3', arg));
 
       // 验证错误状态
       const state = store.getState().chat;
       expect(state.runningChat[chat.id]?.[model.id]?.isSending).toBe(false);
-      expect(state.runningChat[chat.id]?.[model.id]?.errorMessage).toBe(errorMessage);
+      expect(state.runningChat[chat.id]?.[model.id]?.errorMessage).toContain('Network error');
     });
   });
 
@@ -241,37 +208,23 @@ describe('chatSlices', () => {
       });
       const model1 = createMockModel({ id: 'model-1' });
       const model2 = createMockModel({ id: 'model-2' });
-      const history1 = createMockMessage({ id: 'msg-1', content: 'Response 1' });
-      const history2 = createMockMessage({ id: 'msg-2', content: 'Response 2' });
+      const history1 = createMockMessage({ content: 'Response 1' });
+      const history2 = createMockMessage({ content: 'Response 2' });
 
       // 先创建聊天到 store
       store.dispatch(createChat({ chat }));
 
       // 初始化两个模型的 runningChat
-      store.dispatch({
-        type: 'chatModel/sendMessage/pending',
-        meta: { arg: { chat, model: model1, message: 'test', historyList: [] } },
-      });
-      store.dispatch({
-        type: 'chatModel/sendMessage/pending',
-        meta: { arg: { chat, model: model2, message: 'test', historyList: [] } },
-      });
+      store.dispatch(sendMessage.pending('test-req-4', { chat, model: model1, message: 'test', historyList: [] }));
+      store.dispatch(sendMessage.pending('test-req-5', { chat, model: model2, message: 'test', historyList: [] }));
 
       // 设置运行中的历史记录
-      store.dispatch({
-        type: 'chat/pushRunningChatHistory',
-        payload: { chat, model: model1, message: history1 },
-      });
-      store.dispatch({
-        type: 'chat/pushRunningChatHistory',
-        payload: { chat, model: model2, message: history2 },
-      });
+      store.dispatch(pushRunningChatHistory({ chat, model: model1, message: history1 }));
+      store.dispatch(pushRunningChatHistory({ chat, model: model2, message: history2 }));
 
       // Dispatch startSendChatMessage rejected action
-      store.dispatch({
-        type: 'chatModel/startSendChatMessage/rejected',
-        meta: { arg: { chat, message: 'test' } },
-      });
+      const startArg = { chat, message: 'test' };
+      store.dispatch(startSendChatMessage.rejected(new Error('cancelled'), 'test-req-6', startArg));
 
       // 验证历史记录被回写到聊天历史中
       const state = store.getState().chat;
@@ -298,10 +251,7 @@ describe('chatSlices', () => {
 
     it('应该清除初始化错误信息', () => {
       // 先设置一个初始化错误
-      store.dispatch({
-        type: 'chat/initialize/rejected',
-        error: { message: 'Init error' },
-      });
+      store.dispatch(initializeChatList.rejected(new Error('Init error'), 'test-req-init'));
 
       // 验证错误已设置
       expect(store.getState().chat.initializationError).toBe('Init error');
@@ -325,11 +275,8 @@ describe('chatSlices', () => {
 
       store.dispatch(createChat({ chat }));
 
-      // 直接调用 reducer（通过 dispatch action）
-      store.dispatch({
-        type: 'chat/pushChatHistory',
-        payload: { chat, model, message },
-      });
+      // 直接调用 action creator
+      store.dispatch(pushChatHistory({ chat, model, message }));
 
       const state = store.getState().chat;
       expect(state.chatList[0].chatModelList?.[0].chatHistoryList).toHaveLength(1);
@@ -344,10 +291,7 @@ describe('chatSlices', () => {
       const message = createMockMessage();
 
       // 不创建聊天，直接尝试添加消息
-      store.dispatch({
-        type: 'chat/pushChatHistory',
-        payload: { chat, model, message },
-      });
+      store.dispatch(pushChatHistory({ chat, model, message }));
 
       const state = store.getState().chat;
       expect(state.chatList).toHaveLength(0); // 聊天列表为空
@@ -363,16 +307,11 @@ describe('chatSlices', () => {
       const message = createMockMessage({ content: 'Running message' });
 
       // 先初始化 runningChat（通过 dispatch pending action）
-      store.dispatch({
-        type: 'chatModel/sendMessage/pending',
-        meta: { arg: { chat, model, message: 'test', historyList: [] } },
-      });
+      const pendingArg = { chat, model, message: 'test', historyList: [] };
+      store.dispatch(sendMessage.pending('test-req-running', pendingArg));
 
       // 更新运行中的历史记录
-      store.dispatch({
-        type: 'chat/pushRunningChatHistory',
-        payload: { chat, model, message },
-      });
+      store.dispatch(pushRunningChatHistory({ chat, model, message }));
 
       const state = store.getState().chat;
       expect(state.runningChat[chat.id]?.[model.id]?.history).toEqual(message);
@@ -385,10 +324,7 @@ describe('chatSlices', () => {
       store.dispatch(createChat({ chat }));
 
       // 编辑聊天名称
-      store.dispatch({
-        type: 'chat/editChatName',
-        payload: { id: chat.id, name: 'New Name' },
-      });
+      store.dispatch(editChatName({ id: chat.id, name: 'New Name' }));
 
       const state = store.getState().chat;
       expect(state.chatList[0].name).toBe('New Name');
@@ -400,10 +336,7 @@ describe('chatSlices', () => {
       store.dispatch(createChat({ chat }));
 
       // 尝试编辑为空名称（应该被拒绝）
-      store.dispatch({
-        type: 'chat/editChatName',
-        payload: { id: chat.id, name: '' },
-      });
+      store.dispatch(editChatName({ id: chat.id, name: '' }));
 
       const state = store.getState().chat;
       // 名称应该保持不变
@@ -417,10 +350,7 @@ describe('chatSlices', () => {
       store.dispatch(createChat({ chat }));
 
       // 尝试编辑为仅空白字符（应该被拒绝）
-      store.dispatch({
-        type: 'chat/editChatName',
-        payload: { id: chat.id, name: '   ' },
-      });
+      store.dispatch(editChatName({ id: chat.id, name: '   ' }));
 
       const state = store.getState().chat;
       // 名称应该保持不变
@@ -436,10 +366,11 @@ describe('chatSlices', () => {
       store.dispatch(createChat({ chat }));
 
       // Dispatch fulfilled action with generated title
-      store.dispatch({
-        type: 'chat/generateName/fulfilled',
-        payload: { chatId: chat.id, name: 'Generated Title' },
-      });
+      store.dispatch(generateChatName.fulfilled(
+        { chatId: chat.id, name: 'Generated Title' },
+        'generate-req-1',
+        { chat, model: createMockModel(), historyList: [] },
+      ));
 
       const state = store.getState().chat;
       expect(state.chatList[0].name).toBe('Generated Title');
@@ -451,10 +382,7 @@ describe('chatSlices', () => {
       store.dispatch(createChat({ chat }));
 
       // Dispatch fulfilled action with null (失败情况)
-      store.dispatch({
-        type: 'chat/generateName/fulfilled',
-        payload: null,
-      });
+      store.dispatch(generateChatName.fulfilled(null, 'generate-req-2', { chat, model: createMockModel(), historyList: [] }));
 
       const state = store.getState().chat;
       expect(state.chatList[0].name).toBeUndefined();
@@ -463,10 +391,11 @@ describe('chatSlices', () => {
     it('应该在聊天不存在时不抛出错误', () => {
       // Dispatch fulfilled action for non-existent chat
       expect(() => {
-        store.dispatch({
-          type: 'chat/generateName/fulfilled',
-          payload: { chatId: 'non-existent-chat', name: 'Title' },
-        });
+        store.dispatch(generateChatName.fulfilled(
+          { chatId: 'non-existent-chat', name: 'Title' },
+          'generate-req-3',
+          { chat: createMockChat(), model: createMockModel(), historyList: [] },
+        ));
       }).not.toThrow();
     });
   });

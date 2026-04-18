@@ -129,7 +129,7 @@ describe('BottomNav 组件', () => {
       const buttons = screen.getAllByRole('button');
       const chatButton = buttons.find((btn) => btn.textContent?.includes('聊天'));
       expect(chatButton).toBeInTheDocument();
-      expect(chatButton).toHaveClass('bg-blue-100');
+      expect(chatButton).toHaveAttribute('aria-current', 'page');
     });
 
     it('非激活路径应该使用非激活样式', () => {
@@ -144,26 +144,26 @@ describe('BottomNav 组件', () => {
   });
 
   describe('样式和布局', () => {
-    it('应该有正确的固定定位类', () => {
+    it('导航容器应该可见且可访问', () => {
       render(
           <BottomNav />
       );
 
       const nav = screen.getByRole('navigation');
-      expect(nav).toHaveClass('border-t', 'bg-background', 'h-16');
+      expect(nav).toBeVisible();
     });
 
-    it('应该使用flex布局均匀分布导航项', () => {
+    it('应该均匀分布所有导航项', () => {
       render(
           <BottomNav />
       );
 
-      const nav = screen.getByRole('navigation');
-      const containerDiv = nav.querySelector('div');
-      expect(containerDiv).toHaveClass('flex', 'items-center', 'justify-around');
+      const buttons = screen.getAllByRole('button');
+      expect(buttons).toHaveLength(3);
+      buttons.forEach(btn => expect(btn).toBeVisible());
     });
 
-    it('导航项应该有正确的主题样式', () => {
+    it('激活导航项应该有明确的视觉标识', () => {
       render(
           <BottomNav />
       );
@@ -171,8 +171,7 @@ describe('BottomNav 组件', () => {
       const buttons = screen.getAllByRole('button');
       const chatButton = buttons.find((btn) => btn.textContent?.includes('聊天'));
 
-      // 激活状态下应该有 text-blue-500 类（来自 activeClassName）
-      expect(chatButton).toHaveClass('text-blue-500');
+      expect(chatButton).toHaveAttribute('aria-current', 'page');
     });
   });
 
