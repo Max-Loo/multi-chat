@@ -34,7 +34,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -84,7 +84,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -104,7 +104,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -156,7 +156,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -172,7 +172,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -202,7 +202,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -218,7 +218,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -270,7 +270,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -290,7 +290,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -334,7 +334,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -350,7 +350,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -394,7 +394,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -410,7 +410,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -476,7 +476,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -496,7 +496,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -540,7 +540,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -560,7 +560,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -668,7 +668,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -700,7 +700,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -752,7 +752,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 
@@ -768,7 +768,7 @@ describe('ExecutionContext', () => {
 
 
 
-      const steps: InitStep[] = [
+      const steps = [
 
         {
 
@@ -830,7 +830,7 @@ describe('ExecutionContext', () => {
 
         },
 
-      ];
+      ] as unknown as InitStep[];
 
 
 

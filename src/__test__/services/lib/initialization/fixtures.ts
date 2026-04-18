@@ -8,13 +8,18 @@ import { vi } from 'vitest';
 import type { InitStep, InitError, ExecutionContext } from '@/services/initialization';
 
 /**
+ * 测试用步骤类型，允许任意字符串作为步骤名
+ */
+export type TestInitStep = Omit<InitStep, 'name'> & { name: string };
+
+/**
  * 创建 Mock 初始化步骤
  * @param overrides 覆盖的步骤属性
  * @returns Mock 初始化步骤
  */
 export const createMockInitStep = (
-  overrides?: Partial<InitStep>
-): InitStep => {
+  overrides?: Partial<TestInitStep>
+): TestInitStep => {
   return {
     name: 'mockStep',
     critical: false,
@@ -50,7 +55,7 @@ export const createMockInitError = (
  * 创建测试用初始化步骤配置
  * @returns 测试用初始化步骤数组
  */
-export const createTestInitSteps = (): InitStep[] => {
+export const createTestInitSteps = (): TestInitStep[] => {
   return [
     createMockInitStep({
       name: 'step1',
@@ -100,7 +105,7 @@ export const createMockExecutionContext = (): ExecutionContext => {
 export const createSuccessfulStep = (
   name: string,
   returnValue?: unknown
-): InitStep => {
+): TestInitStep => {
   return createMockInitStep({
     name,
     critical: false,
@@ -119,7 +124,7 @@ export const createFailingStep = (
   name: string,
   severity: 'fatal' | 'warning' | 'ignorable' = 'warning',
   errorMessage?: string
-): InitStep => {
+): TestInitStep => {
   const error = new Error(errorMessage || 'Step execution failed');
 
   return createMockInitStep({
@@ -143,7 +148,7 @@ export const createFailingStep = (
 export const createStepWithValue = <T>(
   name: string,
   value: T
-): InitStep => {
+): TestInitStep => {
   return createMockInitStep({
     name,
     critical: false,

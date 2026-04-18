@@ -140,7 +140,7 @@ export class InitializationManager {
    * @param steps 初始化步骤列表
    */
   private validateDependencies(steps: InitStep[]): void {
-    const stepNames = new Set(steps.map((s) => s.name));
+    const stepNames = new Set<string>(steps.map((s) => s.name));
 
     for (const step of steps) {
       if (step.dependencies) {
