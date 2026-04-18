@@ -69,17 +69,17 @@ export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) =>
         </div>
 
         {/* 错误列表 */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {errors.map((error, index) => {
             const shouldShowErrorDetails = import.meta.env.DEV && error.originalError != null;
 
             return (
-              <Alert key={index} variant="destructive">
+              <Alert key={index} variant="destructive" className="p-4">
                 <AlertOctagon className="h-4 w-4" />
                 <AlertTitle>
                   {error.message}
                 </AlertTitle>
-                <AlertDescription>
+                <AlertDescription className="mt-1">
                   {/* 开发模式下显示错误详情 */}
                   {shouldShowErrorDetails && (
                     <details className="mt-2">
@@ -98,28 +98,31 @@ export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) =>
         </div>
 
         {/* 操作按钮 */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-3">
           <Button onClick={handleRefresh} size="lg" disabled={isResetting}>
             {t($ => $.common.refreshPage)}
           </Button>
-          {hasMasterKeyError && (
+          <div className="w-full border-t" />
+          <div className="flex flex-row flex-wrap items-center justify-center gap-3">
+            {hasMasterKeyError && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setIsRecoveryDialogOpen(true)}
+                disabled={isResetting}
+              >
+                {t($ => $.common.masterKeyRegeneratedImport)}
+              </Button>
+            )}
             <Button
               variant="outline"
               size="lg"
-              onClick={() => setIsRecoveryDialogOpen(true)}
+              onClick={() => setIsResetDialogOpen(true)}
               disabled={isResetting}
             >
-              {t($ => $.common.masterKeyRegeneratedImport)}
+              {t($ => $.common.resetAllData)}
             </Button>
-          )}
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => setIsResetDialogOpen(true)}
-            disabled={isResetting}
-          >
-            {t($ => $.common.resetAllData)}
-          </Button>
+          </div>
         </div>
       </div>
 
