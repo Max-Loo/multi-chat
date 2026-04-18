@@ -15,9 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
+import { useScrollContainer } from "@/hooks/useScrollContainer";
 import { useResetDataDialog } from "@/hooks/useResetDataDialog";
-import { useRef, useEffect } from "react";
 import { exportMasterKey } from "@/store/keyring/masterKey";
 import { copyToClipboard } from "@/utils/clipboard";
 import { toastQueue } from "@/services/toast";
@@ -27,23 +26,13 @@ import { toastQueue } from "@/services/toast";
  */
 const KeyManagementSetting: React.FC = () => {
   const { t } = useTranslation();
-  const { scrollbarClassname, onScrollEvent } = useAdaptiveScrollbar();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { scrollContainerRef, scrollbarClassname } = useScrollContainer();
 
   // 导出密钥相关状态：null 对话框关闭，"" 加载中，string 密钥值（展示+复制）
   const [exportState, setExportState] = useState<null | string>(null);
 
   // 重置数据相关状态
   const { setIsDialogOpen: setIsResetDialogOpen, isResetting, renderResetDialog } = useResetDataDialog();
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    container.addEventListener("scroll", onScrollEvent, { passive: true });
-    return () => {
-      container.removeEventListener("scroll", onScrollEvent);
-    };
-  }, [onScrollEvent]);
 
   const handleExportKey = async () => {
     try {
