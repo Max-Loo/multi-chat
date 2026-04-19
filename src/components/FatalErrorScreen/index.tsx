@@ -3,7 +3,7 @@ import { AlertOctagon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
 import type { InitError } from "@/services/initialization";
-import { MASTER_KEY_STEP_NAME } from "@/config/initSteps";
+import { STEP_NAMES } from "@/config/initSteps";
 import { useResetDataDialog } from "@/hooks/useResetDataDialog";
 import { KeyRecoveryDialog } from "@/components/KeyRecoveryDialog";
 import { useState } from "react";
@@ -43,7 +43,7 @@ export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) =>
   const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
 
   /** 检测是否有 masterKey 步骤的 fatal 错误 */
-  const hasMasterKeyError = errors.some((error) => error.stepName === MASTER_KEY_STEP_NAME);
+  const hasMasterKeyError = errors.some((error) => error.stepName === STEP_NAMES.masterKey);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background p-4">

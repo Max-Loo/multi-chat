@@ -2,15 +2,12 @@
  * 初始化系统核心类型定义
  */
 
+import type { StepName } from '@/config/initSteps';
+
 /**
  * 错误严重程度
  */
 export type ErrorSeverity = 'fatal' | 'warning' | 'ignorable';
-
-/**
- * 初始化步骤名称联合类型
- */
-export type StepName = 'keyringMigration' | 'i18n' | 'masterKey' | 'models' | 'chatList' | 'appLanguage' | 'transmitHistoryReasoning' | 'autoNamingEnabled' | 'modelProvider';
 
 /**
  * 初始化步骤接口

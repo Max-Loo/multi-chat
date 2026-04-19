@@ -17,16 +17,21 @@ import { migrateKeyringV1ToV2 } from '@/utils/tauriCompat';
 /** "无可用供应商"错误的标识字符串 */
 const NO_PROVIDERS_ERROR_MESSAGE = "无法获取模型供应商数据，请检查网络连接";
 
-/** 步骤名常量，供外部引用 */
-export const KEYRING_MIGRATION_STEP_NAME = 'keyringMigration';
-export const I18N_STEP_NAME = 'i18n';
-export const MASTER_KEY_STEP_NAME = 'masterKey';
-export const MODELS_STEP_NAME = 'models';
-export const CHAT_LIST_STEP_NAME = 'chatList';
-export const APP_LANGUAGE_STEP_NAME = 'appLanguage';
-export const TRANSMIT_HISTORY_REASONING_STEP_NAME = 'transmitHistoryReasoning';
-export const AUTO_NAMING_ENABLED_STEP_NAME = 'autoNamingEnabled';
-export const MODEL_PROVIDER_STEP_NAME = 'modelProvider';
+/** 步骤名常量对象，单一事实来源 */
+export const STEP_NAMES = {
+  keyringMigration: 'keyringMigration',
+  i18n: 'i18n',
+  masterKey: 'masterKey',
+  models: 'models',
+  chatList: 'chatList',
+  appLanguage: 'appLanguage',
+  transmitHistoryReasoning: 'transmitHistoryReasoning',
+  autoNamingEnabled: 'autoNamingEnabled',
+  modelProvider: 'modelProvider',
+} as const;
+
+/** 步骤名联合类型，从 STEP_NAMES 自动派生 */
+export type StepName = (typeof STEP_NAMES)[keyof typeof STEP_NAMES];
 
 // i18n 初始化失败的错误消息（使用英文常量，因为此时 i18n 肯定未就绪）
 const I18N_INIT_FAILED = 'Failed to initialize internationalization';
@@ -36,7 +41,7 @@ const I18N_INIT_FAILED = 'Failed to initialize internationalization';
  */
 export const initSteps: InitStep[] = [
   {
-    name: KEYRING_MIGRATION_STEP_NAME,
+    name: STEP_NAMES.keyringMigration,
     critical: false,
     execute: async (context) => {
       const result = await migrateKeyringV1ToV2();
@@ -50,7 +55,7 @@ export const initSteps: InitStep[] = [
     }),
   },
   {
-    name: I18N_STEP_NAME,
+    name: STEP_NAMES.i18n,
     critical: true,
     execute: async () => {
       await initI18n();
@@ -62,9 +67,9 @@ export const initSteps: InitStep[] = [
     }),
   },
   {
-    name: MASTER_KEY_STEP_NAME,
+    name: STEP_NAMES.masterKey,
     critical: true,
-    dependencies: ['keyringMigration'],
+    dependencies: [STEP_NAMES.keyringMigration],
     execute: async (context) => {
       const result = await initializeMasterKey();
       context.setResult('masterKeyRegenerated', result.isNewlyGenerated);
@@ -79,9 +84,9 @@ export const initSteps: InitStep[] = [
     }),
   },
   {
-    name: MODELS_STEP_NAME,
+    name: STEP_NAMES.models,
     critical: false,
-    dependencies: ['masterKey'],
+    dependencies: [STEP_NAMES.masterKey],
     execute: async (context) => {
       const { models, decryptionFailureCount } = await store.dispatch(initializeModels()).unwrap();
       context.setResult('models', models);
@@ -95,7 +100,7 @@ export const initSteps: InitStep[] = [
     }),
   },
   {
-    name: CHAT_LIST_STEP_NAME,
+    name: STEP_NAMES.chatList,
     critical: false,
     execute: async (context) => {
       const chatList = await store.dispatch(initializeChatList()).unwrap();
@@ -109,9 +114,9 @@ export const initSteps: InitStep[] = [
     }),
   },
   {
-    name: APP_LANGUAGE_STEP_NAME,
+    name: STEP_NAMES.appLanguage,
     critical: false,
-    dependencies: ['i18n'],
+    dependencies: [STEP_NAMES.i18n],
     execute: async (context) => {
       const appLanguage = await store.dispatch(initializeAppLanguage()).unwrap();
       context.setResult('appLanguage', appLanguage);
@@ -124,7 +129,7 @@ export const initSteps: InitStep[] = [
     }),
   },
   {
-    name: TRANSMIT_HISTORY_REASONING_STEP_NAME,
+    name: STEP_NAMES.transmitHistoryReasoning,
     critical: false,
     execute: async (context) => {
       const transmitHistoryReasoning = await store.dispatch(initializeTransmitHistoryReasoning()).unwrap();
@@ -138,7 +143,7 @@ export const initSteps: InitStep[] = [
     }),
   },
   {
-    name: AUTO_NAMING_ENABLED_STEP_NAME,
+    name: STEP_NAMES.autoNamingEnabled,
     critical: false,
     execute: async (context) => {
       const autoNamingEnabled = await store.dispatch(initializeAutoNamingEnabled()).unwrap();
@@ -152,7 +157,7 @@ export const initSteps: InitStep[] = [
     }),
   },
   {
-    name: MODEL_PROVIDER_STEP_NAME,
+    name: STEP_NAMES.modelProvider,
     critical: false,
     execute: async (context) => {
       try {
