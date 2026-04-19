@@ -1,1 +1,1 @@
-/Users/luyuexing/Documents/projects/personal/multi-chat/AGENTS.md
+AGENTS.md
