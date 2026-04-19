@@ -1,6 +1,7 @@
 import ToolsBar from "./components/ToolsBar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { Chat } from "@/types/chat"
 import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedFilter";
 import { useAppSelector } from "@/hooks/redux";
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
@@ -20,11 +21,15 @@ const Sidebar: React.FC = () => {
 
   const [filterText, setFilterText] = useState<string>("");
 
+  const filterPredicate = useCallback(
+    (chat: Chat) => chat.name?.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
+    [filterText]
+  )
+
   const { filteredList: filteredChatList } = useDebouncedFilter(
     filterText,
     chatList,
-    (chat) =>
-      chat.name?.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
+    filterPredicate,
   );
 
   return (

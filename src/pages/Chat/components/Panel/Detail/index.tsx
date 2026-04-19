@@ -10,7 +10,7 @@ import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import { ChatBubble } from "@/components/chat/ChatBubble"
 import RunningBubble from "./RunningBubble";
 import { useIsSending } from "@/pages/Chat/hooks/useIsSending";
-import { isNil, isNotNil } from "es-toolkit"
+import { isNotNil } from "es-toolkit"
 import { useTranslation } from "react-i18next"
 import { Virtualizer } from "virtua"
 import type { VirtualizerHandle } from "virtua"
@@ -51,14 +51,18 @@ const Detail: React.FC<DetailProps> = ({
   // 引用滚动容器
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  // 同步 historyList.length 到 ref，供 scrollToBottom 稳定引用
+  const historyLengthRef = useRef(historyList.length)
+  useEffect(() => { historyLengthRef.current = historyList.length }, [historyList.length])
+
   // Virtualizer 引用
   const virtualizerRef = useRef<VirtualizerHandle>(null)
 
   // Title 引用，用于测量高度作为 startMargin
   const titleRef = useRef<HTMLDivElement>(null)
 
-  // 跟踪用户是否在底部（用于流式自动跟随判断）
-  const shouldStickToBottom = useRef(true)
+  // isAtBottom 的 ref 镜像，供 effect 读取避免重建
+  const isAtBottomRef = useRef(true)
 
   // Virtualizer 的 startMargin（Title 的高度）
   const [startMargin, setStartMargin] = useState(0)
@@ -76,38 +80,18 @@ const Detail: React.FC<DetailProps> = ({
   // 状态：是否在底部
   const [isAtBottom, setIsAtBottom] = useState(true)
 
-  // 🔧 添加防抖标志，防止 ResizeObserver 导致的无限循环
-  const isCheckingScrollRef = useRef(false)
-
   /**
    * 滚动到列表底部
    * 优先使用 Virtualizer API 以确保与虚拟化引擎协调
    */
   const scrollToBottom = useCallback(() => {
-    const virtualizer = virtualizerRef.current
-    if (virtualizer) {
-      virtualizer.scrollToIndex(historyList.length - 1, { align: 'end' })
-      return
-    }
-    // 降级：无虚拟化时直接操作 DOM
-    const container = scrollContainerRef.current
-    if (isNil(container)) {
-      return
-    }
-    container.scrollTop = container.scrollHeight
-  }, [historyList.length])
+    virtualizerRef.current?.scrollToIndex(historyLengthRef.current - 1, { align: 'end' })
+  }, [])
 
   // 检测是否需要滚动条以及是否在底部
   const checkScrollStatus = useCallback(() => {
-    // 防止递归调用
-    if (isCheckingScrollRef.current) {
-      return
-    }
-
     const container = scrollContainerRef.current
     if (!container) return
-
-    isCheckingScrollRef.current = true
 
     // 检测是否需要滚动条（内容高度大于容器高度）
     const hasScrollbar = container.scrollHeight > container.clientHeight
@@ -115,16 +99,9 @@ const Detail: React.FC<DetailProps> = ({
     // 检测是否在底部
     const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= SCROLL_BOTTOM_THRESHOLD
 
-    // 使用 requestAnimationFrame 避免在同一帧内多次更新状态
-    requestAnimationFrame(() => {
-      setNeedsScrollbar(hasScrollbar)
-      setIsAtBottom(atBottom)
-
-      // 在下一帧重置标志，确保状态更新已完成
-      requestAnimationFrame(() => {
-        isCheckingScrollRef.current = false
-      })
-    })
+    setNeedsScrollbar(prev => prev === hasScrollbar ? prev : hasScrollbar)
+    setIsAtBottom(prev => prev === atBottom ? prev : atBottom)
+    isAtBottomRef.current = atBottom
   }, [])
 
   // 监听 Title 高度变化，更新 Virtualizer 的 startMargin
@@ -144,22 +121,18 @@ const Detail: React.FC<DetailProps> = ({
 
   // 流式自动跟随：当用户在底部且有流式数据更新时，等待 DOM 更新后自动滚动到底部
   useEffect(() => {
-    if (shouldStickToBottom.current && runningChatData) {
+    if (isAtBottomRef.current && runningChatData) {
       requestAnimationFrame(() => {
         scrollToBottom()
       })
     }
   }, [runningChatData, scrollToBottom])
 
-  // 监听内容变化和滚动容器尺寸变化
+  // ResizeObserver：监听容器尺寸变化，依赖为空（挂载一次不重建）
   useEffect(() => {
-    // 初始检测
-    checkScrollStatus()
-
     const container = scrollContainerRef.current
     if (!container) return
 
-    // 监听容器尺寸变化（使用 ResizeObserver）
     const resizeObserver = new ResizeObserver(() => {
       checkScrollStatus()
     })
@@ -168,16 +141,20 @@ const Detail: React.FC<DetailProps> = ({
     return () => {
       resizeObserver.disconnect()
     }
-  }, [historyList, runningChatData, checkScrollStatus])
+  }, [checkScrollStatus])
 
-  // Virtualizer 滚动事件处理（替代原有的 addEventListener）
+  // 内容变化时检测滚动状态
+  useEffect(() => {
+    checkScrollStatus()
+  }, [historyList.length, runningChatData, checkScrollStatus])
+
+  // Virtualizer 滚动事件处理
   const handleVirtualizerScroll = useCallback((_offset: number) => {
     const container = scrollContainerRef.current
     if (!container) return
 
-    // 更新 shouldStickToBottom
     const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= SCROLL_BOTTOM_THRESHOLD
-    shouldStickToBottom.current = atBottom
+    isAtBottomRef.current = atBottom
 
     checkScrollStatus()
     onScrollEvent()
