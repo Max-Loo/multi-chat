@@ -5,7 +5,7 @@ license: MIT
 compatibility: Universal
 metadata:
   author: workspace
-  version: "1.1.0"
+  version: "1.1.1"
 ---
 
 # Commit Message 生成 Skill
@@ -149,12 +149,15 @@ feat(chat): 添加消息已读状态显示
 2. 对比暂存区文件与 commit message 对应的目标文件：
    - 完全匹配（暂存区 = 目标文件集合） → 直接 `git commit`
    - 不匹配（空、不完整、含多余文件、混合情况） → 统一执行：先 `git reset`，再 `git add` 目标文件，最后 `git commit`
-3. 提交时使用 HEREDOC 格式并附带 Co-Authored-By 尾缀：
+3. 提交时使用 HEREDOC 格式，commit message 包含变更摘要作为 body：
    ```bash
    git commit -m "$(cat <<'EOF'
    <commit message>
 
-   Co-Authored-By: Claude <noreply@anthropic.com>
+   变更摘要：
+
+   - 变更摘要项1
+   - 变更摘要项2
    EOF
    )"
    ```
