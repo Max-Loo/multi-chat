@@ -18,7 +18,7 @@ export interface InitStep {
   /** 是否为关键步骤（关键步骤失败将导致应用无法运行） */
   critical: boolean;
   /** 依赖的步骤名称列表（可选） */
-  dependencies?: string[];
+  dependencies?: StepName[];
   /** 步骤执行函数 */
   execute: (context: ExecutionContext) => Promise<unknown>;
   /** 错误处理回调 */

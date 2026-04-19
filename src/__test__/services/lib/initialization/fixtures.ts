@@ -10,7 +10,7 @@ import type { InitStep, InitError, ExecutionContext } from '@/services/initializ
 /**
  * 测试用步骤类型，允许任意字符串作为步骤名
  */
-export type TestInitStep = Omit<InitStep, 'name'> & { name: string };
+export type TestInitStep = Omit<InitStep, 'name' | 'dependencies'> & { name: string; dependencies?: string[] };
 
 /**
  * 创建 Mock 初始化步骤
