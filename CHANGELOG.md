@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.1] - 2026-04-20
+
+### 🧪 测试增强
+
+- **测试基础设施重构**：统一 i18n mock、store 创建模式、hook 测试 wrapper，消除手动构建和假阳性断言
+- **测试质量全面改进**：消除 `as any` 模式和占位断言，建立类型安全的测试辅助工具，行为断言替代样式断言
+- **统一 mock 工具**：统一 `createMockModel` 为单一来源，新增 mock 工具简化 virtua mock
+- **补充单元测试**：补充自定义组件、聊天面板子组件、中间件、工具函数等模块的单元测试
+- **修复测试问题**：修复 IndexedDB 异步清理、虚拟滚动 mock、FatalErrorScreen 依赖和 i18n 翻译键等问题
+
+### 🐛 Bug 修复
+
+- **修复 Logo 类型检查**：导出 COLORS 常量修复类型检查和测试失败
+
+### 🔧 杂项
+
+- **清理未使用代码**：清理 knip 检出的未使用代码、MSW 测试基础设施和过期配置
+- **移除 i18next-cli 依赖**：移除不必要的 i18next-cli 开发依赖
+
+### 📝 文档变更
+
+- 更新 AI SDK LLM 参考文档
+- 更新 commit-draft skill guardrail
+
+---
+
 ## [0.4.0] - 2026-04-20
 
 ### ✨ 新功能
