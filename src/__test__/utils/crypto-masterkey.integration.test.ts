@@ -190,7 +190,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       // Given: Keyring 中无密钥（已通过 beforeEach 清理）
 
       // When: 初始化主密钥
-      const masterKey = await initializeMasterKey();
+      const { key: masterKey } = await initializeMasterKey();
 
       // Then: 应生成新密钥（长度 64）
       expect(masterKey).toHaveLength(64);
@@ -203,16 +203,16 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(ciphertext).toMatch(/^enc:/);
 
       // And: 再次初始化应返回相同密钥（验证已存储）
-      const secondKey = await initializeMasterKey();
+      const { key: secondKey } = await initializeMasterKey();
       expect(secondKey).toBe(masterKey);
     });
 
     test('已有密钥时复用并加密：应返回现有密钥', async () => {
       // Given: 已初始化密钥
-      const firstKey = await initializeMasterKey();
+      const { key: firstKey } = await initializeMasterKey();
 
       // When: 再次初始化主密钥
-      const secondKey = await initializeMasterKey();
+      const { key: secondKey } = await initializeMasterKey();
 
       // Then: 应返回相同密钥
       expect(secondKey).toBe(firstKey);
@@ -227,7 +227,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
 
     test('使用初始化密钥进行往返加密/解密：应无数据损失', async () => {
       // Given: 初始化主密钥
-      const masterKey = await initializeMasterKey();
+      const { key: masterKey } = await initializeMasterKey();
 
       // When: 加密明文并解密
       const plaintext = 'Round-trip test data';
@@ -268,7 +268,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       // When: 重置 keyring 并重新初始化生成新密钥
       await keyringManager.reset();
       localStorage.clear();
-      const newKey = await initializeMasterKey();
+      const { key: newKey } = await initializeMasterKey();
 
       // Then: 使用新密钥解密旧密文应抛出错误
       await expect(decryptField(ciphertext, newKey)).rejects.toThrow(
@@ -299,7 +299,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   describe('密钥导出与加密操作兼容性', () => {
     test('导出密钥后用于加密：应成功加密', async () => {
       // Given: 初始化主密钥
-      const masterKey = await initializeMasterKey();
+      const { key: masterKey } = await initializeMasterKey();
 
       // When: 导出密钥
       const exportedKey = await exportMasterKey();
@@ -317,7 +317,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
 
     test('导出密钥后用于解密：应往返一致', async () => {
       // Given: 初始化密钥并加密明文
-      const masterKey = await initializeMasterKey();
+      const { key: masterKey } = await initializeMasterKey();
       const plaintext = 'Test data';
       const ciphertext = await encryptField(plaintext, masterKey);
 
@@ -353,7 +353,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       mockIsTauri.mockReturnValue(true);
 
       // When: 初始化主密钥
-      const masterKey = await initializeMasterKey();
+      const { key: masterKey } = await initializeMasterKey();
 
       // Then: 密钥应该存在
       expect(masterKey).toBeDefined();
@@ -372,7 +372,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       mockIsTauri.mockReturnValue(false);
 
       // When: 初始化主密钥
-      const masterKey = await initializeMasterKey();
+      const { key: masterKey } = await initializeMasterKey();
 
       // Then: 密钥应该存在
       expect(masterKey).toBeDefined();
@@ -393,7 +393,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       // When: 初始化主密钥
       // 注意：在测试环境中，Tauri Keyring API 不可用，所以会使用 Web 实现
       // 此测试主要验证环境检测逻辑
-      const masterKey = await initializeMasterKey();
+      const { key: masterKey } = await initializeMasterKey();
 
       // Then: 应成功生成密钥
       expect(masterKey).toBeDefined();
@@ -412,7 +412,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       mockIsTauri.mockReturnValue(false);
 
       // When: 初始化主密钥（使用 fake-indexeddb，应该正常工作）
-      const masterKey = await initializeMasterKey();
+      const { key: masterKey } = await initializeMasterKey();
 
       // Then: 应成功生成密钥
       expect(masterKey).toBeDefined();
@@ -434,7 +434,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   describe('测试隔离与验证', () => {
     test('每个测试用例独立执行：无状态共享', async () => {
       // Given: 初始化第一个密钥
-      const key1 = await initializeMasterKey();
+      const { key: key1 } = await initializeMasterKey();
 
       // Then: 第一个密钥应该有效
       expect(key1).toBeDefined();

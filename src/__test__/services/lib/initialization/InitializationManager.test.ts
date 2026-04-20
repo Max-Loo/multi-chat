@@ -11,7 +11,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InitializationManager } from '@/services/initialization/InitializationManager';
 import type { InitStep } from '@/services/initialization';
-import { createMockInitStep } from './fixtures';
+import { createMockInitStep, type TestInitStep } from './fixtures';
 
 describe('InitializationManager', () => {
   let manager: InitializationManager;
@@ -34,23 +34,23 @@ describe('InitializationManager', () => {
 
   describe('validateDependencies 方法', () => {
     it('应该验证依赖存在的步骤', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({ name: 'step2', dependencies: ['step1'] }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
     });
 
     it('应该检测依赖不存在的步骤并返回致命错误', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({ name: 'step2', dependencies: ['nonExistentStep'] }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(false);
       expect(result.fatalErrors).toHaveLength(1);
@@ -62,11 +62,11 @@ describe('InitializationManager', () => {
     });
 
     it('应该检测自依赖并返回致命错误', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1', dependencies: ['step1'] }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(false);
       expect(result.fatalErrors).toHaveLength(1);
@@ -80,12 +80,12 @@ describe('InitializationManager', () => {
 
   describe('detectCircularDependencies 方法', () => {
     it('应该检测简单循环依赖（A→B→A）', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'A', dependencies: ['B'] }),
         createMockInitStep({ name: 'B', dependencies: ['A'] }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(false);
       expect(result.fatalErrors).toHaveLength(1);
@@ -97,13 +97,13 @@ describe('InitializationManager', () => {
     });
 
     it('应该检测复杂循环依赖（A→B→C→A）', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'A', dependencies: ['C'] }),
         createMockInitStep({ name: 'B', dependencies: ['A'] }),
         createMockInitStep({ name: 'C', dependencies: ['B'] }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(false);
       expect(result.fatalErrors).toHaveLength(1);
@@ -115,13 +115,13 @@ describe('InitializationManager', () => {
     });
 
     it('应该允许无循环依赖的正常情况', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'A' }),
         createMockInitStep({ name: 'B', dependencies: ['A'] }),
         createMockInitStep({ name: 'C', dependencies: ['B'] }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       expect(result.completedSteps).toEqual(['A', 'B', 'C']);
@@ -129,7 +129,7 @@ describe('InitializationManager', () => {
 
     it('应该检测跨层循环依赖', async () => {
       // 测试 A→B→C→D→E→A 的跨层循环
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'A' }),
         createMockInitStep({ name: 'B', dependencies: ['A'] }),
         createMockInitStep({ name: 'C', dependencies: ['B'] }),
@@ -138,11 +138,11 @@ describe('InitializationManager', () => {
       ];
 
       // 这个测试应该成功，因为没有循环
-      const result1 = await manager.runInitialization({ steps });
+      const result1 = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
       expect(result1.success).toBe(true);
 
       // 添加一个创建循环的步骤（E 依赖 A）
-      const stepsWithCycle: InitStep[] = [
+      const stepsWithCycle: TestInitStep[] = [
         createMockInitStep({ name: 'A', dependencies: ['E'] }), // A 依赖 E
         createMockInitStep({ name: 'B', dependencies: ['A'] }),
         createMockInitStep({ name: 'C', dependencies: ['B'] }),
@@ -150,7 +150,7 @@ describe('InitializationManager', () => {
         createMockInitStep({ name: 'E', dependencies: ['D'] }),
       ];
 
-      const result2 = await manager.runInitialization({ steps: stepsWithCycle });
+      const result2 = await manager.runInitialization({ steps: stepsWithCycle as InitStep[] });
       expect(result2.success).toBe(false);
       expect(result2.fatalErrors).toHaveLength(1);
     });
@@ -158,13 +158,13 @@ describe('InitializationManager', () => {
 
   describe('topologicalSort 方法', () => {
     it('应该正确执行无依赖步骤', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({ name: 'step2' }),
         createMockInitStep({ name: 'step3' }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       expect(result.completedSteps).toHaveLength(3);
@@ -173,27 +173,27 @@ describe('InitializationManager', () => {
     });
 
     it('应该正确排序单层依赖的步骤', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'A' }),
         createMockInitStep({ name: 'B', dependencies: ['A'] }),
         createMockInitStep({ name: 'C', dependencies: ['B'] }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       expect(result.completedSteps).toEqual(['A', 'B', 'C']);
     });
 
     it('应该正确处理复杂依赖图', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'A' }),
         createMockInitStep({ name: 'B', dependencies: ['A'] }),
         createMockInitStep({ name: 'C', dependencies: ['A'] }),
         createMockInitStep({ name: 'D', dependencies: ['B', 'C'] }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       // A 必须在 B 和 C 之前
@@ -210,7 +210,7 @@ describe('InitializationManager', () => {
 
     it('应该返回正确的执行计划', async () => {
       let executionOrder: string[] = [];
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({
           name: 'A',
           execute: vi.fn().mockImplementation(async () => {
@@ -240,7 +240,7 @@ describe('InitializationManager', () => {
         }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       // A 应该是第一个
@@ -253,7 +253,7 @@ describe('InitializationManager', () => {
   describe('handleError 方法', () => {
     it('应该正确处理致命错误', async () => {
       const error = new Error('Fatal error');
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({
           name: 'fatalStep',
           critical: true,
@@ -266,7 +266,7 @@ describe('InitializationManager', () => {
         }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(false);
       expect(result.fatalErrors).toHaveLength(1);
@@ -276,7 +276,7 @@ describe('InitializationManager', () => {
 
     it('应该正确处理警告错误', async () => {
       const error = new Error('Warning error');
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({
           name: 'warningStep',
           critical: false,
@@ -289,7 +289,7 @@ describe('InitializationManager', () => {
         }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       expect(result.warnings).toHaveLength(1);
@@ -299,7 +299,7 @@ describe('InitializationManager', () => {
 
     it('应该正确处理可忽略错误', async () => {
       const error = new Error('Ignorable error');
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({
           name: 'ignorableStep',
           critical: false,
@@ -312,7 +312,7 @@ describe('InitializationManager', () => {
         }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       expect(result.ignorableErrors).toHaveLength(1);
@@ -323,13 +323,13 @@ describe('InitializationManager', () => {
 
   describe('完整流程测试', () => {
     it('应该成功执行所有步骤', async () => {
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({ name: 'step2' }),
         createMockInitStep({ name: 'step3' }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       expect(result.completedSteps).toContain('step1');
@@ -342,7 +342,7 @@ describe('InitializationManager', () => {
 
     it('应该并行执行无依赖步骤', async () => {
       let executionOrder: string[] = [];
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({
           name: 'step1',
           execute: vi.fn().mockImplementation(async () => {
@@ -366,7 +366,7 @@ describe('InitializationManager', () => {
         }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       expect(result.completedSteps).toHaveLength(3);
@@ -380,13 +380,13 @@ describe('InitializationManager', () => {
         progressCalls.push({ current, total, currentStep });
       });
 
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({ name: 'step2' }),
         createMockInitStep({ name: 'step3' }),
       ];
 
-      await manager.runInitialization({ steps, onProgress });
+      await manager.runInitialization({ steps: steps as unknown as InitStep[], onProgress });
 
       expect(onProgress).toHaveBeenCalledTimes(3);
       expect(progressCalls).toHaveLength(3);
@@ -397,7 +397,7 @@ describe('InitializationManager', () => {
 
     it('应该在致命错误时中断初始化', async () => {
       const error = new Error('Critical failure');
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({
           name: 'criticalStep',
@@ -412,7 +412,7 @@ describe('InitializationManager', () => {
         createMockInitStep({ name: 'step3' }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(false);
       expect(result.fatalErrors).toHaveLength(1);
@@ -423,7 +423,7 @@ describe('InitializationManager', () => {
 
     it('应该在警告错误时继续执行', async () => {
       const error = new Error('Non-critical failure');
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({
           name: 'warningStep',
@@ -438,7 +438,7 @@ describe('InitializationManager', () => {
         createMockInitStep({ name: 'step3' }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       expect(result.success).toBe(true);
       expect(result.warnings).toHaveLength(1);
@@ -454,7 +454,7 @@ describe('InitializationManager', () => {
       const warningError = new Error('Warning');
       const ignorableError = new Error('Ignorable');
 
-      const steps: InitStep[] = [
+      const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({
           name: 'fatalStep',
@@ -488,7 +488,7 @@ describe('InitializationManager', () => {
         }),
       ];
 
-      const result = await manager.runInitialization({ steps });
+      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
       // 致命错误应该中断初始化
       expect(result.success).toBe(false);

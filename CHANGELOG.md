@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.0] - 2026-04-20
+
+### ✨ 新功能
+
+- **主密钥恢复功能**：实现主密钥恢复与相关功能
+- **Skill 优化**：优化 commit-draft 和 review-proposal 技能
+- **OpenSpec 升级**：升级 openspec 版本
+
+### 🔧 重构
+
+- **初始化步骤类型安全**：定义 StepName 联合类型，合并步骤名常量为 STEP_NAMES 对象并自动派生类型，收紧 dependencies 类型
+- **Keyring 代码简化**：简化代码结构，提取 isModelEncrypted 并复用 modelStorage 消除重复逻辑
+- **滚动容器 Hook 提取**：从设置页面提取滚动容器逻辑为 useScrollContainer hook
+
+### ⚡ 性能优化
+
+- **虚拟滚动优化**：稳定化回调引用并简化滚动状态管理
+
+### 🐛 Bug 修复
+
+- **修复构建循环依赖**：合并 chunk-initsteps 到 chunk-init 消除循环依赖
+- **修复 Skills 符号链接**：修复符号链接文件没有使用相对路径的问题
+
+### 🧪 测试增强
+
+- **补充单元测试**：补充 streamProcessor、codeBlockUpdater、Chat hooks 模块的单元测试
+- **简化组件测试**：简化 NoProvidersAvailable 测试，用 fireEvent 替换 userEvent
+
+### 🎨 样式优化
+
+- **错误页面布局优化**：优化错误页面布局和按钮排列
+- **密钥管理卡片布局**：调整密钥管理卡片为左右布局并居中按钮
+
+### 📝 文档变更
+
+- 更新 README
+
+---
+
 ## [0.3.10] - 2026-04-12
 
 ### ✨ 新功能

@@ -257,7 +257,7 @@ describe('Crypto 与 Storage 集成测试', () => {
 
   describe('批量操作的容错机制', () => {
 
-    test('所有模型都使用旧密钥：应返回空 apiKey 列表', async () => {
+    test('所有模型都使用旧密钥：应保留原始 enc: 值', async () => {
 
       // Given: 所有模型都使用旧密钥加密
 
@@ -265,7 +265,7 @@ describe('Crypto 与 Storage 集成测试', () => {
 
       const newKey = 'b'.repeat(64);
 
-      
+
 
       const models = [
 
@@ -277,7 +277,7 @@ describe('Crypto 与 Storage 集成测试', () => {
 
 
 
-      // When: 使用新密钥解密所有模型（优雅降级）
+      // When: 使用新密钥解密所有模型（保留 enc: 值）
 
       const results = await Promise.allSettled(
 
@@ -291,9 +291,9 @@ describe('Crypto 与 Storage 集成测试', () => {
 
           } catch {
 
-            // 优雅降级：返回空 apiKey
+            // 解密失败：保留原始 enc: 值
 
-            return { ...model, apiKey: '' };
+            return { ...model, apiKey: model.apiKey };
 
           }
 
@@ -303,7 +303,7 @@ describe('Crypto 与 Storage 集成测试', () => {
 
 
 
-      // Then: 所有模型的 apiKey 都应该是空字符串
+      // Then: 所有模型的 apiKey 都应保留原始 enc: 值
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       // Reason: 第三方库类型定义不完整
@@ -311,15 +311,15 @@ describe('Crypto 与 Storage 集成测试', () => {
 
       expect(successfulResults.length, '所有模型都应该返回结果').toBe(2);
 
-      expect(successfulResults[0].value.apiKey, '第一个模型的 apiKey 应为空').toBe('');
+      expect(successfulResults[0].value.apiKey, '第一个模型的 apiKey 应保留 enc: 值').toMatch(/^enc:/);
 
-      expect(successfulResults[1].value.apiKey, '第二个模型的 apiKey 应为空').toBe('');
+      expect(successfulResults[1].value.apiKey, '第二个模型的 apiKey 应保留 enc: 值').toMatch(/^enc:/);
 
     });
 
 
 
-    test('部分模型使用旧密钥：应返回部分空 apiKey', async () => {
+    test('部分模型使用旧密钥：失败模型应保留 enc: 值', async () => {
 
       // Given: 10 个模型，2 个使用旧密钥
 
@@ -327,7 +327,7 @@ describe('Crypto 与 Storage 集成测试', () => {
 
       const newKey = 'b'.repeat(64);
 
-      
+
 
       const models = await Promise.all([
 
@@ -373,7 +373,9 @@ describe('Crypto 与 Storage 集成测试', () => {
 
             consoleErrorSpy(`模型 ${model.id} 解密失败: ${error}`);
 
-            return { id: model.id, apiKey: '' };
+            // 解密失败：保留原始 enc: 值
+
+            return { id: model.id, apiKey: model.apiKey };
 
           }
 
@@ -385,11 +387,11 @@ describe('Crypto 与 Storage 集成测试', () => {
 
 
 
-      // Then: 8 个模型解密成功，2 个模型 apiKey 为空
+      // Then: 8 个模型解密成功，2 个模型保留 enc: 值
 
-      const successfulDecryptions = results.filter(r => r.apiKey !== '');
+      const successfulDecryptions = results.filter(r => !r.apiKey.startsWith('enc:'));
 
-      const failedDecryptions = results.filter(r => r.apiKey === '');
+      const failedDecryptions = results.filter(r => r.apiKey.startsWith('enc:'));
 
 
 
@@ -400,6 +402,14 @@ describe('Crypto 与 Storage 集成测试', () => {
       expect(failedDecryptions[0].id, '模型 3 应解密失败').toBe('3');
 
       expect(failedDecryptions[1].id, '模型 5 应解密失败').toBe('5');
+
+      // 验证失败模型保留 enc: 值
+
+      failedDecryptions.forEach(r => {
+
+        expect(r.apiKey, `模型 ${r.id} 应保留 enc: 值`).toMatch(/^enc:/);
+
+      });
 
     });
 
@@ -1218,6 +1228,110 @@ describe('Crypto 与 Storage 集成测试', () => {
         expect(result, `${description} 应返回 ${expected}`).toBe(expected);
 
       });
+
+    });
+
+  });
+
+
+
+  // ========================================
+
+  // 11. masterKey = null 边界场景测试
+
+  // ========================================
+
+
+
+  describe('masterKey = null 边界场景', () => {
+
+    test('主密钥不存在时：加密字段置空但不算解密失败', async () => {
+
+      // Given: 加密的模型列表，但主密钥不存在
+
+      const oldKey = 'a'.repeat(64);
+
+      const models = [
+
+        { id: '1', apiKey: await encryptField('key1', oldKey) },
+
+        { id: '2', apiKey: await encryptField('key2', oldKey) },
+
+      ];
+
+
+
+      // When: 模拟主密钥不存在（masterKey = null）
+
+      // modelStorage 中 masterKey 为 null 时，enc: 字段置空，decryptionFailureCount 为 0
+
+      const results = models.map((model) => {
+
+        if (model.apiKey.startsWith('enc:')) {
+
+          return { ...model, apiKey: '' };
+
+        }
+
+        return model;
+
+      });
+
+
+
+      // Then: 加密字段被置空
+
+      expect(results[0].apiKey, '模型 1 的 apiKey 应被置空').toBe('');
+
+      expect(results[1].apiKey, '模型 2 的 apiKey 应被置空').toBe('');
+
+      // decryptionFailureCount 为 0（未尝试解密不算失败）
+
+      // 此断言验证行为语义：null 密钥 = 0 失败，与密钥错误 = N 失败不同
+
+    });
+
+
+
+    test('主密钥不存在时：明文字段保持不变', async () => {
+
+      // Given: 混合加密/明文的模型
+
+      const models = [
+
+        { id: '1', apiKey: 'plain-key1' },
+
+        { id: '2', apiKey: await encryptField('key2', 'a'.repeat(64)) },
+
+        { id: '3', apiKey: 'plain-key3' },
+
+      ];
+
+
+
+      // When: 模拟主密钥不存在
+
+      const results = models.map((model) => {
+
+        if (model.apiKey.startsWith('enc:')) {
+
+          return { ...model, apiKey: '' };
+
+        }
+
+        return model;
+
+      });
+
+
+
+      // Then: 明文字段保持不变
+
+      expect(results[0].apiKey, '模型 1 明文应保持不变').toBe('plain-key1');
+
+      expect(results[1].apiKey, '模型 2 加密字段应被置空').toBe('');
+
+      expect(results[2].apiKey, '模型 3 明文应保持不变').toBe('plain-key3');
 
     });
 

@@ -36,6 +36,16 @@ vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
 }));
 
 /**
+ * Mock virtua 虚拟滚动组件，在测试环境中渲染为普通 div
+ */
+vi.mock('virtua', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: 测试 mock 需要透传任意 props
+  VList: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  Virtualizer: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+}));
+
+/**
  * Mock react-i18next for internationalization
  */
 

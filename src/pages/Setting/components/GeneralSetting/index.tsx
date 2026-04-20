@@ -1,26 +1,10 @@
-import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
+import { useScrollContainer } from "@/hooks/useScrollContainer";
 import LanguageSetting from "./components/LanguageSetting";
 import ModelProviderSetting from "./components/ModelProviderSetting";
 import AutoNamingSetting from "./components/AutoNamingSetting";
-import { useRef, useEffect } from "react";
 
 const GeneralSetting: React.FC = () => {
-  const { scrollbarClassname, onScrollEvent } = useAdaptiveScrollbar();
-
-  // 滚动容器 ref
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // 添加 passive 监听器
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    container.addEventListener("scroll", onScrollEvent, { passive: true });
-
-    return () => {
-      container.removeEventListener("scroll", onScrollEvent);
-    };
-  }, [onScrollEvent]);
+  const { scrollContainerRef, scrollbarClassname } = useScrollContainer();
 
   return (
     <div

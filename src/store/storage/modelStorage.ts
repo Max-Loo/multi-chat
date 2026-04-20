@@ -3,10 +3,20 @@
  * 负责模型数据的加密存储和加载
  */
 import type { Model } from "@/types/model";
-import { encryptField, decryptField } from "@/utils/crypto";
+import { encryptField, decryptField, isEncrypted } from "@/utils/crypto";
 import { getMasterKey } from "@/store/keyring/masterKey";
 import { createLazyStore, saveToStore, loadFromStore } from "./storeUtils";
 import type { StoreCompat } from "@/utils/tauriCompat";
+
+/**
+ * loadModelsFromJson 返回的结构化结果
+ */
+export interface LoadModelsResult {
+  /** 模型列表 */
+  models: Model[];
+  /** 解密失败的数量 */
+  decryptionFailureCount: number;
+}
 
 /**
  * 模型存储的 LazyStore 实例（模块级单例）
@@ -17,7 +27,7 @@ let modelsStore: StoreCompat | null = null;
  * 获取或创建 modelsStore 实例
  * @returns StoreCompat 实例
  */
-const getModelsStore = (): StoreCompat => {
+export const getModelsStore = (): StoreCompat => {
   if (!modelsStore) {
     modelsStore = createLazyStore('models.json');
   }
@@ -53,7 +63,7 @@ const encryptModelSensitiveFields = async (
 
   if (model.apiKey && model.apiKey.length > 0) {
     try {
-      if (!model.apiKey.startsWith("enc:")) {
+      if (!isEncrypted(model.apiKey)) {
         encryptedModel.apiKey = await encryptField(model.apiKey, masterKey);
       }
     } catch (error) {
@@ -76,19 +86,21 @@ const encryptModelSensitiveFields = async (
 const decryptModelSensitiveFields = async (
   model: Model,
   masterKey: string
-): Promise<Model> => {
+): Promise<{ model: Model; decryptionFailed: boolean }> => {
   const decryptedModel = { ...model };
 
-  if (model.apiKey && model.apiKey.startsWith("enc:")) {
+  if (model.apiKey && isEncrypted(model.apiKey)) {
     try {
       decryptedModel.apiKey = await decryptField(model.apiKey, masterKey);
     } catch (error) {
       console.error(`解密模型 ${model.id} 的 apiKey 失败:`, error);
-      decryptedModel.apiKey = "";
+      // 保留原始 enc: 值，防止后续保存时覆盖磁盘上的加密数据
+      decryptedModel.apiKey = model.apiKey;
+      return { model: decryptedModel, decryptionFailed: true };
     }
   }
 
-  return decryptedModel;
+  return { model: decryptedModel, decryptionFailed: false };
 };
 
 /**
@@ -112,27 +124,59 @@ export const saveModelsToJson = async (models: Model[]): Promise<void> => {
 /**
  * 从 Store 加载模型列表
  * 敏感字段（apiKey）会被解密
- * @returns 模型列表
+ * @returns 结构化结果，包含模型列表和解密失败数量
  */
-export const loadModelsFromJson = async (): Promise<Model[]> => {
+export const loadModelsFromJson = async (): Promise<LoadModelsResult> => {
   const storedModels = await loadFromStore<Model[]>(getModelsStore(), 'models', []);
 
   if (storedModels.length === 0) {
-    return [];
+    return { models: [], decryptionFailureCount: 0 };
   }
 
   const masterKey = await getMasterKey();
   if (!masterKey) {
     console.warn("主密钥不存在，无法解密敏感数据，返回带空 apiKey 的模型");
-    return storedModels.map((model) => ({
-      ...model,
-      apiKey: model.apiKey?.startsWith("enc:") ? "" : model.apiKey,
-    }));
+    return {
+      models: storedModels.map((model) => ({
+        ...model,
+        apiKey: model.apiKey && isEncrypted(model.apiKey) ? "" : model.apiKey,
+      })),
+      // 主密钥不存在时未尝试解密，不算失败
+      decryptionFailureCount: 0,
+    };
   }
 
-  const decryptedModels = await Promise.all(
+  const results = await Promise.all(
     storedModels.map((model) => decryptModelSensitiveFields(model, masterKey))
   );
 
-  return decryptedModels;
+  const decryptionFailureCount = results.filter((r) => r.decryptionFailed).length;
+
+  return {
+    models: results.map((r) => r.model),
+    decryptionFailureCount,
+  };
+};
+
+/**
+ * 检测模型是否有加密的 apiKey
+ */
+export const isModelEncrypted = (model: Model): boolean => {
+  return !!(model.apiKey && typeof model.apiKey === 'string' && isEncrypted(model.apiKey));
+};
+
+/**
+ * 检查持久化存储中是否存在加密的模型数据
+ * 用于判断密钥重新生成后是否有可恢复的加密数据
+ */
+export const hasEncryptedModels = async (): Promise<boolean> => {
+  try {
+    const models = await loadFromStore<Model[]>(getModelsStore(), 'models', []);
+    if (models.length === 0) {
+      return false;
+    }
+    return models.some(isModelEncrypted);
+  } catch {
+    return false;
+  }
 };

@@ -78,7 +78,7 @@ describe('应用加载集成测试', () => {
         createMockModel({ id: 'model-1', nickname: 'DeepSeek Chat' }),
         createMockModel({ id: 'model-2', nickname: 'Kimi Chat' }),
       ];
-      vi.mocked(loadModelsFromJson).mockResolvedValue(storedModels);
+      vi.mocked(loadModelsFromJson).mockResolvedValue({ models: storedModels, decryptionFailureCount: 0 });
 
       // When: 初始化模型
       const store = createTestStore();
@@ -106,7 +106,7 @@ describe('应用加载集成测试', () => {
       // Given: 存储中有模型数据
       const mockModels: Model[] = [createMockModel()];
       vi.mocked(loadModelsFromJson).mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve(mockModels), 100))
+        () => new Promise(resolve => setTimeout(() => resolve({ models: mockModels, decryptionFailureCount: 0 }), 100))
       );
 
       // When: 初始化模型
@@ -123,7 +123,7 @@ describe('应用加载集成测试', () => {
 
     test('应该处理空模型列表', async () => {
       // Given: 存储中没有模型数据
-vi.mocked(loadModelsFromJson).mockResolvedValue([]);
+vi.mocked(loadModelsFromJson).mockResolvedValue({ models: [], decryptionFailureCount: 0 });
 
       // When: 初始化模型
       const store = createTestStore();
@@ -169,7 +169,7 @@ vi.mocked(loadModelsFromJson).mockImplementation(async () => {
           throw new Error('Network error');
         }
         // 第二次成功
-        return [createMockModel()];
+        return { models: [createMockModel()], decryptionFailureCount: 0 };
       });
 
       // When: 第一次初始化失败
@@ -226,7 +226,7 @@ vi.mocked(loadModelsFromJson).mockImplementation(async () => {
         if (attemptCount === 1) {
           throw new Error('Remote API failed');
         }
-        return cachedModels;
+        return { models: cachedModels, decryptionFailureCount: 0 };
       });
 
       // When: 第一次初始化失败
@@ -249,7 +249,7 @@ vi.mocked(loadModelsFromJson).mockImplementation(async () => {
     test('应该在降级时显示提示信息', async () => {
       // Given: 使用缓存数据
       const cachedModels: Model[] = [createMockModel()];
-vi.mocked(loadModelsFromJson).mockResolvedValue(cachedModels);
+vi.mocked(loadModelsFromJson).mockResolvedValue({ models: cachedModels, decryptionFailureCount: 0 });
 
       // When: 初始化模型
       const store = createTestStore();
@@ -273,7 +273,7 @@ vi.mocked(loadModelsFromJson).mockResolvedValue(cachedModels);
       const mockModels: Model[] = Array.from({ length: 100 }, (_, i) =>
         createMockModel({ id: `model-${i}`, nickname: `Model ${i}` })
       );
-vi.mocked(loadModelsFromJson).mockResolvedValue(mockModels);
+vi.mocked(loadModelsFromJson).mockResolvedValue({ models: mockModels, decryptionFailureCount: 0 });
 
       // When: 初始化模型
       const store = createTestStore();
@@ -298,7 +298,7 @@ vi.mocked(loadModelsFromJson).mockResolvedValue(mockModels);
     test('应该处理并发初始化请求', async () => {
       // Given: 模型数据
       const mockModels: Model[] = [createMockModel()];
-vi.mocked(loadModelsFromJson).mockResolvedValue(mockModels);
+vi.mocked(loadModelsFromJson).mockResolvedValue({ models: mockModels, decryptionFailureCount: 0 });
 
       // When: 并发发起多个初始化请求
       const store = createTestStore();
@@ -322,7 +322,7 @@ vi.mocked(loadModelsFromJson).mockResolvedValue(mockModels);
       // Given: 模拟异步加载
       const mockModels: Model[] = [createMockModel()];
 vi.mocked(loadModelsFromJson).mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve(mockModels), 50))
+        () => new Promise(resolve => setTimeout(() => resolve({ models: mockModels, decryptionFailureCount: 0 }), 50))
       );
 
       // When: 开始初始化
@@ -350,7 +350,7 @@ vi.mocked(loadModelsFromJson).mockImplementation(
       // Given: 模拟异步加载
       const mockModels: Model[] = [createMockModel()];
 vi.mocked(loadModelsFromJson).mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve(mockModels), 50))
+        () => new Promise(resolve => setTimeout(() => resolve({ models: mockModels, decryptionFailureCount: 0 }), 50))
       );
 
       // When: 初始化模型

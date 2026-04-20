@@ -31,7 +31,7 @@ describe('initSteps 配置验证', () => {
 
   describe('依赖存在性验证', () => {
     it('应该所有依赖的步骤存在', () => {
-      const stepNames = new Set(initSteps.map((step) => step.name));
+      const stepNames = new Set<string>(initSteps.map((step) => step.name));
 
       for (const step of initSteps) {
         if (step.dependencies) {
@@ -43,7 +43,7 @@ describe('initSteps 配置验证', () => {
     });
 
     it('应该检测依赖不存在的步骤', () => {
-      const stepNames = new Set(initSteps.map((step) => step.name));
+      const stepNames = new Set<string>(initSteps.map((step) => step.name));
 
       for (const step of initSteps) {
         if (step.dependencies) {

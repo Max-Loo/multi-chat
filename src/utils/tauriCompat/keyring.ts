@@ -39,7 +39,7 @@ const STORE_NAME = 'keys';
 /**
  * localStorage 中存储种子的键名
  */
-const SEED_STORAGE_KEY = 'multi-chat-keyring-seed';
+export const SEED_STORAGE_KEY = 'multi-chat-keyring-seed';
 
 /**
  * 生成 256-bit 随机种子并存储到 localStorage

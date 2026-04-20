@@ -3,6 +3,10 @@ import { AlertOctagon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
 import type { InitError } from "@/services/initialization";
+import { STEP_NAMES } from "@/config/initSteps";
+import { useResetDataDialog } from "@/hooks/useResetDataDialog";
+import { KeyRecoveryDialog } from "@/components/KeyRecoveryDialog";
+import { useState } from "react";
 
 /**
  * 致命错误屏幕组件属性
@@ -35,6 +39,11 @@ const formatErrorDetails = (error: unknown): string => {
  */
 export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) => {
   const { t } = useTranslation();
+  const { setIsDialogOpen: setIsResetDialogOpen, isResetting, renderResetDialog } = useResetDataDialog();
+  const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
+
+  /** 检测是否有 masterKey 步骤的 fatal 错误 */
+  const hasMasterKeyError = errors.some((error) => error.stepName === STEP_NAMES.masterKey);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background p-4">
@@ -51,17 +60,17 @@ export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) =>
         </div>
 
         {/* 错误列表 */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {errors.map((error, index) => {
             const shouldShowErrorDetails = import.meta.env.DEV && error.originalError != null;
 
             return (
-              <Alert key={index} variant="destructive">
+              <Alert key={index} variant="destructive" className="p-4">
                 <AlertOctagon className="h-4 w-4" />
                 <AlertTitle>
                   {error.message}
                 </AlertTitle>
-                <AlertDescription>
+                <AlertDescription className="mt-1">
                   {/* 开发模式下显示错误详情 */}
                   {shouldShowErrorDetails && (
                     <details className="mt-2">
@@ -79,13 +88,40 @@ export const FatalErrorScreen: React.FC<FatalErrorScreenProps> = ({ errors }) =>
           })}
         </div>
 
-        {/* 刷新按钮 */}
-        <div className="flex justify-center">
-          <Button onClick={handleRefresh} size="lg">
+        {/* 操作按钮 */}
+        <div className="flex flex-col items-center gap-3">
+          <Button onClick={handleRefresh} size="lg" disabled={isResetting}>
             {t($ => $.common.refreshPage)}
           </Button>
+          <div className="w-full border-t" />
+          <div className="flex flex-row flex-wrap items-center justify-center gap-3">
+            {hasMasterKeyError && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setIsRecoveryDialogOpen(true)}
+                disabled={isResetting}
+              >
+                {t($ => $.common.masterKeyRegeneratedImport)}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setIsResetDialogOpen(true)}
+              disabled={isResetting}
+            >
+              {t($ => $.common.resetAllData)}
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* 重置确认对话框 */}
+      {renderResetDialog()}
+
+      {/* 密钥恢复对话框 */}
+      <KeyRecoveryDialog open={isRecoveryDialogOpen} onOpenChange={setIsRecoveryDialogOpen} />
     </div>
   );
 };

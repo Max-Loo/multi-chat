@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { ChatRoleEnum } from "@/types/chat";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { ThinkingSection } from "./ThinkingSection";
 import { generateCleanHtml } from "@/utils/markdown";
 import { useTranslation } from "react-i18next"
@@ -23,7 +23,7 @@ interface ChatBubbleProps {
  * 聊天气泡组件
  * @description 显示用户和 AI 助手的聊天气泡，支持 Markdown 渲染和代码高亮
  */
-export const ChatBubble: React.FC<ChatBubbleProps> = ({
+const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
   role,
   content,
   reasoningContent,
@@ -91,3 +91,20 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     }
   }
 };
+
+/**
+ * 自定义比较函数，只比较关键 props 避免不必要的重渲染
+ */
+const arePropsEqual = (
+  prevProps: ChatBubbleProps,
+  nextProps: ChatBubbleProps,
+) => {
+  return (
+    prevProps.role === nextProps.role &&
+    prevProps.content === nextProps.content &&
+    prevProps.reasoningContent === nextProps.reasoningContent &&
+    prevProps.isRunning === nextProps.isRunning
+  );
+};
+
+export const ChatBubble = memo(ChatBubbleInner, arePropsEqual);

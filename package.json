@@ -1,6 +1,6 @@
 {
   "name": "multi-chat",
-  "version": "0.3.10",
+  "version": "0.4.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -73,6 +73,7 @@
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
     "tauri-plugin-keyring-api": "~0.1.1",
+    "virtua": "^0.48.8",
     "zhipu-ai-provider": "^0.2.2"
   },
   "devDependencies": {

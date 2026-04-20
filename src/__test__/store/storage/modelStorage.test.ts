@@ -41,6 +41,7 @@ import {
   resetModelsStore,
 } from '@/store/storage/modelStorage';
 import { storeMasterKey, getMasterKey } from '@/store/keyring/masterKey';
+import * as masterKeyModule from '@/store/keyring/masterKey';
 import { WebKeyringCompat } from '@/utils/tauriCompat/keyring';
 import { createMockModel } from '@/__test__/fixtures/models';
 
@@ -111,7 +112,7 @@ describe('modelStorage (Integration Test)', () => {
       await saveModelsToJson([mockModel]);
 
       // 加载模型（通过正常流程验证加密/解密）
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       // 验证加载的数据是正确的（解密成功）
       expect(loadedModels).toHaveLength(1);
@@ -124,7 +125,7 @@ describe('modelStorage (Integration Test)', () => {
       await saveModelsToJson([mockModel]);
 
       // 加载并验证解密成功
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       // 验证能够正确解密（如果加密格式错误，解密会失败）
       expect(loadedModels).toHaveLength(1);
@@ -139,7 +140,7 @@ describe('modelStorage (Integration Test)', () => {
       await saveModelsToJson([mockModel]);
 
       // 加载模型
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       // 验证解密后的 API key 正确
       expect(loadedModels).toHaveLength(1);
@@ -162,7 +163,7 @@ describe('modelStorage (Integration Test)', () => {
       await saveModelsToJson(models);
 
       // 加载
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       // 验证
       expect(loadedModels).toHaveLength(3);
@@ -177,7 +178,7 @@ describe('modelStorage (Integration Test)', () => {
       await saveModelsToJson(models1);
 
       // 验证第一次保存成功
-      const loaded1 = await loadModelsFromJson();
+      const { models: loaded1 } = await loadModelsFromJson();
       expect(loaded1).toHaveLength(1);
       expect(loaded1[0].id).toBe('model-1');
 
@@ -189,7 +190,7 @@ describe('modelStorage (Integration Test)', () => {
       await saveModelsToJson(models2);
 
       // 验证只有第二次的数据
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
       expect(loadedModels).toHaveLength(2);
       expect(loadedModels[0].id).toBe('model-2');
       expect(loadedModels[1].id).toBe('model-3');
@@ -198,7 +199,7 @@ describe('modelStorage (Integration Test)', () => {
     it('应该处理空数据的场景', async () => {
       // 注意：由于 modelsStore 是模块级单例，这个测试验证
       // 在 store 初始化后读取数据的正常流程
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       // 验证返回一个数组（可能是空的，也可能包含之前测试的数据）
       expect(Array.isArray(loadedModels)).toBe(true);
@@ -214,7 +215,7 @@ describe('modelStorage (Integration Test)', () => {
       await saveModelsToJson(models);
 
       // 验证加载后正确解密
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
       expect(loadedModels[0].apiKey).toBe('sk-key-1');
       expect(loadedModels[1].apiKey).toBe('sk-key-2');
       expect(loadedModels[2].apiKey).toBe('sk-key-3');
@@ -230,7 +231,7 @@ describe('modelStorage (Integration Test)', () => {
 
       await saveModelsToJson([model]);
 
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       expect(loadedModels[0].apiKey).toBe('');
     });
@@ -242,21 +243,22 @@ describe('modelStorage (Integration Test)', () => {
 
       await saveModelsToJson([model]);
 
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       expect(loadedModels[0].apiKey).toBeUndefined();
     });
 
-    it('应该处理已加密的 API key（跳过重复加密）', async () => {
+    it('无效密文解密失败时应保留原始 enc: 值', async () => {
       const model = createMockModel({ apiKey: 'enc:already-encrypted' });
 
       await saveModelsToJson([model]);
 
       // 验证加载后保持原样（没有重复加密）
-      const loadedModels = await loadModelsFromJson();
+      const result = await loadModelsFromJson();
 
-      // 已加密的数据（无效的密文）无法解密，会返回空字符串
-      expect(loadedModels[0].apiKey).toBe('');
+      // 无效密文解密失败，保留原始 enc: 值
+      expect(result.models[0].apiKey).toMatch(/^enc:/);
+      expect(result.decryptionFailureCount).toBe(1);
     });
 
     it('应该处理明文 API key（跳过解密）', async () => {
@@ -265,7 +267,7 @@ describe('modelStorage (Integration Test)', () => {
       storeMap.set('models', [model]);
 
       // 加载应该保持明文
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       expect(loadedModels[0].apiKey).toBe('sk-plaintext-key');
     });
@@ -275,7 +277,7 @@ describe('modelStorage (Integration Test)', () => {
       const model = createMockModel({ apiKey: 'sk-test-key' });
       await saveModelsToJson([model]);
 
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       expect(loadedModels).toHaveLength(1);
       expect(loadedModels[0].apiKey).toBe('sk-test-key');
@@ -294,7 +296,7 @@ describe('modelStorage (Integration Test)', () => {
       keyringCompat = new WebKeyringCompat();
 
       // 加载应该成功（使用新的 keyring 实例）
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       expect(loadedModels).toHaveLength(1);
       // 注意：由于种子相同，解密应该成功
@@ -315,10 +317,11 @@ describe('modelStorage (Integration Test)', () => {
       const stored = storeMap.get('models') as Model[];
       stored[0].apiKey = 'enc:invalid-base64!';
 
-      // 加载应该返回空 API key（解密失败）
-      const loadedModels = await loadModelsFromJson();
+      // 解密失败时保留原始 enc: 值
+      const result = await loadModelsFromJson();
 
-      expect(loadedModels[0].apiKey).toBe('');
+      expect(result.models[0].apiKey).toMatch(/^enc:/);
+      expect(result.decryptionFailureCount).toBe(1);
     });
 
     it('应该处理部分模型解密失败的场景', async () => {
@@ -334,13 +337,14 @@ describe('modelStorage (Integration Test)', () => {
       const stored = storeMap.get('models') as Model[];
       stored[1].apiKey = 'enc:invalid';
 
-      // 加载应该继续处理，失败的模型返回空 API key
-      const loadedModels = await loadModelsFromJson();
+      // 加载应继续处理，失败的模型保留原始 enc: 值
+      const result = await loadModelsFromJson();
 
-      expect(loadedModels).toHaveLength(3);
-      expect(loadedModels[0].apiKey).toBe('sk-key-1');
-      expect(loadedModels[1].apiKey).toBe(''); // 解密失败
-      expect(loadedModels[2].apiKey).toBe('sk-key-3');
+      expect(result.models).toHaveLength(3);
+      expect(result.models[0].apiKey).toBe('sk-key-1');
+      expect(result.models[1].apiKey).toMatch(/^enc:/); // 解密失败，保留 enc:
+      expect(result.models[2].apiKey).toBe('sk-key-3');
+      expect(result.decryptionFailureCount).toBe(1);
     });
 
     it('应该处理并发保存和加载的场景', async () => {
@@ -354,7 +358,7 @@ describe('modelStorage (Integration Test)', () => {
       ]);
 
       // 最后一次保存应该生效
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       expect(loadedModels).toHaveLength(1);
       expect(['model-1', 'model-2']).toContain(loadedModels[0].id);
@@ -378,7 +382,7 @@ describe('modelStorage (Integration Test)', () => {
       ]);
 
       // 最后一次保存应该生效
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       expect(loadedModels).toHaveLength(1);
       expect(['model-1', 'model-2', 'model-3']).toContain(loadedModels[0].id);
@@ -396,7 +400,7 @@ describe('modelStorage (Integration Test)', () => {
       ]);
 
       // 所有加载应该成功
-      results.forEach((loadedModels) => {
+      results.forEach(({ models: loadedModels }) => {
         expect(loadedModels).toHaveLength(1);
         expect(loadedModels[0].id).toBe('model-1');
       });
@@ -427,12 +431,91 @@ describe('modelStorage (Integration Test)', () => {
       await saveModelsToJson(models);
 
       const startTime = Date.now();
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
       const endTime = Date.now();
 
       expect(loadedModels).toHaveLength(100);
       // 加载和解密 100 个模型应该在 5 秒内完成
       expect(endTime - startTime).toBeLessThan(5000);
+    });
+  });
+
+  // ========================================
+  // 解密失败统计测试
+  // ========================================
+  describe('解密失败统计', () => {
+    it('所有模型解密成功时 decryptionFailureCount 为 0', async () => {
+      const models = [
+        createMockModel({ id: 'model-1', apiKey: 'sk-key-1' }),
+        createMockModel({ id: 'model-2', apiKey: 'sk-key-2' }),
+      ];
+      await saveModelsToJson(models);
+
+      const result = await loadModelsFromJson();
+
+      expect(result.decryptionFailureCount).toBe(0);
+      expect(result.models).toHaveLength(2);
+      expect(result.models[0].apiKey).toBe('sk-key-1');
+      expect(result.models[1].apiKey).toBe('sk-key-2');
+    });
+
+    it('空数据时 decryptionFailureCount 为 0', async () => {
+      const result = await loadModelsFromJson();
+
+      expect(result.decryptionFailureCount).toBe(0);
+      expect(result.models).toHaveLength(0);
+    });
+
+    it('多个模型解密失败时 decryptionFailureCount 统计准确', async () => {
+      const models = [
+        createMockModel({ id: 'model-1', apiKey: 'sk-key-1' }),
+        createMockModel({ id: 'model-2', apiKey: 'sk-key-2' }),
+        createMockModel({ id: 'model-3', apiKey: 'sk-key-3' }),
+      ];
+      await saveModelsToJson(models);
+
+      // 修改前两个为无效密文
+      const stored = storeMap.get('models') as Model[];
+      stored[0].apiKey = 'enc:invalid-1';
+      stored[1].apiKey = 'enc:invalid-2';
+
+      const result = await loadModelsFromJson();
+
+      expect(result.decryptionFailureCount).toBe(2);
+      expect(result.models[0].apiKey).toMatch(/^enc:/);
+      expect(result.models[1].apiKey).toMatch(/^enc:/);
+      expect(result.models[2].apiKey).toBe('sk-key-3');
+    });
+
+    it('主密钥不存在时 apiKey 置空且 decryptionFailureCount 为 0', async () => {
+      // 直接写入加密数据到 storeMap（不经过 saveModelsToJson 的加密）
+      const oldKey = 'a'.repeat(64);
+      const { encryptField } = await import('@/utils/crypto');
+      const models = [
+        createMockModel({
+          id: 'model-null-1',
+          apiKey: await encryptField('key1', oldKey),
+        }),
+        createMockModel({
+          id: 'model-null-2',
+          apiKey: await encryptField('key2', oldKey),
+        }),
+      ];
+      storeMap.set('models', models);
+
+      // mock getMasterKey 返回 null
+      const getMasterKeySpy = vi
+        .spyOn(masterKeyModule, 'getMasterKey')
+        .mockResolvedValueOnce(null);
+
+      const result = await loadModelsFromJson();
+
+      expect(result.models).toHaveLength(2);
+      expect(result.models[0].apiKey).toBe('');
+      expect(result.models[1].apiKey).toBe('');
+      expect(result.decryptionFailureCount).toBe(0);
+
+      getMasterKeySpy.mockRestore();
     });
   });
 });

@@ -24,14 +24,14 @@ describe('i18n 初始化集成测试', () => {
 
   describe('完整的初始化流程（i18n + 其他步骤）', () => {
     it('应该成功执行包含 i18n 步骤的完整初始化', async () => {
-      const mockSteps: InitStep[] = [
+      const mockSteps = [
         {
           name: 'i18n',
           critical: true,
           execute: async () => {
             await initI18n();
           },
-          onError: (error) => ({
+          onError: (error: unknown) => ({
             severity: 'fatal' as const,
             message: 'i18n 初始化失败',
             originalError: error,
@@ -41,13 +41,13 @@ describe('i18n 初始化集成测试', () => {
           name: 'mockStep',
           critical: false,
           execute: vi.fn().mockResolvedValue(undefined),
-          onError: (error) => ({
+          onError: (error: unknown) => ({
             severity: 'warning' as const,
             message: 'Mock step 失败',
             originalError: error,
           }),
         },
-      ];
+      ] as unknown as InitStep[];
 
       const result = await manager.runInitialization({ steps: mockSteps });
 
@@ -59,7 +59,7 @@ describe('i18n 初始化集成测试', () => {
     it('应该按依赖顺序执行初始化步骤', async () => {
       let executionOrder: string[] = [];
 
-      const mockSteps: InitStep[] = [
+      const mockSteps = [
         {
           name: 'i18n',
           critical: true,
@@ -67,7 +67,7 @@ describe('i18n 初始化集成测试', () => {
             executionOrder.push('i18n');
             await initI18n();
           },
-          onError: (error) => ({
+          onError: (error: unknown) => ({
             severity: 'fatal' as const,
             message: 'i18n 初始化失败',
             originalError: error,
@@ -80,13 +80,13 @@ describe('i18n 初始化集成测试', () => {
           execute: async () => {
             executionOrder.push('dependsOnI18n');
           },
-          onError: (error) => ({
+          onError: (error: unknown) => ({
             severity: 'warning' as const,
             message: '依赖步骤失败',
             originalError: error,
           }),
         },
-      ];
+      ] as unknown as InitStep[];
 
       await manager.runInitialization({ steps: mockSteps });
 
@@ -124,14 +124,14 @@ describe('i18n 初始化集成测试', () => {
 
   describe('没有致命错误时应用成功启动', () => {
     it('应该在非关键步骤失败时继续启动应用', async () => {
-      const mockSteps: InitStep[] = [
+      const mockSteps = [
         {
           name: 'i18n',
           critical: true,
           execute: async () => {
             await initI18n();
           },
-          onError: (error) => ({
+          onError: (error: unknown) => ({
             severity: 'fatal' as const,
             message: 'i18n 初始化失败',
             originalError: error,
@@ -141,13 +141,13 @@ describe('i18n 初始化集成测试', () => {
           name: 'nonCritical',
           critical: false,
           execute: vi.fn().mockRejectedValue(new Error('Non-critical error')),
-          onError: (error) => ({
+          onError: (error: unknown) => ({
             severity: 'warning' as const,
             message: '非关键步骤失败',
             originalError: error,
           }),
         },
-      ];
+      ] as unknown as InitStep[];
 
       const result = await manager.runInitialization({ steps: mockSteps });
 
@@ -158,14 +158,14 @@ describe('i18n 初始化集成测试', () => {
     });
 
     it('应该在所有步骤成功时成功启动应用', async () => {
-      const mockSteps: InitStep[] = [
+      const mockSteps = [
         {
           name: 'i18n',
           critical: true,
           execute: async () => {
             await initI18n();
           },
-          onError: (error) => ({
+          onError: (error: unknown) => ({
             severity: 'fatal' as const,
             message: 'i18n 初始化失败',
             originalError: error,
@@ -175,13 +175,13 @@ describe('i18n 初始化集成测试', () => {
           name: 'otherStep',
           critical: false,
           execute: vi.fn().mockResolvedValue(undefined),
-          onError: (error) => ({
+          onError: (error: unknown) => ({
             severity: 'warning' as const,
             message: '其他步骤失败',
             originalError: error,
           }),
         },
-      ];
+      ] as unknown as InitStep[];
 
       const result = await manager.runInitialization({ steps: mockSteps });
 
