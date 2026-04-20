@@ -1,88 +1,44 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import { useExistingChatList } from '@/hooks/useExistingChatList';
-import chatReducer from '@/store/slices/chatSlices';
-import type { RootState } from '@/store';
-import type { Chat } from '@/types/chat';
-
-const createMockChat = (id: string, isDeleted: boolean = false): Chat => ({
-  id,
-  name: `Chat ${id}`,
-  chatModelList: [{
-    modelId: 'model-1',
-    chatHistoryList: [],
-  }],
-  isDeleted,
-});
-
-const createTestStore = (state: Partial<RootState>) => {
-  return configureStore({
-    reducer: {
-      chat: chatReducer,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    } as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    preloadedState: state as any,
-  });
-};
-
-const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-  return ({ children }: { children: React.ReactNode }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    return <Provider store={store as any}>{children}</Provider>;
-  };
-};
+import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
+import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
+import { createMockChat } from '@/__test__/helpers/testing-utils';
 
 describe('useExistingChatList', () => {
 
   describe('获取聊天列表测试', () => {
     it('应返回完整的聊天数组（无删除标记）', () => {
-      const chat1 = createMockChat('chat-1', false);
-      const chat2 = createMockChat('chat-2', false);
-      const chat3 = createMockChat('chat-3', false);
+      const chat1 = createMockChat({ id: 'chat-1' });
+      const chat2 = createMockChat({ id: 'chat-2' });
+      const chat3 = createMockChat({ id: 'chat-3' });
 
-      const store = createTestStore({
-        chat: {
-          chatList: [chat1, chat2, chat3],
-          selectedChatId: null,
-          loading: false,
-          error: null,
-          initializationError: null,
-          runningChat: {},
+      const { result } = renderHookWithProviders(() => useExistingChatList(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1, chat2, chat3],
+            selectedChatId: null,
+          }),
         },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingChatList(), { wrapper });
 
       expect(result.current).toHaveLength(3);
       expect(result.current).toEqual([chat1, chat2, chat3]);
     });
 
     it('应过滤掉已删除的聊天', () => {
-      const chat1 = createMockChat('chat-1', false);
-      const chat2 = createMockChat('chat-2', true);
-      const chat3 = createMockChat('chat-3', false);
-      const chat4 = createMockChat('chat-4', true);
+      const chat1 = createMockChat({ id: 'chat-1' });
+      const chat2 = createMockChat({ id: 'chat-2', isDeleted: true });
+      const chat3 = createMockChat({ id: 'chat-3' });
+      const chat4 = createMockChat({ id: 'chat-4', isDeleted: true });
 
-      const store = createTestStore({
-        chat: {
-          chatList: [chat1, chat2, chat3, chat4],
-          selectedChatId: null,
-          loading: false,
-          error: null,
-          initializationError: null,
-          runningChat: {},
+      const { result } = renderHookWithProviders(() => useExistingChatList(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1, chat2, chat3, chat4],
+            selectedChatId: null,
+          }),
         },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingChatList(), { wrapper });
 
       expect(result.current).toHaveLength(2);
       expect(result.current).toEqual([chat1, chat3]);
@@ -90,23 +46,18 @@ describe('useExistingChatList', () => {
     });
 
     it('应保留聊天顺序', () => {
-      const chat1 = createMockChat('chat-1', false);
-      const chat2 = createMockChat('chat-2', false);
-      const chat3 = createMockChat('chat-3', false);
+      const chat1 = createMockChat({ id: 'chat-1' });
+      const chat2 = createMockChat({ id: 'chat-2' });
+      const chat3 = createMockChat({ id: 'chat-3' });
 
-      const store = createTestStore({
-        chat: {
-          chatList: [chat1, chat2, chat3],
-          selectedChatId: null,
-          loading: false,
-          error: null,
-          initializationError: null,
-          runningChat: {},
+      const { result } = renderHookWithProviders(() => useExistingChatList(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1, chat2, chat3],
+            selectedChatId: null,
+          }),
         },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingChatList(), { wrapper });
 
       expect(result.current[0].id).toBe('chat-1');
       expect(result.current[1].id).toBe('chat-2');
@@ -116,42 +67,32 @@ describe('useExistingChatList', () => {
 
   describe('空列表测试', () => {
     it('应返回空数组', () => {
-      const store = createTestStore({
-        chat: {
-          chatList: [],
-          selectedChatId: null,
-          loading: false,
-          error: null,
-          initializationError: null,
-          runningChat: {},
+      const { result } = renderHookWithProviders(() => useExistingChatList(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [],
+            selectedChatId: null,
+          }),
         },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingChatList(), { wrapper });
 
       expect(result.current).toEqual([]);
       expect(result.current).toHaveLength(0);
     });
 
     it('当所有聊天都已删除时应返回空数组', () => {
-      const chat1 = createMockChat('chat-1', true);
-      const chat2 = createMockChat('chat-2', true);
-      const chat3 = createMockChat('chat-3', true);
+      const chat1 = createMockChat({ id: 'chat-1', isDeleted: true });
+      const chat2 = createMockChat({ id: 'chat-2', isDeleted: true });
+      const chat3 = createMockChat({ id: 'chat-3', isDeleted: true });
 
-      const store = createTestStore({
-        chat: {
-          chatList: [chat1, chat2, chat3],
-          selectedChatId: null,
-          loading: false,
-          error: null,
-          initializationError: null,
-          runningChat: {},
+      const { result } = renderHookWithProviders(() => useExistingChatList(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1, chat2, chat3],
+            selectedChatId: null,
+          }),
         },
       });
-
-      const wrapper = createWrapper(store);
-      const { result } = renderHook(() => useExistingChatList(), { wrapper });
 
       expect(result.current).toEqual([]);
       expect(result.current).toHaveLength(0);
@@ -160,21 +101,16 @@ describe('useExistingChatList', () => {
 
   describe('Memoization 测试', () => {
     it('应在 chatList 不变时返回相同的引用', () => {
-      const chat1 = createMockChat('chat-1', false);
+      const chat1 = createMockChat({ id: 'chat-1' });
 
-      const store = createTestStore({
-        chat: {
-          chatList: [chat1],
-          selectedChatId: null,
-          loading: false,
-          error: null,
-          initializationError: null,
-          runningChat: {},
+      const { result, rerender } = renderHookWithProviders(() => useExistingChatList(), {
+        preloadedState: {
+          chat: createChatSliceState({
+            chatList: [chat1],
+            selectedChatId: null,
+          }),
         },
       });
-
-      const wrapper = createWrapper(store);
-      const { result, rerender } = renderHook(() => useExistingChatList(), { wrapper });
 
       const firstResult = result.current;
 

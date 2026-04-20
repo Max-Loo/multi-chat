@@ -185,3 +185,73 @@ export const createReactRouterMocksWithNestedParams = (config?: {
   };
 };
 
+// ========================================
+// 路由配置测试 Helper
+// 用于访问 router.routes 内部结构的类型安全工具
+// ========================================
+
+/**
+ * React 元素的类型信息（用于测试中访问组件名和 props）
+ *
+ * React Router 内部路由节点携带的 React 元素包含 type 和 props，
+ * 但这些不在 RouteObject 公开类型中，此处补充测试所需的类型定义。
+ */
+export interface ReactElementLike {
+  type?: { name?: string; _payload?: unknown; _ctor?: unknown };
+  props?: Record<string, unknown>;
+}
+
+/**
+ * 测试用路由节点类型，包含测试所需的全部字段
+ *
+ * Reason: createBrowserRouter 返回的 router.routes 是 @remix-run/router
+ * 内部类型 AggressiveRouteObject，不完整暴露 children、element 等属性。
+ * RouteObject 是 IndexRouteObject | NonIndexRouteObject 联合类型，
+ * 不能用 interface extends，因此独立定义测试所需的类型替代 as any。
+ */
+export interface TestRouteObject {
+  path?: string;
+  index?: boolean;
+  element?: ReactElementLike;
+  children?: TestRouteObject[];
+  loader?: unknown;
+  action?: unknown;
+}
+
+/**
+ * 递归检查路由树是否包含指定属性
+ * @param routes 路由列表
+ * @param propName 属性名（如 'loader'、'action'、'path'）
+ * @param predicate 属性值断言函数
+ */
+export const hasRouteProperty = (
+  routes: TestRouteObject[],
+  propName: keyof TestRouteObject,
+  predicate?: (value: unknown) => boolean,
+): boolean => {
+  return routes.some((route) => {
+    const value = route[propName];
+    if (value !== undefined) {
+      return predicate ? predicate(value) : true;
+    }
+    if (route.children) return hasRouteProperty(route.children, propName, predicate);
+    return false;
+  });
+};
+
+/**
+ * 获取路由器的根路由配置
+ * @param routerInstance createBrowserRouter 创建的路由器实例
+ */
+export function getRootRoute(routerInstance: { routes: Array<TestRouteObject> }): TestRouteObject {
+  return routerInstance.routes[0] as TestRouteObject;
+}
+
+/**
+ * 获取路由器根路由的子路由列表
+ * @param routerInstance createBrowserRouter 创建的路由器实例
+ */
+export function getRootChildren(routerInstance: { routes: Array<TestRouteObject> }): TestRouteObject[] {
+  return getRootRoute(routerInstance).children ?? [];
+}
+

@@ -314,9 +314,17 @@ describe('metadataCollector', () => {
         sources: Promise.resolve([{ sourceType: 'url', id: '1', url: 'https://example.com' }]),
       });
 
-      // 创建 mock StreamResult
-      const mockStreamResult = Promise.resolve(metadata) as any;
-      mockStreamResult[Symbol.asyncIterator] = async function* () {};
+      // 创建 mock StreamResult（需要实现 PromiseLike + AsyncIterable 双重接口）
+      // oxlint-disable-next-line unicorn/no-thenable -- 测试需要模拟 PromiseLike 接口
+      const mockStreamResult: {
+        then: <T>(onfulfilled?: (value: StreamResultMetadata) => T | PromiseLike<T>) => Promise<T>;
+        [Symbol.asyncIterator]: () => AsyncIterator<unknown>;
+      } = {
+        // oxlint-disable-next-line unicorn/no-thenable -- 测试需要模拟 PromiseLike 接口
+        then: <T>(onfulfilled?: (value: StreamResultMetadata) => T | PromiseLike<T>) =>
+          Promise.resolve(metadata).then(onfulfilled),
+        [Symbol.asyncIterator]: async function* () {},
+      };
 
       const result = await collectAllMetadata(mockStreamResult);
 
@@ -335,8 +343,16 @@ describe('metadataCollector', () => {
         providerMetadata: Promise.reject(new Error('Provider error')),
       });
 
-      const mockStreamResult = Promise.resolve(metadata) as any;
-      mockStreamResult[Symbol.asyncIterator] = async function* () {};
+      // oxlint-disable-next-line unicorn/no-thenable -- 测试需要模拟 PromiseLike 接口
+      const mockStreamResult: {
+        then: <T>(onfulfilled?: (value: StreamResultMetadata) => T | PromiseLike<T>) => Promise<T>;
+        [Symbol.asyncIterator]: () => AsyncIterator<unknown>;
+      } = {
+        // oxlint-disable-next-line unicorn/no-thenable -- 测试需要模拟 PromiseLike 接口
+        then: <T>(onfulfilled?: (value: StreamResultMetadata) => T | PromiseLike<T>) =>
+          Promise.resolve(metadata).then(onfulfilled),
+        [Symbol.asyncIterator]: async function* () {},
+      };
 
       await expect(collectAllMetadata(mockStreamResult)).rejects.toThrow(MetadataCollectionError);
     });

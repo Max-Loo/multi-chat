@@ -20,8 +20,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, waitFor } from '@testing-library/react';
 import { getTestStore, resetStore } from '@/__test__/helpers/integration/resetStore';
 import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
-import type { Store } from '@reduxjs/toolkit';
-import type { RootState } from '@/store';
+import type { AppDispatch } from '@/store';
 import {
   startSendChatMessage,
   createChat,
@@ -35,7 +34,7 @@ import * as chatStorage from '@/store/storage/chatStorage';
 
 // Mock streamChatCompletion 以避免真实的 API 调用
 vi.mock('@/services/chat', async () => {
-  const actual = await vi.importActual<any>('@/services/chat');
+  const actual = await vi.importActual<typeof import('@/services/chat')>('@/services/chat');
   return {
     ...actual,
     streamChatCompletion: vi.fn(() => ({
@@ -92,7 +91,7 @@ function createTestModel(overrides: Partial<Model> = {}): Model {
 }
 
 describe('自动命名功能集成测试', () => {
-  let store: Store<RootState>;
+  let store: ReturnType<typeof getTestStore>;
 
   beforeEach(async () => {
     await clearIndexedDB();
@@ -124,10 +123,10 @@ describe('自动命名功能集成测试', () => {
 
     // Act: 发送消息并触发 AI 回复
     await act(async () => {
-      await store.dispatch(startSendChatMessage({
+      await (store.dispatch as AppDispatch)(startSendChatMessage({
         chat,
         message: '如何学习 TypeScript？',
-      }) as any);
+      }));
     });
 
     // 等待异步操作完成
@@ -173,21 +172,25 @@ describe('自动命名功能集成测试', () => {
 
     // Act: 发送消息
     await act(async () => {
-      await store.dispatch(startSendChatMessage({
+      await (store.dispatch as AppDispatch)(startSendChatMessage({
         chat,
         message: '再次提问',
-      }) as any);
+      }));
     });
 
-    // 等待可能的异步操作
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // 等待消息处理完成
+    await waitFor(() => {
+      const s = store.getState();
+      const chatItem = s.chat.chatList.find((item) => item.id === chat.id);
+      expect(chatItem?.chatModelList?.[0]?.chatHistoryList?.length).toBeGreaterThan(0);
+    });
 
     // Assert: 验证 generateChatTitleService 未被调用
     expect(generateChatTitleService).not.toHaveBeenCalled();
 
     // 验证标题保持手动设置的值
     state = store.getState();
-    updatedChat = state.chat.chatList.find((c) => c.id === chat.id);
+    updatedChat = state.chat.chatList.find((item) => item.id === chat.id);
     expect(updatedChat?.name).toBe('我的手动标题');
     expect(updatedChat?.isManuallyNamed).toBe(true);
   });
@@ -214,14 +217,18 @@ describe('自动命名功能集成测试', () => {
 
     // Act: 发送消息
     await act(async () => {
-      await store.dispatch(startSendChatMessage({
+      await (store.dispatch as AppDispatch)(startSendChatMessage({
         chat,
         message: '测试问题',
-      }) as any);
+      }));
     });
 
-    // 等待可能的异步操作
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // 等待消息处理完成
+    await waitFor(() => {
+      const s = store.getState();
+      const chatItem = s.chat.chatList.find((item) => item.id === chat.id);
+      expect(chatItem?.chatModelList?.[0]?.chatHistoryList?.length).toBeGreaterThan(0);
+    });
 
     // Assert: 验证 generateChatTitleService 未被调用
     expect(generateChatTitleService).not.toHaveBeenCalled();
@@ -263,10 +270,10 @@ describe('自动命名功能集成测试', () => {
     // Act: 两个模型几乎同时完成
     await act(async () => {
       const promises = [
-        store.dispatch(startSendChatMessage({
+        (store.dispatch as AppDispatch)(startSendChatMessage({
           chat,
           message: '测试问题',
-        }) as any),
+        })),
       ];
       await Promise.all(promises);
     });

@@ -5,6 +5,12 @@
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach } from 'vitest';
+
+/** Mock @radix-ui/react-slot——预构建环境下 forwardRef 不可用 */
+vi.mock('@radix-ui/react-slot', () => ({
+  Slot: (props: any) => props.children,
+}));
+
 import { Button } from '@/components/ui/button';
 
 describe('Button 组件', () => {

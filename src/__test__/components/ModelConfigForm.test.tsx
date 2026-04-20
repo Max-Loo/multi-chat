@@ -5,90 +5,35 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
-import React from 'react';
+import { fireEvent, waitFor, cleanup } from '@testing-library/react';
 import ModelConfigForm from '@/pages/Model/components/ModelConfigForm';
-import modelReducer from '@/store/slices/modelSlice';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
-import type { RootState } from '@/store';
-import { createMockModel, createDeepSeekProvider, createKimiProvider } from '@/__test__/helpers/fixtures';
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
+import { createDeepSeekProvider, createKimiProvider } from '@/__test__/helpers/fixtures';
 import { ModelProviderKeyEnum } from '@/utils/enums';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
+import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
+import type { Model } from '@/types/model';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (keyOrFn: string | ((_: any) => string)) => {
-      const translations = {
-        model: {
-          nickname: '模型昵称',
-          apiKey: 'API 密钥',
-          apiAddress: 'API 地址',
-          modelName: '模型名称',
-          createModel: '创建模型',
-          editModel: '编辑模型',
-          submit: '提交',
-          cancel: '取消',
-          required: '必填',
-        },
-        common: {
-          required: '必填',
-          submit: '提交',
-          cancel: '取消',
-        },
-      };
+vi.mock('react-i18next', () => {
+  const R = { model: { modelNickname: '模型昵称', apiKey: 'API 密钥', apiAddress: 'API 地址', model: '模型', modelNicknameRequired: '请输入模型昵称', apiKeyRequired: '请输入 API 密钥', apiAddressRequired: '请输入 API 地址', modelRequired: '请选择模型' }, common: { remark: '备注', submit: '提交' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
-      if (typeof keyOrFn === 'function') {
-        return keyOrFn(translations);
-      }
-      
-      const translationsMap: Record<string, string> = {
-        'model.nickname': '模型昵称',
-        'model.apiKey': 'API 密钥',
-        'model.apiAddress': 'API 地址',
-        'model.modelName': '模型名称',
-        'model.createModel': '创建模型',
-        'model.editModel': '编辑模型',
-        'common.submit': '提交',
-        'common.cancel': '取消',
-        'common.required': '必填',
-      };
-      return translationsMap[keyOrFn] || keyOrFn;
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
-const createTestStore = (state: Partial<RootState>) => {
-  return configureStore({
-    reducer: {
-      models: modelReducer,
-      modelProvider: modelProviderReducer,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    } as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    preloadedState: state as any,
+const createStore = (
+  modelsOverrides?: Parameters<typeof createModelSliceState>[0],
+  modelProviderOverrides?: Parameters<typeof createModelProviderSliceState>[0],
+) => {
+  return createTypeSafeTestStore({
+    models: createModelSliceState(modelsOverrides),
+    modelProvider: createModelProviderSliceState(modelProviderOverrides),
   });
 };
 
-const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-  return function({ children }: { children: React.ReactNode }) {
-    return <Provider store={store}>{children}</Provider>;
-  };
-};
-
 describe('ModelConfigForm', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // Reason: 测试错误处理，需要构造无效输入
-  let mockOnFinish: any;
+  let mockOnFinish: ReturnType<typeof vi.fn<(model: Model) => void>>;
 
   beforeEach(() => {
-    mockOnFinish = vi.fn();
+    mockOnFinish = vi.fn<(model: Model) => void>();
   });
 
   afterEach(() => {
@@ -97,29 +42,17 @@ describe('ModelConfigForm', () => {
 
   describe('表单渲染', () => {
     it('应该渲染新建模型表单', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [createDeepSeekProvider()],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createStore(
+        undefined,
+        { providers: [createDeepSeekProvider()] },
+      );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           onFinish={mockOnFinish}
         />,
-        { wrapper }
+        { store }
       );
 
       const form = document.querySelector('form');
@@ -132,30 +65,18 @@ describe('ModelConfigForm', () => {
         apiKey: 'existing-key',
       });
 
-      const store = createTestStore({
-        models: {
-          models: [existingModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [createDeepSeekProvider()],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createStore(
+        { models: [existingModel] },
+        { providers: [createDeepSeekProvider()] },
+      );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={existingModel}
           onFinish={mockOnFinish}
         />,
-        { wrapper }
+        { store }
       );
 
       const form = document.querySelector('form');
@@ -165,29 +86,17 @@ describe('ModelConfigForm', () => {
 
   describe('表单验证', () => {
     it('应该验证必填字段', async () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [createDeepSeekProvider()],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createStore(
+        undefined,
+        { providers: [createDeepSeekProvider()] },
+      );
 
-      const wrapper = createWrapper(store);
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           onFinish={mockOnFinish}
         />,
-        { wrapper }
+        { store }
       );
 
       // 获取提交按钮（通过 container 查找，避免多个测试元素干扰）
@@ -206,29 +115,17 @@ describe('ModelConfigForm', () => {
     });
 
     it('应该在字段失焦时显示验证错误', async () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [createDeepSeekProvider()],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createStore(
+        undefined,
+        { providers: [createDeepSeekProvider()] },
+      );
 
-      const wrapper = createWrapper(store);
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           onFinish={mockOnFinish}
         />,
-        { wrapper }
+        { store }
       );
 
       // 获取输入框（通过 name 属性）
@@ -250,29 +147,17 @@ describe('ModelConfigForm', () => {
 
   describe('表单提交', () => {
     it('应该在新建模型提交成功后调用 onFinish', async () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [createDeepSeekProvider()],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createStore(
+        undefined,
+        { providers: [createDeepSeekProvider()] },
+      );
 
-      const wrapper = createWrapper(store);
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           onFinish={mockOnFinish}
         />,
-        { wrapper }
+        { store }
       );
 
       // 填写表单 - 通过 container 和 name 属性查找输入框
@@ -304,30 +189,18 @@ describe('ModelConfigForm', () => {
     it('应该在编辑模型提交成功后调用 onFinish', async () => {
       const existingModel = createMockModel();
 
-      const store = createTestStore({
-        models: {
-          models: [existingModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [createDeepSeekProvider()],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createStore(
+        { models: [existingModel] },
+        { providers: [createDeepSeekProvider()] },
+      );
 
-      const wrapper = createWrapper(store);
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={existingModel}
           onFinish={mockOnFinish}
         />,
-        { wrapper }
+        { store }
       );
 
       const submitButton = container.querySelector('button[type="submit"]');
@@ -343,39 +216,23 @@ describe('ModelConfigForm', () => {
 
   describe('提供商切换', () => {
     it('应该在新建模式下切换提供商时重置表单', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [createDeepSeekProvider(), createKimiProvider()],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createStore(
+        undefined,
+        { providers: [createDeepSeekProvider(), createKimiProvider()] },
+      );
 
-      const wrapper = createWrapper(store);
-      const { rerender: testRerender } = render(
+      const { rerender: testRerender } = renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onFinish={mockOnFinish as any}
+          onFinish={mockOnFinish}
         />,
-        { wrapper }
+        { store }
       );
 
       testRerender(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.MOONSHOTAI}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onFinish={mockOnFinish as any}
+          onFinish={mockOnFinish}
         />
       );
 
@@ -386,41 +243,25 @@ describe('ModelConfigForm', () => {
     it('应该在编辑模式下切换提供商时保留表单值', () => {
       const existingModel = createMockModel();
 
-      const store = createTestStore({
-        models: {
-          models: [existingModel],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [createDeepSeekProvider(), createKimiProvider()],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createStore(
+        { models: [existingModel] },
+        { providers: [createDeepSeekProvider(), createKimiProvider()] },
+      );
 
-      const wrapper = createWrapper(store);
-      const { rerender: testRerender } = render(
+      const { rerender: testRerender } = renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={existingModel}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onFinish={mockOnFinish as any}
+          onFinish={mockOnFinish}
         />,
-        { wrapper }
+        { store }
       );
 
       testRerender(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.MOONSHOTAI}
           modelParams={existingModel}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          // Reason: 测试错误处理，需要构造无效输入
-          onFinish={mockOnFinish as any}
+          onFinish={mockOnFinish}
         />
       );
 
@@ -431,29 +272,17 @@ describe('ModelConfigForm', () => {
 
   describe('国际化支持', () => {
     it('应该使用 i18n 翻译表单标签', () => {
-      const store = createTestStore({
-        models: {
-          models: [],
-          loading: false,
-          error: null,
-          initializationError: null,
-        },
-        modelProvider: {
-          providers: [createDeepSeekProvider()],
-          loading: false,
-          error: null,
-          lastUpdate: null,
-          backgroundRefreshing: false,
-        },
-      });
+      const store = createStore(
+        undefined,
+        { providers: [createDeepSeekProvider()] },
+      );
 
-      const wrapper = createWrapper(store);
-      render(
+      renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           onFinish={mockOnFinish}
         />,
-        { wrapper }
+        { store }
       );
 
       const form = document.querySelector('form');

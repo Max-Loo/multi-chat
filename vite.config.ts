@@ -72,13 +72,17 @@ export default defineConfig(async () => ({
     deps: {
       optimizer: {
         web: {
-          // 预构建 CommonJS 模块以解决 ESM 兼容性问题
+          // 预构建 CommonJS/ESM 模块以解决兼容性问题
+          // react-redux: ESM 初始化时访问 React.version，需预构建确保 React 先解析
           include: [
             "use-sync-external-store",
             "cookie",
             "react",
             "react-dom",
             "react/jsx-runtime",
+            "react-redux",
+            "react-remove-scroll",
+            "@radix-ui/react-slot",
           ],
         },
       },

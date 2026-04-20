@@ -154,7 +154,7 @@ interface KeyringPublicAPI {
 **数据迁移**：
 - 位置：`src/utils/tauriCompat/keyringMigration.ts`
 - V1 → V2 迁移在应用启动时自动执行
-- 详见 `openspec/changes/keyring-migration-v1-to-v2/`
+- 详见 `openspec/changes/archive/2026-03-18-keyring-migration-v1-to-v2/`
 
 ## 统一 API 设计
 

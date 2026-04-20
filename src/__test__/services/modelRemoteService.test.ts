@@ -5,6 +5,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { asTestType } from '@/__test__/helpers/testing-utils';
+import { createMockResponse } from '@/__test__/helpers/mocks/fetch';
 import {
   fetchRemoteData,
   saveCachedProviderData,
@@ -22,6 +24,8 @@ import {
   createOpenAIApiResponse,
   createMockApiResponse,
 } from '@/__test__/fixtures/modelProvider';
+
+const API_URL = 'https://models.dev/api.json';
 
 // Mock tauriCompat/http for system boundary (network requests)
 vi.mock('@/utils/tauriCompat/http');
@@ -50,14 +54,13 @@ describe('modelRemoteService', () => {
     delete: vi.fn().mockResolvedValue(undefined),
     keys: vi.fn().mockResolvedValue([]),
     save: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn(),
     isSupported: vi.fn().mockReturnValue(true),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    mockCreateLazyStore.mockReturnValue(mockStore as any);
+    mockCreateLazyStore.mockReturnValue(mockStore as ReturnType<typeof createLazyStore>);
   });
 
   afterEach(() => {
@@ -80,22 +83,7 @@ describe('modelRemoteService', () => {
 
     it('应该成功获取并返回完整 API 响应和过滤后的数据', async () => {
       // Mock fetch 成功响应
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        json: async () => mockApiResponse,
-        headers: new Headers(),
-        redirected: false,
-        url: 'https://models.dev/api.json',
-        body: null,
-        bodyUsed: false,
-        arrayBuffer: vi.fn(),
-        blob: vi.fn(),
-        formData: vi.fn(),
-        clone: vi.fn(),
-        text: vi.fn(),
-      } as unknown as Response);
+      mockFetch.mockResolvedValue(createMockResponse(mockApiResponse, 200, API_URL));
 
       const result = await fetchRemoteData();
 
@@ -144,17 +132,7 @@ describe('modelRemoteService', () => {
           // 200ms后才resolve，超过100ms超时
           setTimeout(() => {
             if (!options?.signal?.aborted) {
-              resolve({
-                ok: true,
-                status: 200,
-                statusText: 'OK',
-                json: async () => mockApiResponse,
-                headers: new Headers(),
-                redirected: false,
-                url: 'https://models.dev/api.json',
-                body: null,
-                bodyUsed: false,
-              } as unknown as Response);
+              resolve(createMockResponse(mockApiResponse, 200, API_URL));
             }
           }, 200);
         });
@@ -192,17 +170,7 @@ describe('modelRemoteService', () => {
           setTimeout(() => {
             if (!settled && !options?.signal?.aborted) {
               settled = true;
-              resolve({
-                ok: true,
-                status: 200,
-                statusText: 'OK',
-                json: async () => mockApiResponse,
-                headers: new Headers(),
-                redirected: false,
-                url: 'https://models.dev/api.json',
-                body: null,
-                bodyUsed: false,
-              } as unknown as Response);
+              resolve(createMockResponse(mockApiResponse, 200, API_URL));
             }
           }, 200);
         });
@@ -227,22 +195,7 @@ describe('modelRemoteService', () => {
       mockFetch
         .mockRejectedValueOnce(new TypeError('Failed to fetch'))
         .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          statusText: 'OK',
-          json: async () => mockApiResponse,
-          headers: new Headers(),
-          redirected: false,
-          url: 'https://models.dev/api.json',
-          body: null,
-          bodyUsed: false,
-          arrayBuffer: vi.fn(),
-          blob: vi.fn(),
-          formData: vi.fn(),
-          clone: vi.fn(),
-          text: vi.fn(),
-        } as unknown as Response);
+        .mockResolvedValueOnce(createMockResponse(mockApiResponse, 200, API_URL));
 
       const resultPromise = fetchRemoteData({ maxRetries: 2 });
 
@@ -265,38 +218,8 @@ describe('modelRemoteService', () => {
 
       // Mock fetch 返回 500 错误，然后成功
       mockFetch
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error',
-          json: vi.fn(),
-          headers: new Headers(),
-          redirected: false,
-          url: 'https://models.dev/api.json',
-          body: null,
-          bodyUsed: false,
-          arrayBuffer: vi.fn(),
-          blob: vi.fn(),
-          formData: vi.fn(),
-          clone: vi.fn(),
-          text: vi.fn(),
-        } as unknown as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          statusText: 'OK',
-          json: async () => mockApiResponse,
-          headers: new Headers(),
-          redirected: false,
-          url: 'https://models.dev/api.json',
-          body: null,
-          bodyUsed: false,
-          arrayBuffer: vi.fn(),
-          blob: vi.fn(),
-          formData: vi.fn(),
-          clone: vi.fn(),
-          text: vi.fn(),
-        } as unknown as Response);
+        .mockResolvedValueOnce(createMockResponse(undefined, 500, API_URL))
+        .mockResolvedValueOnce(createMockResponse(mockApiResponse, 200, API_URL));
 
       const resultPromise = fetchRemoteData({ maxRetries: 1 });
 
@@ -335,22 +258,7 @@ describe('modelRemoteService', () => {
 
     it('应该在 404 错误时不重试', async () => {
       // Mock fetch 返回 404
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-        json: vi.fn(),
-        headers: new Headers(),
-        redirected: false,
-        url: 'https://models.dev/api.json',
-        body: null,
-        bodyUsed: false,
-        arrayBuffer: vi.fn(),
-        blob: vi.fn(),
-        formData: vi.fn(),
-        clone: vi.fn(),
-        text: vi.fn(),
-      } as unknown as Response);
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 404, API_URL));
 
       await expect(fetchRemoteData()).rejects.toThrow();
 
@@ -459,22 +367,7 @@ describe('modelRemoteService', () => {
       ]);
 
       // Mock fetch 成功响应
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        json: async () => mockApiResponse,
-        headers: new Headers(),
-        redirected: false,
-        url: 'https://models.dev/api.json',
-        body: null,
-        bodyUsed: false,
-        arrayBuffer: vi.fn(),
-        blob: vi.fn(),
-        formData: vi.fn(),
-        clone: vi.fn(),
-        text: vi.fn(),
-      } as unknown as Response);
+      mockFetch.mockResolvedValue(createMockResponse(mockApiResponse, 200, API_URL));
 
       const result = await fetchRemoteData();
 
@@ -637,32 +530,22 @@ describe('modelRemoteService', () => {
           setTimeout(() => {
             if (!settled && !options?.signal?.aborted) {
               settled = true;
-              resolve({
-                ok: true,
-                status: 200,
-                statusText: 'OK',
-                json: async () => ({
-                  deepseek: {
-                    id: 'deepseek',
-                    name: 'DeepSeek',
-                    api: 'https://api.deepseek.com',
-                    env: ['DEEPSEEK_API_KEY'],
-                    npm: '@ai-sdk/deepseek',
-                    doc: 'https://docs.deepseek.com',
-                    models: {
-                      'deepseek-chat': {
-                        id: 'deepseek-chat',
-                        name: 'DeepSeek Chat',
-                      },
+              resolve(createMockResponse({
+                deepseek: {
+                  id: 'deepseek',
+                  name: 'DeepSeek',
+                  api: 'https://api.deepseek.com',
+                  env: ['DEEPSEEK_API_KEY'],
+                  npm: '@ai-sdk/deepseek',
+                  doc: 'https://docs.deepseek.com',
+                  models: {
+                    'deepseek-chat': {
+                      id: 'deepseek-chat',
+                      name: 'DeepSeek Chat',
                     },
                   },
-                }),
-                headers: new Headers(),
-                redirected: false,
-                url: 'https://models.dev/api.json',
-                body: null,
-                bodyUsed: false,
-              } as unknown as Response);
+                },
+              }, 200, API_URL));
             }
           }, 200);
         });
@@ -716,7 +599,7 @@ describe('modelRemoteService', () => {
       vi.useFakeTimers();
 
       // Mock fetch 返回无效 JSON
-      mockFetch.mockResolvedValue({
+      mockFetch.mockResolvedValue(asTestType<Response>({
         ok: true,
         status: 200,
         statusText: 'OK',
@@ -731,7 +614,7 @@ describe('modelRemoteService', () => {
         formData: vi.fn(),
         clone: vi.fn(),
         text: vi.fn(),
-      } as unknown as Response);
+      }));
 
       const fetchPromise = fetchRemoteData().catch(err => err);
 

@@ -1,48 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
-import modelReducer from '@/store/slices/modelSlice';
-import chatReducer from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
-import appConfigReducer from '@/store/slices/appConfigSlices';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
 import type { RootState, AppDispatch } from '@/store';
-
-const createTestStore = (preloadedState?: Partial<RootState>) => {
-  return configureStore({
-    reducer: {
-      models: modelReducer,
-      chat: chatReducer,
-      chatPage: chatPageReducer,
-      appConfig: appConfigReducer,
-      modelProvider: modelProviderReducer,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    } as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    preloadedState: preloadedState as any,
-  });
-};
-
-const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-  return ({ children }: { children: React.ReactNode }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Redux Toolkit 严格类型系统限制
-    return <Provider store={store as any}>{children}</Provider>;
-  };
-};
+import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 
 describe('Redux Hooks', () => {
 
   describe('useAppDispatch 类型安全测试', () => {
     it('应返回类型安全的 dispatch 函数', () => {
-      const store = createTestStore();
-      const wrapper = createWrapper(store);
-
-      const { result } = renderHook(() => useAppDispatch(), { wrapper });
+      const { result, store } = renderHookWithProviders(() => useAppDispatch());
 
       expect(result.current).toBeInstanceOf(Function);
       expect(result.current).toEqual(store.dispatch);
@@ -52,10 +17,7 @@ describe('Redux Hooks', () => {
     });
 
     it('应能够 dispatch action', () => {
-      const store = createTestStore();
-      const wrapper = createWrapper(store);
-
-      const { result } = renderHook(() => useAppDispatch(), { wrapper });
+      const { result } = renderHookWithProviders(() => useAppDispatch());
 
       const dispatch = result.current;
 
@@ -66,12 +28,7 @@ describe('Redux Hooks', () => {
 
   describe('useAppSelector 类型安全测试', () => {
     it('应正确推断 RootState 类型', () => {
-      const store = createTestStore();
-      const wrapper = createWrapper(store);
-
-      const { result } = renderHook(() => useAppSelector((state) => state), {
-        wrapper,
-      });
+      const { result } = renderHookWithProviders(() => useAppSelector((state) => state));
 
       const state = result.current;
       expect(state).toBeDefined();
@@ -81,12 +38,8 @@ describe('Redux Hooks', () => {
     });
 
     it('应正确选择 models slice state', () => {
-      const store = createTestStore();
-      const wrapper = createWrapper(store);
-
-      const { result } = renderHook(
-        () => useAppSelector((state) => state.models),
-        { wrapper }
+      const { result } = renderHookWithProviders(
+        () => useAppSelector((state) => state.models)
       );
 
       expect(result.current).toBeDefined();
@@ -95,12 +48,8 @@ describe('Redux Hooks', () => {
     });
 
     it('应正确选择 chat slice state', () => {
-      const store = createTestStore();
-      const wrapper = createWrapper(store);
-
-      const { result } = renderHook(
-        () => useAppSelector((state) => state.chat),
-        { wrapper }
+      const { result } = renderHookWithProviders(
+        () => useAppSelector((state) => state.chat)
       );
 
       expect(result.current).toBeDefined();
@@ -109,12 +58,8 @@ describe('Redux Hooks', () => {
     });
 
     it('应正确选择 chatPage slice state', () => {
-      const store = createTestStore();
-      const wrapper = createWrapper(store);
-
-      const { result } = renderHook(
-        () => useAppSelector((state) => state.chatPage),
-        { wrapper }
+      const { result } = renderHookWithProviders(
+        () => useAppSelector((state) => state.chatPage)
       );
 
       expect(result.current).toBeDefined();
@@ -123,12 +68,8 @@ describe('Redux Hooks', () => {
     });
 
     it('应正确选择 appConfig slice state', () => {
-      const store = createTestStore();
-      const wrapper = createWrapper(store);
-
-      const { result } = renderHook(
-        () => useAppSelector((state) => state.appConfig),
-        { wrapper }
+      const { result } = renderHookWithProviders(
+        () => useAppSelector((state) => state.appConfig)
       );
 
       expect(result.current).toBeDefined();
@@ -137,18 +78,14 @@ describe('Redux Hooks', () => {
     });
 
     it('应支持复杂的选择器逻辑', () => {
-      const store = createTestStore();
-      const wrapper = createWrapper(store);
-
-      const { result } = renderHook(
+      const { result } = renderHookWithProviders(
         () =>
           useAppSelector((state) => ({
             modelCount: state.models.models.length,
             selectedChatId: state.chat.selectedChatId,
             isSidebarCollapsed: state.chatPage.isSidebarCollapsed,
             language: state.appConfig.language,
-          })),
-        { wrapper }
+          }))
       );
 
       expect(result.current).toEqual({

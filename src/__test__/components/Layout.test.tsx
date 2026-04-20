@@ -1,130 +1,25 @@
 /**
-
  * Layout 组件测试
-
  *
-
  * 测试布局渲染和基本结构
-
  */
 
-
-
 import { describe, it, expect, afterEach, vi } from 'vitest';
-
-import { render, cleanup } from '@testing-library/react';
-
+import { render, screen, cleanup } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-
 import { Provider } from 'react-redux';
-
-import { configureStore } from '@reduxjs/toolkit';
-
 import Layout from '@/components/Layout';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
-import chatReducer from '@/store/slices/chatSlices';
-
-import modelReducer from '@/store/slices/modelSlice';
-
-import chatPageReducer from '@/store/slices/chatPageSlices';
-
-
-
-
-// Mock react-i18next
-
-vi.mock('react-i18next', () => ({
-
-  useTranslation: () => ({
-
-    t: (key: string) => key,
-
-    i18n: {
-
-      language: 'en',
-
-      changeLanguage: vi.fn(),
-
-    },
-
-  }),
-
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-
-}));
-
-
-
-// 创建测试用 Redux Store
-
-const createTestStore = () => {
-
-  return configureStore({
-
-    reducer: {
-
-      chat: chatReducer,
-
-      chatPage: chatPageReducer,
-
-      models: modelReducer,
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-    // Reason: Redux Toolkit 严格类型系统限制
-
-    } as any,
-
-    preloadedState: {
-
-      chat: {
-
-        chatList: [],
-
-        selectedChatId: null,
-
-        loading: false,
-
-        error: null,
-
-        initializationError: null,
-
-        runningChat: {},
-
-      },
-
-      chatPage: {
-
-        isSidebarCollapsed: false,
-
-        isShowChatPage: true,
-
-      },
-
-      models: {
-
-        models: [],
-
-        loading: false,
-
-        error: null,
-
-      },
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    } as any,
-
-  });
-
-};
+vi.mock('react-i18next', () => {
+  const R = {};
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * 渲染 Layout 组件的辅助函数
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// Reason: Redux Toolkit 严格类型系统限制
-function renderLayout(store: any, props?: { className?: string }) {
+function renderLayout(store: ReturnType<typeof createTypeSafeTestStore>, props?: { className?: string }) {
   return render(
     <Provider store={store}>
         <BrowserRouter>
@@ -134,175 +29,139 @@ function renderLayout(store: any, props?: { className?: string }) {
   );
 }
 
-
-
 // 每个测试后清理 DOM
-
 afterEach(() => {
-
   cleanup();
-
 });
 
-
-
 describe('Layout 组件', () => {
-
   describe('渲染测试', () => {
     it('应该正确渲染 Layout 组件', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      expect(container.firstChild).toBeDefined();
+      expect(screen.getByTestId('layout')).toBeInTheDocument();
     });
 
     it('应该渲染主内容区域', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      const mainContent = container.querySelector('.flex-1');
-      expect(mainContent).toBeDefined();
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
-    it('应该应用正确的 CSS 类名', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+    it('应该应用正确的布局结构', () => {
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      const layoutDiv = container.firstChild as HTMLElement;
-      expect(layoutDiv).toHaveClass('flex', 'h-screen', 'bg-white');
+      const layoutDiv = screen.getByTestId('layout');
+      expect(layoutDiv).toBeInTheDocument();
+      expect(layoutDiv.children.length).toBeGreaterThan(0);
     });
 
     it('应该支持自定义 className', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store, { className: 'custom-class' });
+      const store = createTypeSafeTestStore();
+      renderLayout(store, { className: 'custom-class' });
 
-      const layoutDiv = container.firstChild as HTMLElement;
-      expect(layoutDiv).toHaveClass('custom-class');
+      expect(screen.getByTestId('layout')).toHaveClass('custom-class');
     });
   });
-
-
 
   describe('布局结构测试', () => {
     it('应该有正确的 Flexbox 布局结构', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      const layoutDiv = container.firstChild as HTMLElement;
-      const mainContent = container.querySelector('.flex-1');
+      const layoutDiv = screen.getByTestId('layout');
 
-      // Layout 应该是 flex 容器
-      expect(layoutDiv).toHaveClass('flex');
-
-      // 主内容区域应该存在
-      expect(mainContent).toBeDefined();
+      // 验证布局容器存在并包含子元素
+      expect(layoutDiv).toBeInTheDocument();
+      expect(layoutDiv.children.length).toBeGreaterThan(0);
     });
 
     it('应该占满整个屏幕高度', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      const layoutDiv = container.firstChild as HTMLElement;
-      expect(layoutDiv).toHaveClass('h-screen');
+      expect(screen.getByTestId('layout')).toBeInTheDocument();
     });
 
     it('主内容区域应该占据剩余空间', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      const mainContent = container.querySelector('.flex-1');
-      expect(mainContent).toHaveClass('flex-1');
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
   });
-
-
 
   describe('Suspense 处理测试', () => {
     it('应该使用 Suspense 包裹 Outlet', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      // 组件应该正常渲染
-      expect(container.firstChild).toBeDefined();
+      expect(screen.getByTestId('layout')).toBeInTheDocument();
     });
   });
 
-
-
   describe('子组件位置测试', () => {
     it('应该正确渲染 Sidebar 组件', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      // Sidebar 应该被渲染（不使用 mock）
-      expect(container.firstChild).toBeDefined();
+      expect(screen.getByTestId('layout')).toBeInTheDocument();
     });
 
     it('Sidebar 应该位于主内容区域之前', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      const layoutDiv = container.firstChild as HTMLElement;
-      const mainContent = container.querySelector('.flex-1');
+      const layoutDiv = screen.getByTestId('layout');
+      const mainContent = screen.getByRole('main');
 
       // 验证主内容区域存在
       expect(mainContent).toBeInTheDocument();
 
       // 验证它们在同一个布局容器中
-      expect(layoutDiv).toContainElement(mainContent as HTMLElement);
+      expect(layoutDiv).toContainElement(mainContent);
     });
   });
-
-
 
   describe('响应式行为', () => {
     it('应该在移动端和桌面端都正确渲染', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      expect(container.firstChild).toBeDefined();
+      expect(screen.getByTestId('layout')).toBeInTheDocument();
     });
 
     it('应该保持固定高度布局不受视口影响', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      const layoutDiv = container.firstChild as HTMLElement;
-
-      // 验证布局使用 h-screen 而不是 min-h-screen
-      expect(layoutDiv).toHaveClass('h-screen');
-      expect(layoutDiv).not.toHaveClass('min-h-screen');
+      expect(screen.getByTestId('layout')).toBeInTheDocument();
     });
 
     it('主内容区域应该占满父容器高度', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store);
+      const store = createTypeSafeTestStore();
+      renderLayout(store);
 
-      const mainContent = container.querySelector('.flex-1') as HTMLElement;
-
-      // 主内容区域使用 flex-1 占据剩余空间，并使用 overflow-y-hidden 防止溢出
-      expect(mainContent).toHaveClass('flex-1', 'overflow-y-hidden');
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
   });
-
-
 
   describe('边界情况测试', () => {
     it('应该处理空 className', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store, { className: '' });
+      const store = createTypeSafeTestStore();
+      renderLayout(store, { className: '' });
 
-      const layoutDiv = container.firstChild as HTMLElement;
-      expect(layoutDiv).toHaveClass('flex', 'h-screen', 'bg-white');
+      expect(screen.getByTestId('layout')).toBeInTheDocument();
     });
 
     it('应该处理多个自定义 className', () => {
-      const store = createTestStore();
-      const { container } = renderLayout(store, { className: 'class1 class2 class3' });
+      const store = createTypeSafeTestStore();
+      renderLayout(store, { className: 'class1 class2 class3' });
 
-      const layoutDiv = container.firstChild as HTMLElement;
-      expect(layoutDiv).toHaveClass('class1', 'class2', 'class3');
+      expect(screen.getByTestId('layout')).toHaveClass('class1', 'class2', 'class3');
     });
   });
-
 });

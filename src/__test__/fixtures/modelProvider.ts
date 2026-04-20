@@ -12,7 +12,7 @@ import { z } from 'zod';
  * Fixture 验证错误类
  * 用于在 Fixture 数据验证失败时抛出错误
  */
-export class FixtureValidationError extends Error {
+class FixtureValidationError extends Error {
   constructor(
     public fixtureName: string,
     public validationErrors: z.ZodError
@@ -66,26 +66,6 @@ function validateRemoteProviderData(data: unknown, fixtureName: string): RemoteP
  * });
  * ```
  */
-export const createMockRemoteProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData => {
-  const data = {
-    providerKey: ModelProviderKeyEnum.DEEPSEEK,
-    providerName: 'DeepSeek',
-    api: 'https://api.deepseek.com/v1',
-    models: [
-      {
-        modelKey: 'deepseek-chat',
-        modelName: 'DeepSeek Chat',
-      },
-      {
-        modelKey: 'deepseek-coder',
-        modelName: 'DeepSeek Coder',
-      },
-    ],
-    ...overrides,
-  };
-  
-  return validateRemoteProviderData(data, 'createMockRemoteProvider');
-};
 
 /**
  * 创建 DeepSeek 供应商数据
@@ -130,7 +110,7 @@ export const createDeepSeekProvider = (overrides?: Partial<RemoteProviderData>):
  * });
  * ```
  */
-export const createKimiProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData => {
+const createKimiProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData => {
   const data = {
     providerKey: ModelProviderKeyEnum.MOONSHOTAI,
     providerName: 'Kimi',
@@ -166,7 +146,7 @@ export const createKimiProvider = (overrides?: Partial<RemoteProviderData>): Rem
  * });
  * ```
  */
-export const createZhipuProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData => {
+const createZhipuProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData => {
   const data = {
     providerKey: ModelProviderKeyEnum.ZHIPUAI,
     providerName: 'ZhipuAI',

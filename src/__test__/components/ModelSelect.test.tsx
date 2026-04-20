@@ -5,54 +5,19 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
-import { Provider } from 'react-redux';
+import { screen, fireEvent, within } from '@testing-library/react';
 import ModelSelect from '@/pages/Chat/components/ModelSelect';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 import { ModelProviderKeyEnum } from '@/utils/enums';
-import { createTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
+import { createChatSliceState, createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (keyOrFn: string | ((_: any) => string)) => {
-      if (typeof keyOrFn === 'function') {
-        return keyOrFn({
-          chat: {
-            selectModelHint: '请选择至少一个模型',
-            configureChatSuccess: '配置聊天成功',
-            configureChatFailed: '配置聊天失败',
-            searchPlaceholder: '搜索模型...',
-          },
-          common: {
-            confirm: '确认',
-          },
-          table: {
-            nickname: '模型名称',
-            modelProvider: '模型供应商',
-            modelName: '模型',
-            remark: '备注',
-            apiAddress: 'API地址',
-            operations: '操作',
-            isEnable: '状态',
-          },
-        });
-      }
-      const translations: Record<string, string> = {
-        'chat.selectModelHint': '请选择至少一个模型',
-        'chat.configureChatSuccess': '配置聊天成功',
-        'chat.configureChatFailed': '配置聊天失败',
-        'chat.searchPlaceholder': '搜索模型...',
-        'common.confirm': '确认',
-      };
-      return translations[keyOrFn] || keyOrFn;
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { selectModelHint: '请选择至少一个模型', configureChatSuccess: '配置聊天成功', configureChatFailed: '配置聊天失败', searchPlaceholder: '搜索模型...' }, model: { openProviderList: '打开供应商列表' }, common: { confirm: '确认', remark: '备注' }, table: { nickname: '模型名称', modelProvider: '模型供应商', modelName: '模型', lastUpdateTime: '更新时间', createTime: '创建时间' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // Mock toastQueue
 vi.mock('@/services/toast', () => ({
@@ -68,18 +33,14 @@ const createModelSelectStore = () => {
     createMockModel({
       id: 'model-1',
       nickname: 'GPT-4',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 测试错误处理，需要构造无效输入
-      providerKey: 'deepseek' as any,
+      providerKey: asTestType<ModelProviderKeyEnum>('deepseek'),
       modelName: 'gpt-4',
       providerName: 'OpenAI',
     }),
     createMockModel({
       id: 'model-2',
       nickname: 'Claude 3',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 测试错误处理，需要构造无效输入
-      providerKey: 'moonshotai' as any,
+      providerKey: asTestType<ModelProviderKeyEnum>('moonshotai'),
       modelName: 'claude-3-opus',
       providerName: 'Anthropic',
     }),
@@ -92,46 +53,22 @@ const createModelSelectStore = () => {
     }),
   ];
 
-  return createTestStore({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    models: {
+  return createTypeSafeTestStore({
+    models: createModelSliceState({
       models: mockModels,
-      loading: false,
-      error: null,
-    } as any,
-    modelProvider: {
+    }),
+    modelProvider: createModelProviderSliceState({
       providers: [
-        { providerKey: 'openai', providerName: 'OpenAI', providerLabel: 'OpenAI' },
-        { providerKey: 'anthropic', providerName: 'Anthropic', providerLabel: 'Anthropic' },
-        { providerKey: 'deepseek', providerName: 'DeepSeek', providerLabel: 'DeepSeek' },
+        { providerKey: 'openai', providerName: 'OpenAI', api: 'https://api.openai.com', models: [] },
+        { providerKey: 'anthropic', providerName: 'Anthropic', api: 'https://api.anthropic.com', models: [] },
+        { providerKey: 'deepseek', providerName: 'DeepSeek', api: 'https://api.deepseek.com', models: [] },
       ],
-      loading: false,
-      error: null,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    } as any,
-    chat: {
+    }),
+    chat: createChatSliceState({
       chatList: [createMockChat({ id: 'chat-1', name: 'Test Chat' })],
       selectedChatId: 'chat-1',
-      loading: false,
-      error: null,
-      initializationError: null,
-      runningChat: {},
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    } as any,
+    }),
   });
-};
-
-const createWrapper = (store: ReturnType<typeof createModelSelectStore>) => {
-  return function({ children }: { children: React.ReactNode }) {
-    return (
-      <Provider store={store}>
-        {children}
-      </Provider>
-    );
-  };
 };
 
 describe('ModelSelect 用户交互测试', () => {
@@ -148,13 +85,12 @@ describe('ModelSelect 用户交互测试', () => {
    */
   describe('基本渲染交互', () => {
     it('应该正确渲染而不抛错', () => {
-      const wrapper = createWrapper(store);
-      expect(() => render(<ModelSelect />, { wrapper })).not.toThrow();
+      renderWithProviders(<ModelSelect />, { store });
+      expect(true).toBe(true);
     });
 
     it('应该渲染模型列表', () => {
-      const wrapper = createWrapper(store);
-      render(<ModelSelect />, { wrapper });
+      renderWithProviders(<ModelSelect />, { store });
 
       // 使用 ARIA role 验证表格存在
       const tables = screen.getAllByRole('table');
@@ -162,8 +98,7 @@ describe('ModelSelect 用户交互测试', () => {
     });
 
     it('应该渲染确认按钮', () => {
-      const wrapper = createWrapper(store);
-      render(<ModelSelect />, { wrapper });
+      renderWithProviders(<ModelSelect />, { store });
 
       // 验证确认按钮存在
       const buttons = screen.getAllByRole('button');
@@ -176,8 +111,7 @@ describe('ModelSelect 用户交互测试', () => {
    */
   describe('模型数据渲染', () => {
     it('应该在表格中渲染模型名称', () => {
-      const wrapper = createWrapper(store);
-      render(<ModelSelect />, { wrapper });
+      renderWithProviders(<ModelSelect />, { store });
 
       // 模型 nickname 会出现在表格行中
       expect(screen.getAllByText('GPT-4').length).toBeGreaterThan(0);
@@ -186,8 +120,7 @@ describe('ModelSelect 用户交互测试', () => {
     });
 
     it('应该在表格中渲染与 store 模型数量对应的行', () => {
-      const wrapper = createWrapper(store);
-      render(<ModelSelect />, { wrapper });
+      renderWithProviders(<ModelSelect />, { store });
 
       // 使用 ARIA role 验证表格行数
       const tables = screen.getAllByRole('table');
@@ -203,8 +136,7 @@ describe('ModelSelect 用户交互测试', () => {
   describe('用户选择交互', () => {
     it('应该在未选择模型时点击确认显示提示', async () => {
       const { toastQueue } = await import('@/services/toast');
-      const wrapper = createWrapper(store);
-      render(<ModelSelect />, { wrapper });
+      renderWithProviders(<ModelSelect />, { store });
 
       // 找到确认按钮（使用 getByRole 以避免文本匹配问题）
       const confirmButtons = screen.getAllByRole('button');
@@ -216,8 +148,7 @@ describe('ModelSelect 用户交互测试', () => {
     });
 
     it('确认按钮应该可点击', () => {
-      const wrapper = createWrapper(store);
-      render(<ModelSelect />, { wrapper });
+      renderWithProviders(<ModelSelect />, { store });
 
       const confirmButtons = screen.getAllByRole('button');
       const confirmButton = confirmButtons.find(btn => btn.textContent?.includes('确认'));

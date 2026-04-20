@@ -277,4 +277,4 @@ mockLoader.register('deepseek', {
 ## 相关变更
 
 详细的设计决策和性能测试报告见：
-`openspec/changes/lazy-load-provider-sdk/`
+`openspec/changes/archive/2026-03-08-lazy-load-provider-sdk/`

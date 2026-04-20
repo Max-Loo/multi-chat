@@ -21,6 +21,26 @@ export interface ResetOptions {
 }
 
 /**
+ * 硬编码的数据库名称列表
+ * 当 indexedDB.databases() 不可用时作为 fallback
+ * 对应业务代码 src/utils/tauriCompat/store.ts 和 keyring.ts 中的定义
+ */
+const FALLBACK_DB_NAMES = ['multi-chat-store', 'multi-chat-keyring'];
+
+/**
+ * 删除指定名称的 IndexedDB 数据库
+ * @param name 数据库名称
+ */
+const deleteDatabase = (name: string): Promise<void> => {
+  return new Promise<void>((resolve) => {
+    const request = indexedDB.deleteDatabase(name);
+    request.addEventListener('success', () => resolve());
+    request.addEventListener('error', () => resolve());
+    request.addEventListener('blocked', () => resolve());
+  });
+};
+
+/**
  * 清空所有 IndexedDB 数据库
  * 用于测试隔离，确保每个测试开始时 IndexedDB 为空
  */
@@ -31,42 +51,36 @@ export const clearIndexedDB = async (): Promise<void> => {
   }
 
   try {
-    // 获取所有数据库名称
-    const databases = await indexedDB.databases();
-    
-    // 删除所有数据库
-    await Promise.all(
-      databases.map((db) => {
-        if (db.name) {
-          return new Promise<void>((resolve, reject) => {
-            const request = indexedDB.deleteDatabase(db.name!);
-            request.addEventListener('success', () => resolve());
-            request.addEventListener('error', () => reject(request.error));
-            request.addEventListener('blocked', () => {
-              // 如果被阻塞，强制关闭连接后重试
-              resolve();
-            });
-          });
-        }
-        return Promise.resolve();
-      })
-    );
-  } catch (error) {
-    // 忽略清理错误，不影响测试执行
-    console.warn('[clearIndexedDB] 清理 IndexedDB 时出现警告:', error);
+    // 尝试使用 indexedDB.databases() 获取所有数据库
+    if (typeof indexedDB.databases === 'function') {
+      const databases = await indexedDB.databases();
+      const dbNames = databases
+        .map((db) => db.name)
+        .filter((name): name is string => typeof name === 'string');
+
+      if (dbNames.length > 0) {
+        await Promise.all(dbNames.map(deleteDatabase));
+        return;
+      }
+    }
+  } catch {
+    // indexedDB.databases() 抛出异常时走 fallback
   }
+
+  // fallback: indexedDB.databases() 不可用、返回空列表或抛出异常时，使用硬编码数据库名列表
+  await Promise.all(FALLBACK_DB_NAMES.map(deleteDatabase));
 };
 
 /**
  * 重置测试状态
  * @param options 重置选项
  */
-export const resetTestState = (options: ResetOptions = {}): void => {
+export const resetTestState = async (options: ResetOptions = {}): Promise<void> => {
   const defaultOptions: ResetOptions = {
     resetLocalStorage: true,
     resetMocks: true,
     resetModules: false,
-    resetIndexedDB: false,
+    resetIndexedDB: true,
   };
   const config = { ...defaultOptions, ...options };
 
@@ -85,10 +99,9 @@ export const resetTestState = (options: ResetOptions = {}): void => {
     vi.resetModules();
   }
 
-  // 重置 IndexedDB（异步操作，但同步调用）
+  // 重置 IndexedDB（异步操作，等待完成）
   if (config.resetIndexedDB) {
-    // 使用 void 表示不等待异步完成
-    void clearIndexedDB();
+    await clearIndexedDB();
   }
 };
 
@@ -99,22 +112,22 @@ export const resetTestState = (options: ResetOptions = {}): void => {
  */
 export const useIsolatedTest = (options?: {
   /** beforeEach 回调 */
-  onBeforeEach?: () => void;
+  onBeforeEach?: () => void | Promise<void>;
   /** afterEach 回调 */
-  onAfterEach?: () => void;
+  onAfterEach?: () => void | Promise<void>;
   /** 重置选项 */
   resetOptions?: ResetOptions;
 }): void => {
   const { onBeforeEach, onAfterEach, resetOptions } = options ?? {};
 
-  beforeEach(() => {
-    resetTestState(resetOptions);
-    onBeforeEach?.();
+  beforeEach(async () => {
+    await resetTestState(resetOptions);
+    await onBeforeEach?.();
   });
 
-  afterEach(() => {
-    resetTestState(resetOptions);
-    onAfterEach?.();
+  afterEach(async () => {
+    await resetTestState(resetOptions);
+    await onAfterEach?.();
   });
 };
 
@@ -128,14 +141,44 @@ export const setTestEnv = (key: string, value: string): void => {
 };
 
 /**
+ * 检查 IndexedDB 中是否存在未清理的数据库
+ * @returns 是否存在未清理的数据库
+ */
+const hasUncleanedDatabases = async (): Promise<boolean> => {
+  if (typeof indexedDB === 'undefined') {
+    return false;
+  }
+
+  try {
+    if (typeof indexedDB.databases === 'function') {
+      const databases = await indexedDB.databases();
+      return databases.some((db) => typeof db.name === 'string' && db.name.length > 0);
+    }
+
+    // indexedDB.databases() 不可用时无法可靠检查，跳过 IndexedDB 检查
+    return false;
+  } catch {
+    // indexedDB.databases() 抛出异常时跳过检查
+    return false;
+  }
+};
+
+/**
  * 验证测试隔离
- * 检测是否有状态泄漏
+ * 检测是否有状态泄漏，覆盖 localStorage 和 IndexedDB 两个维度
  * @returns 是否通过隔离验证
  */
-export const verifyIsolation = (): boolean => {
+export const verifyIsolation = async (): Promise<boolean> => {
   // 检查 localStorage 是否为空
   if (typeof localStorage !== 'undefined' && localStorage.length > 0) {
     console.warn('[verifyIsolation] localStorage 未清空，可能存在状态泄漏');
+    return false;
+  }
+
+  // 检查 IndexedDB 是否为空
+  const hasUncleanedDB = await hasUncleanedDatabases();
+  if (hasUncleanedDB) {
+    console.warn('[verifyIsolation] IndexedDB 中存在未清理的数据库，可能存在状态泄漏');
     return false;
   }
 

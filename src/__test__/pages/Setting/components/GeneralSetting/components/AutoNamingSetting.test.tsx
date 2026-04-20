@@ -6,40 +6,9 @@ import { configureStore } from '@reduxjs/toolkit';
 import AutoNamingSetting from '@/pages/Setting/components/GeneralSetting/components/AutoNamingSetting';
 import appConfigReducer from '@/store/slices/appConfigSlices';
 
-/**
- * Mock react-i18next 模块
- * 提供测试用的国际化函数模拟实现，支持类型安全语法
- *
- * 注意：由于 Vitest hoisting 机制，mock 必须内联定义，不能引用外部变量
- */
 vi.mock('react-i18next', () => {
-  const zhResources = {
-    setting: {
-      autoNaming: {
-        title: '自动命名',
-        description: '自动为聊天生成标题，默认开启',
-      },
-    },
-  } as const;
-
-  return {
-    useTranslation: () => ({
-      t: ((keyOrSelector: string | ((resources: typeof zhResources) => string)) => {
-        if (typeof keyOrSelector === 'function') {
-          return keyOrSelector(zhResources);
-        }
-        return keyOrSelector;
-      }) as unknown,
-      i18n: {
-        language: 'zh',
-        changeLanguage: vi.fn(),
-      },
-    }),
-    initReactI18next: {
-      type: '3rdParty',
-      init: vi.fn(),
-    },
-  };
+  const R = { setting: { autoNaming: { title: '自动命名', description: '自动为聊天生成标题，默认开启' } } };
+  return globalThis.__createI18nMockReturn(R);
 });
 
 /**

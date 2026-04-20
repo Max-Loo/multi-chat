@@ -26,7 +26,7 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { encryptField, decryptField } from '@/utils/crypto';
+import { encryptField, decryptField, isEncrypted } from '@/utils/crypto';
 
 
 
@@ -1043,21 +1043,7 @@ describe('Crypto 与 Storage 集成测试', () => {
 
       inputs.forEach((input) => {
 
-        expect(input.startsWith('enc:'), `输入 "${input.slice(0, 20)}..." 应以 enc: 开头`).toBe(true);
-
-      });
-
-
-
-      // 验证系统不崩溃或抛出异常
-
-      inputs.forEach((input) => {
-
-        expect(() => {
-
-          input.startsWith('enc:');
-
-        }).not.toThrow();
+        expect(isEncrypted(input), `输入 "${input.slice(0, 20)}..." 应判定为已加密`).toBe(true);
 
       });
 
@@ -1223,7 +1209,7 @@ describe('Crypto 与 Storage 集成测试', () => {
 
       inputs.forEach(({ value, expected, description }) => {
 
-        const result = value.startsWith('enc:');
+        const result = isEncrypted(value);
 
         expect(result, `${description} 应返回 ${expected}`).toBe(expected);
 

@@ -53,12 +53,10 @@ describe('聊天存储', () => {
 
     it('保存失败时应该抛出错误', async () => {
       const errorMockStore = {
-        init: vi.fn().mockResolvedValue(undefined),
-        set: vi.fn().mockRejectedValue(new Error('Set failed')),
-        save: vi.fn().mockResolvedValue(undefined),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 测试错误处理，需要构造无效输入
-      } as any;
+        init: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+        set: vi.fn<(key: string, value: unknown) => Promise<void>>().mockRejectedValue(new Error('Set failed')),
+        save: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      };
 
       // 验证 mockStore.set() 确实会拒绝
       await expect(errorMockStore.set('key', 'value')).rejects.toThrow('Set failed');

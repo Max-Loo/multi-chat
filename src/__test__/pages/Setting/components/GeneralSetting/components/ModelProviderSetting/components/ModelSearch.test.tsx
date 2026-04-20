@@ -3,13 +3,10 @@ import { render, screen, cleanup } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { ModelSearch } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ModelSearch'
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (fn: (ns: any) => string) => (fn ? fn({ setting: { modelProvider: { searchPlaceholder: 'setting.modelProvider.searchPlaceholder', searchResult: 'setting.modelProvider.searchResult', totalModels: 'setting.modelProvider.totalModels' } } }) : ''),
-  }),
-}))
+vi.mock('react-i18next', () => {
+  const R = { setting: { modelProvider: { searchPlaceholder: 'setting.modelProvider.searchPlaceholder', searchResult: 'setting.modelProvider.searchResult', totalModels: 'setting.modelProvider.totalModels' } } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 describe('ModelSearch', () => {
   beforeEach(() => {

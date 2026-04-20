@@ -3,46 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ProviderCard } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ProviderCard';
 import type { RemoteProviderData } from '@/services/modelRemote';
 
-/**
- * Mock react-i18next 模块
- * 提供测试用的国际化函数模拟实现，支持类型安全语法
- */
 vi.mock('react-i18next', () => {
-  const zhResources = {
-    setting: {
-      modelProvider: {
-        status: {
-          available: '可用',
-          unavailable: '不可用',
-        },
-        modelCount: '共 {{count}} 个模型',
-        clickToViewDetails: '点击查看详情',
-        searchPlaceholder: '搜索模型',
-        searchResult: '找到 {{count}} 个模型',
-        totalModels: '共 {{count}} 个模型',
-      },
-    },
-  } as const;
-
-  return {
-    useTranslation: () => ({
-      t: ((keyOrSelector: string | ((resources: typeof zhResources) => string), options?: { count?: number }) => {
-        if (typeof keyOrSelector === 'function') {
-          let result = keyOrSelector(zhResources);
-          // 处理模板字符串中的 {{count}} 占位符
-          if (options?.count !== undefined) {
-            result = result.replace('{{count}}', String(options.count));
-          }
-          return result;
-        }
-        return keyOrSelector;
-      }) as unknown,
-      i18n: {
-        language: 'zh',
-        changeLanguage: vi.fn(),
-      },
-    }),
-  };
+  const R = { setting: { modelProvider: { status: { available: '可用', unavailable: '不可用' }, modelCount: '共 {{count}} 个模型', clickToViewDetails: '点击查看详情', searchPlaceholder: '搜索模型', searchResult: '找到 {{count}} 个模型', totalModels: '共 {{count}} 个模型', noModels: '暂无模型' } } };
+  return globalThis.__createI18nMockReturn(R);
 });
 
 const mockProvider: RemoteProviderData = {

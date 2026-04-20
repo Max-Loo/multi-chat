@@ -1,8 +1,22 @@
 /**
  * Vercel AI SDK Mock 辅助函数
- * 
+ *
  * 提供创建模拟 streamText 返回值的工具函数
  */
+
+/**
+ * AI SDK 错误类型，扩展 Error 添加网络请求相关属性
+ * 替代运行时通过 as any 给 Error 注入额外属性的模式
+ */
+export interface AIError extends Error {
+  statusCode?: number;
+  response?: {
+    status: number;
+    statusText: string;
+    json?: () => Promise<unknown>;
+  };
+  code?: string;
+}
 
 /**
  * 创建模拟的流式响应结果
@@ -161,13 +175,11 @@ export const StreamEventTypes = {
 export function createMockAISDKNetworkError(
   message: string,
   statusCode?: number
-): Error {
-  const error = new Error(message);
+): AIError {
+  const error = new Error(message) as AIError;
   if (statusCode) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (error as any).statusCode = statusCode;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (error as any).response = {
+    error.statusCode = statusCode;
+    error.response = {
       status: statusCode,
       statusText: message,
     };
@@ -184,12 +196,10 @@ export function createMockAISDKNetworkError(
 export function createMockAPIError(
   statusCode: number,
   errorMessage: string
-): Error {
-  const error = new Error(`API Error ${statusCode}: ${errorMessage}`);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (error as any).statusCode = statusCode;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (error as any).response = {
+): AIError {
+  const error = new Error(`API Error ${statusCode}: ${errorMessage}`) as AIError;
+  error.statusCode = statusCode;
+  error.response = {
     status: statusCode,
     statusText: errorMessage,
     json: () =>
@@ -208,11 +218,10 @@ export function createMockAPIError(
  * 创建模拟的超时错误
  * @returns 模拟的超时错误对象
  */
-export function createMockTimeoutError(): Error {
-  const error = new Error('Request timeout');
+export function createMockTimeoutError(): AIError {
+  const error = new Error('Request timeout') as AIError;
   error.name = 'TimeoutError';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (error as any).code = 'ETIMEDOUT';
+  error.code = 'ETIMEDOUT';
   return error;
 }
 

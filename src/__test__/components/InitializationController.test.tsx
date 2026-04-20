@@ -1,29 +1,17 @@
 /**
  * InitializationController 组件单元测试
+ *
+ * 渲染完整组件树（FatalErrorScreen、NoProvidersAvailable 为真实组件），
+ * 仅 mock 第三方 UI 组件 Progress 和 Canvas 动画组件 AnimatedLogo
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import * as InitializationModule from '@/services/initialization';
 import { InitializationController } from '@/components/InitializationController';
 import type { InitResult, InitConfig, InitStep } from '@/services/initialization';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
-// Mock FatalErrorScreen
-vi.mock('@/components/FatalErrorScreen', () => ({
-  FatalErrorScreen: ({ errors }: { errors: Array<{ message: string }> }) => (
-    <div data-testid="fatal-error-screen">
-      {errors.map((e, i) => (
-        <p key={i}>{e.message}</p>
-      ))}
-    </div>
-  ),
-}));
-
-// Mock NoProvidersAvailable
-vi.mock('@/components/NoProvidersAvailable', () => ({
-  NoProvidersAvailable: () => <div data-testid="no-providers">No providers available</div>,
-}));
-
-// Mock Progress component
+// Mock Progress component（shadcn/ui 第三方 UI 组件，属于例外）
 vi.mock('@/components/ui/progress', () => ({
   Progress: ({ value }: { value: number }) => (
     <div data-testid="progress" data-value={value}>
@@ -31,6 +19,41 @@ vi.mock('@/components/ui/progress', () => ({
     </div>
   ),
 }));
+
+// Mock AnimatedLogo（Canvas 动画组件，happy-dom 不支持 Canvas 渲染）
+vi.mock('@/components/AnimatedLogo', () => ({
+  AnimatedLogo: () => <div data-testid="animated-logo">Logo</div>,
+}));
+
+// Mock lucide-react 图标（仅 mock InitializationController 不直接使用的图标，
+// FatalErrorScreen 和 NoProvidersAvailable 的图标通过真实组件渲染）
+vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('lucide-react')>();
+  return {
+    ...actual,
+    AlertOctagon: () => <span data-testid="icon-alert-octagon">AlertOctagon</span>,
+    AlertCircle: () => <span data-testid="icon-alert-circle">AlertCircle</span>,
+  };
+});
+
+// Mock useResetDataDialog（FatalErrorScreen 依赖，内部调用 resetAllData 涉及浏览器 API）
+vi.mock('@/hooks/useResetDataDialog', () => ({
+  useResetDataDialog: () => ({
+    setIsDialogOpen: vi.fn(),
+    isResetting: false,
+    renderResetDialog: () => null,
+  }),
+}));
+
+// Mock KeyRecoveryDialog（FatalErrorScreen 依赖，内部调用 masterKey 加密模块）
+vi.mock('@/components/KeyRecoveryDialog', () => ({
+  KeyRecoveryDialog: () => null,
+}));
+
+vi.mock('react-i18next', () => {
+  const R = { common: { initializationFailed: '初始化失败', initializationFailedDescription: '初始化过程中遇到了无法恢复的错误', showErrorDetails: '查看错误详情', masterKeyRegeneratedImport: '重新生成主密钥并导入', resetAllData: '重置所有数据', resetConfirmTitle: '确认重置', resetConfirmDescription: '此操作不可撤销', resetConfirmAction: '确认重置', cancel: '取消', refreshPage: '刷新页面', noProvidersAvailable: '无可用的模型供应商', noProvidersDescription: '应用无法连接到模型数据服务器，且本地无可用缓存。', noProvidersHint: '请检查网络连接后点击下方按钮重试。', reload: '重新加载' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // 创建一个可控制的 mock runInitialization 函数
 let mockRunInitialization: ReturnType<typeof vi.fn>;
@@ -48,10 +71,12 @@ describe('InitializationController', () => {
 
     // Mock InitializationManager 类
     vi.spyOn(InitializationModule, 'InitializationManager').mockImplementation(
-      function (this: { runInitialization: typeof mockRunInitialization }) {
-        this.runInitialization = mockRunInitialization;
-        return this;
-      } as unknown as typeof InitializationModule.InitializationManager
+      asTestType<typeof InitializationModule.InitializationManager>(
+        function (this: { runInitialization: typeof mockRunInitialization }) {
+          this.runInitialization = mockRunInitialization;
+          return this;
+        }
+      )
     );
   });
 
@@ -186,7 +211,7 @@ describe('InitializationController', () => {
   });
 
   describe('错误状态渲染', () => {
-    it('初始化失败时应该渲染 FatalErrorScreen', async () => {
+    it('初始化失败时应该渲染 FatalErrorScreen（显示错误标题和错误消息）', async () => {
       const failureResult: InitResult = {
         success: false,
         fatalErrors: [{ severity: 'fatal', message: 'Critical error' }],
@@ -200,16 +225,20 @@ describe('InitializationController', () => {
       const onComplete = vi.fn();
       render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
+      // 通过真实 FatalErrorScreen 的用户可见文本验证
       await waitFor(() => {
-        expect(screen.getByTestId('fatal-error-screen')).toBeInTheDocument();
+        expect(screen.getByText('初始化失败')).toBeInTheDocument();
       });
 
+      // 验证错误消息内容
       expect(screen.getByText('Critical error')).toBeInTheDocument();
+      // 验证刷新按钮存在
+      expect(screen.getByRole('button', { name: '刷新页面' })).toBeInTheDocument();
       // 不应该调用 onComplete
       expect(onComplete).not.toHaveBeenCalled();
     });
 
-    it('无可用供应商时应该渲染 NoProvidersAvailable（通过 modelProviderStatus）', async () => {
+    it('无可用供应商时应该渲染 NoProvidersAvailable（显示提示文本和重新加载按钮）', async () => {
       const successResult: InitResult = {
         success: true,
         fatalErrors: [],
@@ -228,10 +257,14 @@ describe('InitializationController', () => {
       const onComplete = vi.fn();
       render(<InitializationController initSteps={mockInitSteps} onComplete={onComplete} />);
 
+      // 通过真实 NoProvidersAvailable 的用户可见文本验证
       await waitFor(() => {
-        expect(screen.getByTestId('no-providers')).toBeInTheDocument();
+        expect(screen.getByText('无可用的模型供应商')).toBeInTheDocument();
       });
 
+      // 验证提示文本和按钮
+      expect(screen.getByText('应用无法连接到模型数据服务器，且本地无可用缓存。')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '重新加载' })).toBeInTheDocument();
       // 不应该调用 onComplete
       expect(onComplete).not.toHaveBeenCalled();
     });

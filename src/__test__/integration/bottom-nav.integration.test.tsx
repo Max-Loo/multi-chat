@@ -13,40 +13,17 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
+import type { EnhancedStore } from '@reduxjs/toolkit';
 import { BottomNav } from '@/components/BottomNav';
-
-// Redux reducers
-import chatReducer from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
-import modelReducer from '@/store/slices/modelSlice';
-import appConfigReducer from '@/store/slices/appConfigSlices';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
-import settingPageReducer from '@/store/slices/settingPageSlices';
-import modelPageReducer from '@/store/slices/modelPageSlices';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
+import type { RootState } from '@/store';
 
 // Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'nav.chat': '聊天',
-        'nav.model': '模型',
-        'nav.setting': '设置',
-      };
-      return translations[key] || key;
-    },
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = { nav: { chat: '聊天', model: '模型', setting: '设置' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 // Mock useResponsive 为移动端模式（底部导航栏才显示）
 vi.mock('@/hooks/useResponsive', () => ({
@@ -61,100 +38,19 @@ vi.mock('@/hooks/useResponsive', () => ({
   }),
 }));
 
-// Mock navigation配置
-vi.mock('@/config/navigation', () => ({
-  NAVIGATION_ITEMS: [
-    {
-      id: 'chat',
-      path: '/chat',
-      i18nKey: 'nav.chat',
-      IconComponent: () => <svg data-testid="chat-icon" />,
-      theme: {
-        base: 'text-blue-400',
-        active: 'bg-blue-100 text-blue-500',
-        inactive: 'hover:text-blue-500 hover:bg-blue-100',
-      },
-    },
-    {
-      id: 'model',
-      path: '/model',
-      i18nKey: 'nav.model',
-      IconComponent: () => <svg data-testid="model-icon" />,
-      theme: {
-        base: 'text-emerald-400',
-        active: 'bg-emerald-100 text-emerald-500',
-        inactive: 'hover:text-emerald-500 hover:bg-emerald-100',
-      },
-    },
-    {
-      id: 'setting',
-      path: '/setting',
-      i18nKey: 'nav.setting',
-      IconComponent: () => <svg data-testid="setting-icon" />,
-      theme: {
-        base: 'text-violet-400',
-        inactive: 'hover:text-violet-500 hover:bg-violet-100',
-        active: 'bg-violet-100 text-violet-500',
-      },
-    },
-  ],
-}));
+// Mock navigation配置（使用共享 mock）
+vi.mock('@/config/navigation', async () => {
+  const { createNavigationItemsMock } = await import('@/__test__/helpers/mocks/navigation');
+  return { NAVIGATION_ITEMS: createNavigationItemsMock() };
+});
 
 /**
  * 创建测试用 Redux Store
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function createTestStore(): any {
-  return configureStore({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    reducer: {
-      chat: chatReducer,
-      chatPage: chatPageReducer,
-      models: modelReducer,
-      appConfig: appConfigReducer,
-      modelProvider: modelProviderReducer,
-      settingPage: settingPageReducer,
-      modelPage: modelPageReducer,
-    } as any,
-    preloadedState: {
-      chat: {
-        chatList: [],
-        selectedChatId: null,
-        loading: false,
-        error: null,
-        initializationError: null,
-        runningChat: {},
-      },
-      chatPage: {
-        isSidebarCollapsed: false,
-        isShowChatPage: true,
-        isDrawerOpen: false,
-      },
-      models: {
-        models: [],
-        loading: false,
-        error: null,
-        initializationError: null,
-      },
-      appConfig: {
-        language: 'zh',
-        includeReasoningContent: true,
-        autoNamingEnabled: true,
-      },
-      modelProvider: {
-        providers: [],
-        loading: false,
-        error: null,
-        lastUpdate: null,
-        backgroundRefreshing: false,
-      },
-      settingPage: {
-        isDrawerOpen: false,
-      },
-      modelPage: {
-        isDrawerOpen: false,
-      },
-    },
+function createBottomNavTestStore(): EnhancedStore<RootState> {
+  return createTypeSafeTestStore({
+    appConfig: createAppConfigSliceState({ language: 'zh' }),
+    chatPage: createChatPageSliceState({ isShowChatPage: true }),
   });
 }
 
@@ -162,7 +58,7 @@ function createTestStore(): any {
  * 渲染带路由和 Redux 的 BottomNav
  */
 function renderBottomNavWithRouter(
-  store: any,
+  store: EnhancedStore<RootState>,
   initialEntries: string[] = ['/chat']
 ) {
   return render(
@@ -175,10 +71,10 @@ function renderBottomNavWithRouter(
 }
 
 describe('底部导航栏集成测试', () => {
-  let store: any;
+  let store: EnhancedStore<RootState>;
 
   beforeEach(() => {
-    store = createTestStore();
+    store = createBottomNavTestStore();
     // 设置移动端窗口尺寸
     global.innerWidth = 600;
     global.dispatchEvent(new Event('resize'));
