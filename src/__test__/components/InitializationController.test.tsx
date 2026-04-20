@@ -36,10 +36,10 @@ vi.mock('@/components/ui/progress', () => ({
 let mockRunInitialization: ReturnType<typeof vi.fn>;
 
 // Mock initSteps
-const mockInitSteps: InitStep[] = [
+const mockInitSteps = [
   { name: 'step1', critical: true, execute: vi.fn(), onError: vi.fn() },
   { name: 'step2', critical: false, execute: vi.fn(), onError: vi.fn() },
-];
+] as unknown as InitStep[];
 
 describe('InitializationController', () => {
   beforeEach(() => {

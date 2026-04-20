@@ -141,16 +141,11 @@ pnpm deploy:gh-pages
 - 更安全的权限模型（`pages: write` + `id-token: write`）
 - 不需要维护 gh-pages 分支
 
-同时，桌面应用构建（`build-and-release.yml`）也会并行触发，确保桌面和 Web 版本同步发布。
-
 ### 其他常用命令
 
 ```bash
 # 运行代码检查（使用 oxlint）
 pnpm lint
-
-# 类型检查
-pnpm tsc
 
 # 更新应用版本号
 pnpm update-version
@@ -221,15 +216,15 @@ multi-chat/
 │   ├── hooks/                 # 自定义 Hooks
 │   ├── config/                # 配置文件
 │   │   └── initSteps.ts       # 初始化步骤配置
-│   ├── lib/                   # 核心库
-│   │   ├── i18n.ts            # 国际化配置
-│   │   └── global.ts          # 全局配置
 │   ├── locales/               # 国际化语言文件
 │   │   ├── en/                # 英文语言包
-│   │   └── zh/                # 中文语言包
+│   │   ├── zh/                # 中文语言包
+│   │   └── fr/                # 法文语言包
 │   ├── services/              # 服务层
 │   │   ├── chat/              # 聊天服务（模块化）
-│   │   └── modelRemote/       # 远程模型服务
+│   │   ├── modelRemote/       # 远程模型服务
+│   │   ├── i18n.ts            # 国际化配置
+│   │   └── global.ts          # 全局配置
 │   ├── store/                 # Redux 状态管理
 │   │   ├── slices/            # Redux 切片
 │   │   ├── middleware/        # 中间件
@@ -255,6 +250,7 @@ multi-chat/
 
 - 中文 (zh)
 - 英文 (en)
+- 法文 (fr)
 
 ### 语言文件结构
 
@@ -268,6 +264,7 @@ multi-chat/
   - `provider.json`: 模型提供商文本
   - `setting.json`: 设置相关文本
   - `table.json`: 表格相关文本
+  - `error.json`: 错误提示文本
 
 ### 语言切换机制
 
@@ -331,7 +328,7 @@ multi-chat/
 
 1. 在 `src/utils/enums.ts` 中添加新的服务商枚举
 2. 在 `src/services/chat/providerLoader.ts` 中注册对应的 Provider 工厂函数
-3. 在 `src/pages/Model/components/ModelSidebar.tsx` 中添加服务商选项
+3. 在 `src/pages/Model/CreateModel/components/ModelSidebar.tsx` 中添加服务商选项
 
 ### 代码规范
 
@@ -392,17 +389,8 @@ multi-chat/
 
 **解决方案**:
 - Web 环境的密钥种子存储在 `localStorage` 中，清除浏览器数据会导致密钥丢失
-- 建议定期导出模型配置和聊天记录作为备份
+- 建议提前在设置页面导出主密钥作为备份，密钥丢失后可通过导入恢复
 - 重要的敏感数据建议使用桌面版处理
-
-### 模型配置加密失败
-
-**问题**: 添加模型时提示加密失败
-
-**解决方案**:
-1. 检查主密钥是否正确初始化
-2. 尝试重新启动应用
-3. 如果问题持续，可能是 Web Crypto API 不支持，请使用现代浏览器（Chrome 90+、Firefox 88+、Safari 14.1+）
 
 ## 许可证
 

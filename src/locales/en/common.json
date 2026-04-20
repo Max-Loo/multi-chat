@@ -22,5 +22,29 @@
   "initializationWarningMessage": "Some features may be limited",
   "showErrorDetails": "Show Error Details",
   "hideErrorDetails": "Hide Error Details",
-  "loading": "Loading"
+  "loading": "Loading",
+  "resetAllData": "Reset All Data and Start Over",
+  "resetConfirmTitle": "Confirm Reset All Data",
+  "resetConfirmDescription": "This will clear all saved model configurations and chat records, and generate a new encryption key. This action cannot be undone.",
+  "resetConfirmAction": "Confirm Reset",
+  "resetSuccess": "Data has been reset, reloading...",
+  "masterKeyRegeneratedMessage": "The encryption key has been regenerated. Previously saved API keys cannot be decrypted. If you have a backup key, please import it first. Do not modify model configurations before importing, otherwise encrypted data will be unrecoverable.",
+  "masterKeyRegeneratedImport": "Import Key",
+  "masterKeyRegeneratedDismiss": "I Understand",
+  "decryptionFailureMessage": "{{count}} model(s) have API keys that cannot be decrypted. Please import the correct encryption key to recover.",
+  "decryptionFailureImport": "Import Key",
+  "decryptionFailureDismiss": "I Understand",
+  "keyRecovery": {
+    "title": "Import Key",
+    "description": "Enter your backup key to recover encrypted data",
+    "placeholder": "Enter 64-character hex encoded key",
+    "importButton": "Import",
+    "importing": "Importing...",
+    "importSuccess": "Key imported successfully, reloading...",
+    "securityWarning": "The key is sensitive, do not enter it when others can see",
+    "mismatchWarning": "The imported key cannot decrypt existing data. Please verify the key is correct",
+    "importFailed": "Key import failed, please try again",
+    "forceImport": "Import Anyway",
+    "cancel": "Cancel"
+  }
 }

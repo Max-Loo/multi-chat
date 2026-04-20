@@ -115,7 +115,7 @@ describe('模型配置集成测试', () => {
 
     // Mock 主密钥获取
     vi.mocked(getMasterKey).mockResolvedValue(masterKey);
-    vi.mocked(initializeMasterKey).mockResolvedValue(masterKey);
+    vi.mocked(initializeMasterKey).mockResolvedValue({ key: masterKey, isNewlyGenerated: false });
     vi.mocked(storeMasterKey).mockResolvedValue(undefined);
 
     // Mock 存储层
@@ -123,7 +123,7 @@ describe('模型配置集成测试', () => {
       storageModels = [...models];
     });
     vi.mocked(loadModelsFromJson).mockImplementation(async () => {
-      return [...storageModels];
+      return { models: [...storageModels], decryptionFailureCount: 0 };
     });
 
     // 设置默认流式响应 Mock
@@ -378,7 +378,7 @@ describe('模型配置集成测试', () => {
       await saveModelsToJson(state.models.models);
 
       // Then: 加载验证
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
       const loadedModel = loadedModels.find(m => m.id === originalModel.id);
       expect(loadedModel?.nickname).toBe('DeepSeek Chat Updated');
     });
@@ -411,7 +411,7 @@ describe('模型配置集成测试', () => {
       await saveModelsToJson([updatedModel]);
 
       // Then: 加载验证
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
       expect(loadedModels[0].apiKey).toBe('sk-new-key');
 
       // Then: 验证加密数据一致性
@@ -464,7 +464,7 @@ describe('模型配置集成测试', () => {
       await saveModelsToJson(activeModels);
 
       // Then: 加载验证（不应包含已删除模型）
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
       expect(loadedModels).toHaveLength(0);
     });
 
@@ -513,7 +513,7 @@ describe('模型配置集成测试', () => {
       await saveModelsToJson(activeModels);
 
       // Then: 加载验证（只应包含未删除的模型）
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
       expect(loadedModels).toHaveLength(1);
       expect(loadedModels[0].id).toBe('model-2');
       expect(loadedModels[0].apiKey).toBe('sk-key-2');
@@ -656,7 +656,7 @@ describe('模型配置集成测试', () => {
 
       // When: 保存并加载
       await saveModelsToJson([model]);
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
 
       // Then: API Key 应完整
       expect(loadedModels[0].apiKey).toBe('sk-integrity-test');
@@ -703,7 +703,7 @@ describe('模型配置集成测试', () => {
 
       // When: 批量加载解密
       const loadStartTime = Date.now();
-      const loadedModels = await loadModelsFromJson();
+      const { models: loadedModels } = await loadModelsFromJson();
       const loadTime = Date.now() - loadStartTime;
 
       // Then: 加载应 < 5 秒

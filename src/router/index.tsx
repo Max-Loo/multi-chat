@@ -11,6 +11,9 @@ const SettingPage = lazy(() => import("@/pages/Setting"));
 const GeneralSetting = lazy(
   () => import("@/pages/Setting/components/GeneralSetting"),
 );
+const KeyManagementSetting = lazy(
+  () => import("@/pages/Setting/components/KeyManagementSetting"),
+);
 const ToastTest = lazy(() => import("@/pages/Setting/components/ToastTest"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -74,6 +77,10 @@ const router = createBrowserRouter(
             {
               path: "common",
               element: <GeneralSetting />,
+            },
+            {
+              path: "key-management",
+              element: <KeyManagementSetting />,
             },
             ...(toastTestRoute ? [toastTestRoute] : []),
           ],

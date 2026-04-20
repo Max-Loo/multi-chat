@@ -2,6 +2,8 @@
  * 初始化系统核心类型定义
  */
 
+import type { StepName } from '@/config/initSteps';
+
 /**
  * 错误严重程度
  */
@@ -12,11 +14,11 @@ export type ErrorSeverity = 'fatal' | 'warning' | 'ignorable';
  */
 export interface InitStep {
   /** 步骤名称（唯一标识符） */
-  name: string;
+  name: StepName;
   /** 是否为关键步骤（关键步骤失败将导致应用无法运行） */
   critical: boolean;
   /** 依赖的步骤名称列表（可选） */
-  dependencies?: string[];
+  dependencies?: StepName[];
   /** 步骤执行函数 */
   execute: (context: ExecutionContext) => Promise<unknown>;
   /** 错误处理回调 */
@@ -31,6 +33,8 @@ export interface InitError {
   severity: ErrorSeverity;
   /** 错误消息 */
   message: string;
+  /** 产生错误的步骤名称（可选） */
+  stepName?: StepName;
   /** 原始错误对象（可选） */
   originalError?: unknown;
 }
@@ -83,4 +87,8 @@ export interface InitResult {
   completedSteps: string[];
   /** 模型供应商状态（由 modelProvider 步骤设置） */
   modelProviderStatus?: ModelProviderStatus;
+  /** 主密钥是否为新生成的（由 masterKey 步骤设置） */
+  masterKeyRegenerated?: boolean;
+  /** 解密失败的模型数量（由 models 步骤设置） */
+  decryptionFailureCount?: number;
 }

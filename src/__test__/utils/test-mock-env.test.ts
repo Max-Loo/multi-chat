@@ -35,6 +35,6 @@ beforeEach(async () => {
 test('mock isTauri works', async () => {
   expect(mockIsTauri()).toBe(false);
   
-  const key = await initializeMasterKey();
+  const { key } = await initializeMasterKey();
   expect(key).toHaveLength(64);
 });

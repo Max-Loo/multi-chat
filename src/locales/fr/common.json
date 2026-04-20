@@ -22,5 +22,29 @@
   "initializationWarningMessage": "Certaines fonctionnalités peuvent être limitées",
   "showErrorDetails": "Afficher les détails de l'erreur",
   "hideErrorDetails": "Masquer les détails de l'erreur",
-  "loading": "Chargement"
+  "loading": "Chargement",
+  "resetAllData": "Réinitialiser toutes les données et recommencer",
+  "resetConfirmTitle": "Confirmer la réinitialisation",
+  "resetConfirmDescription": "Cela effacera toutes les configurations de modèles et les enregistrements de chat, et générera une nouvelle clé de chiffrement. Cette action est irréversible.",
+  "resetConfirmAction": "Confirmer la réinitialisation",
+  "resetSuccess": "Données réinitialisées, rechargement...",
+  "masterKeyRegeneratedMessage": "La clé de chiffrement a été régénérée. Les clés API précédemment enregistrées ne peuvent pas être déchiffrées. Si vous avez une clé de sauvegarde, veuillez l'importer d'abord. Ne modifiez pas les configurations de modèles avant l'importation.",
+  "masterKeyRegeneratedImport": "Importer la clé",
+  "masterKeyRegeneratedDismiss": "Je comprends",
+  "decryptionFailureMessage": "{{count}} modèle(s) ont des clés API qui ne peuvent pas être déchiffrées. Veuillez importer la clé de chiffrement correcte pour récupérer.",
+  "decryptionFailureImport": "Importer la clé",
+  "decryptionFailureDismiss": "Je comprends",
+  "keyRecovery": {
+    "title": "Importer la clé",
+    "description": "Entrez votre clé de sauvegarde pour récupérer les données chiffrées",
+    "placeholder": "Entrez la clé hex encodée de 64 caractères",
+    "importButton": "Importer",
+    "importing": "Importation...",
+    "importSuccess": "Clé importée avec succès, rechargement...",
+    "securityWarning": "La clé est sensible, ne la saisissez pas en présence d'autres personnes",
+    "mismatchWarning": "La clé importée ne peut pas déchiffrer les données existantes. Veuillez vérifier la clé",
+    "importFailed": "Échec de l'importation de la clé, veuillez réessayer",
+    "forceImport": "Importer quand même",
+    "cancel": "Annuler"
+  }
 }

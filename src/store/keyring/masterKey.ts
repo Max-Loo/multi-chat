@@ -6,10 +6,22 @@
 import { keyring } from "@/utils/tauriCompat";
 import { isTauri } from "@/utils/tauriCompat/env";
 import { toastQueue } from '@/services/toast';
+import { verifyMasterKey } from "@/store/keyring/keyVerification";
 
-// 服务名和账户名配置
-const SERVICE_NAME = "com.multichat.app";
-const ACCOUNT_NAME = "master-key";
+/** 服务名和账户名配置（keyring 存储标识） */
+export const KEYRING_SERVICE_NAME = "com.multichat.app";
+export const KEYRING_ACCOUNT_NAME = "master-key";
+
+/** 安全警告已关闭标记的 localStorage key */
+export const SECURITY_WARNING_DISMISSED_KEY = 'multi-chat-security-warning-dismissed';
+
+/** 密钥格式无效错误 */
+export class InvalidKeyFormatError extends Error {
+  constructor() {
+    super('密钥格式无效，请输入 64 字符的 hex 编码字符串');
+    this.name = 'InvalidKeyFormatError';
+  }
+}
 
 /**
  * 生成 256-bit 随机密钥（32 字节）
@@ -31,7 +43,7 @@ export const generateMasterKey = (): string => {
  */
 export const isMasterKeyExists = async (): Promise<boolean> => {
   try {
-    const key = await keyring.getPassword(SERVICE_NAME, ACCOUNT_NAME);
+    const key = await keyring.getPassword(KEYRING_SERVICE_NAME, KEYRING_ACCOUNT_NAME);
     return key !== null && key !== undefined && key.length > 0;
   } catch (error) {
     console.error("检查主密钥是否存在时出错:", error);
@@ -45,7 +57,7 @@ export const isMasterKeyExists = async (): Promise<boolean> => {
  */
 export const getMasterKey = async (): Promise<string | null> => {
   try {
-    const key = await keyring.getPassword(SERVICE_NAME, ACCOUNT_NAME);
+    const key = await keyring.getPassword(KEYRING_SERVICE_NAME, KEYRING_ACCOUNT_NAME);
     return key;
   } catch (error) {
     console.error("获取主密钥时出错:", error);
@@ -53,14 +65,14 @@ export const getMasterKey = async (): Promise<string | null> => {
     // Web 环境可能因为 IndexedDB 不可用或解密失败而抛出错误
     if (!isTauri()) {
       throw new Error(
-        "无法访问浏览器安全存储或密钥解密失败。可能原因：浏览器不支持 IndexedDB、存储空间不足，或密钥已损坏。建议清理浏览器数据或使用桌面版。",
+        "浏览器不支持安全存储或存储空间不足",
         { cause: error }
       );
     }
 
     // Tauri 环境
     throw new Error(
-      "无法访问系统安全存储，请检查钥匙串权限设置或重新启动应用",
+      "无法访问系统安全存储，请检查钥匙串权限设置",
       { cause: error }
     );
   }
@@ -72,39 +84,49 @@ export const getMasterKey = async (): Promise<string | null> => {
  */
 export const storeMasterKey = async (key: string): Promise<void> => {
   try {
-    await keyring.setPassword(SERVICE_NAME, ACCOUNT_NAME, key);
+    await keyring.setPassword(KEYRING_SERVICE_NAME, KEYRING_ACCOUNT_NAME, key);
   } catch (error) {
     console.error("存储主密钥时出错:", error);
 
     // Web 环境可能因为 IndexedDB 不可用或加密失败而抛出错误
     if (!isTauri()) {
       throw new Error(
-        "无法将密钥存储到浏览器安全存储或密钥加密失败。可能原因：浏览器不支持 IndexedDB、存储空间不足，或 Web Crypto API 不可用。建议使用桌面版。",
+        "浏览器不支持安全存储或存储空间不足",
         { cause: error }
       );
     }
 
     // Tauri 环境
     throw new Error(
-      "无法将密钥存储到系统安全存储，请检查系统密钥环服务是否正常运行",
+      "无法访问系统安全存储，请检查钥匙串权限设置",
       { cause: error }
     );
   }
 };
 
 /**
+ * initializeMasterKey 返回值结构
+ */
+export interface InitializeMasterKeyResult {
+  /** 主密钥（hex 编码） */
+  key: string;
+  /** 是否为新生成的密钥 */
+  isNewlyGenerated: boolean;
+}
+
+/**
  * 初始化主密钥（应用启动时调用）
  * 如果密钥存在则返回，如果不存在则生成新密钥并存储
  * 此函数应在应用启动的阻断式初始化阶段调用
- * @returns 返回主密钥（hex 编码）
+ * @returns 返回主密钥和是否为新生成的标记
  * @throws 当 keyring 不可用时抛出错误
  */
-export const initializeMasterKey = async (): Promise<string> => {
+export const initializeMasterKey = async (): Promise<InitializeMasterKeyResult> => {
   try {
     // 首先尝试获取已存在的密钥
     const existingKey = await getMasterKey();
     if (existingKey) {
-      return existingKey;
+      return { key: existingKey, isNewlyGenerated: false };
     }
 
     // 密钥不存在，生成新密钥
@@ -130,7 +152,7 @@ export const initializeMasterKey = async (): Promise<string> => {
       );
     }
 
-    return newKey;
+    return { key: newKey, isNewlyGenerated: true };
   } catch (error) {
     console.error("Error getting or creating master key:", error);
     throw error;
@@ -148,7 +170,7 @@ export const handleSecurityWarning = async (): Promise<void> => {
   }
 
   // 检查用户是否已经确认过
-  const dismissed = localStorage.getItem('multi-chat-security-warning-dismissed');
+  const dismissed = localStorage.getItem(SECURITY_WARNING_DISMISSED_KEY);
   if (dismissed === 'true') {
     return;
   }
@@ -165,7 +187,7 @@ export const handleSecurityWarning = async (): Promise<void> => {
     action: {
       label: 'OK',
       onClick: () => {
-        localStorage.setItem('multi-chat-security-warning-dismissed', 'true');
+        localStorage.setItem(SECURITY_WARNING_DISMISSED_KEY, 'true');
       }
     },
   });
@@ -181,4 +203,72 @@ export const exportMasterKey = async (): Promise<string> => {
     throw new Error("主密钥不存在，无法导出");
   }
   return key;
+};
+
+/**
+ * 验证 hex 格式密钥（64 字符）
+ * @param key 待验证的密钥字符串
+ * @returns 是否为有效的 hex 格式密钥
+ */
+const isValidHexKey = (key: string): boolean => {
+  return /^[0-9a-f]{64}$/.test(key);
+};
+
+/**
+ * 导入主密钥（用于从备份恢复）
+ * 验证格式后替换当前密钥，不包含模型重新加载逻辑
+ * 调用方需自行 dispatch initializeModels() 重新加载模型数据以验证密钥有效性
+ * @param key 用户粘贴的 hex 编码密钥字符串
+ * @throws 格式无效时抛出 InvalidKeyFormatError
+ */
+export const importMasterKey = async (key: string): Promise<void> => {
+  if (!isValidHexKey(key)) {
+    throw new InvalidKeyFormatError();
+  }
+
+  await storeMasterKey(key);
+};
+
+/**
+ * 带验证的密钥导入结果
+ */
+export interface ImportKeyWithValidationResult {
+  /** 是否导入成功 */
+  success: boolean;
+  /** 密钥是否与现有加密数据匹配（null 表示无加密数据，跳过验证） */
+  keyMatched: boolean | null;
+  /** 错误信息（失败时） */
+  error?: string;
+}
+
+/**
+ * 带验证的密钥导入
+ * 格式验证 → 验证匹配性 → 存储密钥
+ * @param key 用户粘贴的 hex 编码密钥字符串
+ * @param forceImport 是否跳过验证直接导入（用于"仍然导入"场景）
+ */
+export const importMasterKeyWithValidation = async (
+  key: string,
+  forceImport = false
+): Promise<ImportKeyWithValidationResult> => {
+  if (!isValidHexKey(key)) {
+    return { success: false, keyMatched: null, error: '密钥格式无效，请输入 64 字符的 hex 编码字符串' };
+  }
+
+  try {
+    const matchResult = await verifyMasterKey(key);
+
+    if (!forceImport && matchResult === false) {
+      return { success: false, keyMatched: false };
+    }
+
+    await storeMasterKey(key);
+    return { success: true, keyMatched: matchResult };
+  } catch {
+    return {
+      success: false,
+      keyMatched: null,
+      error: '密钥导入失败，无法写入安全存储',
+    };
+  }
 };

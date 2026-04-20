@@ -96,7 +96,7 @@ const modelSlice = createSlice({
       // 初始化模型数据成功
       .addCase(initializeModels.fulfilled, (state, action) => {
         state.loading = false;
-        state.models = action.payload;
+        state.models = action.payload.models;
       })
       // 初始化模型数据失败
       .addCase(initializeModels.rejected, (state, action) => {

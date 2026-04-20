@@ -80,6 +80,7 @@ export class InitializationManager {
               result.completedSteps.push(step.name);
             } catch (error) {
               const initError = step.onError(error);
+              initError.stepName = step.name;
               this.handleError(result, initError);
 
               // 如果是关键步骤失败，抛出错误以终止初始化
@@ -104,6 +105,18 @@ export class InitializationManager {
       if (modelProviderStatus) {
         result.modelProviderStatus = modelProviderStatus;
       }
+
+      // 从 context 中提取 masterKeyRegenerated（如果已设置）
+      const masterKeyRegenerated = context.getResult<boolean>('masterKeyRegenerated');
+      if (masterKeyRegenerated !== undefined) {
+        result.masterKeyRegenerated = masterKeyRegenerated;
+      }
+
+      // 从 context 中提取 decryptionFailureCount（如果已设置）
+      const decryptionFailureCount = context.getResult<number>('decryptionFailureCount');
+      if (decryptionFailureCount !== undefined) {
+        result.decryptionFailureCount = decryptionFailureCount;
+      }
     } catch (error) {
       // 捕获未处理的错误
       if (error instanceof Object && 'severity' in error) {
@@ -127,7 +140,7 @@ export class InitializationManager {
    * @param steps 初始化步骤列表
    */
   private validateDependencies(steps: InitStep[]): void {
-    const stepNames = new Set(steps.map((s) => s.name));
+    const stepNames = new Set<string>(steps.map((s) => s.name));
 
     for (const step of steps) {
       if (step.dependencies) {
