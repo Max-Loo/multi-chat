@@ -23,12 +23,10 @@ globalThis.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
-// Mock virtua 虚拟滚动——真实 Virtualizer 在 jsdom/happy-dom 中不渲染子元素
 vi.mock('virtua', () => {
-  const MockVirtualizer = ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  );
-  return { Virtualizer: MockVirtualizer, VList: MockVirtualizer };
+  // oxlint-disable-next-line consistent-function-scoping — Vitest vi.mock 工厂函数会被提升，必须内联定义
+  const V = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
+  return { Virtualizer: V, VList: V };
 });
 
 vi.mock('react-i18next', () => {
