@@ -23,7 +23,6 @@
     "src/**/__tests__/**",        // 测试目录
     "src/**/__mocks__/**",        // Mock 目录
     "src/types/**",               // 类型定义目录
-    "src/lib/**",                 // 库文件目录
     "dist/**",                    // 构建输出
     "node_modules/**",            // 依赖目录
     "src-tauri/**"                // Tauri Rust 后端代码
@@ -38,7 +37,6 @@
     "autoprefixer",               // CSS 后处理工具
     "globals",                    // JavaScript 全局变量类型
     "lint-staged",                // Git 钩子工具（husky 使用）
-    "tailwindcss-animate",        // Tailwind CSS 动画插件
-    "i18next-cli"                 // i18n 类型生成工具
+    "tailwindcss-animate"         // Tailwind CSS 动画插件
   ]
 }

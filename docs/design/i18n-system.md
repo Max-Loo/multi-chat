@@ -226,8 +226,7 @@ export const createLanguagePersistenceMiddleware = (): Middleware => {
 ### 实现位置
 
 **位置**：
-- **主 middleware**：`src/store/middleware/appConfigMiddleware.ts`（推荐）
-- **备用 middleware**：`src/store/middleware/languagePersistence.ts`
+- **middleware**：`src/store/middleware/appConfigMiddleware.ts`
 
 ## 5. 翻译完整性检查
 
@@ -285,7 +284,7 @@ npm run validate
 - **安全翻译函数**：`src/services/i18n.ts` - `tSafely()`
 - **缓存验证**：`src/services/global.ts`, `src/utils/constants.ts`
 - **Toast 队列**：`src/services/toast/toastQueue.ts`
-- **自动持久化**：`src/store/middleware/appConfigMiddleware.ts`, `src/store/middleware/languagePersistence.ts`
+- **自动持久化**：`src/store/middleware/appConfigMiddleware.ts`
 - **翻译完整性检查**：`scripts/check-i18n.js`
 - **翻译文件**：`src/locales/{lang}/`
 - **error 命名空间**：`src/locales/{lang}/error.json`
