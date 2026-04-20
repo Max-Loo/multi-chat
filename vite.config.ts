@@ -119,26 +119,22 @@ export default defineConfig(async () => ({
 
   // 构建配置
   build: {
+    // 通过环境变量 MINIFY=false 禁用代码混淆
+    minify: process.env.MINIFY !== "false",
     // 设置 chunk 大小警告限制为 500 KB
     chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
         // 手动代码分割配置
         manualChunks: (id) => {
-          // chunk-initsteps: initSteps 配置 + store（独立打包，~10KB gzip 目标）
-          if (id.includes("config/initSteps")) {
-            return "chunk-initsteps";
-          }
-
-          // chunk-init: 初始化 UI 组件、逻辑、types（~50KB gzip 目标）
-          // 注意：不包含 initSteps 和 store，确保轻量化
+          // chunk-init: 初始化 UI 组件 + initSteps 配置（~60KB gzip 目标）
           if (
+            id.includes("config/initSteps") ||
             id.includes("components/InitializationController") ||
             id.includes("components/AnimatedLogo") ||
             id.includes("components/canvas-logo") ||
             id.includes("components/FatalErrorScreen") ||
             id.includes("components/NoProvidersAvailable") ||
-            id.includes("lib/initialization") ||
             id.includes("components/ui/progress")
           ) {
             return "chunk-init";
