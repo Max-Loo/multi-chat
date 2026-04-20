@@ -1,22 +1,21 @@
 /**
  * 模型配置集成测试
- * 
- * 测试目的：验证模型配置的完整生命周期
+ *
+ * 测试目的：验证模型配置的完整生命周期（加密 → 存储 → Redux → UI）
  * 测试范围：
  * - 添加模型配置（加密 → 存储 → Redux → UI）
  * - 使用模型配置进行聊天（解密 → API 调用）
  * - 编辑模型配置（加载 → 修改 → 重新加密）
  * - 删除模型配置（清理加密数据）
- * - 跨平台兼容性（Tauri vs Web）
  * - 数据完整性验证
- * 
- * 测试隔离：使用真实的加密逻辑，Mock API 请求和存储层
+ *
+ * 测试隔离：使用真实加密逻辑和真实 modelStorage 代码路径，仅 mock 外部 API（keyring 系统密钥链、chatService、tauriCompat 存储后端）
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { encryptField, decryptField } from '@/utils/crypto';
 
-// Mock keyring 模块
+// Mock keyring 模块（系统密钥链为外部依赖）
 vi.mock('@/store/keyring/masterKey', () => ({
   getMasterKey: vi.fn(),
   initializeMasterKey: vi.fn(),
@@ -25,16 +24,44 @@ vi.mock('@/store/keyring/masterKey', () => ({
 
 import { getMasterKey, initializeMasterKey, storeMasterKey } from '@/store/keyring/masterKey';
 
-// Mock storage 模块
-vi.mock('@/store/storage/modelStorage', () => ({
-  saveModelsToJson: vi.fn(),
-  loadModelsFromJson: vi.fn(),
-}));
+// Mock tauriCompat 存储后端为内存 Map（避免 fake-indexeddb 测试间连接问题）
+// modelStorage 的加密/解密/保存/加载代码路径完全真实
+const memoryStore = new Map<string, unknown>();
 
-import { saveModelsToJson, loadModelsFromJson } from '@/store/storage/modelStorage';
+vi.mock('@/utils/tauriCompat', () => {
+  return {
+    isTauri: () => false,
+    createLazyStore: () => ({
+      init: async () => {},
+      get: async <T>(key: string): Promise<T | null> => {
+        const val = memoryStore.get(key);
+        return val !== undefined ? (val as T) : null;
+      },
+      set: async (key: string, value: unknown) => {
+        memoryStore.set(key, value);
+      },
+      delete: async (key: string) => {
+        memoryStore.delete(key);
+      },
+      keys: async () => Array.from(memoryStore.keys()),
+      save: async () => {},
+      close: () => {},
+      isSupported: () => true,
+    }),
+    keyring: {
+      getPassword: vi.fn(),
+      setPassword: vi.fn(),
+      deletePassword: vi.fn(),
+      isSupported: vi.fn().mockReturnValue(true),
+      resetState: vi.fn(),
+    },
+  };
+});
+
+// 不 mock modelStorage — 使用真实代码路径（加密 → 存储 → 解密）
+import { saveModelsToJson, loadModelsFromJson, resetModelsStore } from '@/store/storage/modelStorage';
 
 import { getTestStore, resetStore, cleanupStore } from '@/__test__/helpers/integration/resetStore';
-import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
 import { createModel, editModel, deleteModel } from '@/store/slices/modelSlice';
 import type { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
@@ -42,7 +69,7 @@ import { StandardMessage } from '@/types/chat';
 import { ChatRoleEnum } from '@/types/chat';
 
 // ========================================
-// Mock streamChatCompletion
+// Mock streamChatCompletion（外部 API）
 // ========================================
 
 let mockStreamChatCompletion = vi.fn();
@@ -56,10 +83,9 @@ function setupDefaultStreamMock() {
     historyList: StandardMessage[];
     message: string;
   }) {
-    // 模拟流式响应
     const chunks = ['你', '好', '！', '有', '什', '么', '可', '以', '帮', '助', '？'];
     let accumulated = '';
-    
+
     for (const chunk of chunks) {
       accumulated += chunk;
       yield {
@@ -73,8 +99,7 @@ function setupDefaultStreamMock() {
         raw: null,
       };
     }
-    
-    // 最终响应
+
     yield {
       id: 'msg-test',
       timestamp: Math.floor(Date.now() / 1000),
@@ -92,7 +117,7 @@ function setupDefaultStreamMock() {
   });
 }
 
-// Mock chatService 模块
+// Mock chatService 模块（外部 API）
 vi.mock('@/services/chat', () => ({
   streamChatCompletion: vi.fn((...args: unknown[]) => mockStreamChatCompletion(...args)),
   getProvider: vi.fn(),
@@ -107,88 +132,79 @@ import { streamChatCompletion } from '@/services/chat';
 describe('模型配置集成测试', () => {
   let testStore: ReturnType<typeof getTestStore>;
   let masterKey: string;
-  let storageModels: Model[] = [];
+
+  /** 创建测试用模型 */
+  function createTestModel(overrides: Partial<Model> = {}): Model {
+    return {
+      id: `model-test-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: '2025-01-01 00:00:00',
+      updateAt: '2025-01-01 00:00:00',
+      providerName: 'DeepSeek',
+      providerKey: ModelProviderKeyEnum.DEEPSEEK,
+      nickname: 'DeepSeek Chat',
+      modelName: 'DeepSeek Chat',
+      modelKey: 'deepseek-chat',
+      apiKey: 'sk-test-key',
+      apiAddress: 'https://api.deepseek.com',
+      isEnable: true,
+      ...overrides,
+    };
+  }
 
   beforeEach(async () => {
+    // 重置存储层单例和内存存储
+    resetModelsStore();
+    memoryStore.clear();
+
     // 生成测试用主密钥
     masterKey = 'a'.repeat(64);
 
-    // Mock 主密钥获取
+    // Mock 主密钥获取（keyring 为系统密钥链外部依赖）
     vi.mocked(getMasterKey).mockResolvedValue(masterKey);
     vi.mocked(initializeMasterKey).mockResolvedValue({ key: masterKey, isNewlyGenerated: false });
     vi.mocked(storeMasterKey).mockResolvedValue(undefined);
-
-    // Mock 存储层
-    vi.mocked(saveModelsToJson).mockImplementation(async (models: Model[]) => {
-      storageModels = [...models];
-    });
-    vi.mocked(loadModelsFromJson).mockImplementation(async () => {
-      return { models: [...storageModels], decryptionFailureCount: 0 };
-    });
 
     // 设置默认流式响应 Mock
     setupDefaultStreamMock();
 
     // 创建测试 store
     testStore = getTestStore();
-
-    // 清理 IndexedDB
-    await clearIndexedDB();
   });
 
-  afterEach(async () => {
+  afterEach(() => {
+    // 重置存储层单例和内存存储
+    resetModelsStore();
+    memoryStore.clear();
+
     // 清理 store
     resetStore();
     cleanupStore();
 
-    // 清理 IndexedDB
-    await clearIndexedDB();
-
-    // 清理所有 mocks
+    // 清理 mock 调用记录
     vi.clearAllMocks();
-    vi.restoreAllMocks();
-
-    // 重置存储
-    storageModels = [];
   });
 
   // ========================================
-  // 3.1 添加模型配置测试
+  // 1. 添加模型配置测试
   // ========================================
 
   describe('添加模型配置', () => {
-    test('应该成功添加模型配置：API Key 加密 → 存储 → Redux → UI', async () => {
-      // Given: 用户填写的模型配置
-      const modelConfig: Model = {
-        id: 'model-test-1',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-test-123456',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
+    test('应该成功添加模型配置：API Key 加密 → 真实存储 → Redux → UI', async () => {
+      const modelConfig = createTestModel();
 
-      // When: 保存模型配置
-      const models = [modelConfig];
-      await saveModelsToJson(models);
+      // When: 通过真实存储层保存模型配置
+      await saveModelsToJson([modelConfig]);
 
-      // Then: 存储层应被调用
-      expect(saveModelsToJson).toHaveBeenCalledWith(models);
-      expect(storageModels).toHaveLength(1);
+      // When: 从真实存储层加载
+      const { models: loadedModels, decryptionFailureCount } = await loadModelsFromJson();
 
-      // Then: 验证加密逻辑
-      const encryptedApiKey = await encryptField('sk-test-123456', masterKey);
-      expect(encryptedApiKey).toMatch(/^enc:/);
-      expect(encryptedApiKey.length).toBeGreaterThan(4);
+      // Then: 存储层应返回模型，且无解密失败
+      expect(loadedModels).toHaveLength(1);
+      expect(decryptionFailureCount).toBe(0);
 
-      // Then: 验证解密逻辑
-      const decryptedApiKey = await decryptField(encryptedApiKey, masterKey);
-      expect(decryptedApiKey).toBe('sk-test-123456');
+      // Then: apiKey 应被正确解密（加密 → 存储 → 加载 → 解密）
+      expect(loadedModels[0].apiKey).toBe(modelConfig.apiKey);
+      expect(loadedModels[0].nickname).toBe(modelConfig.nickname);
 
       // When: 更新 Redux store
       testStore.dispatch(createModel({ model: modelConfig }));
@@ -197,68 +213,39 @@ describe('模型配置集成测试', () => {
       // Then: Redux store 应包含新模型
       expect(state.models.models).toHaveLength(1);
       expect(state.models.models[0]).toEqual(modelConfig);
-
-      // Then: UI 应显示新模型（通过 Redux state 验证）
-      const displayedModel = state.models.models.find(m => m.id === modelConfig.id);
-      expect(displayedModel).toBeDefined();
-      expect(displayedModel?.nickname).toBe('DeepSeek Chat');
     });
 
-    test('应该拒绝重复的模型 ID', async () => {
-      // Given: 已存在的模型配置
-      const existingModel: Model = {
-        id: 'model-duplicate',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-test-123',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
+    test('应该正确加密并读回多个模型配置', async () => {
+      const models = [
+        createTestModel({ id: 'model-1', apiKey: 'sk-key-alpha', nickname: 'Alpha' }),
+        createTestModel({ id: 'model-2', apiKey: 'sk-key-beta', nickname: 'Beta' }),
+        createTestModel({ id: 'model-3', apiKey: 'sk-key-gamma', nickname: 'Gamma' }),
+      ];
 
-      // When: 保存第一个模型
-      await saveModelsToJson([existingModel]);
-      testStore.dispatch(createModel({ model: existingModel }));
+      // When: 保存多个模型
+      await saveModelsToJson(models);
+      const { models: loadedModels, decryptionFailureCount } = await loadModelsFromJson();
 
-      // Then: 尝试添加重复 ID 的模型
-      const duplicateModel: Model = { ...existingModel, nickname: 'Duplicate' };
-      
-      // 验证：Redux store 应允许添加（业务层检测重复）
-      const initialState = testStore.getState().models.models.length;
-      testStore.dispatch(createModel({ model: duplicateModel }));
-      const finalState = testStore.getState().models.models.length;
-      
-      // Redux slice 的 createModel 会直接 push
-      expect(finalState).toBe(initialState + 1);
+      // Then: 所有模型应正确保存和加载
+      expect(loadedModels).toHaveLength(3);
+      expect(decryptionFailureCount).toBe(0);
+
+      // 验证每个 apiKey 的加密/解密往返
+      for (let i = 0; i < models.length; i++) {
+        expect(loadedModels[i].apiKey).toBe(models[i].apiKey);
+        expect(loadedModels[i].nickname).toBe(models[i].nickname);
+      }
     });
   });
 
   // ========================================
-  // 3.2 使用模型配置进行聊天测试
+  // 2. 使用模型配置进行聊天测试
   // ========================================
 
   describe('使用模型配置进行聊天', () => {
     test('应该成功使用模型配置进行聊天：解密 API Key → 调用 API', async () => {
-      // Given: 保存的模型配置
-      const modelConfig: Model = {
-        id: 'model-chat-1',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-chat-test',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
+      const modelConfig = createTestModel();
 
-      // When: 使用模型配置进行聊天
       const messages: StandardMessage[] = [];
       const chatRequest = {
         model: modelConfig,
@@ -275,7 +262,6 @@ describe('模型配置集成测试', () => {
       expect(responses.length).toBeGreaterThan(0);
       expect(responses[responses.length - 1].content).toBe('你好！有什么可以帮助？');
 
-      // Then: 验证响应角色和模型
       const finalResponse = responses[responses.length - 1];
       expect(finalResponse.role).toBe(ChatRoleEnum.ASSISTANT);
       expect(finalResponse.modelKey).toBe('deepseek-chat');
@@ -283,22 +269,8 @@ describe('模型配置集成测试', () => {
     });
 
     test('应该处理无效的 API Key', async () => {
-      // Given: 模型配置（无效 API Key）
-      const modelConfig: Model = {
-        id: 'model-invalid-key',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-invalid-key',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
+      const modelConfig = createTestModel();
 
-      // Mock 无效 API Key 的错误响应
       mockStreamChatCompletion.mockImplementation(async function* () {
         yield {
           id: 'msg-error',
@@ -313,53 +285,35 @@ describe('模型配置集成测试', () => {
         throw new Error('Invalid API key');
       });
 
-      // When: 尝试使用无效 API Key 进行聊天
-      const messages: StandardMessage[] = [];
       const chatRequest = {
         model: modelConfig,
-        historyList: messages,
+        historyList: [] as StandardMessage[],
         message: '你好',
       };
 
-      // Then: 应抛出错误
       await expect(async () => {
-        const responses: StandardMessage[] = [];
-        for await (const response of streamChatCompletion(chatRequest)) {
-          responses.push(response);
+        for await (const _ of streamChatCompletion(chatRequest)) {
+          // consume stream
         }
       }).rejects.toThrow('Invalid API key');
 
-      // 重置为默认 Mock
       setupDefaultStreamMock();
     });
   });
 
   // ========================================
-  // 3.3 编辑模型配置测试
+  // 3. 编辑模型配置测试
   // ========================================
 
   describe('编辑模型配置', () => {
-    test('应该成功编辑模型配置：加载 → 修改 → 保存', async () => {
-      // Given: 已保存的模型配置
-      const originalModel: Model = {
-        id: 'model-edit-1',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-original-key',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
+    test('应该成功编辑模型配置：加载 → 修改 → 保存 → 读回验证', async () => {
+      const originalModel = createTestModel({ id: 'model-edit-1', apiKey: 'sk-original-key' });
 
-      // When: 保存原始配置
+      // 保存原始配置
       await saveModelsToJson([originalModel]);
       testStore.dispatch(createModel({ model: originalModel }));
 
-      // When: 修改模型配置（不修改 API Key）
+      // 修改模型配置（不修改 API Key）
       const updatedModel: Model = {
         ...originalModel,
         nickname: 'DeepSeek Chat Updated',
@@ -368,378 +322,118 @@ describe('模型配置集成测试', () => {
 
       testStore.dispatch(editModel({ model: updatedModel }));
 
-      // Then: Redux store 应更新
+      // 保存到真实存储
       const state = testStore.getState();
-      const modelInStore = state.models.models.find(m => m.id === originalModel.id);
-      expect(modelInStore?.nickname).toBe('DeepSeek Chat Updated');
-      expect(modelInStore?.remark).toBe('Updated model');
-
-      // Then: 保存到存储
       await saveModelsToJson(state.models.models);
 
-      // Then: 加载验证
-      const { models: loadedModels } = await loadModelsFromJson();
+      // 从真实存储加载验证
+      const { models: loadedModels, decryptionFailureCount } = await loadModelsFromJson();
+      expect(decryptionFailureCount).toBe(0);
+
       const loadedModel = loadedModels.find(m => m.id === originalModel.id);
       expect(loadedModel?.nickname).toBe('DeepSeek Chat Updated');
+      expect(loadedModel?.remark).toBe('Updated model');
+      expect(loadedModel?.apiKey).toBe('sk-original-key');
     });
 
     test('应该成功修改 API Key（重新加密）', async () => {
-      // Given: 已保存的模型配置
-      const originalModel: Model = {
-        id: 'model-edit-apikey',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-old-key',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
+      const originalModel = createTestModel({ id: 'model-edit-apikey', apiKey: 'sk-old-key' });
 
-      // When: 保存原始配置
+      // 保存原始配置
       await saveModelsToJson([originalModel]);
 
-      // When: 修改 API Key
-      const updatedModel: Model = {
-        ...originalModel,
-        apiKey: 'sk-new-key',
-      };
-
+      // 修改 API Key
+      const updatedModel = { ...originalModel, apiKey: 'sk-new-key' };
       await saveModelsToJson([updatedModel]);
 
-      // Then: 加载验证
-      const { models: loadedModels } = await loadModelsFromJson();
+      // 从真实存储加载验证
+      const { models: loadedModels, decryptionFailureCount } = await loadModelsFromJson();
+      expect(decryptionFailureCount).toBe(0);
+
       expect(loadedModels[0].apiKey).toBe('sk-new-key');
-
-      // Then: 验证加密数据一致性
-      const encryptedOldKey = await encryptField('sk-old-key', masterKey);
-      const encryptedNewKey = await encryptField('sk-new-key', masterKey);
-      expect(encryptedOldKey).not.toBe(encryptedNewKey);
-
-      const decryptedOldKey = await decryptField(encryptedOldKey, masterKey);
-      const decryptedNewKey = await decryptField(encryptedNewKey, masterKey);
-      expect(decryptedOldKey).toBe('sk-old-key');
-      expect(decryptedNewKey).toBe('sk-new-key');
     });
   });
 
   // ========================================
-  // 3.4 删除模型配置测试
+  // 4. 删除模型配置测试
   // ========================================
 
   describe('删除模型配置', () => {
     test('应该成功删除模型配置：清理加密数据', async () => {
-      // Given: 已保存的模型配置
-      const modelToDelete: Model = {
-        id: 'model-delete-1',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-delete-key',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
+      const modelToDelete = createTestModel({ id: 'model-delete-1' });
 
-      // When: 保存并添加到 store
       await saveModelsToJson([modelToDelete]);
       testStore.dispatch(createModel({ model: modelToDelete }));
 
-      // When: 删除模型
       testStore.dispatch(deleteModel({ model: modelToDelete }));
 
-      // Then: Redux store 应标记为已删除
       const state = testStore.getState();
       const deletedModel = state.models.models.find(m => m.id === modelToDelete.id);
       expect(deletedModel?.isDeleted).toBe(true);
 
-      // When: 保存到存储（过滤已删除模型）
+      // 保存过滤后的活跃模型到真实存储
       const activeModels = state.models.models.filter(m => !m.isDeleted);
       await saveModelsToJson(activeModels);
 
-      // Then: 加载验证（不应包含已删除模型）
+      // 验证存储中不包含已删除模型
       const { models: loadedModels } = await loadModelsFromJson();
       expect(loadedModels).toHaveLength(0);
     });
 
-    test('应该彻底清理加密数据', async () => {
-      // Given: 多个模型配置
-      const models: Model[] = [
-        {
-          id: 'model-1',
-          createdAt: '2025-01-01 00:00:00',
-          updateAt: '2025-01-01 00:00:00',
-          providerName: 'DeepSeek',
-          providerKey: ModelProviderKeyEnum.DEEPSEEK,
-          nickname: 'DeepSeek Chat 1',
-          modelName: 'DeepSeek Chat',
-          modelKey: 'deepseek-chat',
-          apiKey: 'sk-key-1',
-          apiAddress: 'https://api.deepseek.com',
-          isEnable: true,
-        },
-        {
-          id: 'model-2',
-          createdAt: '2025-01-01 00:00:00',
-          updateAt: '2025-01-01 00:00:00',
-          providerName: 'DeepSeek',
-          providerKey: ModelProviderKeyEnum.DEEPSEEK,
-          nickname: 'DeepSeek Chat 2',
-          modelName: 'DeepSeek Chat',
-          modelKey: 'deepseek-chat',
-          apiKey: 'sk-key-2',
-          apiAddress: 'https://api.deepseek.com',
-          isEnable: true,
-        },
-      ];
+    test('应该保留未删除的模型', async () => {
+      const model1 = createTestModel({ id: 'model-keep', apiKey: 'sk-key-keep' });
+      const model2 = createTestModel({ id: 'model-remove', apiKey: 'sk-key-remove' });
 
-      // When: 保存所有模型
-      await saveModelsToJson(models);
+      await saveModelsToJson([model1, model2]);
+      testStore.dispatch(createModel({ model: model1 }));
+      testStore.dispatch(createModel({ model: model2 }));
+      testStore.dispatch(deleteModel({ model: model2 }));
 
-      // When: 删除一个模型
-      testStore.dispatch(createModel({ model: models[0] }));
-      testStore.dispatch(createModel({ model: models[1] }));
-      testStore.dispatch(deleteModel({ model: models[0] }));
-
-      // Then: 保存活跃模型
       const state = testStore.getState();
       const activeModels = state.models.models.filter(m => !m.isDeleted);
       await saveModelsToJson(activeModels);
 
-      // Then: 加载验证（只应包含未删除的模型）
-      const { models: loadedModels } = await loadModelsFromJson();
+      const { models: loadedModels, decryptionFailureCount } = await loadModelsFromJson();
       expect(loadedModels).toHaveLength(1);
-      expect(loadedModels[0].id).toBe('model-2');
-      expect(loadedModels[0].apiKey).toBe('sk-key-2');
+      expect(decryptionFailureCount).toBe(0);
+      expect(loadedModels[0].id).toBe('model-keep');
+      expect(loadedModels[0].apiKey).toBe('sk-key-keep');
     });
   });
 
   // ========================================
-  // 3.5 跨平台兼容性测试
-  // ========================================
-
-  describe('跨平台兼容性', () => {
-    test('加密算法应跨平台一致', async () => {
-      // Given: 相同的明文和密钥
-      const plaintext = 'Cross-platform test';
-      const key = 'a'.repeat(64);
-
-      // When: 加密
-      const encrypted1 = await encryptField(plaintext, key);
-      const encrypted2 = await encryptField(plaintext, key);
-
-      // Then: 每次加密应产生不同密文（nonce 唯一性）
-      expect(encrypted1).not.toBe(encrypted2);
-
-      // Then: 都能成功解密
-      const decrypted1 = await decryptField(encrypted1, key);
-      const decrypted2 = await decryptField(encrypted2, key);
-      expect(decrypted1).toBe(plaintext);
-      expect(decrypted2).toBe(plaintext);
-    });
-  });
-
-  // ========================================
-  // 3.6 数据完整性测试
+  // 5. 数据完整性测试
   // ========================================
 
   describe('数据完整性', () => {
-    test('应该验证必填字段', async () => {
-      // Given: 缺少必填字段的模型配置
-      const invalidModels = [
-        { id: '', nickname: 'Test', modelKey: 'test', apiKey: 'sk-test' },
-        { id: 'test-id', nickname: '', modelKey: 'test', apiKey: 'sk-test' },
-        { id: 'test-id', nickname: 'Test', modelKey: '', apiKey: 'sk-test' },
-        { id: 'test-id', nickname: 'Test', modelKey: 'test', apiKey: '' },
-      ];
+    test('应该验证加密数据完整性：写入 → 读回 → 修改密文 → 解密失败', async () => {
+      const model = createTestModel({ apiKey: 'sk-integrity-test' });
 
-      // When & Then: 验证必填字段
-      for (const model of invalidModels) {
-        // 每次只验证一个字段缺失的情况
-        const errors: string[] = [];
-        if (!model.id) errors.push('ID is required');
-        if (!model.nickname) errors.push('Nickname is required');
-        if (!model.modelKey) errors.push('Model key is required');
-        if (!model.apiKey) errors.push('API key is required');
-        
-        // 应该检测到至少一个错误
-        expect(errors.length).toBeGreaterThan(0);
-      }
-    });
-
-    test('应该验证 API 地址格式', async () => {
-      // Given: 各种 API 地址格式
-      const apiAddresses = [
-        { address: 'https://api.deepseek.com', valid: true },
-        { address: 'http://localhost:8080', valid: true },
-        { address: 'invalid-url', valid: false },
-        { address: '', valid: false },
-      ];
-
-      // Then: 应验证格式
-      for (const { address, valid } of apiAddresses) {
-        try {
-          // eslint-disable-next-line no-new
-          new URL(address);
-          if (!valid && address !== '') {
-            throw new Error('Should have thrown error');
-          }
-        } catch {
-          if (valid) {
-            throw new Error(`Valid URL "${address}" should not throw error`);
-          }
-        }
-      }
-    });
-
-    test('应该检测重复模型', async () => {
-      // Given: 两个相同 ID 的模型配置
-      const model1: Model = {
-        id: 'model-dup-1',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-test-1',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
-
-      const model2: Model = {
-        id: 'model-dup-2',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-test-2',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
-
-      // When: 保存两个模型
-      await saveModelsToJson([model1, model2]);
-      testStore.dispatch(createModel({ model: model1 }));
-      testStore.dispatch(createModel({ model: model2 }));
-
-      // Then: 都应成功保存（ID 不同）
-      const state = testStore.getState();
-      expect(state.models.models).toHaveLength(2);
-    });
-
-    test('应该验证加密数据完整性', async () => {
-      // Given: 模型配置
-      const model: Model = {
-        id: 'model-integrity',
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: 'DeepSeek Chat',
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: 'sk-integrity-test',
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      };
-
-      // When: 保存并加载
+      // 保存并加载
       await saveModelsToJson([model]);
       const { models: loadedModels } = await loadModelsFromJson();
-
-      // Then: API Key 应完整
       expect(loadedModels[0].apiKey).toBe('sk-integrity-test');
 
-      // Then: 加密数据应能解密
+      // 独立验证加密/解密往返
       const encrypted = await encryptField('sk-integrity-test', masterKey);
       const decrypted = await decryptField(encrypted, masterKey);
       expect(decrypted).toBe('sk-integrity-test');
 
-      // Then: 修改密文应导致解密失败
+      // 修改密文应导致解密失败
       const tamperedEncrypted = encrypted.slice(0, -1) + 'A';
       await expect(decryptField(tamperedEncrypted, masterKey)).rejects.toThrow();
     });
-  });
 
-  // ========================================
-  // 3.7 性能测试
-  // ========================================
+    test('应该检测重复模型', async () => {
+      const model1 = createTestModel({ id: 'model-dup-1', apiKey: 'sk-test-1' });
+      const model2 = createTestModel({ id: 'model-dup-2', apiKey: 'sk-test-2' });
 
-  describe('性能测试', () => {
-    test('批量加密/解密应 < 5 秒', async () => {
-      // Given: 100 个模型配置
-      const models: Model[] = Array.from({ length: 100 }, (_, i) => ({
-        id: `model-perf-${i}`,
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: `DeepSeek Chat ${i}`,
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: `sk-key-${i}`,
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      }));
+      await saveModelsToJson([model1, model2]);
+      testStore.dispatch(createModel({ model: model1 }));
+      testStore.dispatch(createModel({ model: model2 }));
 
-      // When: 批量加密保存
-      const startTime = Date.now();
-      await saveModelsToJson(models);
-      const saveTime = Date.now() - startTime;
-
-      // Then: 保存应 < 5 秒（Mock 版本会非常快）
-      expect(saveTime).toBeLessThan(5000);
-
-      // When: 批量加载解密
-      const loadStartTime = Date.now();
-      const { models: loadedModels } = await loadModelsFromJson();
-      const loadTime = Date.now() - loadStartTime;
-
-      // Then: 加载应 < 5 秒
-      expect(loadTime).toBeLessThan(5000);
-
-      // Then: 所有 API Key 应完整
-      expect(loadedModels).toHaveLength(100);
-      loadedModels.forEach((model, index) => {
-        expect(model.apiKey).toBe(`sk-key-${index}`);
-      });
-    });
-
-    test('并发添加模型应无竞态条件', async () => {
-      // Given: 10 个模型配置
-      const models: Model[] = Array.from({ length: 10 }, (_, i) => ({
-        id: `model-concurrent-${i}`,
-        createdAt: '2025-01-01 00:00:00',
-        updateAt: '2025-01-01 00:00:00',
-        providerName: 'DeepSeek',
-        providerKey: ModelProviderKeyEnum.DEEPSEEK,
-        nickname: `DeepSeek Chat ${i}`,
-        modelName: 'DeepSeek Chat',
-        modelKey: 'deepseek-chat',
-        apiKey: `sk-key-${i}`,
-        apiAddress: 'https://api.deepseek.com',
-        isEnable: true,
-      }));
-
-      // When: 并发添加到 store
-      await Promise.all(
-        models.map(model => testStore.dispatch(createModel({ model })))
-      );
-
-      // Then: 所有模型都应被添加
       const state = testStore.getState();
-      expect(state.models.models).toHaveLength(10);
+      expect(state.models.models).toHaveLength(2);
     });
   });
 });

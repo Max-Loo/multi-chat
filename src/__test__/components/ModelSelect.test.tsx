@@ -89,7 +89,10 @@ describe('ModelSelect 用户交互测试', () => {
   describe('基本渲染交互', () => {
     it('应该正确渲染而不抛错', () => {
       renderWithProviders(<ModelSelect />, { store });
-      expect(true).toBe(true);
+
+      // 验证表格渲染成功，组件确实加载了模型数据
+      const tables = screen.getAllByRole('table');
+      expect(tables.length).toBeGreaterThan(0);
     });
 
     it('应该渲染模型列表', () => {

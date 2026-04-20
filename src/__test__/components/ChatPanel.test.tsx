@@ -147,7 +147,7 @@ describe('ChatPanel', () => {
   });
 
   describe('4.1.3 测试可调整大小的面板布局', () => {
-    it('应该在分割模式下启用 ResizablePanel', () => {
+    it('应该在分割模式下启用 ResizablePanel', async () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1' });
 
       const store = createStore({
@@ -165,9 +165,9 @@ describe('ChatPanel', () => {
         fireEvent.click(splitterSwitch);
 
         // 等待状态更新
-        waitFor(() => {
+        await waitFor(() => {
           // 检查是否显示了 ResizablePanel 相关的元素
-          const resizablePanels = container.querySelectorAll('[data-panel-id]');
+          const resizablePanels = container.querySelectorAll('[data-panel]');
           expect(resizablePanels.length).toBeGreaterThan(0);
         });
       }
@@ -325,7 +325,7 @@ describe('ChatPanel', () => {
       expect(splitterSwitch).toHaveAttribute('data-state', 'unchecked');
     });
 
-    it('应该在分割模式下显示不同的布局', () => {
+    it('应该在分割模式下显示不同的布局', async () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1' });
 
       const store = createStore({
@@ -341,9 +341,10 @@ describe('ChatPanel', () => {
         fireEvent.click(splitterSwitch);
 
         // 等待状态更新并检查布局
-        waitFor(() => {
-          const resizableContainer = container.querySelector('.absolute.top-0.left-0.w-full.pt-12.pb-22');
-          expect(resizableContainer).toBeInTheDocument();
+        await waitFor(() => {
+          // 分割模式下渲染 ResizablePanel（[data-panel] 属性仅分割模式存在）
+          const resizablePanels = container.querySelectorAll('[data-panel]');
+          expect(resizablePanels.length).toBeGreaterThan(0);
         });
       }
     });

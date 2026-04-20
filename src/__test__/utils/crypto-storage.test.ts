@@ -1,20 +1,20 @@
 /**
 
- * Crypto 与 Storage 集成测试
+ * Crypto 加密/解密单元测试
 
- * 
+ *
 
- * 测试目的：验证 crypto.ts 加密/解密功能与业务场景的集成
+ * 测试目的：验证 crypto.ts 加密/解密功能与业务场景
 
  * 测试范围：
 
- * - 端到端加密存储流程（saveModelsToJson → loadModelsFromJson）
+ * - 加密/解密往返验证
 
  * - 密钥轮换后的数据访问验证
 
  * - 批量操作的容错机制验证
 
- * 
+ *
 
  * 测试隔离：所有外部依赖（@/utils/tauriCompat、@/store/storage/modelStorage）均被 Mock
 
@@ -57,7 +57,7 @@ vi.mock('@/store/storage/modelStorage', () => ({
 
 
 
-describe('Crypto 与 Storage 集成测试', () => {
+describe('Crypto 加密/解密单元测试', () => {
 
   beforeEach(() => {
 
