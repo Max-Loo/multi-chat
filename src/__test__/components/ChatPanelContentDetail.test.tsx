@@ -23,6 +23,14 @@ globalThis.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
+// Mock virtua 虚拟滚动——真实 Virtualizer 在 jsdom/happy-dom 中不渲染子元素
+vi.mock('virtua', () => {
+  const MockVirtualizer = ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  );
+  return { Virtualizer: MockVirtualizer, VList: MockVirtualizer };
+});
+
 vi.mock('react-i18next', () => {
   const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称', thinking: '思考中......', thinkingComplete: '思考完毕', scrollToBottom: '滚动到底部' }, common: { loading: 'Loading...' } };
   return globalThis.__createI18nMockReturn(R);

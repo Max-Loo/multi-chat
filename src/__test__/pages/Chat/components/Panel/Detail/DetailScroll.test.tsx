@@ -54,6 +54,13 @@ vi.mock('@/components/chat/ChatBubble', () => ({
   ),
 }));
 
+// Mock virtua 虚拟滚动——真实 Virtualizer 在 jsdom/happy-dom 中不渲染子元素
+vi.mock('virtua', async () => {
+  const { createVirtuaMock } = await import('../../../../../helpers/mocks/virtua');
+  const { MockVirtualizer, MockVList } = createVirtuaMock();
+  return { Virtualizer: MockVirtualizer, VList: MockVList };
+});
+
 vi.mock('react-i18next', () => {
   const R = { chat: { scrollToBottom: '滚动到底部' } };
   return globalThis.__createI18nMockReturn(R);
@@ -164,7 +171,7 @@ function mockScrollDimensions(
 }
 
 describe('Detail 滚动到底部按钮', () => {
-  let resizeCallbacks: Array<() => void> = [];
+  let resizeCallbacks: Array<(entries: ResizeObserverEntry[], observer: ResizeObserver) => void> = [];
   let OriginalRO: typeof globalThis.ResizeObserver;
 
   beforeEach(() => {
@@ -175,16 +182,14 @@ describe('Detail 滚动到底部按钮', () => {
     // Mock ResizeObserver 以捕获回调
     OriginalRO = globalThis.ResizeObserver;
     globalThis.ResizeObserver = class {
-      cb: () => void;
-      constructor(cb: () => void) {
+      cb: (entries: ResizeObserverEntry[], observer: ResizeObserver) => void;
+      constructor(cb: (entries: ResizeObserverEntry[], observer: ResizeObserver) => void) {
         this.cb = cb;
         resizeCallbacks.push(cb);
       }
       observe() {}
       unobserve() {}
       disconnect() {}
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 自定义 ResizeObserver mock 类与浏览器 API 构造签名不完全匹配
     } as any;
   });
 
@@ -206,7 +211,8 @@ describe('Detail 滚动到底部按钮', () => {
   }
 
   /**
-   * 模拟滚动状态并触发重新检测
+   * 模拟滚动状态并通过 ResizeObserver 回调触发重新检测
+   * （组件通过 ResizeObserver 而非原生 scroll 事件检测滚动状态）
    */
   function triggerScrollRecheck(scrollContainer: HTMLElement, opts: {
     scrollHeight: number;
@@ -215,7 +221,7 @@ describe('Detail 滚动到底部按钮', () => {
   }) {
     mockScrollDimensions(scrollContainer, opts);
     act(() => {
-      fireEvent.scroll(scrollContainer);
+      resizeCallbacks.forEach((cb) => cb([{ contentRect: { height: 0 } }] as any, null as any));
       vi.advanceTimersByTime(200);
     });
   }
@@ -311,7 +317,7 @@ describe('Detail 滚动到底部按钮', () => {
 
     // 通过 ResizeObserver 回调触发重新检测
     act(() => {
-      resizeCallbacks.forEach((cb) => cb());
+      resizeCallbacks.forEach((cb) => cb([{ contentRect: { height: 0 } }] as any, null as any));
       vi.advanceTimersByTime(200);
     });
 

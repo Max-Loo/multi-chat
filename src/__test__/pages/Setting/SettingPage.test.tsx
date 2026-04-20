@@ -27,7 +27,7 @@ vi.mock('@/hooks/useResponsive', () => ({
 }));
 
 vi.mock('react-i18next', () => {
-  const R = { setting: { generalSetting: '通用设置' } };
+  const R = { setting: { generalSetting: '通用设置', keyManagement: { title: '密钥管理' }, toastTest: 'Toast 测试' } };
   return globalThis.__createI18nMockReturn(R);
 });
 

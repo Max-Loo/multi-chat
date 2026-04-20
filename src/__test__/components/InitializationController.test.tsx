@@ -36,8 +36,22 @@ vi.mock('lucide-react', async (importOriginal) => {
   };
 });
 
+// Mock useResetDataDialog（FatalErrorScreen 依赖，内部调用 resetAllData 涉及浏览器 API）
+vi.mock('@/hooks/useResetDataDialog', () => ({
+  useResetDataDialog: () => ({
+    setIsDialogOpen: vi.fn(),
+    isResetting: false,
+    renderResetDialog: () => null,
+  }),
+}));
+
+// Mock KeyRecoveryDialog（FatalErrorScreen 依赖，内部调用 masterKey 加密模块）
+vi.mock('@/components/KeyRecoveryDialog', () => ({
+  KeyRecoveryDialog: () => null,
+}));
+
 vi.mock('react-i18next', () => {
-  const R = { common: { initializationFailed: '初始化失败', refreshPage: '刷新页面', noProvidersAvailable: '无可用的模型供应商', noProvidersDescription: '应用无法连接到模型数据服务器，且本地无可用缓存。', noProvidersHint: '请检查网络连接后点击下方按钮重试。', reload: '重新加载' } };
+  const R = { common: { initializationFailed: '初始化失败', initializationFailedDescription: '初始化过程中遇到了无法恢复的错误', showErrorDetails: '查看错误详情', masterKeyRegeneratedImport: '重新生成主密钥并导入', resetAllData: '重置所有数据', resetConfirmTitle: '确认重置', resetConfirmDescription: '此操作不可撤销', resetConfirmAction: '确认重置', cancel: '取消', refreshPage: '刷新页面', noProvidersAvailable: '无可用的模型供应商', noProvidersDescription: '应用无法连接到模型数据服务器，且本地无可用缓存。', noProvidersHint: '请检查网络连接后点击下方按钮重试。', reload: '重新加载' } };
   return globalThis.__createI18nMockReturn(R);
 });
 
