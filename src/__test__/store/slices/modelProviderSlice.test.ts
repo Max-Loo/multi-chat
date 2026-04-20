@@ -53,9 +53,7 @@ vi.mock("@/services/modelRemote", () => ({
   RemoteDataErrorType: {
     NETWORK_TIMEOUT: "network_timeout",
     SERVER_ERROR: "server_error",
-    PARSE_ERROR: "parse_error",
     NO_CACHE: "no_cache",
-    ABORTED: "aborted",
     NETWORK_ERROR: "network_error",
   },
 }));

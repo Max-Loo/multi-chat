@@ -85,12 +85,8 @@ export enum RemoteDataErrorType {
   NETWORK_TIMEOUT = "network_timeout",
   /** 服务器错误（4xx/5xx） */
   SERVER_ERROR = "server_error",
-  /** JSON 解析失败 */
-  PARSE_ERROR = "parse_error",
   /** 无可用缓存 */
   NO_CACHE = "no_cache",
-  /** 请求被取消 */
-  ABORTED = "aborted",
   /** 网络连接失败 */
   NETWORK_ERROR = "network_error",
 }

@@ -191,5 +191,3 @@ export const InitializationController: React.FC<
     </div>
   );
 };
-
-export default InitializationController;

@@ -99,7 +99,6 @@
     "husky": "^9.1.7",
     "knip": "^5.86.0",
     "lint-staged": "^16.3.2",
-    "msw": "^2.12.10",
     "oxlint": "^1.51.0",
     "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^4.2.1",
