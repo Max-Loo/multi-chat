@@ -1,15 +1,11 @@
 /**
  * useCreateChat Hook 单元测试
  *
- * 测试策略：Mock useAppDispatch、useNavigateToChat 和 generateId
+ * 测试策略：使用 renderHookWithProviders + 真实 store，
+ * 通过 store.getState() 验证 state 变更，而非 mock dispatch
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
-
-vi.mock('@/hooks/redux', () => ({
-  useAppDispatch: vi.fn(),
-}));
 
 vi.mock('@/hooks/useNavigateToPage', () => ({
   useNavigateToChat: vi.fn(() => ({
@@ -26,80 +22,64 @@ vi.mock('ai', async (importOriginal) => {
   };
 });
 
-import { useAppDispatch } from '@/hooks/redux';
 import { useNavigateToChat } from '@/hooks/useNavigateToPage';
 import { generateId } from 'ai';
+import { useCreateChat } from '@/hooks/useCreateChat';
+import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
+import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
 
 describe('useCreateChat', () => {
-  const mockDispatch = vi.fn();
   const mockNavigateToChat = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useAppDispatch).mockReturnValue(mockDispatch);
-    vi.mocked(useNavigateToChat).mockReturnValue({ 
+    vi.mocked(useNavigateToChat).mockReturnValue({
       navigateToChat: mockNavigateToChat,
       clearChatIdParam: vi.fn(),
     });
     vi.mocked(generateId).mockReturnValue('test-chat-id');
   });
 
-  it('应该返回包含 createNewChat 方法的对象', async () => {
-    const { useCreateChat } = await import('@/hooks/useCreateChat');
-    const { result } = renderHook(() => useCreateChat());
+  it('应该返回包含 createNewChat 方法的对象', () => {
+    const { result } = renderHookWithProviders(() => useCreateChat());
 
     expect(result.current).toHaveProperty('createNewChat');
     expect(typeof result.current.createNewChat).toBe('function');
   });
 
-  it('应该调用 dispatch createChat action', async () => {
-    const { useCreateChat } = await import('@/hooks/useCreateChat');
-    const { result } = renderHook(() => useCreateChat());
-
-    await result.current.createNewChat();
-
-    expect(mockDispatch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: expect.stringContaining('createChat'),
-        payload: expect.objectContaining({
-          chat: expect.objectContaining({
-            id: 'test-chat-id',
-            name: '',
-          }),
+  it('应该在 store 中创建新聊天', () => {
+    const { result, store } = renderHookWithProviders(() => useCreateChat(), {
+      preloadedState: {
+        chat: createChatSliceState({
+          chatList: [],
+          selectedChatId: null,
         }),
-      })
-    );
-  });
+      },
+    });
 
-  it('应该生成正确的 chat 对象（id 非空，name 为空）', async () => {
-    const { useCreateChat } = await import('@/hooks/useCreateChat');
-    const { result } = renderHook(() => useCreateChat());
+    return result.current.createNewChat().then(() => {
+      const state = store.getState();
+      const newChat = state.chat.chatList.find(c => c.id === 'test-chat-id');
 
-    await result.current.createNewChat();
-
-    const dispatchCall = mockDispatch.mock.calls[0][0];
-    const chat = dispatchCall.payload.chat;
-
-    expect(chat.id).toBe('test-chat-id');
-    expect(chat.id).not.toBe('');
-    expect(chat.name).toBe('');
-  });
-
-  it('应该调用 navigateToChat 方法', async () => {
-    const { useCreateChat } = await import('@/hooks/useCreateChat');
-    const { result } = renderHook(() => useCreateChat());
-
-    await result.current.createNewChat();
-
-    expect(mockNavigateToChat).toHaveBeenCalledTimes(1);
-    expect(mockNavigateToChat).toHaveBeenCalledWith({
-      chatId: 'test-chat-id',
+      expect(newChat).toBeDefined();
+      expect(newChat?.id).toBe('test-chat-id');
+      expect(newChat?.name).toBe('');
     });
   });
 
-  it('createNewChat 引用应该稳定（useCallback）', async () => {
-    const { useCreateChat } = await import('@/hooks/useCreateChat');
-    const { result, rerender } = renderHook(() => useCreateChat());
+  it('应该调用 navigateToChat 方法', () => {
+    const { result } = renderHookWithProviders(() => useCreateChat());
+
+    return result.current.createNewChat().then(() => {
+      expect(mockNavigateToChat).toHaveBeenCalledTimes(1);
+      expect(mockNavigateToChat).toHaveBeenCalledWith({
+        chatId: 'test-chat-id',
+      });
+    });
+  });
+
+  it('createNewChat 引用应该稳定（useCallback）', () => {
+    const { result, rerender } = renderHookWithProviders(() => useCreateChat());
 
     const firstRef = result.current.createNewChat;
 
@@ -110,63 +90,68 @@ describe('useCreateChat', () => {
     expect(firstRef).toBe(secondRef);
   });
 
-  it('应该在创建聊天后同步设置 selectedChatId', async () => {
-    const { useCreateChat } = await import('@/hooks/useCreateChat');
-    const { result } = renderHook(() => useCreateChat());
-
-    await result.current.createNewChat();
-
-    // 第一个 dispatch 是 createChat，第二个是 setSelectedChatId
-    expect(mockDispatch).toHaveBeenCalledTimes(2);
-    expect(mockDispatch).toHaveBeenNthCalledWith(2,
-      expect.objectContaining({
-        type: expect.stringContaining('setSelectedChatId'),
-        payload: 'test-chat-id',
-      })
-    );
-  });
-
-  it('应该按正确顺序执行：createChat → setSelectedChatId → navigateToChat', async () => {
-    const { useCreateChat } = await import('@/hooks/useCreateChat');
-    const callOrder: string[] = [];
-    mockDispatch.mockImplementation((action) => {
-      callOrder.push(action.type);
-      return action;
-    });
-    mockNavigateToChat.mockImplementation(() => {
-      callOrder.push('navigateToChat');
+  it('应该在创建聊天后同步设置 selectedChatId', () => {
+    const { result, store } = renderHookWithProviders(() => useCreateChat(), {
+      preloadedState: {
+        chat: createChatSliceState({
+          chatList: [],
+          selectedChatId: null,
+        }),
+      },
     });
 
-    const { result } = renderHook(() => useCreateChat());
-    await result.current.createNewChat();
-
-    expect(callOrder).toEqual([
-      expect.stringContaining('createChat'),
-      expect.stringContaining('setSelectedChatId'),
-      'navigateToChat',
-    ]);
+    return result.current.createNewChat().then(() => {
+      const state = store.getState();
+      expect(state.chat.selectedChatId).toBe('test-chat-id');
+    });
   });
 
-  it('连续快速创建多个新聊天时，selectedChatId 应为最后一个', async () => {
-    const { useCreateChat } = await import('@/hooks/useCreateChat');
+  it('应该按正确顺序执行：createChat → setSelectedChatId → navigateToChat', () => {
+    const { result, store } = renderHookWithProviders(() => useCreateChat(), {
+      preloadedState: {
+        chat: createChatSliceState({
+          chatList: [],
+          selectedChatId: null,
+        }),
+      },
+    });
+
+    return result.current.createNewChat().then(() => {
+      // 验证最终状态：chat 已创建且已选中
+      const state = store.getState();
+      expect(state.chat.chatList).toHaveLength(1);
+      expect(state.chat.selectedChatId).toBe('test-chat-id');
+      // navigateToChat 最后调用
+      expect(mockNavigateToChat).toHaveBeenCalledWith({
+        chatId: 'test-chat-id',
+      });
+    });
+  });
+
+  it('连续快速创建多个新聊天时，selectedChatId 应为最后一个', () => {
     vi.mocked(generateId)
       .mockReturnValueOnce('chat-1')
       .mockReturnValueOnce('chat-2')
       .mockReturnValueOnce('chat-3');
 
-    const { result } = renderHook(() => useCreateChat());
+    const { result, store } = renderHookWithProviders(() => useCreateChat(), {
+      preloadedState: {
+        chat: createChatSliceState({
+          chatList: [],
+          selectedChatId: null,
+        }),
+      },
+    });
 
-    await result.current.createNewChat();
-    await result.current.createNewChat();
-    await result.current.createNewChat();
-
-    // 每次 createNewChat 都会 dispatch createChat + setSelectedChatId = 6 次
-    expect(mockDispatch).toHaveBeenCalledTimes(6);
-    // 最后一次 setSelectedChatId 应为 chat-3
-    const lastSetSelectedCall = mockDispatch.mock.calls
-      .filter(([action]) => String(action.type).includes('setSelectedChatId'))
-      .pop();
-    expect(lastSetSelectedCall![0].payload).toBe('chat-3');
+    return result.current.createNewChat()
+      .then(() => result.current.createNewChat())
+      .then(() => result.current.createNewChat())
+      .then(() => {
+        const state = store.getState();
+        // 所有 3 个聊天都已创建
+        expect(state.chat.chatList).toHaveLength(3);
+        // 最后一个为选中状态
+        expect(state.chat.selectedChatId).toBe('chat-3');
+      });
   });
-
 });

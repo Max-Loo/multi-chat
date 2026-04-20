@@ -3,41 +3,9 @@ import { render, waitFor, within, fireEvent } from '@testing-library/react';
 import { ProviderCardDetails } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ProviderCardDetails';
 import { createMockRemoteProvider, createDeepSeekProvider } from '@/__test__/helpers/fixtures';
 
-/**
- * Mock react-i18next 模块
- * 提供测试用的国际化函数模拟实现
- */
 vi.mock('react-i18next', () => {
-  const zhResources = {
-    setting: {
-      modelProvider: {
-        modelCount: '共 {{count}} 个模型',
-        searchPlaceholder: '搜索模型',
-        searchResult: '找到 {{count}} 个模型',
-        totalModels: '共 {{count}} 个模型',
-        noModels: '暂无模型',
-      },
-    },
-  } as const;
-
-  return {
-    useTranslation: () => ({
-      t: ((keyOrSelector: string | ((resources: typeof zhResources) => string), options?: { count?: number }) => {
-        if (typeof keyOrSelector === 'function') {
-          let result = keyOrSelector(zhResources);
-          if (options?.count !== undefined) {
-            result = result.replace('{{count}}', String(options.count));
-          }
-          return result;
-        }
-        return keyOrSelector;
-      }) as unknown,
-      i18n: {
-        language: 'zh',
-        changeLanguage: vi.fn(),
-      },
-    }),
-  };
+  const R = { setting: { modelProvider: { modelCount: '共 {{count}} 个模型', searchPlaceholder: '搜索模型', searchResult: '找到 {{count}} 个模型', totalModels: '共 {{count}} 个模型' } } };
+  return globalThis.__createI18nMockReturn(R);
 });
 
 describe('ProviderCardDetails', () => {

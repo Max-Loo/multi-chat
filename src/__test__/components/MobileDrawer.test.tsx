@@ -7,41 +7,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { MobileDrawer } from '@/components/MobileDrawer';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          navigation: {
-            mobileDrawer: {
-              title: '侧边栏',
-              description: '侧边栏',
-              ariaDescription: '抽屉内容',
-            },
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = { navigation: { mobileDrawer: { title: '侧边栏', description: '侧边栏', ariaDescription: '抽屉内容' } } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
-// Mock shadcn/ui Sheet 组件
+// Mock shadcn/ui Sheet 组件（底层依赖 radix-ui Dialog，涉及 Portal/Overlay/FocusTrap 等 DOM 结构，
+// 在 happy-dom 中缺少 DOMPortal 支持，不 mock 会导致渲染失败，保留此 mock）
 vi.mock('@/components/ui/sheet', () => ({
   Sheet: ({ open, children }: any) => (
     <div data-open={open} data-testid="sheet">
@@ -284,7 +258,8 @@ describe('MobileDrawer 组件', () => {
     it('应该处理 undefined children', () => {
       render(
         <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
-          {undefined as any}
+          {/* Reason: 测试 undefined children 的降级处理 */}
+          {asTestType<React.ReactNode>(undefined)}
         </MobileDrawer>
       );
 

@@ -27,7 +27,6 @@ describe('Store 兼容层', () => {
     it('应该创建 Store 实例', () => {
       store = createLazyStore('test-store.json');
 
-      expect(store).toBeDefined();
       expect(typeof store.init).toBe('function');
       expect(typeof store.get).toBe('function');
       expect(typeof store.set).toBe('function');
@@ -40,8 +39,8 @@ describe('Store 兼容层', () => {
       const store1 = createLazyStore('store1.json');
       const store2 = createLazyStore('store2.json');
 
-      expect(store1).toBeDefined();
-      expect(store2).toBeDefined();
+      expect(store1).toBeTruthy();
+      expect(store2).toBeTruthy();
     });
   });
 
@@ -102,7 +101,7 @@ describe('Store 兼容层', () => {
       await store.set('key2', 'value2');
       await store.set('key3', 'value3');
 
-      expect(store).toBeDefined();
+      // 多次 set 不应抛出异常
     });
 
     it('应该处理写入错误', async () => {
@@ -110,7 +109,7 @@ describe('Store 兼容层', () => {
 
       await store.set('test-key', 'test-value');
 
-      expect(store).toBeDefined();
+      // 写入操作不应抛出异常
       consoleSpy.mockRestore();
     });
   });

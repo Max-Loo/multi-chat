@@ -10,22 +10,18 @@ import type { ChatButtonProps } from '@/pages/Chat/components/Sidebar/components
 import type { Chat } from '@/types/chat'
 import { createTestStore } from '@/__test__/helpers/render/redux'
 import { createMockChatList } from '@/__test__/helpers/mocks/chatSidebar'
+import { createChatSliceState } from '@/__test__/helpers/mocks/testState'
 import { setSelectedChatId } from '@/store/slices/chatSlices'
 
 /**
- * 创建性能测试用的 store（放宽类型约束）
+ * 创建性能测试用的 store
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createPerfStore(chatList: Chat[], selectedChatId: string) {
   return createTestStore({
-    chat: {
+    chat: createChatSliceState({
       selectedChatId,
       chatList,
-      loading: false,
-      error: null,
-      initializationError: null,
-      runningChat: {},
-    } as any,
+    }),
   })
 }
 
@@ -49,34 +45,10 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
   }),
 }))
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            unnamed: '未命名',
-            rename: '重命名',
-            delete: '删除',
-            confirmDelete: '确认删除',
-            deleteChatConfirm: '确定要删除这个聊天吗？',
-            deleteChatSuccess: '删除成功',
-            deleteChatFailed: '删除失败',
-            editChatSuccess: '重命名成功',
-            editChatFailed: '重命名失败',
-          },
-        }
-        return keyOrSelector(mockResources)
-      }
-      return keyOrSelector
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-}))
+vi.mock('react-i18next', () => {
+  const R = { chat: { unnamed: '未命名', rename: '重命名', delete: '删除' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 vi.mock('@/hooks/useConfirm', () => ({
   useConfirm: () => ({

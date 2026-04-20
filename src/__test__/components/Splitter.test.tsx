@@ -2,45 +2,35 @@
  * Splitter 组件测试
  *
  * 测试可拖拽布局组件
+ * 不 mock Detail 子组件，使用 renderWithProviders 渲染完整组件树
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, cleanup, screen } from '@testing-library/react';
-import React from 'react';
+import { cleanup, screen } from '@testing-library/react';
 import Splitter from '@/pages/Chat/components/Panel/Splitter';
 import type { ChatModel } from '@/types/chat';
 import {
   createMockPanelChatModel,
   createPanelLayoutStore,
-  createPanelLayoutWrapper,
 } from '@/__test__/helpers/mocks/panelLayout';
+import { renderWithProviders } from '@/__test__/helpers/render/redux';
 
-// Mock ResizeObserver
+// Detail 组件内部使用 ResizeObserver
 globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
 };
 
-// 设置通用 Mock
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
-vi.mock('@/pages/Chat/components/Panel/Detail', () => ({
-  default: ({ chatModel }: { chatModel: ChatModel }) => (
-    <div data-testid={`detail-${chatModel.modelId}`}>Detail: {chatModel.modelId}</div>
-  ),
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称' }, common: { loading: 'Loading...' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /** 渲染 Splitter 的辅助函数 */
 function renderSplitter(board: ChatModel[][]) {
   const store = createPanelLayoutStore();
-  const wrapper = createPanelLayoutWrapper(store);
-  return render(<Splitter board={board} />, { wrapper });
+  return renderWithProviders(<Splitter board={board} />, { store });
 }
 
 describe('Splitter', () => {
@@ -92,8 +82,8 @@ describe('Splitter', () => {
         [createMockPanelChatModel('model-2')],
       ]);
 
-      expect(screen.getByTestId('detail-model-1')).toBeInTheDocument();
-      expect(screen.getByTestId('detail-model-2')).toBeInTheDocument();
+      // 每个 Detail 渲染 Title，modelId 不在 models store 中时显示"模型已删除"
+      expect(screen.getAllByText('模型已删除')).toHaveLength(2);
     });
 
     it('应该在同一行中渲染多个水平面板', () => {
@@ -101,9 +91,7 @@ describe('Splitter', () => {
         [createMockPanelChatModel('model-1'), createMockPanelChatModel('model-2'), createMockPanelChatModel('model-3')],
       ]);
 
-      expect(screen.getByTestId('detail-model-1')).toBeInTheDocument();
-      expect(screen.getByTestId('detail-model-2')).toBeInTheDocument();
-      expect(screen.getByTestId('detail-model-3')).toBeInTheDocument();
+      expect(screen.getAllByText('模型已删除')).toHaveLength(3);
     });
 
     it('应该在多行多列时正确渲染所有面板', () => {
@@ -112,10 +100,7 @@ describe('Splitter', () => {
         [createMockPanelChatModel('model-3'), createMockPanelChatModel('model-4')],
       ]);
 
-      expect(screen.getByTestId('detail-model-1')).toBeInTheDocument();
-      expect(screen.getByTestId('detail-model-2')).toBeInTheDocument();
-      expect(screen.getByTestId('detail-model-3')).toBeInTheDocument();
-      expect(screen.getByTestId('detail-model-4')).toBeInTheDocument();
+      expect(screen.getAllByText('模型已删除')).toHaveLength(4);
     });
   });
 });

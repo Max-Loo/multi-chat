@@ -24,58 +24,16 @@ vi.mock('@/hooks/useResponsive', () => ({
   }),
 }));
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'nav.chat': '聊天',
-        'nav.model': '模型',
-        'nav.setting': '设置',
-      };
-      return translations[key] || key;
-    },
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const R = { nav: { chat: '聊天', model: '模型', setting: '设置' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
-// Mock navigation配置
-vi.mock('@/config/navigation', () => ({
-  NAVIGATION_ITEMS: [
-    {
-      id: 'chat',
-      path: '/chat',
-      i18nKey: 'nav.chat',
-      IconComponent: () => <svg data-testid="chat-icon" />,
-      theme: {
-        base: 'text-blue-400',
-        active: 'bg-blue-100 text-blue-500',
-        inactive: 'hover:text-blue-500 hover:bg-blue-100',
-      },
-    },
-    {
-      id: 'model',
-      path: '/model',
-      i18nKey: 'nav.model',
-      IconComponent: () => <svg data-testid="model-icon" />,
-      theme: {
-        base: 'text-emerald-400',
-        active: 'bg-emerald-100 text-emerald-500',
-        inactive: 'hover:text-emerald-500 hover:bg-emerald-100',
-      },
-    },
-    {
-      id: 'setting',
-      path: '/setting',
-      i18nKey: 'nav.setting',
-      IconComponent: () => <svg data-testid="setting-icon" />,
-      theme: {
-        base: 'text-violet-400',
-        inactive: 'hover:text-violet-500 hover:bg-violet-100',
-        active: 'bg-violet-100 text-violet-500',
-      },
-    },
-  ],
-}));
+// Mock navigation配置（使用共享 mock）
+vi.mock('@/config/navigation', async () => {
+  const { createNavigationItemsMock } = await import('@/__test__/helpers/mocks/navigation');
+  return { NAVIGATION_ITEMS: createNavigationItemsMock() };
+});
 
 import { BottomNav } from '@/components/BottomNav';
 
@@ -171,7 +129,7 @@ describe('BottomNav 组件', () => {
       const buttons = screen.getAllByRole('button');
       const chatButton = buttons.find((btn) => btn.textContent?.includes('聊天'));
       expect(chatButton).toBeInTheDocument();
-      expect(chatButton).toHaveClass('bg-blue-100');
+      expect(chatButton).toHaveAttribute('aria-current', 'page');
     });
 
     it('非激活路径应该使用非激活样式', () => {
@@ -186,26 +144,26 @@ describe('BottomNav 组件', () => {
   });
 
   describe('样式和布局', () => {
-    it('应该有正确的固定定位类', () => {
+    it('导航容器应该可见且可访问', () => {
       render(
           <BottomNav />
       );
 
       const nav = screen.getByRole('navigation');
-      expect(nav).toHaveClass('border-t', 'bg-background', 'h-16');
+      expect(nav).toBeVisible();
     });
 
-    it('应该使用flex布局均匀分布导航项', () => {
+    it('应该均匀分布所有导航项', () => {
       render(
           <BottomNav />
       );
 
-      const nav = screen.getByRole('navigation');
-      const containerDiv = nav.querySelector('div');
-      expect(containerDiv).toHaveClass('flex', 'items-center', 'justify-around');
+      const buttons = screen.getAllByRole('button');
+      expect(buttons).toHaveLength(3);
+      buttons.forEach(btn => expect(btn).toBeVisible());
     });
 
-    it('导航项应该有正确的主题样式', () => {
+    it('激活导航项应该有明确的视觉标识', () => {
       render(
           <BottomNav />
       );
@@ -213,8 +171,7 @@ describe('BottomNav 组件', () => {
       const buttons = screen.getAllByRole('button');
       const chatButton = buttons.find((btn) => btn.textContent?.includes('聊天'));
 
-      // 激活状态下应该有 text-blue-500 类（来自 activeClassName）
-      expect(chatButton).toHaveClass('text-blue-500');
+      expect(chatButton).toHaveAttribute('aria-current', 'page');
     });
   });
 

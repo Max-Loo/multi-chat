@@ -17,7 +17,7 @@ const NotFound: React.FC = () => {
       <div className="flex flex-col items-center justify-center space-y-6 p-8">
         {/* 404 图标 */}
         <div className="relative">
-          <AlertCircle className="h-32 w-32 text-muted-foreground/20" />
+          <AlertCircle className="h-32 w-32 text-muted-foreground/20" role="img" aria-label="error" />
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-6xl font-bold text-muted-foreground">404</span>
           </div>

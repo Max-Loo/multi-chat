@@ -53,24 +53,7 @@ describe('Shell 兼容层', () => {
     });
 
     it('shell.open 应该是异步函数', async () => {
-      const openPromise = shell.open('https://example.com');
-
-      expect(openPromise).toBeInstanceOf(Promise);
-      await openPromise;
-    });
-  });
-
-  describe('类型定义', () => {
-    it('Command 返回值应该有正确的类型', () => {
-      const cmd = Command.create('test');
-
-      expect(cmd.execute).toBeDefined();
-      expect(cmd.isSupported).toBeDefined();
-    });
-
-    it('shell 应该有正确的接口', () => {
-      expect(shell.open).toBeDefined();
-      expect(typeof shell.open).toBe('function');
+      await shell.open('https://example.com');
     });
   });
 });

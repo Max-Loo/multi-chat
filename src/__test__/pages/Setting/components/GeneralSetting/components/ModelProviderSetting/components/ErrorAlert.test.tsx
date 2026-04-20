@@ -2,29 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { ErrorAlert } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ErrorAlert';
 
-/**
- * Mock react-i18next 模块
- * 提供测试用的国际化函数模拟实现
- */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((_: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          setting: {
-            modelProvider: {
-              refreshFailedPrefix: '模型供应商加载失败：',
-            },
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    }) as unknown,
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const R = { setting: { modelProvider: { refreshFailedPrefix: '模型供应商加载失败：' } } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 describe('ErrorAlert', () => {
   beforeEach(() => {

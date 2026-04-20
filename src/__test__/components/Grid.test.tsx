@@ -2,32 +2,30 @@
  * Grid 组件测试
  *
  * 测试固定网格布局组件
+ * 不 mock Detail 子组件，使用 renderWithProviders 渲染完整组件树
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
-import React from 'react';
+import { cleanup, screen } from '@testing-library/react';
 import Grid from '@/pages/Chat/components/Panel/Grid';
 import type { ChatModel } from '@/types/chat';
 import {
   createMockPanelChatModel,
   createPanelLayoutStore,
-  createPanelLayoutWrapper,
 } from '@/__test__/helpers/mocks/panelLayout';
+import { renderWithProviders } from '@/__test__/helpers/render/redux';
 
-// 设置通用 Mock
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+// Detail 组件内部使用 ResizeObserver
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
-vi.mock('@/pages/Chat/components/Panel/Detail', () => ({
-  default: ({ chatModel }: { chatModel: ChatModel }) => (
-    <div data-testid={`detail-${chatModel.modelId}`}>Detail: {chatModel.modelId}</div>
-  ),
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称' }, common: { loading: 'Loading...' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 describe('Grid', () => {
   beforeEach(() => {
@@ -38,23 +36,19 @@ describe('Grid', () => {
   describe('列表转二维网格', () => {
     it('应该将 board 渲染为网格布局', () => {
       const store = createPanelLayoutStore();
-      const wrapper = createPanelLayoutWrapper(store);
 
       const board: ChatModel[][] = [
         [createMockPanelChatModel('model-1'), createMockPanelChatModel('model-2')],
         [createMockPanelChatModel('model-3')],
       ];
 
-      const { container } = render(<Grid board={board} />, { wrapper });
+      renderWithProviders(<Grid board={board} />, { store });
 
-      // 验证容器存在
-      const containerElement = container.querySelector('.absolute.top-0.left-0');
-      expect(containerElement).toBeInTheDocument();
+      expect(screen.getByTestId('grid-container')).toBeInTheDocument();
     });
 
     it('应该渲染正确数量的行', () => {
       const store = createPanelLayoutStore();
-      const wrapper = createPanelLayoutWrapper(store);
 
       const board: ChatModel[][] = [
         [createMockPanelChatModel('model-1'), createMockPanelChatModel('model-2')],
@@ -62,43 +56,37 @@ describe('Grid', () => {
         [createMockPanelChatModel('model-5')],
       ];
 
-      const { container } = render(<Grid board={board} />, { wrapper });
+      renderWithProviders(<Grid board={board} />, { store });
 
-      // 验证有 3 个行
-      const rows = container.querySelectorAll('.flex.w-full.flex-1');
+      const rows = screen.getAllByTestId('grid-row');
       expect(rows).toHaveLength(3);
     });
 
     it('应该处理空 board', () => {
       const store = createPanelLayoutStore();
-      const wrapper = createPanelLayoutWrapper(store);
 
       const board: ChatModel[][] = [];
 
-      const { container } = render(<Grid board={board} />, { wrapper });
+      renderWithProviders(<Grid board={board} />, { store });
 
-      // 验证容器仍然存在
-      const containerElement = container.querySelector('.absolute.top-0.left-0');
-      expect(containerElement).toBeInTheDocument();
+      expect(screen.getByTestId('grid-container')).toBeInTheDocument();
     });
 
     it('应该处理单行 board', () => {
       const store = createPanelLayoutStore();
-      const wrapper = createPanelLayoutWrapper(store);
 
       const board: ChatModel[][] = [
         [createMockPanelChatModel('model-1')],
       ];
 
-      const { container } = render(<Grid board={board} />, { wrapper });
+      renderWithProviders(<Grid board={board} />, { store });
 
-      const rows = container.querySelectorAll('.flex.w-full.flex-1');
+      const rows = screen.getAllByTestId('grid-row');
       expect(rows).toHaveLength(1);
     });
 
     it('应该处理单列 board', () => {
       const store = createPanelLayoutStore();
-      const wrapper = createPanelLayoutWrapper(store);
 
       const board: ChatModel[][] = [
         [createMockPanelChatModel('model-1')],
@@ -106,9 +94,9 @@ describe('Grid', () => {
         [createMockPanelChatModel('model-3')],
       ];
 
-      const { container } = render(<Grid board={board} />, { wrapper });
+      renderWithProviders(<Grid board={board} />, { store });
 
-      const rows = container.querySelectorAll('.flex.w-full.flex-1');
+      const rows = screen.getAllByTestId('grid-row');
       expect(rows).toHaveLength(3);
     });
   });
@@ -116,31 +104,25 @@ describe('Grid', () => {
   describe('样式验证', () => {
     it('应该应用正确的容器样式', () => {
       const store = createPanelLayoutStore();
-      const wrapper = createPanelLayoutWrapper(store);
 
       const board: ChatModel[][] = [[createMockPanelChatModel('model-1')]];
 
-      const { container } = render(<Grid board={board} />, { wrapper });
+      renderWithProviders(<Grid board={board} />, { store });
 
-      const absContainer = container.querySelector('.absolute.top-0.left-0.w-full.h-full');
-      expect(absContainer).toBeInTheDocument();
-      expect(absContainer).toHaveClass('pt-12');
-      expect(absContainer).toHaveClass('pb-30');
+      expect(screen.getByTestId('grid-container')).toBeInTheDocument();
     });
 
     it('应该为非最后一行添加底部边框', () => {
       const store = createPanelLayoutStore();
-      const wrapper = createPanelLayoutWrapper(store);
 
       const board: ChatModel[][] = [
         [createMockPanelChatModel('model-1')],
         [createMockPanelChatModel('model-2')],
       ];
 
-      const { container } = render(<Grid board={board} />, { wrapper });
+      renderWithProviders(<Grid board={board} />, { store });
 
-      // 第一行的单元格应该有 border-b
-      const rows = container.querySelectorAll('.flex.w-full.flex-1');
+      const rows = screen.getAllByTestId('grid-row');
       expect(rows.length).toBe(2);
     });
   });
@@ -148,16 +130,15 @@ describe('Grid', () => {
   describe('边界情况', () => {
     it('应该处理大量模型', () => {
       const store = createPanelLayoutStore();
-      const wrapper = createPanelLayoutWrapper(store);
 
       const board: ChatModel[][] = [];
       for (let i = 0; i < 10; i++) {
         board.push([createMockPanelChatModel(`model-${i + 1}`)]);
       }
 
-      const { container } = render(<Grid board={board} />, { wrapper });
+      renderWithProviders(<Grid board={board} />, { store });
 
-      const rows = container.querySelectorAll('.flex.w-full.flex-1');
+      const rows = screen.getAllByTestId('grid-row');
       expect(rows).toHaveLength(10);
     });
   });

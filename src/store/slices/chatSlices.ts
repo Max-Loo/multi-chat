@@ -66,7 +66,7 @@ export const initializeChatList = createAsyncThunk(
 /**
  * @description 针对某个聊天的每个模型来发送消息
  */
-const sendMessage = createAsyncThunk<
+export const sendMessage = createAsyncThunk<
   void,
   {
     chat: Chat;
@@ -554,7 +554,7 @@ export const {
   deleteChat,
 } = chatSlice.actions;
 
-const {
+export const {
   pushRunningChatHistory,
   pushChatHistory,
 } = chatSlice.actions

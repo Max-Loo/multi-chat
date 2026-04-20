@@ -20,6 +20,14 @@ vi.mock('@/services/chat/providerFactory', () => ({
   getProvider: vi.fn(),
 }));
 
+/**
+ * Mock generateText 返回指定文本
+ * Reason: Vercel AI SDK GenerateTextResult 类型过于复杂（含多个泛型参数和工具调用类型），
+ * 测试只需验证 text 字段，使用辅助函数集中管理类型转换。
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockGenerateTextResult = (text: string) => vi.mocked(generateText).mockResolvedValue({ text } as any);
+
 describe('titleGenerator - 后处理逻辑', () => {
   describe('removePunctuation', () => {
     it('应该移除中文标点符号', () => {
@@ -147,7 +155,7 @@ describe('generateChatTitleService', () => {
     ];
     const model = createMockModel();
 
-    vi.mocked(generateText).mockResolvedValue({ text: 'React 入门指南' } as any);
+    mockGenerateTextResult('React 入门指南');
     vi.mocked(getProvider).mockResolvedValue(vi.fn().mockReturnValue('mock-model-instance'));
 
     const result = await generateChatTitleService(messages, model);
@@ -184,7 +192,7 @@ describe('generateChatTitleService', () => {
     ];
     const model = createMockModel();
 
-    vi.mocked(generateText).mockResolvedValue({ text: '' } as any);
+    mockGenerateTextResult('');
     vi.mocked(getProvider).mockResolvedValue(vi.fn());
 
     await expect(
@@ -199,7 +207,7 @@ describe('generateChatTitleService', () => {
     ];
     const model = createMockModel();
 
-    vi.mocked(generateText).mockResolvedValue({ text: '！！！。。。' } as any);
+    mockGenerateTextResult('！！！。。。');
     vi.mocked(getProvider).mockResolvedValue(vi.fn());
 
     await expect(
@@ -215,7 +223,7 @@ describe('generateChatTitleService', () => {
     ];
     const model = createMockModel();
 
-    vi.mocked(generateText).mockResolvedValue({ text: longTitle } as any);
+    mockGenerateTextResult(longTitle);
     vi.mocked(getProvider).mockResolvedValue(vi.fn());
 
     const result = await generateChatTitleService(messages, model);

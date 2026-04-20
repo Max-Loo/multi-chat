@@ -5,6 +5,7 @@
  */
 
 import { vi } from 'vitest';
+import { ChatRoleEnum } from '@/types/chat';
 import type { Chat } from '@/types/chat';
 import { createMockPanelMessage } from './chatPanel';
 import { generateId } from 'ai';
@@ -39,12 +40,12 @@ export const createMockChatWithModels = (
     chatHistoryList: [
       createMockPanelMessage({
         id: `msg-${i}-1`,
-        role: 'user' as any,
+        role: ChatRoleEnum.USER,
         content: `User message ${i + 1}`,
       }),
       createMockPanelMessage({
         id: `msg-${i}-2`,
-        role: 'assistant' as any,
+        role: ChatRoleEnum.ASSISTANT,
         content: `Assistant response ${i + 1}`,
       }),
     ],

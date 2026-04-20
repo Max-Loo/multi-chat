@@ -8,8 +8,10 @@ import { vi } from 'vitest';
 import { createMockStore } from './redux';
 import { createReactRouterMocks } from './router';
 import { createTauriMocks } from './tauri';
+import { ChatRoleEnum } from '@/types/chat';
 import type { StandardMessage } from '@/types/chat';
 import type { Model as ChatModel } from '@/types/model';
+import { ModelProviderKeyEnum } from '@/utils/enums';
 
 /**
  * 创建 Mock 聊天消息（面板专用）
@@ -20,7 +22,7 @@ export const createMockPanelMessage = (overrides?: Partial<StandardMessage>): St
   const now = Math.floor(Date.now() / 1000);
   return {
     id: 'test-message-1',
-    role: 'user' as any,
+    role: ChatRoleEnum.USER,
     content: 'Test message',
     timestamp: now,
     modelKey: 'test-model',
@@ -46,7 +48,7 @@ export const createMockChatModel = (overrides?: Partial<ChatModel>): ChatModel =
     modelKey: 'test-model',
     modelName: 'Test Model Name',
     providerName: 'TestProvider',
-    providerKey: 'deepseek' as any,
+    providerKey: ModelProviderKeyEnum.DEEPSEEK,
     isEnable: true,
     createdAt: now,
     updateAt: now,

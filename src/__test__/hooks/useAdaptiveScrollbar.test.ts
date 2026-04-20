@@ -50,34 +50,40 @@ describe('useAdaptiveScrollbar', () => {
 
   describe('定时器行为测试', () => {
     it('应在多次滚动时重置定时器', () => {
-      const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
       const { result } = renderHook(() => useAdaptiveScrollbar({ hideDebounceMs: 1000 }));
 
       act(() => {
         result.current.onScrollEvent();
       });
 
+      // 未满延迟时间，仍在滚动中
       act(() => {
         vi.advanceTimersByTime(300);
       });
 
+      expect(result.current.isScrolling).toBe(true);
+
+      // 再次滚动，重置定时器
       act(() => {
         result.current.onScrollEvent();
       });
 
-      expect(clearTimeoutSpy).toHaveBeenCalled();
-
+      // 300ms 不足以隐藏（因为定时器被重置了）
       act(() => {
-        vi.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(result.current.isScrolling).toBe(true);
+
+      // 再过 700ms 才到达 1000ms 总延迟
+      act(() => {
+        vi.advanceTimersByTime(700);
       });
 
       expect(result.current.isScrolling).toBe(false);
-
-      clearTimeoutSpy.mockRestore();
     });
 
     it('应在参数变化时清理之前的定时器', () => {
-      const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
       const { result } = renderHook(
         ({ hideDebounceMs }) => useAdaptiveScrollbar({ hideDebounceMs }),
         { initialProps: { hideDebounceMs: 500 } }
@@ -87,17 +93,24 @@ describe('useAdaptiveScrollbar', () => {
         result.current.onScrollEvent();
       });
 
-      const firstTimeoutCalls = clearTimeoutSpy.mock.calls.length;
+      // 第一次滚动，延迟 500ms
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
 
+      expect(result.current.isScrolling).toBe(true);
+
+      // 再次滚动，重置定时器
       act(() => {
         result.current.onScrollEvent();
       });
 
-      const secondTimeoutCalls = clearTimeoutSpy.mock.calls.length;
+      // 500ms 后应该隐藏
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
 
-      expect(secondTimeoutCalls).toBeGreaterThan(firstTimeoutCalls);
-
-      clearTimeoutSpy.mockRestore();
+      expect(result.current.isScrolling).toBe(false);
     });
   });
 

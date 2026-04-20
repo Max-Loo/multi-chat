@@ -2,55 +2,37 @@
  * ChatPanelContentDetail 组件测试
  *
  * 测试聊天详情组件的渲染和交互
+ * 不 mock useSelectedChat / useIsSending，通过 Redux state 驱动行为
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
-import React from 'react';
+import { screen, cleanup } from '@testing-library/react';
 import ChatPanelContentDetail from '@/pages/Chat/components/Panel/Detail';
+import { ModelProviderKeyEnum } from '@/utils/enums';
 import type { ChatModel } from '@/types/chat';
+import type { Model } from '@/types/model';
 import { ChatRoleEnum } from '@/types/chat';
-import chatReducer from '@/store/slices/chatSlices';
-import modelReducer from '@/store/slices/modelSlice';
-import chatPageReducer from '@/store/slices/chatPageSlices';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
+import { createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
+import { asTestType } from '@/__test__/helpers/testing-utils';
 
-// Mock react-i18next for internationalization
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      // 简单的 mock，返回一些可读的文本
-      const translations: Record<string, string> = {
-        'chat.scrollToBottom': 'Scroll to bottom',
-        'chat.modelDeleted': 'Model Deleted',
-        'chat.deleted': 'Deleted',
-        'chat.disabled': 'Disabled',
-      };
-      return translations[key] || key;
-    },
-  }),
-  I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+// Detail 组件内部使用 ResizeObserver
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
-// Mock useSelectedChat hook because it requires complex Redux store setup
-vi.mock('@/pages/Chat/hooks/useSelectedChat', () => ({
-  useSelectedChat: () => ({
-    selectedChat: {
-      id: 'test-chat-1',
-      name: 'Test Chat',
-      chatModelList: [],
-      isDeleted: false,
-    },
-  }),
-}));
+vi.mock('virtua', () => {
+  // oxlint-disable-next-line consistent-function-scoping — Vitest vi.mock 工厂函数会被提升，必须内联定义
+  const V = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
+  return { Virtualizer: V, VList: V };
+});
 
-// Mock useIsSending hook because it requires complex Redux state
-vi.mock('@/pages/Chat/hooks/useIsSending', () => ({
-  useIsSending: () => ({
-    isSending: false,
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称', thinking: '思考中......', thinkingComplete: '思考完毕', scrollToBottom: '滚动到底部' }, common: { loading: 'Loading...' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 describe('ChatPanelContentDetail', () => {
   /**
@@ -58,11 +40,8 @@ describe('ChatPanelContentDetail', () => {
    */
   const createTestStore = (overrides?: {
     chatModel?: ChatModel;
+    models?: Model[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    models?: any[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
     runningChat?: any;
   }) => {
     const defaultChatModel: ChatModel = {
@@ -72,7 +51,7 @@ describe('ChatPanelContentDetail', () => {
 
     const chatModel = overrides?.chatModel || defaultChatModel;
 
-    const defaultModels = [
+    const defaultModels: Model[] = [
       {
         id: 'model-1',
         nickname: 'Model 1',
@@ -82,7 +61,7 @@ describe('ChatPanelContentDetail', () => {
         modelKey: 'model-1',
         modelName: 'Model 1',
         providerName: 'TestProvider',
-        providerKey: 'deepseek',
+        providerKey: 'deepseek' as ModelProviderKeyEnum,
         isEnable: true,
         isDeleted: false,
         createdAt: new Date().toISOString(),
@@ -90,52 +69,27 @@ describe('ChatPanelContentDetail', () => {
       },
     ];
 
-    return configureStore({
-      reducer: {
-        chat: chatReducer,
-        chatPage: chatPageReducer,
-        models: modelReducer,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: Redux Toolkit 严格类型系统限制
-      } as any,
-      preloadedState: {
-        chat: {
-          chatList: [
-            {
-              id: 'test-chat-1',
-              name: 'Test Chat',
-              chatModelList: [chatModel],
-              isDeleted: false,
-            },
-          ],
-          selectedChatId: 'test-chat-1',
-          loading: false,
-          error: null,
-          initializationError: null,
-          runningChat: overrides?.runningChat || {},
-        },
-        chatPage: {
-          isSidebarCollapsed: false,
-          isShowChatPage: true,
-        },
-        models: {
-          models: overrides?.models || defaultModels,
-          loading: false,
-          error: null,
-        },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: Redux Toolkit 严格类型系统限制
-      } as any,
+    return createTypeSafeTestStore({
+      chat: createChatSliceState({
+        chatList: [
+          {
+            id: 'test-chat-1',
+            name: 'Test Chat',
+            chatModelList: [chatModel],
+            isDeleted: false,
+          },
+        ],
+        selectedChatId: 'test-chat-1',
+        runningChat: overrides?.runningChat || {},
+      }),
+      chatPage: createChatPageSliceState({
+        isSidebarCollapsed: false,
+        isShowChatPage: true,
+      }),
+      models: createModelSliceState({
+        models: overrides?.models || defaultModels,
+      }),
     });
-  };
-
-  /**
-   * 创建测试包装器
-   */
-  const createWrapper = (store: ReturnType<typeof createTestStore>) => {
-    return function({ children }: { children: React.ReactNode }) {
-      return <Provider store={store}>{children}</Provider>;
-    };
   };
 
   beforeEach(() => {
@@ -151,14 +105,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
-      // 验证组件成功渲染
       expect(container.firstChild).toBeDefined();
       expect(container.querySelector('div')).toBeInTheDocument();
     });
@@ -170,14 +122,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
-      // 验证滚动容器存在
       const scrollContainer = container.querySelector('div.overflow-y-auto');
       expect(scrollContainer).toBeInTheDocument();
     });
@@ -189,15 +139,14 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      // 组件应该能够渲染而不抛错
-      expect(() => {
-        render(
-          <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
-        );
-      }).not.toThrow();
+      renderWithProviders(
+        <ChatPanelContentDetail chatModel={chatModel} />,
+        { store }
+      );
+
+      // Title 显示 "nickname (modelName)" 格式
+      expect(screen.getByText('Model 1 (Model 1)')).toBeInTheDocument();
     });
 
     it('应该渲染 RunningChatBubble 组件', () => {
@@ -207,15 +156,14 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      // 组件应该能够渲染而不抛错
-      expect(() => {
-        render(
-          <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
-        );
-      }).not.toThrow();
+      const { container } = renderWithProviders(
+        <ChatPanelContentDetail chatModel={chatModel} />,
+        { store }
+      );
+
+      // runningChat 为空，RunningBubble 返回 null，不应有 spinner
+      expect(container.querySelector('svg.animate-spin')).toBeNull();
     });
   });
 
@@ -236,7 +184,7 @@ describe('ChatPanelContentDetail', () => {
           modelKey: 'custom-model-1',
           modelName: 'Custom Model Name',
           providerName: 'CustomProvider',
-          providerKey: 'custom-provider',
+          providerKey: 'custom-provider' as ModelProviderKeyEnum,
           isEnable: true,
           isDeleted: false,
           createdAt: new Date().toISOString(),
@@ -245,15 +193,14 @@ describe('ChatPanelContentDetail', () => {
       ];
 
       const store = createTestStore({ chatModel, models: customModels });
-      const wrapper = createWrapper(store);
 
-      // 组件应该能够渲染而不抛错
-      expect(() => {
-        render(
-          <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
-        );
-      }).not.toThrow();
+      renderWithProviders(
+        <ChatPanelContentDetail chatModel={chatModel} />,
+        { store }
+      );
+
+      // Title 显示自定义模型的名称
+      expect(screen.getByText('Custom Model (Custom Model Name)')).toBeInTheDocument();
     });
 
     it('应该根据 chatModel 渲染对应的历史记录', () => {
@@ -266,15 +213,15 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      // 组件应该能够渲染而不抛错
-      expect(() => {
-        render(
-          <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
-        );
-      }).not.toThrow();
+      renderWithProviders(
+        <ChatPanelContentDetail chatModel={chatModel} />,
+        { store }
+      );
+
+      // 应该渲染两条历史消息
+      expect(screen.getByText('User message 1')).toBeInTheDocument();
+      expect(screen.getByText('Assistant response 1')).toBeInTheDocument();
     });
 
     it('应该处理空的 chatHistoryList', () => {
@@ -284,14 +231,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
-      // 验证组件在没有历史记录时也能正常渲染
       expect(container.firstChild).toBeDefined();
       expect(container.querySelector('div')).toBeInTheDocument();
     });
@@ -299,31 +244,26 @@ describe('ChatPanelContentDetail', () => {
     it('应该处理 null 或 undefined 的 chatHistoryList', () => {
       const chatModel1: ChatModel = {
         modelId: 'model-1',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试错误处理，需要构造无效输入
-        chatHistoryList: null as any,
+        chatHistoryList: asTestType<ChatModel['chatHistoryList']>(null),
       };
 
       const store = createTestStore({ chatModel: chatModel1 });
-      const wrapper = createWrapper(store);
 
-      const { container: container1 } = render(
+      const { container: container1 } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel1} />,
-        { wrapper }
+        { store }
       );
 
       expect(container1.firstChild).toBeDefined();
 
       const chatModel2: ChatModel = {
         modelId: 'model-1',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 测试错误处理，需要构造无效输入
-        chatHistoryList: undefined as any,
+        chatHistoryList: asTestType<ChatModel['chatHistoryList']>(undefined),
       };
 
-      const { container: container2 } = render(
+      const { container: container2 } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel2} />,
-        { wrapper }
+        { store }
       );
 
       expect(container2.firstChild).toBeDefined();
@@ -345,15 +285,14 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      // 组件应该能够渲染而不抛错
-      expect(() => {
-        render(
-          <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
-        );
-      }).not.toThrow();
+      renderWithProviders(
+        <ChatPanelContentDetail chatModel={chatModel} />,
+        { store }
+      );
+
+      // 应该渲染 4 个 ChatBubble
+      expect(screen.getAllByTestId('chat-bubble')).toHaveLength(4);
     });
 
     it('应该为每条消息渲染独立的 ChatBubble', () => {
@@ -368,15 +307,14 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      // 组件应该能够渲染而不抛错
-      expect(() => {
-        render(
-          <ChatPanelContentDetail chatModel={chatModel} />,
-          { wrapper }
-        );
-      }).not.toThrow();
+      renderWithProviders(
+        <ChatPanelContentDetail chatModel={chatModel} />,
+        { store }
+      );
+
+      // 每条消息对应一个 ChatBubble
+      expect(screen.getAllByTestId('chat-bubble')).toHaveLength(2);
     });
   });
 
@@ -397,14 +335,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel, runningChat });
-      const wrapper = createWrapper(store);
 
-      render(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
-      // 验证错误消息显示
       expect(screen.getByText('Network error occurred')).toBeInTheDocument();
     });
 
@@ -415,14 +351,12 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      render(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
-      // 验证没有错误提示显示
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
   });
@@ -435,17 +369,14 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
       const scrollContainer = container.querySelector('div.overflow-y-auto');
       expect(scrollContainer).toBeInTheDocument();
-
-      // 默认应该有 scrollbar-none 类（未滚动时）
       expect(scrollContainer).toHaveClass('scrollbar-none');
     });
   });
@@ -467,15 +398,14 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const store = createTestStore({ chatModel, runningChat });
-      const wrapper = createWrapper(store);
 
-      const { container } = render(
+      const { container } = renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
-        { wrapper }
+        { store }
       );
 
-      // 验证组件在发送状态下正常渲染
-      expect(container.firstChild).toBeDefined();
+      // isSending=true 且无 history 时应该显示 Spinner
+      expect(container.querySelector('svg.animate-spin')).toBeInTheDocument();
     });
   });
 });

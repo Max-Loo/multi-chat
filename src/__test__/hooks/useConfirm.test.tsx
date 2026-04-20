@@ -3,17 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useConfirm, ConfirmProvider } from '@/hooks/useConfirm';
 import { render, screen } from '@testing-library/react';
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        'common.confirm': '确认',
-        'common.cancel': '取消',
-      };
-      return translations[key] || key;
-    },
-  }),
-}));
+vi.mock('react-i18next', () => {
+  const R = { common: { confirm: '确认', cancel: '取消' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <ConfirmProvider>{children}</ConfirmProvider>
@@ -139,10 +132,6 @@ describe('useConfirm', () => {
           onOk,
         });
       }).not.toThrow();
-
-      // 验证回调函数被定义
-      expect(onOk).toBeDefined();
-      expect(typeof onOk).toBe('function');
     });
 
     it('应该支持 onCancel 回调函数 当传入 onCancel 参数', () => {
@@ -156,10 +145,6 @@ describe('useConfirm', () => {
           onCancel,
         });
       }).not.toThrow();
-
-      // 验证回调函数被定义
-      expect(onCancel).toBeDefined();
-      expect(typeof onCancel).toBe('function');
     });
 
     it('应该在点击确认按钮时调用 onOk 回调', async () => {

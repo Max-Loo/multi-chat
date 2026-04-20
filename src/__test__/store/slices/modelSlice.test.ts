@@ -17,7 +17,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Model } from '@/types/model';
-import { createMockModel } from '@/__test__/fixtures/models';
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
 
 // Mock 依赖 - 必须在导入 slice 之前执行
 // 使用 vi.hoisted 确保变量在 vi.mock 之前被定义

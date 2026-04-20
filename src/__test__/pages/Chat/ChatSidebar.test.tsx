@@ -2,12 +2,10 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
-import chatReducer from '@/store/slices/chatSlices';
-import chatPageReducer from '@/store/slices/chatPageSlices';
 import ChatSidebar from '@/pages/Chat/components/Sidebar';
-
 import { resetTestState } from '@/__test__/helpers/isolation';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 
 // Mock useResponsive hook（可配置）
 const mockUseResponsive = vi.fn(() => ({
@@ -45,53 +43,10 @@ vi.mock('virtua', () => ({
   Virtualizer: ({ children, ...props }: any) => <div {...props}>{children}</div>,
 }));
 
-/**
- * Mock react-i18next for internationalization
- */
-
-/**
- * Mock react-i18next for internationalization
- */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            createChat: '新建聊天',
-            hideSidebar: '隐藏侧边栏',
-            unnamed: '未命名',
-            delete: '删除',
-            rename: '重命名',
-            confirmDelete: '确认删除',
-            deleteChatConfirm: '确定要删除这个聊天吗？',
-            deleteChatSuccess: '删除成功',
-            deleteChatFailed: '删除失败',
-            editChatSuccess: '编辑成功',
-            editChatFailed: '编辑失败',
-          },
-          common: {
-            search: '搜索',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 测试错误处理，需要构造无效输入
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => {
+  const R = { common: { search: '搜索', confirm: '确认', cancel: '取消' }, chat: { hideSidebar: '隐藏侧边栏', showSidebar: '显示侧边栏', createChat: '创建聊天', unnamed: '未命名', rename: '重命名', delete: '删除', confirmDelete: '确认删除', deleteChatConfirm: '确定删除该聊天？', deleteChatSuccess: '删除成功', deleteChatFailed: '删除失败', editChatSuccess: '编辑成功', editChatFailed: '编辑失败' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 /**
  * Mock useConfirm hook because it requires ConfirmProvider context which is complex to set up in tests
@@ -114,26 +69,42 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 }));
 
 /**
- * 创建测试用的 Redux store
+ * 创建测试用的初始状态
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// Reason: Redux Toolkit 严格类型系统限制
-function createTestStore(preloadedState?: any) {
-  return configureStore({
-    reducer: {
-      chat: chatReducer,
-      chatPage: chatPageReducer,
-    },
-    ...(preloadedState && { preloadedState }),
+function createInitialState() {
+  return createTypeSafeTestStore({
+    chat: createChatSliceState({
+      chatList: [
+        {
+          id: 'chat-1',
+          name: '聊天 1',
+          isDeleted: false,
+        },
+        {
+          id: 'chat-2',
+          name: '聊天 2',
+          isDeleted: false,
+        },
+        {
+          id: 'chat-3',
+          name: '聊天 3',
+          isDeleted: false,
+        },
+      ],
+      selectedChatId: null,
+      loading: false,
+    }),
+    chatPage: createChatPageSliceState({
+      isShowChatPage: true,
+      isSidebarCollapsed: false,
+    }),
   });
 }
 
 /**
  * 渲染 ChatSidebar 组件的辅助函数
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// Reason: Redux Toolkit 严格类型系统限制
-function renderChatSidebar(store: any) {
+function renderChatSidebar(store: ReturnType<typeof createTypeSafeTestStore>) {
   return render(
     <Provider store={store}>
       <BrowserRouter>
@@ -141,45 +112,6 @@ function renderChatSidebar(store: any) {
       </BrowserRouter>
     </Provider>
   );
-}
-
-/**
- * 创建测试用的初始状态
- */
-function createInitialState() {
-  return {
-    chat: {
-      chatList: [
-        {
-          id: 'chat-1',
-          name: '聊天 1',
-          isDeleted: false,
-          timestamp: 1738000000,
-          lastMessage: '最后消息 1',
-        },
-        {
-          id: 'chat-2',
-          name: '聊天 2',
-          isDeleted: false,
-          timestamp: 1738000100,
-          lastMessage: '最后消息 2',
-        },
-        {
-          id: 'chat-3',
-          name: '聊天 3',
-          isDeleted: false,
-          timestamp: 1738000200,
-          lastMessage: '最后消息 3',
-        },
-      ],
-      selectedChatId: null,
-      loading: false,
-    },
-    chatPage: {
-      isShowChatPage: true,
-      isSidebarCollapsed: false,
-    },
-  };
 }
 
 /**
@@ -193,9 +125,8 @@ function createInitialState() {
  * - 测试聊天列表渲染、搜索过滤、新建聊天等功能
  */
 describe('ChatSidebar Component', () => {
-  beforeEach(() => {
-    resetTestState();
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    await resetTestState();
   });
 
   afterEach(() => {
@@ -207,8 +138,7 @@ describe('ChatSidebar Component', () => {
    */
   describe('聊天列表渲染', () => {
     it('应该渲染所有未删除的聊天', () => {
-      const store = createTestStore(createInitialState());
-
+      const store = createInitialState();
       renderChatSidebar(store);
 
       expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();
@@ -217,13 +147,16 @@ describe('ChatSidebar Component', () => {
     });
 
     it('应该显示空列表状态', () => {
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [],
           selectedChatId: null,
           loading: false,
-        },
-        chatPage: { isShowChatPage: true, isSidebarCollapsed: false },
+        }),
+        chatPage: createChatPageSliceState({
+          isShowChatPage: true,
+          isSidebarCollapsed: false,
+        }),
       });
 
       renderChatSidebar(store);
@@ -232,13 +165,16 @@ describe('ChatSidebar Component', () => {
     });
 
     it('应该在加载期间显示骨架屏', () => {
-      const store = createTestStore({
-        chat: {
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
           chatList: [],
           selectedChatId: null,
           loading: true,
-        },
-        chatPage: { isShowChatPage: true, isSidebarCollapsed: false },
+        }),
+        chatPage: createChatPageSliceState({
+          isShowChatPage: true,
+          isSidebarCollapsed: false,
+        }),
       });
 
       renderChatSidebar(store);
@@ -252,8 +188,7 @@ describe('ChatSidebar Component', () => {
    */
   describe('新建聊天功能', () => {
     it('应该渲染新建聊天按钮', () => {
-      const store = createTestStore(createInitialState());
-
+      const store = createInitialState();
       renderChatSidebar(store);
 
       const newChatButton = screen.getByTestId('create-chat-button');
@@ -261,7 +196,7 @@ describe('ChatSidebar Component', () => {
     });
 
     it('点击新建聊天按钮应该创建新聊天', () => {
-      const store = createTestStore(createInitialState());
+      const store = createInitialState();
       const dispatchSpy = vi.spyOn(store, 'dispatch');
 
       renderChatSidebar(store);
@@ -278,8 +213,7 @@ describe('ChatSidebar Component', () => {
    */
   describe('搜索过滤功能', () => {
     it('应该渲染搜索按钮', () => {
-      const store = createTestStore(createInitialState());
-
+      const store = createInitialState();
       renderChatSidebar(store);
 
       const searchButton = screen.getByTestId('search-button');
@@ -287,8 +221,7 @@ describe('ChatSidebar Component', () => {
     });
 
     it('应该能够过滤聊天列表', async () => {
-      const store = createTestStore(createInitialState());
-
+      const store = createInitialState();
       renderChatSidebar(store);
 
       const searchButton = screen.getByTestId('search-button');
@@ -303,8 +236,7 @@ describe('ChatSidebar Component', () => {
     });
 
     it('应该能够退出搜索模式', () => {
-      const store = createTestStore(createInitialState());
-
+      const store = createInitialState();
       renderChatSidebar(store);
 
       const searchButton = screen.getByTestId('search-button');
@@ -325,8 +257,7 @@ describe('ChatSidebar Component', () => {
    */
   describe('选择聊天功能', () => {
     it('应该能够点击聊天按钮', () => {
-      const store = createTestStore(createInitialState());
-
+      const store = createInitialState();
       renderChatSidebar(store);
 
       const chatButton = screen.getByTestId('chat-button-chat-1');
@@ -341,8 +272,7 @@ describe('ChatSidebar Component', () => {
    */
   describe('聊天列表排序', () => {
     it('应该渲染所有聊天', () => {
-      const store = createTestStore(createInitialState());
-
+      const store = createInitialState();
       renderChatSidebar(store);
 
       expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();
@@ -356,8 +286,7 @@ describe('ChatSidebar Component', () => {
    */
   describe('最后消息预览', () => {
     it('应该显示聊天名称', () => {
-      const store = createTestStore(createInitialState());
-
+      const store = createInitialState();
       renderChatSidebar(store);
 
       const chatNames = screen.getAllByTestId('chat-name');
@@ -383,7 +312,7 @@ describe('ChatSidebar Component', () => {
     });
 
     it('桌面模式：应该正确渲染', () => {
-      const store = createTestStore(createInitialState());
+      const store = createInitialState();
       const { container } = renderChatSidebar(store);
 
       // ChatSidebar 使用 w-full 而不是 w-56（宽度由父组件 ChatPage 控制）
@@ -402,7 +331,7 @@ describe('ChatSidebar Component', () => {
         isDesktop: false,
       });
 
-      const store = createTestStore(createInitialState());
+      const store = createInitialState();
       const { container } = renderChatSidebar(store);
 
       const sidebarDiv = container.querySelector('.w-full');
@@ -420,7 +349,7 @@ describe('ChatSidebar Component', () => {
         isDesktop: false,
       });
 
-      const store = createTestStore(createInitialState());
+      const store = createInitialState();
       const { container } = renderChatSidebar(store);
 
       const sidebarDiv = container.querySelector('.w-full');
@@ -438,7 +367,7 @@ describe('ChatSidebar Component', () => {
         isDesktop: false,
       });
 
-      const store = createTestStore(createInitialState());
+      const store = createInitialState();
       const { container } = renderChatSidebar(store);
 
       // 移动模式使用正常宽度
@@ -447,7 +376,7 @@ describe('ChatSidebar Component', () => {
     });
 
     it('layoutMode 变化时应该正确调整', () => {
-      const store = createTestStore(createInitialState());
+      const store = createInitialState();
 
       // 桌面模式
       mockUseResponsive.mockReturnValue({
@@ -460,7 +389,13 @@ describe('ChatSidebar Component', () => {
         isDesktop: true,
       });
 
-      const { rerender } = renderChatSidebar(store);
+      const { rerender } = render(
+        <Provider store={store}>
+          <BrowserRouter>
+            <ChatSidebar />
+          </BrowserRouter>
+        </Provider>
+      );
       expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();
 
       // 切换到紧凑模式
@@ -525,12 +460,18 @@ describe('ChatSidebar Component', () => {
         },
       ];
 
-      const store = createTestStore(createInitialState());
+      const store = createInitialState();
 
       modes.forEach((mode) => {
         mockUseResponsive.mockReturnValue(mode);
 
-        const { unmount } = renderChatSidebar(store);
+        const { unmount } = render(
+          <Provider store={store}>
+            <BrowserRouter>
+              <ChatSidebar />
+            </BrowserRouter>
+          </Provider>
+        );
 
         // 验证聊天按钮在所有模式下都存在
         expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();

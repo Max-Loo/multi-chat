@@ -2,30 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { NoProvidersAvailable } from '@/components/NoProvidersAvailable'
 
-// Mock i18n
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: (keyOrFn: any) => {
-      if (typeof keyOrFn === 'function') {
-        // 处理 t($ => $.common.noProvidersAvailable) 形式
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // Reason: 第三方库类型定义不完整
-        const mockObj: any = {
-          common: {
-            noProvidersAvailable: '无可用模型供应商',
-            noProvidersDescription: '请检查网络连接或稍后重试',
-            noProvidersHint: '您可以尝试刷新页面',
-            reload: '重新加载',
-          },
-        }
-        return keyOrFn(mockObj)
-      }
-      return keyOrFn
-    },
-  }),
-}))
+vi.mock('react-i18next', () => {
+  const R = { common: { noProvidersAvailable: '无可用模型供应商', noProvidersDescription: '请检查网络连接或稍后重试', noProvidersHint: '您可以尝试刷新页面', reload: '重新加载' } };
+  return globalThis.__createI18nMockReturn(R);
+});
 
 describe('NoProvidersAvailable', () => {
   beforeEach(() => {
