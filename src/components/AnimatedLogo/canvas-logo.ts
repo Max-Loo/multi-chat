@@ -9,7 +9,7 @@
 const LOGICAL_SIZE = 200;
 
 /** 配色方案 */
-const COLORS = {
+export const COLORS = {
   /** 机器人轮廓 */
   outline: "#333333",
   /** 机器人填充 */
