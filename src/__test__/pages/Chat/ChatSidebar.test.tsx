@@ -74,20 +74,23 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
 function createInitialState() {
   return createTypeSafeTestStore({
     chat: createChatSliceState({
-      chatList: [
+      chatMetaList: [
         {
           id: 'chat-1',
           name: '聊天 1',
+          modelIds: [],
           isDeleted: false,
         },
         {
           id: 'chat-2',
           name: '聊天 2',
+          modelIds: [],
           isDeleted: false,
         },
         {
           id: 'chat-3',
           name: '聊天 3',
+          modelIds: [],
           isDeleted: false,
         },
       ],
@@ -149,7 +152,7 @@ describe('ChatSidebar Component', () => {
     it('应该显示空列表状态', () => {
       const store = createTypeSafeTestStore({
         chat: createChatSliceState({
-          chatList: [],
+          chatMetaList: [],
           selectedChatId: null,
           loading: false,
         }),
@@ -167,7 +170,7 @@ describe('ChatSidebar Component', () => {
     it('应该在加载期间显示骨架屏', () => {
       const store = createTypeSafeTestStore({
         chat: createChatSliceState({
-          chatList: [],
+          chatMetaList: [],
           selectedChatId: null,
           loading: true,
         }),

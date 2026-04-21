@@ -3,6 +3,7 @@ import { useCurrentSelectedChat } from '@/hooks/useCurrentSelectedChat';
 import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
 import { asTestType, createMockChat } from '@/__test__/helpers/testing-utils';
+import { chatToMeta } from '@/types/chat';
 
 describe('useCurrentSelectedChat', () => {
 
@@ -14,7 +15,9 @@ describe('useCurrentSelectedChat', () => {
       const { result } = renderHookWithProviders(() => useCurrentSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1, chat2],
+            chatMetaList: [chatToMeta(chat1), chatToMeta(chat2)],
+            activeChatData: { 'chat-1': chat1, 'chat-2': chat2 },
+            sendingChatIds: {},
             selectedChatId: 'chat-2',
           }),
         },
@@ -30,7 +33,9 @@ describe('useCurrentSelectedChat', () => {
       const { result } = renderHookWithProviders(() => useCurrentSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1],
+            chatMetaList: [chatToMeta(chat1)],
+            activeChatData: { 'chat-1': chat1 },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
           }),
         },
@@ -46,7 +51,9 @@ describe('useCurrentSelectedChat', () => {
       const { result } = renderHookWithProviders(() => useCurrentSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [],
+            chatMetaList: [],
+            activeChatData: {},
+            sendingChatIds: {},
             selectedChatId: null,
           }),
         },
@@ -59,7 +66,9 @@ describe('useCurrentSelectedChat', () => {
       const { result } = renderHookWithProviders(() => useCurrentSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [],
+            chatMetaList: [],
+            activeChatData: {},
+            sendingChatIds: {},
             selectedChatId: asTestType<string>(undefined),
           }),
         },
@@ -68,11 +77,13 @@ describe('useCurrentSelectedChat', () => {
       expect(result.current).toBeNull();
     });
 
-    it('当聊天列表为空时应返回 null', () => {
+    it('当 activeChatData 为空时应返回 null', () => {
       const { result } = renderHookWithProviders(() => useCurrentSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [],
+            chatMetaList: [],
+            activeChatData: {},
+            sendingChatIds: {},
             selectedChatId: 'non-existent',
           }),
         },
@@ -81,13 +92,15 @@ describe('useCurrentSelectedChat', () => {
       expect(result.current).toBeNull();
     });
 
-    it('当选中的聊天ID不存在时应返回 null', () => {
+    it('当选中的聊天ID在 activeChatData 中不存在时应返回 null', () => {
       const chat1 = createMockChat({ id: 'chat-1', name: 'Chat 1' });
 
       const { result } = renderHookWithProviders(() => useCurrentSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1],
+            chatMetaList: [chatToMeta(chat1)],
+            activeChatData: { 'chat-1': chat1 },
+            sendingChatIds: {},
             selectedChatId: 'non-existent',
           }),
         },
@@ -105,7 +118,9 @@ describe('useCurrentSelectedChat', () => {
       const { result, rerender } = renderHookWithProviders(() => useCurrentSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1],
+            chatMetaList: [chatToMeta(chat1)],
+            activeChatData: { 'chat-1': chat1 },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
           }),
         },

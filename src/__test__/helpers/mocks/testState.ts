@@ -34,7 +34,9 @@ export const createModelSliceState = (overrides?: Partial<ModelSliceState>): Mod
  * @param overrides 要覆盖的状态字段
  */
 export const createChatSliceState = (overrides?: Partial<ChatSliceState>): ChatSliceState => ({
-  chatList: [],
+  chatMetaList: [],
+  activeChatData: {},
+  sendingChatIds: {},
   loading: false,
   selectedChatId: null,
   error: null,

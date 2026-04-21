@@ -83,7 +83,15 @@ function createPreloadedState(runningChatData?: {
 
   return {
     chat: {
-      chatList: [chat],
+      chatMetaList: [{
+        id: CHAT_ID,
+        modelIds: [MODEL_ID],
+        isDeleted: false,
+      }],
+      activeChatData: {
+        [CHAT_ID]: chat,
+      },
+      sendingChatIds: {},
       selectedChatId: CHAT_ID,
       loading: false,
       error: null,

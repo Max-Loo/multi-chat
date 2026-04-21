@@ -20,6 +20,15 @@
     "resetAllData": "Reset All Data",
     "resetAllDataDescription": "Clear all model configurations and chat records, generate a new encryption key"
   },
+  "chatExport": {
+    "title": "Chat Export",
+    "description": "Export chat data as JSON file, supports exporting active and deleted chats",
+    "exportAll": "Export Active Chats",
+    "exportDeleted": "Export Deleted Chats",
+    "exportSuccess": "Chat data exported successfully",
+    "exportFailed": "Failed to export chat data",
+    "noDeletedChats": "No deleted chats to export"
+  },
   "modelProvider": {
     "title": "Model Provider",
     "description": "Fetch the latest model provider information from remote server",

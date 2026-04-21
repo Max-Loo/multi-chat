@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import { saveChatListMiddleware } from '@/store/middleware/chatMiddleware';
-import { saveChatsToJson } from '@/store/storage';
+import { saveChatAndIndex, deleteChatFromStorage } from '@/store/storage';
 import chatReducer, {
   createChat,
   deleteChat,
@@ -33,10 +33,14 @@ import type { RootState } from '@/store';
 
 // Mock 存储层
 vi.mock('@/store/storage', () => ({
-  saveChatsToJson: vi.fn().mockResolvedValue(undefined),
+  loadChatIndex: vi.fn().mockResolvedValue([]),
+  loadChatById: vi.fn().mockResolvedValue(undefined),
+  saveChatAndIndex: vi.fn().mockResolvedValue(undefined),
+  deleteChatFromStorage: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSaveChatsToJson = vi.mocked(saveChatsToJson);
+const mockSaveChatAndIndex = vi.mocked(saveChatAndIndex);
+const mockDeleteChatFromStorage = vi.mocked(deleteChatFromStorage);
 
 /**
  * 构造满足自动命名条件的 sendMessage.fulfilled action
@@ -59,23 +63,36 @@ const createFulfilledAction = (chatId: string, modelId: string) => ({
  * 因此初始 chatHistoryList 长度应为 1（用户消息），history 为有效的助手消息。
  * 这样 reducer push 后 chatHistoryList 长度变为 2，满足自动命名的条件 4。
  */
-const createState = (chatOverrides: Partial<Chat> & { id: string }, autoNamingEnabled = true): RootState =>
-  createTestRootState({
+const createState = (chatOverrides: Partial<Chat> & { id: string }, autoNamingEnabled = true): RootState => {
+  const chat: Chat = {
+    name: '',
+    chatModelList: [
+      {
+        modelId: 'model-auto',
+        chatHistoryList: [
+          { id: 'msg-1', role: ChatRoleEnum.USER, content: 'hi', timestamp: 0, modelKey: 'model-auto', finishReason: null },
+        ],
+      },
+    ],
+    ...chatOverrides,
+  };
+
+  return createTestRootState({
     chat: createChatSliceState({
-      chatList: [
+      chatMetaList: [
         {
-          name: '',
-          chatModelList: [
-            {
-              modelId: 'model-auto',
-              chatHistoryList: [
-                { id: 'msg-1', role: ChatRoleEnum.USER, content: 'hi', timestamp: 0, modelKey: 'model-auto', finishReason: null },
-              ],
-            },
-          ],
-          ...chatOverrides,
+          id: chat.id,
+          name: chat.name,
+          isManuallyNamed: chat.isManuallyNamed,
+          modelIds: chat.chatModelList?.map(cm => cm.modelId) ?? [],
+          isDeleted: chat.isDeleted,
+          updatedAt: chat.updatedAt,
         },
       ],
+      activeChatData: {
+        [chat.id]: chat,
+      },
+      sendingChatIds: {},
       selectedChatId: chatOverrides.id,
       runningChat: {
         [chatOverrides.id]: {
@@ -91,6 +108,7 @@ const createState = (chatOverrides: Partial<Chat> & { id: string }, autoNamingEn
       autoNamingEnabled,
     }),
   });
+};
 
 /**
  * 辅助函数：统计 dispatchedActions 中 chat/generateName/pending 出现次数
@@ -148,6 +166,9 @@ describe('chatMiddleware', () => {
 
   describe('聊天消息发送触发保存', () => {
     it('应该在消息发送成功时触发保存', async () => {
+      // 在 activeChatData 中预设聊天数据（middleware 从 state 获取最新聊天数据）
+      store.dispatch({ type: 'chat/setActiveChatData', payload: { chatId: 'chat1', chat: mockChat } });
+
       // Dispatch fulfilled action
       await store.dispatch(
         startSendChatMessage.fulfilled(
@@ -161,10 +182,14 @@ describe('chatMiddleware', () => {
 
       // 等待异步 effect 完成
       await vi.waitFor(() => {
-        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+        expect(mockSaveChatAndIndex).toHaveBeenCalledTimes(1);
       });
 
-      expect(mockSaveChatsToJson).toHaveBeenCalledWith(expect.any(Array));
+      expect(mockSaveChatAndIndex).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Object),
+        expect.any(Array),
+      );
     });
 
     it.skip('应该在消息发送失败时触发保存（需要完整的 state.runningChat）', async () => {
@@ -186,7 +211,7 @@ describe('chatMiddleware', () => {
       }
 
       await vi.waitFor(() => {
-        expect(mockSaveChatsToJson).toHaveBeenCalled();
+        expect(mockSaveChatAndIndex).toHaveBeenCalled();
       });
     });
   });
@@ -203,7 +228,7 @@ describe('chatMiddleware', () => {
 
       // 等待异步 effect 完成
       await vi.waitFor(() => {
-        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+        expect(mockSaveChatAndIndex).toHaveBeenCalledTimes(1);
       });
     });
 
@@ -213,16 +238,19 @@ describe('chatMiddleware', () => {
 
       // 等待异步 effect 完成
       await vi.waitFor(() => {
-        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+        expect(mockSaveChatAndIndex).toHaveBeenCalledTimes(1);
       });
     });
 
     it('应该在编辑聊天名称时触发保存', async () => {
+      // 在 activeChatData 中预设聊天数据（middleware 从 state.activeChatData 获取）
+      store.dispatch({ type: 'chat/setActiveChatData', payload: { chatId: 'chat1', chat: mockChat } });
+
       await store.dispatch(editChatName({ name: 'New Name', id: 'chat1' }));
 
       // 等待异步 effect 完成
       await vi.waitFor(() => {
-        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+        expect(mockSaveChatAndIndex).toHaveBeenCalledTimes(1);
       });
     });
 
@@ -231,8 +259,11 @@ describe('chatMiddleware', () => {
 
       // 等待异步 effect 完成
       await vi.waitFor(() => {
-        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+        expect(mockDeleteChatFromStorage).toHaveBeenCalledTimes(1);
       });
+
+      // 验证参数：deleteChatFromStorage(chatId, index)
+      expect(mockDeleteChatFromStorage).toHaveBeenCalledWith('chat1', expect.any(Array));
     });
   });
 
@@ -243,13 +274,13 @@ describe('chatMiddleware', () => {
 
       // 等待异步 effect 完成
       await vi.waitFor(() => {
-        expect(mockSaveChatsToJson).not.toHaveBeenCalled();
+        expect(mockSaveChatAndIndex).not.toHaveBeenCalled();
       });
     });
   });
 
   describe('从 Store 获取最新状态', () => {
-    it('应该传递最新的 chatList 给 saveChatsToJson', async () => {
+    it('应该传递最新的聊天数据给 saveChatAndIndex', async () => {
       // 先创建一个聊天
       const newChat = {
         id: 'chat1',
@@ -261,12 +292,13 @@ describe('chatMiddleware', () => {
 
       // 等待异步 effect 完成
       await vi.waitFor(() => {
-        expect(mockSaveChatsToJson).toHaveBeenCalledTimes(1);
+        expect(mockSaveChatAndIndex).toHaveBeenCalledTimes(1);
       });
 
-      // 验证传递了最新的 chatList
-      const savedChatList = mockSaveChatsToJson.mock.calls[0][0];
-      expect(savedChatList).toContainEqual(newChat);
+      // 验证传递了正确的参数（chatId, chatData, index）
+      const [savedChatId, savedChatData] = mockSaveChatAndIndex.mock.calls[0];
+      expect(savedChatId).toBe('chat1');
+      expect(savedChatData).toEqual(expect.objectContaining({ id: 'chat1' }));
     });
   });
 
@@ -320,7 +352,7 @@ describe('chatMiddleware', () => {
       const chatId = 'auto-chat-005';
       const state = createState({ id: chatId }, true);
       // 初始 chatHistoryList 为 0 条，push 后为 1 条（不等于 2）
-      state.chat.chatList[0]!.chatModelList![0]!.chatHistoryList = [];
+      state.chat.activeChatData[chatId]!.chatModelList![0]!.chatHistoryList = [];
       const { store: autoStore, dispatchedActions } = createAutoNamingStore(state);
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
@@ -351,7 +383,7 @@ describe('chatMiddleware', () => {
         isSending: false,
         history: { id: 'msg-3', role: ChatRoleEnum.ASSISTANT, content: 'world', timestamp: 0, modelKey: 'model-auto-2', finishReason: null },
       };
-      state.chat.chatList[0]!.chatModelList!.push({
+      state.chat.activeChatData[chatId]!.chatModelList!.push({
         modelId: 'model-auto-2',
         chatHistoryList: [{ id: 'msg-4', role: ChatRoleEnum.USER, content: 'hello', timestamp: 0, modelKey: 'model-auto-2', finishReason: null }],
       });

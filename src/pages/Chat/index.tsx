@@ -16,8 +16,8 @@ const ChatPage: React.FC = () => {
   const isDrawerOpen = useAppSelector((state) => state.chatPage.isDrawerOpen);
   const { isDesktop, isMobile } = useResponsive();
 
-  // 获取聊天列表和加载状态
-  const chatList = useAppSelector((state) => state.chat.chatList);
+  // 获取聊天元数据列表和加载状态
+  const chatMetaList = useAppSelector((state) => state.chat.chatMetaList);
   const loading = useAppSelector((state) => state.chat.loading);
   const initializationError = useAppSelector(
     (state) => state.chat.initializationError,
@@ -59,21 +59,20 @@ const ChatPage: React.FC = () => {
       return;
     }
 
-    // 检查聊天是否存在于聊天列表中且未被删除
-    // 注意：需要同时检查 chat.id 匹配和 chat.isDeleted === false
-    const chat = chatList.find((c) => c.id === chatId);
+    // 检查聊天是否存在于元数据列表中
+    const chatMeta = chatMetaList.find((m) => m.id === chatId);
 
-    if (chat && !chat.isDeleted) {
-      // 聊天存在且未删除，正常设置选中的聊天 ID 并预加载供应商 SDK
+    if (chatMeta) {
+      // 聊天存在，正常设置选中的聊天 ID 并预加载供应商 SDK
       dispatch(setSelectedChatIdWithPreload(chatId));
-    } else if (chat?.isDeleted || !chat) {
-      // 聊天不存在（已删除或从未创建），清除 URL 中的 chatId 参数
+    } else {
+      // 聊天不存在，清除 URL 中的 chatId 参数
       clearChatIdParam();
     }
   }, [
     dispatch,
     searchParams,
-    chatList,
+    chatMetaList,
     loading,
     initializationError,
     clearChatIdParam,

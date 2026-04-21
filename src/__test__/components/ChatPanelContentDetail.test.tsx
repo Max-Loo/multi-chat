@@ -12,6 +12,7 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
 import type { ChatModel } from '@/types/chat';
 import type { Model } from '@/types/model';
 import { ChatRoleEnum } from '@/types/chat';
+import { chatToMeta } from '@/types/chat';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
 import { asTestType } from '@/__test__/helpers/testing-utils';
@@ -69,16 +70,18 @@ describe('ChatPanelContentDetail', () => {
       },
     ];
 
+    const chat = {
+        id: 'test-chat-1',
+        name: 'Test Chat',
+        chatModelList: [chatModel],
+        isDeleted: false,
+      };
+
     return createTypeSafeTestStore({
       chat: createChatSliceState({
-        chatList: [
-          {
-            id: 'test-chat-1',
-            name: 'Test Chat',
-            chatModelList: [chatModel],
-            isDeleted: false,
-          },
-        ],
+        chatMetaList: [chatToMeta(chat)],
+        activeChatData: { 'test-chat-1': chat },
+        sendingChatIds: {},
         selectedChatId: 'test-chat-1',
         runningChat: overrides?.runningChat || {},
       }),

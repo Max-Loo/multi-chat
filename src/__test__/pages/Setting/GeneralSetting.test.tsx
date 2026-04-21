@@ -10,10 +10,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { screen, cleanup } from "@testing-library/react"
+import { screen, cleanup, fireEvent } from "@testing-library/react"
 import GeneralSetting from "@/pages/Setting/components/GeneralSetting"
 import { renderWithProviders } from "../../helpers/render/redux"
 import { resetTestState } from "../../helpers/isolation"
+import { exportDeletedChats } from "@/services/chatExport"
+import { toastQueue } from "@/services/toast"
 
 // Mock useAdaptiveScrollbar hook
 vi.mock("@/hooks/useAdaptiveScrollbar", () => ({
@@ -24,7 +26,7 @@ vi.mock("@/hooks/useAdaptiveScrollbar", () => ({
 }))
 
 vi.mock('react-i18next', () => {
-  const R = { common: { language: '语言' }, setting: { autoNaming: { title: '自动命名', description: '自动为聊天生成标题，默认开启' }, modelProvider: { refreshButton: '刷新模型供应商' } } };
+  const R = { common: { language: '语言' }, setting: { autoNaming: { title: '自动命名', description: '自动为聊天生成标题，默认开启' }, modelProvider: { refreshButton: '刷新模型供应商' }, chatExport: { title: '聊天导出', description: '导出聊天数据为 JSON 文件', exportAll: '导出所有聊天', exportDeleted: '导出已删除聊天', exportSuccess: '导出成功', exportFailed: '导出失败', noDeletedChats: '没有已删除的聊天' } } };
   return globalThis.__createI18nMockReturn(R);
 });
 
@@ -33,6 +35,7 @@ vi.mock("@/services/toast", () => ({
   toastQueue: {
     success: vi.fn(),
     error: vi.fn(),
+    info: vi.fn(),
     loading: vi.fn(),
     dismiss: vi.fn(),
   },
@@ -41,6 +44,12 @@ vi.mock("@/services/toast", () => ({
 // Mock changeAppLanguage（LanguageSetting 依赖）
 vi.mock("@/services/i18n", () => ({
   changeAppLanguage: vi.fn().mockResolvedValue({ success: true }),
+}))
+
+// Mock chatExport 服务（ChatExportSetting 依赖）
+vi.mock("@/services/chatExport", () => ({
+  exportAllChats: vi.fn().mockResolvedValue({ chats: [], exportedAt: "", version: "" }),
+  exportDeletedChats: vi.fn().mockResolvedValue({ chats: [], exportedAt: "", version: "" }),
 }))
 
 describe("GeneralSetting 组件", () => {
@@ -99,6 +108,24 @@ describe("GeneralSetting 组件", () => {
 
       // 注意：由于我们 Mock 了 onScrollEvent，这里主要验证组件不会崩溃
       // 实际的事件处理在 useEffect 中，由 React 管理
+    })
+  })
+
+  describe("聊天导出测试", () => {
+    it("导出已删除聊天为空时应提示用户", async () => {
+      renderWithProviders(<GeneralSetting />)
+
+      const exportDeletedButton = screen.getByText("导出已删除聊天")
+      await fireEvent.click(exportDeletedButton)
+
+      // 等待异步操作完成
+      await vi.waitFor(() => {
+        expect(exportDeletedChats).toHaveBeenCalled()
+      })
+
+      // 已删除聊天为空时应提示用户，不应触发文件下载
+      expect(toastQueue.info).toHaveBeenCalledWith("没有已删除的聊天")
+      expect(toastQueue.success).not.toHaveBeenCalled()
     })
   })
 })

@@ -20,6 +20,15 @@
     "resetAllData": "重置所有数据",
     "resetAllDataDescription": "清除所有模型配置和聊天记录，生成新的加密密钥"
   },
+  "chatExport": {
+    "title": "聊天导出",
+    "description": "将聊天数据导出为 JSON 文件，支持导出活跃聊天和已删除聊天",
+    "exportAll": "导出活跃聊天",
+    "exportDeleted": "导出已删除聊天",
+    "exportSuccess": "聊天数据导出成功",
+    "exportFailed": "导出聊天数据失败",
+    "noDeletedChats": "没有可导出的已删除聊天"
+  },
   "modelProvider": {
     "title": "模型供应商",
     "description": "从远程服务器获取最新的模型供应商信息",

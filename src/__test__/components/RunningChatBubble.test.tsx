@@ -13,6 +13,7 @@ import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
 import RunningChatBubble from '@/pages/Chat/components/Panel/Detail/RunningBubble';
 import { createMockPanelMessage } from '@/__test__/helpers/mocks/chatPanel';
 import { ChatRoleEnum } from '@/types/chat';
+import { chatToMeta } from '@/types/chat';
 
 vi.mock('react-i18next', () => {
   const R = { common: { loading: 'Loading...' }, chat: { thinking: '思考中......', thinkingComplete: '思考完毕' } };
@@ -28,12 +29,16 @@ function createStore(
   chatModel: ReturnType<typeof createMockPanelChatModel>,
   runningChatOverrides?: Parameters<typeof createRunningChatEntry>[2],
 ) {
+  const chat = {
+    id: TEST_CHAT_ID,
+    chatModelList: [chatModel],
+  };
+
   return createTypeSafeTestStore({
     chat: createChatSliceState({
-      chatList: [{
-        id: TEST_CHAT_ID,
-        chatModelList: [chatModel],
-      }],
+      chatMetaList: [chatToMeta(chat)],
+      activeChatData: { [TEST_CHAT_ID]: chat },
+      sendingChatIds: {},
       selectedChatId: TEST_CHAT_ID,
       runningChat: runningChatOverrides
         ? createRunningChatEntry(TEST_CHAT_ID, chatModel.modelId, runningChatOverrides)
@@ -221,10 +226,14 @@ describe('RunningChatBubble', () => {
     it('当运行中的聊天不是当前选中的聊天时，不应该渲染任何内容', () => {
       const chatModel = createMockPanelChatModel('model-1');
 
+      const chat = { id: TEST_CHAT_ID, chatModelList: [chatModel] };
+
       // runningChat 中有另一个聊天的数据
       const store = createTypeSafeTestStore({
         chat: createChatSliceState({
-          chatList: [{ id: TEST_CHAT_ID, chatModelList: [chatModel] }],
+          chatMetaList: [chatToMeta(chat)],
+          activeChatData: { [TEST_CHAT_ID]: chat },
+          sendingChatIds: {},
           selectedChatId: TEST_CHAT_ID,
           runningChat: createRunningChatEntry('other-chat-id', chatModel.modelId, {
             isSending: true,
@@ -247,10 +256,14 @@ describe('RunningChatBubble', () => {
     it('当运行中的聊天不是当前模型时，不应该渲染任何内容', () => {
       const chatModel = createMockPanelChatModel('model-1');
 
+      const chat = { id: TEST_CHAT_ID, chatModelList: [chatModel] };
+
       // runningChat 中有另一个模型的数据
       const store = createTypeSafeTestStore({
         chat: createChatSliceState({
-          chatList: [{ id: TEST_CHAT_ID, chatModelList: [chatModel] }],
+          chatMetaList: [chatToMeta(chat)],
+          activeChatData: { [TEST_CHAT_ID]: chat },
+          sendingChatIds: {},
           selectedChatId: TEST_CHAT_ID,
           runningChat: createRunningChatEntry(TEST_CHAT_ID, 'other-model-id', {
             isSending: true,

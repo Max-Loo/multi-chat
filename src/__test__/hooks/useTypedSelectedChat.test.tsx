@@ -11,6 +11,7 @@ import { createMockChat, createMockChatWithModels } from '@/__test__/helpers/moc
 import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
 import { setSelectedChatId } from '@/store/slices/chatSlices';
+import { chatToMeta } from '@/types/chat';
 
 describe('useSelectedChat', () => {
 
@@ -22,7 +23,9 @@ describe('useSelectedChat', () => {
       const { result } = renderHookWithProviders(() => useSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1, chat2],
+            chatMetaList: [chatToMeta(chat1), chatToMeta(chat2)],
+            activeChatData: { 'chat-1': chat1, 'chat-2': chat2 },
+            sendingChatIds: {},
             selectedChatId: 'chat-2',
           }),
         },
@@ -41,7 +44,9 @@ describe('useSelectedChat', () => {
       const { result } = renderHookWithProviders(() => useSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat],
+            chatMetaList: [chatToMeta(chat)],
+            activeChatData: { 'chat-1': chat },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
           }),
         },
@@ -57,7 +62,9 @@ describe('useSelectedChat', () => {
       const { result } = renderHookWithProviders(() => useSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat],
+            chatMetaList: [chatToMeta(chat)],
+            activeChatData: { 'chat-1': chat },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
           }),
         },
@@ -74,7 +81,9 @@ describe('useSelectedChat', () => {
       const { result } = renderHookWithProviders(() => useSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [],
+            chatMetaList: [],
+            activeChatData: {},
+            sendingChatIds: {},
             selectedChatId: null,
           }),
         },
@@ -95,7 +104,9 @@ describe('useSelectedChat', () => {
       const { result, store } = renderHookWithProviders(() => useSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1, chat2],
+            chatMetaList: [chatToMeta(chat1), chatToMeta(chat2)],
+            activeChatData: { 'chat-1': chat1, 'chat-2': chat2 },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
           }),
         },
@@ -120,7 +131,9 @@ describe('useSelectedChat', () => {
       const { result, rerender } = renderHookWithProviders(() => useSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat],
+            chatMetaList: [chatToMeta(chat)],
+            activeChatData: { 'chat-1': chat },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
           }),
         },
@@ -144,7 +157,9 @@ describe('useSelectedChat', () => {
       const { result } = renderHookWithProviders(() => useSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [],
+            chatMetaList: [],
+            activeChatData: {},
+            sendingChatIds: {},
             selectedChatId: null,
           }),
         },
@@ -154,13 +169,15 @@ describe('useSelectedChat', () => {
       expect(result.current.chatModelList).toEqual([]);
     });
 
-    it('测试选中的聊天 ID 不存在', () => {
+    it('测试选中的聊天 ID 在 activeChatData 中不存在', () => {
       const chat1 = createMockChat({ id: 'chat-1', name: 'Chat 1' });
 
       const { result } = renderHookWithProviders(() => useSelectedChat(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1],
+            chatMetaList: [chatToMeta(chat1)],
+            activeChatData: { 'chat-1': chat1 },
+            sendingChatIds: {},
             selectedChatId: 'non-existent-chat',
           }),
         },

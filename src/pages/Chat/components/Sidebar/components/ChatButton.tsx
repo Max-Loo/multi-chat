@@ -1,7 +1,7 @@
-import { useAppDispatch } from "@/hooks/redux"
+import { useAppDispatch, useAppSelector } from "@/hooks/redux"
 import { useNavigateToChat } from "@/hooks/useNavigateToPage"
 import { deleteChat, editChatName } from "@/store/slices/chatSlices"
-import { Chat } from "@/types/chat"
+import { ChatMeta } from "@/types/chat"
 import { Check, X, Trash2, Edit, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,7 +19,7 @@ import { useConfirm } from "@/hooks/useConfirm"
 import { useResponsive } from "@/hooks/useResponsive"
 
 export interface ChatButtonProps {
-  chat: Chat
+  chatMeta: ChatMeta
   isSelected: boolean
 }
 
@@ -27,15 +27,18 @@ export interface ChatButtonProps {
  * @description 聊天列表中的单个聊天按钮
  */
 const ChatButton = memo<ChatButtonProps>(({
-  chat,
+  chatMeta,
   isSelected,
 }) => {
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
+  const sendingChatIds = useAppSelector(state => state.chat.sendingChatIds)
 
   const { layoutMode } = useResponsive()
   // Desktop 和 Mobile 模式使用正常尺寸
   const isNormalSize = layoutMode === 'desktop' || layoutMode === 'mobile'
+
+  const isSending = !!sendingChatIds[chatMeta.id]
 
   const {
     navigateToChat,
@@ -46,10 +49,10 @@ const ChatButton = memo<ChatButtonProps>(({
   const { modal } = useConfirm()
 
   // 点击聊天列表按钮
-  const onClickChat = (clickedChat: Chat) => {
+  const onClickChat = (meta: ChatMeta) => {
     // 跳转到对应的聊天详情
     navigateToChat({
-      chatId: clickedChat.id,
+      chatId: meta.id,
     })
   }
 
@@ -62,7 +65,7 @@ const ChatButton = memo<ChatButtonProps>(({
   // 处理重命名操作
   const handleRename = () => {
     setIsRenaming(true)
-    setNewName(chat.name || '')
+    setNewName(chatMeta.name || '')
   }
 
   // 处理删除操作
@@ -70,7 +73,11 @@ const ChatButton = memo<ChatButtonProps>(({
     const onOk = async () => {
       try {
         await dispatch(deleteChat({
-          chat,
+          // 从 activeChatData 获取完整聊天数据用于存储层标记 isDeleted
+          chat: {
+            id: chatMeta.id,
+            name: chatMeta.name,
+          } as any,
         }))
         toastQueue.success(t($ => $.chat.deleteChatSuccess))
 
@@ -84,7 +91,7 @@ const ChatButton = memo<ChatButtonProps>(({
     }
 
     modal.warning({
-      title: `${t($ => $.chat.confirmDelete)}「${chat.name || t($ => $.chat.unnamed)}」`,
+      title: `${t($ => $.chat.confirmDelete)}「${chatMeta.name || t($ => $.chat.unnamed)}」`,
       description: t($ => $.chat.deleteChatConfirm),
       onOk,
     })
@@ -98,15 +105,14 @@ const ChatButton = memo<ChatButtonProps>(({
   // 确认重命名
   const onConfirmRename = () => {
     // 避免没有意义的编辑
-    if (newName === chat.name) {
+    if (newName === chatMeta.name) {
       onCancelRename()
       return
     }
 
     try {
-      // 因为当前组件被 memo，并不一定能获取到最新的 chat，故使用 editChatName 而不是 editChat
       dispatch(editChatName({
-        id: chat.id,
+        id: chatMeta.id,
         name: newName,
       }))
 
@@ -156,7 +162,7 @@ const ChatButton = memo<ChatButtonProps>(({
 
   return (
     <div
-      data-testid={`chat-button-${chat.id}`}
+      data-testid={`chat-button-${chatMeta.id}`}
       className={`w-full flex justify-between rounded-none cursor-pointer
         ${
           isNormalSize
@@ -166,7 +172,7 @@ const ChatButton = memo<ChatButtonProps>(({
         ${isSelected ? 'bg-primary/20' : 'hover:bg-accent'}
         ${isRenaming && 'pl-1 pr-1'}
       `}
-      onClick={() => onClickChat(chat)}
+      onClick={() => onClickChat(chatMeta)}
     >
       <span
         data-testid="chat-name"
@@ -176,7 +182,7 @@ const ChatButton = memo<ChatButtonProps>(({
             : 'text-xs'
         }`}
       >
-        {chat.name || t($ => $.chat.unnamed)}
+        {chatMeta.name || t($ => $.chat.unnamed)}
       </span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -210,6 +216,7 @@ const ChatButton = memo<ChatButtonProps>(({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"
+            disabled={isSending}
             onClick={(e) => {
               e.stopPropagation()
               handleDelete()
@@ -226,11 +233,11 @@ const ChatButton = memo<ChatButtonProps>(({
   const {
     id,
     name,
-  } = prevProps.chat
+  } = prevProps.chatMeta
   const {
     id: nextId,
     name: nextName,
-  } = nextProps.chat
+  } = nextProps.chatMeta
 
   return (
     id === nextId &&

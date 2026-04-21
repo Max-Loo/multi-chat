@@ -58,8 +58,13 @@ vi.mock('@/services/chat', async () => {
 
 // Mock chatStorage 模块
 vi.mock('@/store/storage/chatStorage', () => ({
-  loadChatsFromJson: vi.fn(() => Promise.resolve([])),
-  saveChatsToJson: vi.fn(() => Promise.resolve()),
+  loadChatIndex: vi.fn(() => Promise.resolve([])),
+  saveChatIndex: vi.fn(() => Promise.resolve()),
+  loadChatById: vi.fn(() => Promise.resolve(undefined)),
+  saveChatById: vi.fn(() => Promise.resolve()),
+  saveChatAndIndex: vi.fn(() => Promise.resolve()),
+  deleteChatFromStorage: vi.fn(() => Promise.resolve()),
+  migrateOldChatStorage: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock generateChatTitleService
@@ -136,12 +141,12 @@ describe('自动命名功能集成测试', () => {
 
     // Assert: 验证标题已生成
     const state = store.getState();
-    const updatedChat = state.chat.chatList.find((c) => c.id === chat.id);
+    const updatedChat = state.chat.activeChatData[chat.id];
     expect(updatedChat?.name).toBe('TypeScript 学习方法');
     expect(updatedChat?.isManuallyNamed).toBeUndefined(); // 允许手动覆盖
 
     // 验证持久化被调用
-    expect(chatStorage.saveChatsToJson).toHaveBeenCalled();
+    expect(chatStorage.saveChatAndIndex).toHaveBeenCalled();
   });
 
   test('场景 2：用户手动命名后不再触发自动命名', async () => {
@@ -164,7 +169,7 @@ describe('自动命名功能集成测试', () => {
 
     // 验证 isManuallyNamed 已设置
     let state = store.getState();
-    let updatedChat = state.chat.chatList.find((c) => c.id === chat.id);
+    let updatedChat = state.chat.chatMetaList.find((c: { id: string }) => c.id === chat.id);
     expect(updatedChat?.isManuallyNamed).toBe(true);
 
     // Mock generateChatTitleService（不应该被调用）
@@ -181,8 +186,8 @@ describe('自动命名功能集成测试', () => {
     // 等待消息处理完成
     await waitFor(() => {
       const s = store.getState();
-      const chatItem = s.chat.chatList.find((item) => item.id === chat.id);
-      expect(chatItem?.chatModelList?.[0]?.chatHistoryList?.length).toBeGreaterThan(0);
+      const chatData = s.chat.activeChatData[chat.id];
+      expect(chatData?.chatModelList?.[0]?.chatHistoryList?.length).toBeGreaterThan(0);
     });
 
     // Assert: 验证 generateChatTitleService 未被调用
@@ -190,7 +195,7 @@ describe('自动命名功能集成测试', () => {
 
     // 验证标题保持手动设置的值
     state = store.getState();
-    updatedChat = state.chat.chatList.find((item) => item.id === chat.id);
+    updatedChat = state.chat.chatMetaList.find((item: { id: string }) => item.id === chat.id);
     expect(updatedChat?.name).toBe('我的手动标题');
     expect(updatedChat?.isManuallyNamed).toBe(true);
   });
@@ -226,8 +231,8 @@ describe('自动命名功能集成测试', () => {
     // 等待消息处理完成
     await waitFor(() => {
       const s = store.getState();
-      const chatItem = s.chat.chatList.find((item) => item.id === chat.id);
-      expect(chatItem?.chatModelList?.[0]?.chatHistoryList?.length).toBeGreaterThan(0);
+      const chatData = s.chat.activeChatData[chat.id];
+      expect(chatData?.chatModelList?.[0]?.chatHistoryList?.length).toBeGreaterThan(0);
     });
 
     // Assert: 验证 generateChatTitleService 未被调用
@@ -235,7 +240,7 @@ describe('自动命名功能集成测试', () => {
 
     // 验证标题仍然为空
     const state = store.getState();
-    const updatedChat = state.chat.chatList.find((c) => c.id === chat.id);
+    const updatedChat = state.chat.chatMetaList.find((c: { id: string }) => c.id === chat.id);
     expect(updatedChat?.name).toBeUndefined();
   });
 
@@ -289,7 +294,7 @@ describe('自动命名功能集成测试', () => {
     // 等待标题被更新到 Redux store
     await waitFor(() => {
       const state = store.getState();
-      const updatedChat = state.chat.chatList.find((c) => c.id === chat.id);
+      const updatedChat = state.chat.chatMetaList.find((c: { id: string }) => c.id === chat.id);
       expect(updatedChat?.name).toBeTruthy();
     }, { timeout: 1000 });
   });
