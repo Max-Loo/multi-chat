@@ -24,11 +24,7 @@ import { LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
 import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY } from '@/utils/constants';
 
 // Mock Tauri 环境
-vi.mock('@/utils/tauriCompat', () => ({
-  isTauri: () => false,
-  locale: async () => 'en-US',
-  createLazyStore: () => globalThis.__createMemoryStorageMock(),
-}));
+vi.mock('@/utils/tauriCompat', () => globalThis.__createTauriCompatModuleMock());
 
 describe('设置变更集成测试', () => {
   let testStore: ReturnType<typeof getTestStore>;

@@ -9,15 +9,7 @@ import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpe
 import type { EnhancedStore } from '@reduxjs/toolkit';
 
 vi.mock('@/hooks/useResponsive', () => ({
-  useResponsive: () => ({
-    layoutMode: 'desktop',
-    width: 1280,
-    height: 800,
-    isMobile: false,
-    isCompact: false,
-    isCompressed: false,
-    isDesktop: true,
-  }),
+  useResponsive: () => globalThis.__createResponsiveMock(),
 }));
 
 vi.mock('react-i18next', () => {

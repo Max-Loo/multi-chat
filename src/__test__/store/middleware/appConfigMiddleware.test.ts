@@ -8,14 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
 // Mock toastQueue and i18n before importing middleware
-vi.mock('@/services/toast', () => ({
-  toastQueue: {
-    loading: vi.fn(async () => 'loading-toast-id'),
-    success: vi.fn(async () => 'toast-id'),
-    error: vi.fn(async () => 'toast-id'),
-    dismiss: vi.fn(),
-  },
-}));
+vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());
 
 vi.mock('@/services/i18n', () => ({
   changeAppLanguage: vi.fn(),

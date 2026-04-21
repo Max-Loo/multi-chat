@@ -18,10 +18,7 @@ vi.mock('react-router-dom', async () => ({
 
 // Mock useResponsive
 vi.mock('@/hooks/useResponsive', () => ({
-  useResponsive: () => ({
-    isMobile: true,
-    layoutMode: 'mobile',
-  }),
+  useResponsive: () => globalThis.__createResponsiveMock({ isMobile: true, layoutMode: 'mobile', isDesktop: false }),
 }));
 
 vi.mock('react-i18next', () => {

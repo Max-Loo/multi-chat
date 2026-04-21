@@ -10,17 +10,7 @@ import { createMainApp } from '@/MainApp';
 import type { InitResult } from '@/services/initialization';
 
 // Mock toastQueue
-vi.mock('@/services/toast', () => ({
-  toastQueue: {
-    warning: vi.fn(),
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    loading: vi.fn(),
-    dismiss: vi.fn(),
-    promise: vi.fn(),
-  },
-}));
+vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());
 
 // Mock i18next
 vi.mock('react-i18next', () => ({

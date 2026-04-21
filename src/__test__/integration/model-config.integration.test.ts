@@ -26,19 +26,10 @@ import { getMasterKey, initializeMasterKey, storeMasterKey } from '@/store/keyri
 
 // Mock tauriCompat 存储后端为内存 Map（避免 fake-indexeddb 测试间连接问题）
 // modelStorage 的加密/解密/保存/加载代码路径完全真实
-const memoryStore = new Map<string, unknown>();
+// 使用 vi.hoisted 确保 memoryStore 与 vi.mock 一起被提升，避免 TDZ 错误
+const memoryStore = vi.hoisted(() => new Map<string, unknown>());
 
-vi.mock('@/utils/tauriCompat', () => ({
-  isTauri: () => false,
-  createLazyStore: () => globalThis.__createMemoryStorageMock(memoryStore),
-  keyring: {
-    getPassword: vi.fn(),
-    setPassword: vi.fn(),
-    deletePassword: vi.fn(),
-    isSupported: vi.fn().mockReturnValue(true),
-    resetState: vi.fn(),
-  },
-}));
+vi.mock('@/utils/tauriCompat', () => globalThis.__createTauriCompatModuleMock(memoryStore));
 
 // 不 mock modelStorage — 使用真实代码路径（加密 → 存储 → 解密）
 import { saveModelsToJson, loadModelsFromJson, resetModelsStore } from '@/store/storage/modelStorage';

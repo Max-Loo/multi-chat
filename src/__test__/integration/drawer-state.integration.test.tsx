@@ -35,15 +35,7 @@ vi.mock('react-i18next', () => {
 
 // Mock useResponsive 为移动端模式（抽屉才显示）
 vi.mock('@/hooks/useResponsive', () => ({
-  useResponsive: () => ({
-    layoutMode: 'mobile',
-    width: 600,
-    height: 844,
-    isMobile: true,
-    isCompact: false,
-    isCompressed: false,
-    isDesktop: false,
-  }),
+  useResponsive: () => globalThis.__createResponsiveMock({ layoutMode: 'mobile', width: 600, height: 844, isMobile: true, isDesktop: false }),
 }));
 
 /**

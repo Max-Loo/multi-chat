@@ -20,10 +20,7 @@ vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
  * Mock useResponsive hook（桌面端模式）
  */
 vi.mock('@/hooks/useResponsive', () => ({
-  useResponsive: () => ({
-    isMobile: false,
-    isDesktop: true,
-  }),
+  useResponsive: () => globalThis.__createResponsiveMock(),
 }));
 
 vi.mock('react-i18next', () => {

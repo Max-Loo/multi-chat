@@ -21,13 +21,7 @@ vi.mock('react-i18next', () => {
 });
 
 // Mock toastQueue
-vi.mock('@/services/toast', () => ({
-  toastQueue: {
-    info: vi.fn(async () => 'toast-id'),
-    success: vi.fn(async () => 'toast-id'),
-    error: vi.fn(async () => 'toast-id'),
-  },
-}));
+vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());
 
 const createModelSelectStore = () => {
   const mockModels = [

@@ -30,15 +30,7 @@ function createPerfStore(chatList: Chat[], selectedChatId: string) {
 
 // Mock ChatButton 的依赖（与 ChatButton.test.tsx 保持一致）
 vi.mock('@/hooks/useResponsive', () => ({
-  useResponsive: vi.fn(() => ({
-    layoutMode: 'desktop',
-    width: 1280,
-    height: 800,
-    isMobile: false,
-    isCompact: false,
-    isCompressed: false,
-    isDesktop: true,
-  })),
+  useResponsive: vi.fn(() => globalThis.__createResponsiveMock()),
 }))
 
 vi.mock('@/hooks/useNavigateToPage', () => ({
@@ -62,12 +54,7 @@ vi.mock('@/hooks/useConfirm', () => ({
   ConfirmProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 
-vi.mock('@/services/toast', () => ({
-  toastQueue: {
-    success: vi.fn(async () => 'toast-id'),
-    error: vi.fn(async () => 'toast-id'),
-  },
-}))
+vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock())
 
 /**
  * 渲染追踪器

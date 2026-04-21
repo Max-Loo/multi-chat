@@ -543,7 +543,7 @@ describe('Crypto 加密/解密单元测试', () => {
 
   describe('并发加密的密文唯一性', () => {
 
-    test('并发加密 100 个相同明文：应产生 100 个不同密文', async () => {
+    test('并发加密 100 个相同明文：应产生 100 个不同密文和 nonce', async () => {
 
       // Given: 相同的明文和密钥
 
@@ -572,6 +572,22 @@ describe('Crypto 加密/解密单元测试', () => {
       const uniqueCiphertexts = new Set(ciphertexts);
 
       expect(uniqueCiphertexts.size, '所有密文应互不相同').toBe(100);
+
+
+
+      // 验证所有 nonce 互不相同
+
+      const nonces = ciphertexts.map((ciphertext) => {
+
+        const combined = Buffer.from(ciphertext.slice(4), 'base64');
+
+        return combined.slice(-12).toString('hex');
+
+      });
+
+      const uniqueNonces = new Set(nonces);
+
+      expect(uniqueNonces.size, '所有 nonce 应互不相同').toBe(100);
 
 
 
@@ -918,50 +934,6 @@ describe('Crypto 加密/解密单元测试', () => {
     });
 
 
-
-    test('100 次加密产生 100 个不同 nonce', async () => {
-
-      // Given: 相同的明文和密钥
-
-      const plaintext = 'Same plaintext';
-
-      const masterKey = 'a'.repeat(64);
-
-
-
-      // When: 加密 100 次
-
-      const ciphertexts = await Promise.all(
-
-        Array.from({ length: 100 }, () => encryptField(plaintext, masterKey))
-
-      );
-
-
-
-      // Then: 所有密文应互不相同
-
-      const uniqueCiphertexts = new Set(ciphertexts);
-
-      expect(uniqueCiphertexts.size, '所有密文应互不相同').toBe(100);
-
-
-
-      // 验证所有 nonce 互不相同
-
-      const nonces = ciphertexts.map((ciphertext) => {
-
-        const combined = Buffer.from(ciphertext.slice(4), 'base64');
-
-        return combined.slice(-12).toString('hex');
-
-      });
-
-      const uniqueNonces = new Set(nonces);
-
-      expect(uniqueNonces.size, '所有 nonce 应互不相同').toBe(100);
-
-    });
 
   });
 

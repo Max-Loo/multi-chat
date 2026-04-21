@@ -271,6 +271,9 @@ vi.mock('zhipu-ai-provider', () => ({
 import { setupCustomAssertions } from './helpers/assertions/setup';
 import { createI18nMockReturn } from './helpers/mocks/i18n';
 import { createMemoryStorageMock } from './helpers/mocks/storage';
+import { createResponsiveMock } from './helpers/mocks/responsive';
+import { createTauriCompatModuleMock } from './helpers/mocks/tauriCompat';
+import { createToastQueueModuleMock } from './helpers/mocks/toast';
 
 // 将 i18n mock 工厂函数注册到 globalThis，供测试文件中的 vi.mock 工厂使用
 // vi.mock 的工厂函数存在 hoisting 限制，无法使用常规 import
@@ -282,6 +285,21 @@ globalThis.__createI18nMockReturn = __i18nMock;
 // eslint-disable-next-line no-var
 var __storageMock: typeof createMemoryStorageMock = createMemoryStorageMock;
 globalThis.__createMemoryStorageMock = __storageMock;
+
+// 将 useResponsive mock 工厂注册到 globalThis，供组件测试复用
+// eslint-disable-next-line no-var
+var __responsiveMock = createResponsiveMock;
+globalThis.__createResponsiveMock = __responsiveMock;
+
+// 将 tauriCompat 模块 mock 工厂注册到 globalThis，供集成测试复用
+// eslint-disable-next-line no-var
+var __tauriCompatModuleMock = createTauriCompatModuleMock;
+globalThis.__createTauriCompatModuleMock = __tauriCompatModuleMock;
+
+// 将 toast 模块 mock 工厂注册到 globalThis，供测试文件复用
+// eslint-disable-next-line no-var
+var __toastModuleMock = createToastQueueModuleMock;
+globalThis.__createToastQueueModuleMock = __toastModuleMock;
 
 // 初始化全局 Mock 系统（临时禁用）
 // setupGlobalMocks({ isTauri: true });

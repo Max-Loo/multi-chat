@@ -56,12 +56,7 @@ vi.mock('@/hooks/useConfirm', () => ({
 /**
  * Mock toastQueue
  */
-vi.mock('@/services/toast', () => ({
-  toastQueue: {
-    success: vi.fn(async () => 'toast-id'),
-    error: vi.fn(async () => 'toast-id'),
-  },
-}));
+vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());
 
 /**
  * 从 Chat 对象提取 ChatMeta
