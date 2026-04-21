@@ -25,6 +25,7 @@ import {
   startSendChatMessage,
   createChat,
   editChatName,
+  setSelectedChatId,
 } from '@/store/slices/chatSlices';
 import { setAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { createModel as createModelAction } from '@/store/slices/modelSlice';
@@ -123,6 +124,9 @@ describe('自动命名功能集成测试', () => {
 
     store.dispatch(createChat({ chat }));
 
+    // 设置 selectedChatId 防止 releaseCompletedBackgroundChat 清除数据
+    store.dispatch(setSelectedChatId(chat.id));
+
     // Mock generateChatTitleService 返回标题
     vi.mocked(generateChatTitleService).mockResolvedValue('TypeScript 学习方法');
 
@@ -134,15 +138,15 @@ describe('自动命名功能集成测试', () => {
       }));
     });
 
-    // 等待异步操作完成
+    // Assert: 等待标题生成完成并验证
     await waitFor(() => {
-      expect(generateChatTitleService).toHaveBeenCalled();
+      const state = store.getState();
+      const updatedChat = state.chat.activeChatData[chat.id];
+      expect(updatedChat?.name).toBe('TypeScript 学习方法');
     });
 
-    // Assert: 验证标题已生成
     const state = store.getState();
     const updatedChat = state.chat.activeChatData[chat.id];
-    expect(updatedChat?.name).toBe('TypeScript 学习方法');
     expect(updatedChat?.isManuallyNamed).toBeUndefined(); // 允许手动覆盖
 
     // 验证持久化被调用
@@ -166,6 +170,9 @@ describe('自动命名功能集成测试', () => {
 
     // 手动编辑标题
     store.dispatch(editChatName({ id: chat.id, name: '我的手动标题' }));
+
+    // 设置 selectedChatId 防止 releaseCompletedBackgroundChat 清除数据
+    store.dispatch(setSelectedChatId(chat.id));
 
     // 验证 isManuallyNamed 已设置
     let state = store.getState();
@@ -216,6 +223,9 @@ describe('自动命名功能集成测试', () => {
     store.dispatch(createModelAction({ model }));
 
     store.dispatch(createChat({ chat }));
+
+    // 设置 selectedChatId 防止 releaseCompletedBackgroundChat 清除数据
+    store.dispatch(setSelectedChatId(chat.id));
 
     // Mock generateChatTitleService（不应该被调用）
     vi.mocked(generateChatTitleService).mockResolvedValue('不应该生成的标题');
