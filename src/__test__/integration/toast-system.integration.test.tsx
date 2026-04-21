@@ -33,18 +33,15 @@ function renderToastToDom(message: string) {
 }
 
 vi.mock('sonner', () => ({
-  toast: Object.assign(
-    (message: string) => renderToastToDom(message),
-    {
-      success: (message: string) => renderToastToDom(message),
-      error: (message: string) => renderToastToDom(message),
-      warning: (message: string) => renderToastToDom(message),
-      info: (message: string) => renderToastToDom(message),
-      loading: (message: string) => renderToastToDom(message),
-      dismiss: vi.fn(),
-      promise: vi.fn(),
-    }
-  ),
+  toast: Object.assign(renderToastToDom, {
+    success: renderToastToDom,
+    error: renderToastToDom,
+    warning: renderToastToDom,
+    info: renderToastToDom,
+    loading: renderToastToDom,
+    dismiss: vi.fn(),
+    promise: vi.fn(),
+  }),
 }));
 
 /**
@@ -63,9 +60,11 @@ describe('Toast 系统集成测试', () => {
     vi.resetModules();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     cleanup();
     cleanupStore();
+    const { toastQueue } = await import('@/services/toast/toastQueue');
+    toastQueue.reset();
     vi.restoreAllMocks();
   });
 

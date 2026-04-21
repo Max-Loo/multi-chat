@@ -29,8 +29,7 @@ import {
 } from '@/store/slices/chatSlices';
 import { setAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { createModel as createModelAction } from '@/store/slices/modelSlice';
-import { ModelProviderKeyEnum } from '@/utils/enums';
-import { Model } from '@/types/model';
+import { createDeepSeekModel } from '@/__test__/helpers/fixtures/model';
 import * as chatStorage from '@/store/storage/chatStorage';
 
 // Mock streamChatCompletion 以避免真实的 API 调用
@@ -75,27 +74,6 @@ vi.mock('@/services/chat/titleGenerator', () => ({
 
 import { generateChatTitleService } from '@/services/chat/titleGenerator';
 
-/**
- * 创建测试模型
- */
-function createTestModel(overrides: Partial<Model> = {}): Model {
-  return {
-    id: 'model-1',
-    createdAt: '2024-01-01 00:00:00',
-    updateAt: '2024-01-01 00:00:00',
-    providerName: 'DeepSeek',
-    providerKey: ModelProviderKeyEnum.DEEPSEEK,
-    nickname: '测试模型',
-    modelName: 'deepseek-chat',
-    modelKey: 'deepseek-chat',
-    apiKey: 'sk-test-key',
-    apiAddress: 'https://api.deepseek.com',
-    isEnable: true,
-    isDeleted: false,
-    ...overrides,
-  };
-}
-
 describe('自动命名功能集成测试', () => {
   let store: ReturnType<typeof getTestStore>;
 
@@ -111,7 +89,7 @@ describe('自动命名功能集成测试', () => {
 
   test('场景 1：新建聊天首次收到 AI 回复后应该自动生成标题', async () => {
     // Arrange: 创建新聊天（标题为空）
-    const model = createTestModel();
+    const model = createDeepSeekModel();
     const chat = {
       id: 'chat-1',
       name: undefined,
@@ -155,7 +133,7 @@ describe('自动命名功能集成测试', () => {
 
   test('场景 2：用户手动命名后不再触发自动命名', async () => {
     // Arrange: 创建聊天并手动设置标题
-    const model = createTestModel();
+    const model = createDeepSeekModel();
     const chat = {
       id: 'chat-2',
       name: '我的手动标题',
@@ -211,7 +189,7 @@ describe('自动命名功能集成测试', () => {
     // Arrange: 关闭全局开关
     store.dispatch(setAutoNamingEnabled(false));
 
-    const model = createTestModel();
+    const model = createDeepSeekModel();
     const chat = {
       id: 'chat-3',
       name: undefined,
@@ -256,8 +234,8 @@ describe('自动命名功能集成测试', () => {
 
   test('场景 4：多模型竞态条件 - 只应该生成一次标题', async () => {
     // Arrange: 创建新聊天
-    const model1 = createTestModel({ id: 'model-1' });
-    const model2 = createTestModel({ id: 'model-2' });
+    const model1 = createDeepSeekModel({ id: 'model-1' });
+    const model2 = createDeepSeekModel({ id: 'model-2' });
     const chat = {
       id: 'chat-4',
       name: undefined,

@@ -142,7 +142,7 @@ describe('模型配置集成测试', () => {
     cleanupStore();
 
     // 清理 mock 调用记录
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   // ========================================
@@ -257,8 +257,6 @@ describe('模型配置集成测试', () => {
           // consume stream
         }
       }).rejects.toThrow('Invalid API key');
-
-      setupDefaultStreamMock();
     });
   });
 

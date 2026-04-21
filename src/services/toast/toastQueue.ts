@@ -186,6 +186,15 @@ class ToastQueue {
   }
 
   /**
+   * 重置队列状态（测试用）
+   */
+  reset(): void {
+    this.queue = [];
+    this.toastReady = false;
+    this.isMobile = undefined;
+  }
+
+  /**
    * 设置移动端状态
    * @param isMobile 是否为移动端
    */

@@ -10,6 +10,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import Layout from '@/components/Layout';
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import type { LayoutMode } from '@/hooks/useResponsive';
 
 vi.mock('react-i18next', () => {
   const R = {};
@@ -20,7 +21,7 @@ vi.mock('react-i18next', () => {
  * Mock useResponsive hook，支持切换 isMobile 返回值
  */
 const mockResponsive = vi.hoisted(() => ({
-  layoutMode: 'desktop' as string,
+  layoutMode: 'desktop' as LayoutMode,
   isMobile: false,
   isCompact: false,
   isCompressed: false,
