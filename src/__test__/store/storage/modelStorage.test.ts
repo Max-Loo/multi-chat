@@ -12,16 +12,7 @@
 const storeMap = new Map<string, unknown>();
 
 vi.mock('@/store/storage/storeUtils', () => ({
-  createLazyStore: vi.fn(() => ({
-    init: vi.fn().mockResolvedValue(undefined),
-    get: vi.fn((key: string) => Promise.resolve(storeMap.get(key) ?? null)),
-    set: vi.fn((key: string, value: unknown) => { storeMap.set(key, value); return Promise.resolve(); }),
-    delete: vi.fn((key: string) => { storeMap.delete(key); return Promise.resolve(); }),
-    keys: vi.fn(() => Promise.resolve([...storeMap.keys()])),
-    save: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn(),
-    isSupported: vi.fn().mockReturnValue(true),
-  })),
+  createLazyStore: vi.fn(() => globalThis.__createMemoryStorageMock(storeMap)),
   saveToStore: vi.fn(async (store: { init: () => Promise<void>; set: (k: string, v: unknown) => Promise<void>; save: () => Promise<void> }, key: string, data: unknown) => {
     await store.init();
     await store.set(key, data);

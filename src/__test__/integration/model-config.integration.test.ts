@@ -28,35 +28,17 @@ import { getMasterKey, initializeMasterKey, storeMasterKey } from '@/store/keyri
 // modelStorage 的加密/解密/保存/加载代码路径完全真实
 const memoryStore = new Map<string, unknown>();
 
-vi.mock('@/utils/tauriCompat', () => {
-  return {
-    isTauri: () => false,
-    createLazyStore: () => ({
-      init: async () => {},
-      get: async <T>(key: string): Promise<T | null> => {
-        const val = memoryStore.get(key);
-        return val !== undefined ? (val as T) : null;
-      },
-      set: async (key: string, value: unknown) => {
-        memoryStore.set(key, value);
-      },
-      delete: async (key: string) => {
-        memoryStore.delete(key);
-      },
-      keys: async () => Array.from(memoryStore.keys()),
-      save: async () => {},
-      close: () => {},
-      isSupported: () => true,
-    }),
-    keyring: {
-      getPassword: vi.fn(),
-      setPassword: vi.fn(),
-      deletePassword: vi.fn(),
-      isSupported: vi.fn().mockReturnValue(true),
-      resetState: vi.fn(),
-    },
-  };
-});
+vi.mock('@/utils/tauriCompat', () => ({
+  isTauri: () => false,
+  createLazyStore: () => globalThis.__createMemoryStorageMock(memoryStore),
+  keyring: {
+    getPassword: vi.fn(),
+    setPassword: vi.fn(),
+    deletePassword: vi.fn(),
+    isSupported: vi.fn().mockReturnValue(true),
+    resetState: vi.fn(),
+  },
+}));
 
 // 不 mock modelStorage — 使用真实代码路径（加密 → 存储 → 解密）
 import { saveModelsToJson, loadModelsFromJson, resetModelsStore } from '@/store/storage/modelStorage';
@@ -64,9 +46,10 @@ import { saveModelsToJson, loadModelsFromJson, resetModelsStore } from '@/store/
 import { getTestStore, resetStore, cleanupStore } from '@/__test__/helpers/integration/resetStore';
 import { createModel, editModel, deleteModel } from '@/store/slices/modelSlice';
 import type { Model } from '@/types/model';
-import { ModelProviderKeyEnum } from '@/utils/enums';
+
 import { StandardMessage } from '@/types/chat';
 import { ChatRoleEnum } from '@/types/chat';
+import { createDeepSeekModel } from '@/__test__/helpers/fixtures/model';
 
 // ========================================
 // Mock streamChatCompletion（外部 API）
@@ -133,29 +116,7 @@ describe('模型配置集成测试', () => {
   let testStore: ReturnType<typeof getTestStore>;
   let masterKey: string;
 
-  /** 创建测试用模型 */
-  function createTestModel(overrides: Partial<Model> = {}): Model {
-    return {
-      id: `model-test-${Math.random().toString(36).slice(2, 8)}`,
-      createdAt: '2025-01-01 00:00:00',
-      updateAt: '2025-01-01 00:00:00',
-      providerName: 'DeepSeek',
-      providerKey: ModelProviderKeyEnum.DEEPSEEK,
-      nickname: 'DeepSeek Chat',
-      modelName: 'DeepSeek Chat',
-      modelKey: 'deepseek-chat',
-      apiKey: 'sk-test-key',
-      apiAddress: 'https://api.deepseek.com',
-      isEnable: true,
-      ...overrides,
-    };
-  }
-
   beforeEach(async () => {
-    // 重置存储层单例和内存存储
-    resetModelsStore();
-    memoryStore.clear();
-
     // 生成测试用主密钥
     masterKey = 'a'.repeat(64);
 
@@ -190,7 +151,7 @@ describe('模型配置集成测试', () => {
 
   describe('添加模型配置', () => {
     test('应该成功添加模型配置：API Key 加密 → 真实存储 → Redux → UI', async () => {
-      const modelConfig = createTestModel();
+      const modelConfig = createDeepSeekModel();
 
       // When: 通过真实存储层保存模型配置
       await saveModelsToJson([modelConfig]);
@@ -217,9 +178,9 @@ describe('模型配置集成测试', () => {
 
     test('应该正确加密并读回多个模型配置', async () => {
       const models = [
-        createTestModel({ id: 'model-1', apiKey: 'sk-key-alpha', nickname: 'Alpha' }),
-        createTestModel({ id: 'model-2', apiKey: 'sk-key-beta', nickname: 'Beta' }),
-        createTestModel({ id: 'model-3', apiKey: 'sk-key-gamma', nickname: 'Gamma' }),
+        createDeepSeekModel({ id: 'model-1', apiKey: 'sk-key-alpha', nickname: 'Alpha' }),
+        createDeepSeekModel({ id: 'model-2', apiKey: 'sk-key-beta', nickname: 'Beta' }),
+        createDeepSeekModel({ id: 'model-3', apiKey: 'sk-key-gamma', nickname: 'Gamma' }),
       ];
 
       // When: 保存多个模型
@@ -244,7 +205,7 @@ describe('模型配置集成测试', () => {
 
   describe('使用模型配置进行聊天', () => {
     test('应该成功使用模型配置进行聊天：解密 API Key → 调用 API', async () => {
-      const modelConfig = createTestModel();
+      const modelConfig = createDeepSeekModel();
 
       const messages: StandardMessage[] = [];
       const chatRequest = {
@@ -269,7 +230,7 @@ describe('模型配置集成测试', () => {
     });
 
     test('应该处理无效的 API Key', async () => {
-      const modelConfig = createTestModel();
+      const modelConfig = createDeepSeekModel();
 
       mockStreamChatCompletion.mockImplementation(async function* () {
         yield {
@@ -307,7 +268,7 @@ describe('模型配置集成测试', () => {
 
   describe('编辑模型配置', () => {
     test('应该成功编辑模型配置：加载 → 修改 → 保存 → 读回验证', async () => {
-      const originalModel = createTestModel({ id: 'model-edit-1', apiKey: 'sk-original-key' });
+      const originalModel = createDeepSeekModel({ id: 'model-edit-1', apiKey: 'sk-original-key' });
 
       // 保存原始配置
       await saveModelsToJson([originalModel]);
@@ -337,7 +298,7 @@ describe('模型配置集成测试', () => {
     });
 
     test('应该成功修改 API Key（重新加密）', async () => {
-      const originalModel = createTestModel({ id: 'model-edit-apikey', apiKey: 'sk-old-key' });
+      const originalModel = createDeepSeekModel({ id: 'model-edit-apikey', apiKey: 'sk-old-key' });
 
       // 保存原始配置
       await saveModelsToJson([originalModel]);
@@ -360,7 +321,7 @@ describe('模型配置集成测试', () => {
 
   describe('删除模型配置', () => {
     test('应该成功删除模型配置：清理加密数据', async () => {
-      const modelToDelete = createTestModel({ id: 'model-delete-1' });
+      const modelToDelete = createDeepSeekModel({ id: 'model-delete-1' });
 
       await saveModelsToJson([modelToDelete]);
       testStore.dispatch(createModel({ model: modelToDelete }));
@@ -381,8 +342,8 @@ describe('模型配置集成测试', () => {
     });
 
     test('应该保留未删除的模型', async () => {
-      const model1 = createTestModel({ id: 'model-keep', apiKey: 'sk-key-keep' });
-      const model2 = createTestModel({ id: 'model-remove', apiKey: 'sk-key-remove' });
+      const model1 = createDeepSeekModel({ id: 'model-keep', apiKey: 'sk-key-keep' });
+      const model2 = createDeepSeekModel({ id: 'model-remove', apiKey: 'sk-key-remove' });
 
       await saveModelsToJson([model1, model2]);
       testStore.dispatch(createModel({ model: model1 }));
@@ -407,7 +368,7 @@ describe('模型配置集成测试', () => {
 
   describe('数据完整性', () => {
     test('应该验证加密数据完整性：写入 → 读回 → 修改密文 → 解密失败', async () => {
-      const model = createTestModel({ apiKey: 'sk-integrity-test' });
+      const model = createDeepSeekModel({ apiKey: 'sk-integrity-test' });
 
       // 保存并加载
       await saveModelsToJson([model]);
@@ -425,8 +386,8 @@ describe('模型配置集成测试', () => {
     });
 
     test('应该检测重复模型', async () => {
-      const model1 = createTestModel({ id: 'model-dup-1', apiKey: 'sk-test-1' });
-      const model2 = createTestModel({ id: 'model-dup-2', apiKey: 'sk-test-2' });
+      const model1 = createDeepSeekModel({ id: 'model-dup-1', apiKey: 'sk-test-1' });
+      const model2 = createDeepSeekModel({ id: 'model-dup-2', apiKey: 'sk-test-2' });
 
       await saveModelsToJson([model1, model2]);
       testStore.dispatch(createModel({ model: model1 }));

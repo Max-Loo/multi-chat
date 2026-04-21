@@ -270,12 +270,18 @@ vi.mock('zhipu-ai-provider', () => ({
 
 import { setupCustomAssertions } from './helpers/assertions/setup';
 import { createI18nMockReturn } from './helpers/mocks/i18n';
+import { createMemoryStorageMock } from './helpers/mocks/storage';
 
 // 将 i18n mock 工厂函数注册到 globalThis，供测试文件中的 vi.mock 工厂使用
 // vi.mock 的工厂函数存在 hoisting 限制，无法使用常规 import
 // eslint-disable-next-line no-var
 var __i18nMock: typeof createI18nMockReturn = createI18nMockReturn;
 globalThis.__createI18nMockReturn = __i18nMock;
+
+// 将内存存储 mock 工厂函数注册到 globalThis，供集成测试的 vi.mock 工厂使用
+// eslint-disable-next-line no-var
+var __storageMock: typeof createMemoryStorageMock = createMemoryStorageMock;
+globalThis.__createMemoryStorageMock = __storageMock;
 
 // 初始化全局 Mock 系统（临时禁用）
 // setupGlobalMocks({ isTauri: true });

@@ -27,15 +27,7 @@ import { LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY, LOCAL_STORAGE_AUTO_NAMING
 vi.mock('@/utils/tauriCompat', () => ({
   isTauri: () => false,
   locale: async () => 'en-US',
-  createLazyStore: () => ({
-    init: async () => {},
-    get: async () => null,
-    set: async () => {},
-    delete: async () => {},
-    keys: async () => [],
-    save: async () => {},
-    isSupported: () => true,
-  }),
+  createLazyStore: () => globalThis.__createMemoryStorageMock(),
 }));
 
 describe('设置变更集成测试', () => {

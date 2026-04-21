@@ -22,63 +22,25 @@ import { setAppLanguage } from '@/store/slices/appConfigSlices';
 /**
  * Mock sonner 模块：toast 函数将消息渲染到 DOM
  */
+function renderToastToDom(message: string) {
+  const container = document.querySelector('[data-testid="toast-container"]');
+  if (container) {
+    const el = document.createElement('div');
+    el.setAttribute('data-testid', 'toast-message');
+    el.textContent = message;
+    container.appendChild(el);
+  }
+}
+
 vi.mock('sonner', () => ({
   toast: Object.assign(
-    (message: string) => {
-      const container = document.querySelector('[data-testid="toast-container"]');
-      if (container) {
-        const el = document.createElement('div');
-        el.setAttribute('data-testid', 'toast-message');
-        el.textContent = message;
-        container.appendChild(el);
-      }
-    },
+    (message: string) => renderToastToDom(message),
     {
-      success: (message: string) => {
-        const container = document.querySelector('[data-testid="toast-container"]');
-        if (container) {
-          const el = document.createElement('div');
-          el.setAttribute('data-testid', 'toast-message');
-          el.textContent = message;
-          container.appendChild(el);
-        }
-      },
-      error: (message: string) => {
-        const container = document.querySelector('[data-testid="toast-container"]');
-        if (container) {
-          const el = document.createElement('div');
-          el.setAttribute('data-testid', 'toast-message');
-          el.textContent = message;
-          container.appendChild(el);
-        }
-      },
-      warning: (message: string) => {
-        const container = document.querySelector('[data-testid="toast-container"]');
-        if (container) {
-          const el = document.createElement('div');
-          el.setAttribute('data-testid', 'toast-message');
-          el.textContent = message;
-          container.appendChild(el);
-        }
-      },
-      info: (message: string) => {
-        const container = document.querySelector('[data-testid="toast-container"]');
-        if (container) {
-          const el = document.createElement('div');
-          el.setAttribute('data-testid', 'toast-message');
-          el.textContent = message;
-          container.appendChild(el);
-        }
-      },
-      loading: (message: string) => {
-        const container = document.querySelector('[data-testid="toast-container"]');
-        if (container) {
-          const el = document.createElement('div');
-          el.setAttribute('data-testid', 'toast-message');
-          el.textContent = message;
-          container.appendChild(el);
-        }
-      },
+      success: (message: string) => renderToastToDom(message),
+      error: (message: string) => renderToastToDom(message),
+      warning: (message: string) => renderToastToDom(message),
+      info: (message: string) => renderToastToDom(message),
+      loading: (message: string) => renderToastToDom(message),
       dismiss: vi.fn(),
       promise: vi.fn(),
     }

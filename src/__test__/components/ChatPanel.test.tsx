@@ -18,7 +18,6 @@ import {
 import { setSelectedChatId, editChat } from '@/store/slices/chatSlices';
 import { chatToMeta } from '@/types/chat';
 
-// 每个测试后清理 DOM
 afterEach(() => {
   cleanup();
 });
@@ -64,15 +63,12 @@ describe('ChatPanel', () => {
 
       renderWithProviders(<ChatPanel />, { store });
 
-      // 应该渲染 ChatPanel 组件的主容器
       const panel = document.querySelector('.relative.flex.flex-col');
       expect(panel).toBeInTheDocument();
 
-      // 应该渲染 ChatPanelHeader
       const header = document.querySelector('.relative.z-10.flex');
       expect(header).toBeInTheDocument();
 
-      // 应该渲染 ChatPanelSender
       const sender = document.querySelector('.relative.z-10.w-full');
       expect(sender).toBeInTheDocument();
     });
@@ -136,7 +132,6 @@ describe('ChatPanel', () => {
 
       renderWithProviders(<ChatPanel />, { store });
 
-      // 应该显示增加和减少列数的按钮
       const buttons = document.querySelectorAll('button');
       const plusButton = Array.from(buttons).find(btn => btn.querySelector('svg')?.classList.contains('lucide-plus'));
       const minusButton = Array.from(buttons).find(btn => btn.querySelector('svg')?.classList.contains('lucide-minus'));
@@ -166,7 +161,6 @@ describe('ChatPanel', () => {
 
         // 等待状态更新
         await waitFor(() => {
-          // 检查是否显示了 ResizablePanel 相关的元素
           const resizablePanels = container.querySelectorAll('[data-panel]');
           expect(resizablePanels.length).toBeGreaterThan(0);
         });
@@ -205,7 +199,6 @@ describe('ChatPanel', () => {
 
       renderWithProviders(<ChatPanel />, { store });
 
-      // columnCount 应该初始化为模型数量（3）
       const columnInput = document.querySelector('input[type="number"]') as HTMLInputElement;
       expect(columnInput).toBeInTheDocument();
       expect(columnInput.value).toBe('3');
