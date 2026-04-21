@@ -81,6 +81,7 @@ import chatReducer, {
   initializeChatList,
   generateChatName,
   startSendChatMessage,
+  releaseCompletedBackgroundChat,
 } from '@/store/slices/chatSlices';
 import modelReducer from '@/store/slices/modelSlice';
 
@@ -453,4 +454,33 @@ describe('chatSlices', () => {
   });
 
   // 聊天列表过滤测试已被删除：集成测试已覆盖软删除和过滤逻辑
+
+  describe('releaseCompletedBackgroundChat', () => {
+    it('应该在非当前选中时删除 activeChatData', () => {
+      const chatA = createMockChat({ id: 'chat-a' });
+      const chatB = createMockChat({ id: 'chat-b' });
+
+      store.dispatch(createChat({ chat: chatA }));
+      store.dispatch(createChat({ chat: chatB }));
+      store.dispatch({ type: 'chat/setSelectedChatId', payload: 'chat-b' });
+
+      store.dispatch(releaseCompletedBackgroundChat('chat-a'));
+
+      const state = store.getState().chat;
+      expect(state.activeChatData['chat-a']).toBeUndefined();
+      expect(state.activeChatData['chat-b']).toBeDefined();
+    });
+
+    it('应该在当前选中时保留 activeChatData', () => {
+      const chatA = createMockChat({ id: 'chat-a' });
+
+      store.dispatch(createChat({ chat: chatA }));
+      store.dispatch({ type: 'chat/setSelectedChatId', payload: 'chat-a' });
+
+      store.dispatch(releaseCompletedBackgroundChat('chat-a'));
+
+      const state = store.getState().chat;
+      expect(state.activeChatData['chat-a']).toBeDefined();
+    });
+  });
 });

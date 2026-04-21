@@ -14,6 +14,7 @@ import {
   editChatName,
   startSendChatMessage,
   generateChatName,
+  releaseCompletedBackgroundChat,
 } from "../slices/chatSlices";
 
 export const saveChatListMiddleware = createListenerMiddleware<RootState>();
@@ -143,6 +144,16 @@ saveChatListMiddleware.startListening({
 
     if (chatId && chatData) {
       await saveChatAndIndex(chatId, chatData, index);
+
+      // 发送结束后，回收非当前选中聊天的 activeChatData
+      const isSendComplete = startSendChatMessage.fulfilled.match(action) ||
+                             startSendChatMessage.rejected.match(action);
+      if (isSendComplete) {
+        const currentState = listenerApi.getState();
+        if (currentState.chat.selectedChatId !== chatId) {
+          listenerApi.dispatch(releaseCompletedBackgroundChat(chatId));
+        }
+      }
     }
   },
 });

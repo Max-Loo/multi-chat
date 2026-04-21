@@ -459,4 +459,76 @@ describe('chatMiddleware', () => {
       });
     });
   });
+
+  describe('后台聊天发送结束后回收 activeChatData', () => {
+    it('应该在 fulfilled 且非当前选中时回收 activeChatData', async () => {
+      const chatA = { id: 'bg-chat-a', name: 'Chat A', chatModelList: [] };
+      const chatB = { id: 'bg-chat-b', name: 'Chat B', chatModelList: [] };
+
+      // 创建两个聊天
+      store.dispatch(createChat({ chat: chatA }));
+      store.dispatch(createChat({ chat: chatB }));
+
+      // 选中 chatB（用户已切走）
+      store.dispatch({ type: 'chat/setSelectedChatId', payload: 'bg-chat-b' });
+
+      // 发送完成
+      await store.dispatch(
+        startSendChatMessage.fulfilled(undefined, 'bg-req-1', { chat: chatA, message: 'hi' })
+      );
+
+      await vi.waitFor(() => {
+        expect(mockSaveChatAndIndex).toHaveBeenCalled();
+      });
+
+      // chatA 应该被回收
+      const state = store.getState().chat;
+      expect(state.activeChatData['bg-chat-a']).toBeUndefined();
+      // chatB 应该保留
+      expect(state.activeChatData['bg-chat-b']).toBeDefined();
+    });
+
+    it('应该在 rejected 且非当前选中时回收 activeChatData', async () => {
+      const chatA = { id: 'bg-chat-c', name: 'Chat C', chatModelList: [] };
+
+      store.dispatch(createChat({ chat: chatA }));
+      store.dispatch({ type: 'chat/setSelectedChatId', payload: 'bg-chat-c' });
+
+      // 将 activeChatData 设回去（reducer rejected 会回写 runningChat）
+      store.dispatch({ type: 'chat/setActiveChatData', payload: { chatId: 'bg-chat-c', chat: chatA } });
+
+      // 用户切走
+      store.dispatch({ type: 'chat/setSelectedChatId', payload: null });
+
+      await store.dispatch(
+        startSendChatMessage.rejected(new Error('fail'), 'bg-req-2', { chat: chatA, message: 'hi' })
+      );
+
+      await vi.waitFor(() => {
+        expect(mockSaveChatAndIndex).toHaveBeenCalled();
+      });
+
+      const state = store.getState().chat;
+      expect(state.activeChatData['bg-chat-c']).toBeUndefined();
+    });
+
+    it('应该在用户已切回时保留 activeChatData', async () => {
+      const chatA = { id: 'bg-chat-d', name: 'Chat D', chatModelList: [] };
+
+      store.dispatch(createChat({ chat: chatA }));
+      // 当前选中的就是 chatA
+      store.dispatch({ type: 'chat/setSelectedChatId', payload: 'bg-chat-d' });
+
+      await store.dispatch(
+        startSendChatMessage.fulfilled(undefined, 'bg-req-3', { chat: chatA, message: 'hi' })
+      );
+
+      await vi.waitFor(() => {
+        expect(mockSaveChatAndIndex).toHaveBeenCalled();
+      });
+
+      const state = store.getState().chat;
+      expect(state.activeChatData['bg-chat-d']).toBeDefined();
+    });
+  });
 });

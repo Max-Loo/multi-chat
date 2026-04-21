@@ -459,6 +459,13 @@ const chatSlice = createSlice({
       }
       delete state.activeChatData[chatId];
     },
+    // 发送结束后回收非当前选中聊天的 activeChatData
+    releaseCompletedBackgroundChat: (state, action: PayloadAction<string>) => {
+      const chatId = action.payload;
+      if (state.selectedChatId !== chatId) {
+        delete state.activeChatData[chatId];
+      }
+    },
     // 向当前聊天的聊天记录添加内容
     pushRunningChatHistory: (state, action: PayloadAction<{
       chat: Chat;
@@ -655,6 +662,7 @@ export const {
   deleteChat,
   setActiveChatData,
   clearActiveChatData,
+  releaseCompletedBackgroundChat,
 } = chatSlice.actions;
 
 export const {
