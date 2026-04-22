@@ -29,38 +29,12 @@ vi.mock('@/utils/markdown', () => ({
   generateCleanHtml: vi.fn((content: string) => `<p>${content}</p>`),
 }));
 
-/**
- * Mock react-i18next for internationalization
- */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            thinking: '思考中...',
-            thinkingComplete: '思考完成',
-          },
-          common: {
-            loading: '加载中',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
+vi.mock('react-i18next', () =>
+  globalThis.__createI18nMockReturn({
+    chat: { thinking: '思考中...', thinkingComplete: '思考完成' },
+    common: { loading: '加载中' },
   }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+);
 
 // ========================================
 // 测试常量和辅助函数

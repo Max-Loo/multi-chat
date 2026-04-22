@@ -64,39 +64,30 @@ Object.defineProperty(window, 'location', {
   writable: true,
 });
 
-// Mock i18next
-vi.mock('react-i18next', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-i18next')>();
-  return {
-    ...actual,
-    useTranslation: () => ({
-      t: (fn: (k: any) => string) => {
-        // 简单模拟：从函数调用中提取 key 的最后部分
-        const mock: Record<string, string> = {
-          resetAllData: '重置所有数据并重新开始',
-          resetConfirmTitle: '确认重置所有数据',
-          resetConfirmDescription: '将清除所有已保存的模型配置和聊天记录，生成新的加密密钥。此操作不可撤销。',
-          resetConfirmAction: '确认重置',
-          cancel: '取消',
-          refreshPage: '刷新页面',
-          initializationFailed: '初始化失败',
-          initializationFailedDescription: '应用初始化过程中发生错误',
-          showErrorDetails: '显示错误详情',
-        };
-        // 尝试通过传入函数模拟
-        try {
-          const obj = {
-            common: mock,
-          };
-          return fn(obj);
-        } catch {
-          return 'mocked text';
-        }
+vi.mock('react-i18next', () =>
+  globalThis.__createI18nMockReturn({
+    common: {
+      resetAllData: '重置所有数据并重新开始',
+      resetConfirmTitle: '确认重置所有数据',
+      resetConfirmDescription: '将清除所有已保存的模型配置和聊天记录，生成新的加密密钥。此操作不可撤销。',
+      resetConfirmAction: '确认重置',
+      cancel: '取消',
+      refreshPage: '刷新页面',
+      initializationFailed: '初始化失败',
+      initializationFailedDescription: '应用初始化过程中发生错误',
+      showErrorDetails: '显示错误详情',
+      keyRecovery: {
+        title: 'title',
+        description: 'description',
+        securityWarning: 'securityWarning',
+        importButton: 'importButton',
+        placeholder: 'placeholder',
+        mismatchWarning: 'mismatchWarning',
+        forceImport: 'forceImport',
       },
-      i18n: { language: 'zh' },
-    }),
-  };
-});
+    },
+  }),
+);
 
 describe('主密钥恢复功能集成测试', () => {
   beforeEach(() => {

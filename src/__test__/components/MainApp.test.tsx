@@ -12,29 +12,18 @@ import type { InitResult } from '@/services/initialization';
 // Mock toastQueue
 vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());
 
-// Mock i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (fn: (k: unknown) => string) => {
-      const mockObj = {
-        common: {
-          decryptionFailureMessage: '2 个模型的 API Key 无法解密',
-          decryptionFailureImport: '导入密钥',
-          decryptionFailureDismiss: '我知道了',
-          masterKeyRegeneratedMessage: '密钥已重新生成',
-          masterKeyRegeneratedImport: '导入密钥',
-          masterKeyRegeneratedDismiss: '我知道了',
-        },
-      };
-      try {
-        return fn(mockObj as unknown);
-      } catch {
-        return 'mocked';
-      }
+vi.mock('react-i18next', () =>
+  globalThis.__createI18nMockReturn({
+    common: {
+      decryptionFailureMessage: '2 个模型的 API Key 无法解密',
+      decryptionFailureImport: '导入密钥',
+      decryptionFailureDismiss: '我知道了',
+      masterKeyRegeneratedMessage: '密钥已重新生成',
+      masterKeyRegeneratedImport: '导入密钥',
+      masterKeyRegeneratedDismiss: '我知道了',
     },
-    i18n: { language: 'zh' },
   }),
-}));
+);
 
 // Mock router - 使用 createMemoryRouter 避免浏览器历史依赖
 vi.mock('@/router', async () => {

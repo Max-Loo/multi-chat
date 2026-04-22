@@ -1109,13 +1109,10 @@ describe('测试组件', () => {
 ### Redux Mock
 
 ```typescript
-import { createMockStore } from '@/__test__/helpers/mocks/redux';
+import { createMockAbortController, createMockAbortSignal } from '@/__test__/helpers/mocks/redux';
 
-const mockStore = createMockStore({
-  preloadedState: {
-    chat: { chatList: [], selectedChatId: null },
-  },
-});
+const abortController = createMockAbortController();
+const abortSignal = createMockAbortSignal(false);
 ```
 
 ### ChatPanel Mock
@@ -1660,8 +1657,8 @@ describe('ChatPanelHeader', () => {
 ### 使用 Mock 数据
 
 ```typescript
-import { createMockChat, createMockModel } from '@/__test__/helpers';
-import { createMockStore } from '@/__test__/helpers/mocks/redux';
+import { createMockModel } from '@/__test__/helpers';
+import { configureStore } from '@reduxjs/toolkit';
 
 describe('ModelSelect', () => {
   it('应该显示模型列表', () => {
@@ -1670,14 +1667,15 @@ describe('ModelSelect', () => {
       createMockModel({ id: 'model-2', nickname: 'Claude 3' }),
     ];
 
-    const mockStore = createMockStore({
+    const store = configureStore({
+      reducer: { models: modelsReducer },
       preloadedState: {
         models: { models: mockModels },
       },
     });
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <Provider store={mockStore}>{children}</Provider>
+      <Provider store={store}>{children}</Provider>
     );
 
     render(<ModelSelect />, { wrapper });

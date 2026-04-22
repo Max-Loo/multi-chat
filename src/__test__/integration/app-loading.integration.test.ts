@@ -36,17 +36,6 @@ vi.mock('@/store/storage/storeUtils', () => ({
 import { loadModelsFromJson } from '@/store/storage/modelStorage';
 import modelReducer, { initializeModels } from '@/store/slices/modelSlice';
 
-vi.mock('@/store/storage/chatStorage', () => ({
-  loadChatsFromJson: vi.fn(() => Promise.resolve([])),
-  saveChatsToJson: vi.fn(() => Promise.resolve(undefined)),
-}));
-
-vi.mock('@/store/storage/storeUtils', () => ({
-  createLazyStore: vi.fn(() => ({})),
-  saveToStore: vi.fn(() => Promise.resolve()),
-  loadFromStore: vi.fn(() => Promise.resolve([])),
-}));
-
 /**
  * 创建测试用的 Redux store
  */

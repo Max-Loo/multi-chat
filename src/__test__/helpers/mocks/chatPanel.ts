@@ -1,13 +1,9 @@
 /**
  * ChatPanel 测试 Mock 工厂
- * 
+ *
  * 提供聊天面板组件测试所需的 Mock 工厂函数
  */
 
-import { vi } from 'vitest';
-import { createMockStore } from './redux';
-import { createReactRouterMocks } from './router';
-import { createTauriMocks } from './tauri';
 import { ChatRoleEnum } from '@/types/chat';
 import type { StandardMessage } from '@/types/chat';
 import type { Model as ChatModel } from '@/types/model';
@@ -74,40 +70,6 @@ export const createMockSelectedChat = (overrides?: {
     models: defaultModels,
     timestamp: Date.now() / 1000,
     ...overrides,
-  };
-};
-
-/**
- * 创建 Mock Chat Service
- * @returns Chat service 的 Mock 实现
- */
-export const createMockChatService = () => {
-  return {
-    streamChatCompletion: vi.fn(),
-  };
-};
-
-/**
- * 创建 ChatPanel 测试 Mock 集合
- * @param customMocks 自定义 Mock 配置
- * @returns 包含所有必需 Mock 的对象
- */
-export const createChatPanelMocks = (customMocks?: {
-  reduxStore?: ReturnType<typeof createMockStore>;
-  router?: ReturnType<typeof createReactRouterMocks>;
-  tauri?: ReturnType<typeof createTauriMocks>;
-  chatService?: ReturnType<typeof createMockChatService>;
-}) => {
-  const reduxStore = customMocks?.reduxStore || createMockStore();
-  const router = customMocks?.router || createReactRouterMocks();
-  const tauri = customMocks?.tauri || createTauriMocks({ isTauri: false });
-  const chatService = customMocks?.chatService || createMockChatService();
-
-  return {
-    reduxStore,
-    router,
-    tauri,
-    chatService,
   };
 };
 

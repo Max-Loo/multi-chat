@@ -9,18 +9,22 @@ import { render, screen, waitFor, act, cleanup } from '@testing-library/react';
 import { fireEvent } from '@testing-library/react';
 import { KeyRecoveryDialog } from '@/components/KeyRecoveryDialog';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (fn: (arg: any) => string) => {
-      const proxy = new Proxy({} as Record<string, string>, {
-        get: (_, prop: string) => prop,
-      });
-      return fn({ common: { keyRecovery: proxy, cancel: 'mockCancel' } });
+vi.mock('react-i18next', () =>
+  globalThis.__createI18nMockReturn({
+    common: {
+      keyRecovery: {
+        title: 'title',
+        description: 'description',
+        securityWarning: 'securityWarning',
+        importButton: 'importButton',
+        placeholder: 'placeholder',
+        mismatchWarning: 'mismatchWarning',
+        forceImport: 'forceImport',
+      },
+      cancel: 'mockCancel',
     },
-    i18n: { language: 'zh' },
   }),
-}));
+);
 
 // Mock importMasterKeyWithValidation
 vi.mock('@/store/keyring/masterKey', () => ({

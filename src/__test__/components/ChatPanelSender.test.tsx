@@ -21,8 +21,9 @@ import {
 import {
   createChatSliceState,
   createAppConfigSliceState,
+  createModelSliceState,
 } from "@/__test__/helpers/mocks/testState";
-import { chatToMeta } from "@/types/chat";
+import { createMockModel } from "@/__test__/helpers/fixtures/model";
 
 vi.mock('react-i18next', () => {
   const R = { chat: { sendMessage: "发送消息", stopSending: "停止发送", typeMessage: "输入消息...", transmitHistoryReasoning: "包含推理内容" }, common: { confirm: "确认", cancel: "取消" } };
@@ -39,15 +40,6 @@ const createStore = (
   });
 };
 
-/**
- * 从 mockChat 构建 chatMetaList + activeChatData + sendingChatIds
- */
-const chatToState = (chat: ReturnType<typeof createMockChat>) => ({
-  chatMetaList: [chatToMeta(chat)],
-  activeChatData: { [chat.id]: chat },
-  sendingChatIds: {},
-});
-
 describe("ChatPanelSender", () => {
   let mockChat: ReturnType<typeof createMockChat>;
 
@@ -61,9 +53,10 @@ describe("ChatPanelSender", () => {
 
   describe("基础消息发送功能", () => {
     it("应该渲染输入框和发送按钮", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -75,9 +68,10 @@ describe("ChatPanelSender", () => {
     });
 
     it("应该更新输入框的值", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -93,9 +87,10 @@ describe("ChatPanelSender", () => {
 
   describe("Enter 键发送消息", () => {
     it("应该在按下 Enter 键时发送消息", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -111,9 +106,10 @@ describe("ChatPanelSender", () => {
     });
 
     it("应该在按下 Shift+Enter 时换行而不是发送", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -136,17 +132,15 @@ describe("ChatPanelSender", () => {
 
   describe("发送中状态", () => {
     it("应该在发送中时忽略 Enter 键", () => {
-      const store = createStore(
-        {
-          ...chatToState(mockChat),
-          selectedChatId: "chat-1",
-          runningChat: {
-            "chat-1": {
-              "model-1": { isSending: true, history: null },
-            },
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+        runningChat: {
+          "chat-1": {
+            "model-1": { isSending: true, history: null },
           },
         },
-      );
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -162,17 +156,15 @@ describe("ChatPanelSender", () => {
     });
 
     it("应该显示停止按钮而不是发送按钮", () => {
-      const store = createStore(
-        {
-          ...chatToState(mockChat),
-          selectedChatId: "chat-1",
-          runningChat: {
-            "chat-1": {
-              "model-1": { isSending: true, history: null },
-            },
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+        runningChat: {
+          "chat-1": {
+            "model-1": { isSending: true, history: null },
           },
         },
-      );
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -182,36 +174,56 @@ describe("ChatPanelSender", () => {
       expect(stopButton).toBeInTheDocument();
     });
 
-    it("应该在点击停止按钮时中止消息发送", () => {
-      const store = createStore(
-        {
-          ...chatToState(mockChat),
+    it("应该在点击停止按钮时调用 abort 中止消息发送", () => {
+      const abortSpy = vi.spyOn(AbortController.prototype, "abort");
+
+      const mockModel = createMockModel({ id: "model-1" });
+      const chat = createMockChat({
+        id: "chat-1",
+        name: "Test Chat",
+        chatModelList: [{ modelId: "model-1", chatHistoryList: [] }],
+      });
+
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
+          chatList: [chat],
           selectedChatId: "chat-1",
-          runningChat: {
-            "chat-1": {
-              "model-1": { isSending: true, history: null },
-            },
-          },
-        },
-      );
+        }),
+        models: createModelSliceState({ models: [mockModel] }),
+        appConfig: createAppConfigSliceState(),
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
-      const stopButton = screen.getByTitle(/停止发送/i);
+      const textarea = screen.getByPlaceholderText(
+        /输入消息/i,
+      ) as HTMLTextAreaElement;
 
+      // 发送消息以创建 AbortController 并存入 ref
+      fireEvent.change(textarea, { target: { value: "Test message" } });
+      fireEvent.keyDown(textarea, {
+        key: "Enter",
+        code: "Enter",
+        keyCode: 13,
+      });
+
+      // sendMessage.pending 同步设置 isSending: true，停止按钮立即可见
+      const stopButton = screen.getByTitle(/停止发送/i);
       fireEvent.click(stopButton);
 
-      // 验证 abortController 被调用
-      // 注意：点击停止按钮只是调用 abort，runningChat 的清理由 rejected action 处理
-      expect(stopButton).toBeInTheDocument();
+      // 验证 abort 被调用
+      expect(abortSpy).toHaveBeenCalled();
+
+      abortSpy.mockRestore();
     });
   });
 
   describe("空消息处理", () => {
     it("不应该发送空消息", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -227,9 +239,10 @@ describe("ChatPanelSender", () => {
     });
 
     it("不应该发送仅包含空格的消息", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -267,9 +280,10 @@ describe("ChatPanelSender", () => {
         configurable: true,
       });
 
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -300,9 +314,10 @@ describe("ChatPanelSender", () => {
         configurable: true,
       });
 
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -326,9 +341,10 @@ describe("ChatPanelSender", () => {
 
   describe("推理内容开关", () => {
     it("应该显示推理内容开关", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -340,20 +356,21 @@ describe("ChatPanelSender", () => {
     // TODO: 推理内容开关按钮当前有 hidden class，点击不会触发任何效果
     // 当功能启用后，需要移除 hidden class 并取消此跳过
     it.skip("应该切换推理内容开关状态", async () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const reasoningButton = screen.getByText(/包含推理内容/i);
-      
+
       // 初始状态：未激活
       expect(reasoningButton).toBeInTheDocument();
-      
+
       // 点击切换
       fireEvent.click(reasoningButton);
-      
+
       // 验证状态已更新（通过检查样式变化）
       await waitFor(() => {
         const state = store.getState();
@@ -364,9 +381,10 @@ describe("ChatPanelSender", () => {
 
   describe("发送按钮交互", () => {
     it("应该在非发送状态时显示发送按钮", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -376,9 +394,10 @@ describe("ChatPanelSender", () => {
     });
 
     it("应该在点击发送按钮时发送消息", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -397,9 +416,10 @@ describe("ChatPanelSender", () => {
 
   describe("异步消息发送流程", () => {
     it("应该在发送消息后保存 AbortController", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -419,9 +439,10 @@ describe("ChatPanelSender", () => {
 
   describe("输入框值变化和清空", () => {
     it("应该在输入时更新文本状态", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -439,9 +460,10 @@ describe("ChatPanelSender", () => {
     });
 
     it("应该在发送消息后清空输入框", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -458,32 +480,12 @@ describe("ChatPanelSender", () => {
     });
   });
 
-  describe("compositionEnd 事件时间戳记录", () => {
-    it("应该在 compositionEnd 事件触发时记录时间戳", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
-
-      renderWithProviders(React.createElement(ChatPanelSender), { store });
-
-      const textarea = screen.getByPlaceholderText(
-        /输入消息/i,
-      ) as HTMLTextAreaElement;
-
-      const timestamp = Date.now();
-      fireEvent.compositionEnd(textarea, { timeStamp: timestamp });
-
-      // 时间戳应该被记录（通过在 Safari 测试中验证）
-      // 这里我们只是确认事件被触发，不检查内部状态
-      expect(textarea).toBeInTheDocument();
-    });
-  });
-
   describe("自动调整高度功能", () => {
     it("5.1 应该保持最小高度 当单行输入", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -502,9 +504,10 @@ describe("ChatPanelSender", () => {
 
   describe("布局和样式", () => {
     it("7.1 应该使用 flex 布局结构", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -516,9 +519,10 @@ describe("ChatPanelSender", () => {
     });
 
     it("7.2 外层容器应该有细灰色边框", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -530,9 +534,10 @@ describe("ChatPanelSender", () => {
     });
 
     it("7.3 工具栏应该独立于 Textarea 区域", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
@@ -550,9 +555,10 @@ describe("ChatPanelSender", () => {
     });
 
     it("7.4 发送按钮应该可点击且尺寸适当", () => {
-      const store = createStore(
-        { ...chatToState(mockChat), selectedChatId: "chat-1" },
-      );
+      const store = createStore({
+        chatList: [mockChat],
+        selectedChatId: "chat-1",
+      });
 
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 

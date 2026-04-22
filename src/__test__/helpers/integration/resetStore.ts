@@ -50,9 +50,6 @@ export function getTestStore(): EnhancedStore<RootState> {
  * 清除所有状态
  */
 export function resetStore(): void {
-  if (testStore) {
-    testStore.dispatch({ type: 'RESET' })
-  }
   testStore = null
 }
 

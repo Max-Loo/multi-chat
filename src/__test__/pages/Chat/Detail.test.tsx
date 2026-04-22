@@ -56,46 +56,22 @@ vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
   }),
 }));
 
-/**
- * Mock react-i18next for internationalization
- * 使用 selector-based mock 模式，支持所有组件需要的翻译 key
- */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            scrollToBottom: '回到底部',
-            thinking: '思考中...',
-            thinkingComplete: '思考完成',
-            modelDeleted: '模型已删除',
-            deleted: '已删除',
-            disabled: '已禁用',
-            supplier: '供应商',
-            model: '模型',
-            nickname: '昵称',
-          },
-          common: {
-            loading: '加载中',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
+vi.mock('react-i18next', () =>
+  globalThis.__createI18nMockReturn({
+    chat: {
+      scrollToBottom: '回到底部',
+      thinking: '思考中...',
+      thinkingComplete: '思考完成',
+      modelDeleted: '模型已删除',
+      deleted: '已删除',
+      disabled: '已禁用',
+      supplier: '供应商',
+      model: '模型',
+      nickname: '昵称',
     },
+    common: { loading: '加载中' },
   }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+);
 
 // Mock ResizeObserver（jsdom 不提供）
 // 使用 class 语法确保可以作为构造函数使用

@@ -18,6 +18,8 @@ import { configureStore, createAction } from '@reduxjs/toolkit';
 import chatPageReducer, {
   setIsCollapsed,
   setIsShowChatPage,
+  toggleDrawer,
+  setIsDrawerOpen,
   type ChatPageSliceState,
 } from '@/store/slices/chatPageSlices';
 
@@ -126,6 +128,55 @@ describe('chatPageSlices', () => {
 
       const stateAfter = store.getState().chatPage;
       expect(stateAfter).toEqual(stateBefore);
+    });
+  });
+
+  describe('抽屉状态管理', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let store: any;
+
+    beforeEach(() => {
+      store = configureStore({
+        reducer: {
+          chatPage: chatPageReducer,
+        },
+      });
+    });
+
+    it('dispatch toggleDrawer 应该切换抽屉状态', () => {
+      expect(store.getState().chatPage.isDrawerOpen).toBe(false);
+
+      store.dispatch(toggleDrawer());
+      expect(store.getState().chatPage.isDrawerOpen).toBe(true);
+
+      store.dispatch(toggleDrawer());
+      expect(store.getState().chatPage.isDrawerOpen).toBe(false);
+    });
+
+    it('dispatch setIsDrawerOpen 应该设置抽屉状态', () => {
+      store.dispatch(setIsDrawerOpen(true));
+      expect(store.getState().chatPage.isDrawerOpen).toBe(true);
+
+      store.dispatch(setIsDrawerOpen(false));
+      expect(store.getState().chatPage.isDrawerOpen).toBe(false);
+    });
+
+    it('重复 dispatch toggleDrawer 应该正确切换状态', () => {
+      for (let i = 0; i < 4; i++) {
+        store.dispatch(toggleDrawer());
+      }
+      expect(store.getState().chatPage.isDrawerOpen).toBe(false);
+    });
+
+    it('setIsDrawerOpen 应该覆盖当前状态', () => {
+      store.dispatch(toggleDrawer());
+      expect(store.getState().chatPage.isDrawerOpen).toBe(true);
+
+      store.dispatch(setIsDrawerOpen(true));
+      expect(store.getState().chatPage.isDrawerOpen).toBe(true);
+
+      store.dispatch(setIsDrawerOpen(false));
+      expect(store.getState().chatPage.isDrawerOpen).toBe(false);
     });
   });
 });
