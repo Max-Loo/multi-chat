@@ -138,7 +138,7 @@ describe('RunningBubble Component', () => {
     renderRunningBubble();
 
     // RunningBubble 返回 null，不应有 ChatBubble 或 Spinner
-    expect(screen.queryByTestId('chat-bubble')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('assistant-message')).not.toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
@@ -148,7 +148,7 @@ describe('RunningBubble Component', () => {
       history: null,
     });
 
-    expect(screen.queryByTestId('chat-bubble')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('assistant-message')).not.toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
@@ -160,7 +160,7 @@ describe('RunningBubble Component', () => {
 
     // Spinner 组件使用 role="status"
     expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.queryByTestId('chat-bubble')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('assistant-message')).not.toBeInTheDocument();
   });
 
   it('应该显示 ChatBubble 当有流式内容', () => {
@@ -174,7 +174,7 @@ describe('RunningBubble Component', () => {
     });
 
     // 应渲染 ChatBubble，包含流式内容
-    expect(screen.getByTestId('chat-bubble')).toBeInTheDocument();
+    expect(screen.getByTestId('assistant-message')).toBeInTheDocument();
     expect(screen.getByText('Streaming response')).toBeInTheDocument();
   });
 });

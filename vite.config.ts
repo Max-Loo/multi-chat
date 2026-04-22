@@ -131,7 +131,10 @@ export default defineConfig(async () => ({
     include: ["src/__test__/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist", "src/__test__/integration/**"],
 
-    // 忽略未处理的 Promise rejection（测试错误处理场景时会故意创建错误）
+    // 忽略未处理的 Promise rejection
+    // 注意：setup.ts 的 window.unhandledrejection handler 无法阻止 vitest 检测 rejection，
+    // 因为 vitest 通过 Node.js process 级别监听 unhandledRejection。
+    // 此配置是 vitest 唯一提供的全局控制机制，移除会导致测试隔离 bug 引发级联失败。
     dangerouslyIgnoreUnhandledErrors: true,
 
     // 并行执行配置

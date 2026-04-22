@@ -120,6 +120,15 @@ TBD - created by archiving change responsive-layout-system. Update Purpose after
 - **THEN** 系统清理所有事件监听器（resize, media query）
 - **AND** 不保留任何引用
 
+### Requirement: 集成测试验证布局切换行为
+
+响应式布局的集成测试 SHALL 验证组件在不同响应式状态下的实际渲染差异，而非仅断言 mock 变量自身的值。测试 SHALL NOT mock 被测功能本身。
+
+#### Scenario: Desktop 到 Mobile 模式切换的集成测试
+- **WHEN** 测试从 Desktop 切换到 Mobile 模式
+- **THEN** SHALL 在 cleanup 后用新状态重新渲染，验证 Desktop 下 Sidebar 可见而 Mobile 下 BottomNav 可见
+- **AND** SHALL NOT 仅断言 `mockResponsiveState.isMobile === true`
+
 ### Requirement: 布局模式切换的平滑过渡
 
 系统必须确保布局模式切换时 UI 平滑过渡，不出现跳动或闪烁。

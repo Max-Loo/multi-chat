@@ -228,7 +228,7 @@ describe('Detail Component', () => {
 
       // viewportHeight=600, itemHeight=80, overscan=2
       // 可见 8 个 + 2 个 overscan = 10 个
-      const bubbles = screen.queryAllByTestId('chat-bubble');
+      const bubbles = screen.queryAllByTestId('user-message').concat(screen.queryAllByTestId('assistant-message'));
       expect(bubbles.length).toBeLessThan(50);
       expect(bubbles.length).toBeLessThanOrEqual(10);
     });
@@ -237,7 +237,7 @@ describe('Detail Component', () => {
       const messages = createMessages(3);
       renderDetail({ messages });
 
-      const bubbles = screen.queryAllByTestId('chat-bubble');
+      const bubbles = screen.queryAllByTestId('user-message').concat(screen.queryAllByTestId('assistant-message'));
       expect(bubbles.length).toBe(3);
     });
   });
@@ -275,9 +275,9 @@ describe('Detail Component', () => {
         },
       });
 
-      // RunningBubble 渲染 ChatBubble（流式内容），共 1 个
+      // RunningBubble 渲染 ChatBubble（流式内容），共 1 个 assistant-message
       // 同时虚拟化区域无历史消息
-      const bubbles = screen.queryAllByTestId('chat-bubble');
+      const bubbles = screen.queryAllByTestId('assistant-message');
       expect(bubbles.length).toBe(1);
     });
 
@@ -285,7 +285,7 @@ describe('Detail Component', () => {
       renderDetail({ messages: [] });
 
       // 无流式数据时，不应有 ChatBubble
-      const bubbles = screen.queryAllByTestId('chat-bubble');
+      const bubbles = screen.queryAllByTestId('user-message').concat(screen.queryAllByTestId('assistant-message'));
       expect(bubbles.length).toBe(0);
     });
   });

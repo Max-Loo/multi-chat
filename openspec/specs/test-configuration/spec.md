@@ -102,6 +102,16 @@
 - **WHEN** `tsconfig.json` 的 `compilerOptions.paths` 包含 `@/test-helpers/*`
 - **THEN** 系统 TypeScript 提供正确的类型提示
 
+### Requirement: 禁止全局 dangerouslyIgnoreUnhandledErrors
+
+系统 SHALL NOT 在 `vite.config.ts` 中配置 `dangerouslyIgnoreUnhandledErrors: true`，除非已确认 DOM 级 `unhandledrejection` handler 无法阻止 Vitest 进程级别的 rejection 检测（技术限制）。保留此配置时 SHALL 附带注释说明技术原因。
+
+#### Scenario: 保留全局错误忽略时须有技术依据
+- **GIVEN** `src/__test__/setup.ts` 的 DOM 级 `unhandledrejection` handler 无法拦截 Vitest 的 Node.js process 级检测
+- **WHEN** `vite.config.ts` 保留 `dangerouslyIgnoreUnhandledErrors: true`
+- **THEN** 配置上方 SHALL 有注释解释该技术限制
+- **AND** 注释 SHALL 说明移除此配置会导致测试隔离 bug 引发级联失败
+
 ### Requirement: 改进的 setup.ts 结构
 
 系统 SHALL 重构 `setup.ts` 采用模块化结构，清晰分离不同职责。

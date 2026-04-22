@@ -8,6 +8,7 @@ describe('useAdaptiveScrollbar', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 

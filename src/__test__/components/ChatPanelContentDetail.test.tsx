@@ -294,8 +294,8 @@ describe('ChatPanelContentDetail', () => {
         { store }
       );
 
-      // 应该渲染 4 个 ChatBubble
-      expect(screen.getAllByTestId('chat-bubble')).toHaveLength(4);
+      // 应该渲染 4 个 ChatBubble（2 user + 2 assistant）
+      expect(screen.getAllByTestId('user-message').concat(screen.getAllByTestId('assistant-message'))).toHaveLength(4);
     });
 
     it('应该为每条消息渲染独立的 ChatBubble', () => {
@@ -316,8 +316,8 @@ describe('ChatPanelContentDetail', () => {
         { store }
       );
 
-      // 每条消息对应一个 ChatBubble
-      expect(screen.getAllByTestId('chat-bubble')).toHaveLength(2);
+      // 每条消息对应一个 ChatBubble（1 user + 1 assistant）
+      expect(screen.getAllByTestId('user-message').concat(screen.getAllByTestId('assistant-message'))).toHaveLength(2);
     });
   });
 

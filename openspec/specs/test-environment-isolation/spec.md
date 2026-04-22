@@ -119,6 +119,16 @@
 
 ---
 
+### Requirement: 假定时器必须配对恢复
+
+使用 `vi.useFakeTimers()` 的测试文件 SHALL 在 `afterEach` 或 `afterAll` 中调用 `vi.useRealTimers()` 恢复真实定时器。
+
+#### Scenario: useDebounce 测试的定时器清理
+- **WHEN** `useDebounce.test.ts` 的 `afterEach` 执行
+- **THEN** SHALL 调用 `vi.useRealTimers()` 恢复真实定时器，避免影响后续测试
+
+---
+
 ### Requirement: 并发测试隔离
 
 系统 SHALL 确保并发执行的测试互不影响。

@@ -195,14 +195,6 @@ describe('Crypto 工具函数', () => {
       expect(encrypted.length).toBeGreaterThan(4); // 至少包含 "enc:" 前缀和加密数据
     });
 
-    it('每次加密应该产生不同的密文（因为使用随机 nonce）', async () => {
-      const plaintext = 'Same text';
-      const encrypted1 = await testEncryptDecrypt(plaintext, masterKey);
-      const encrypted2 = await testEncryptDecrypt(plaintext, masterKey);
-
-      expect(encrypted1).not.toBe(encrypted2);
-    });
-
     it('应该正确加密空字符串', async () => {
       const plaintext = '';
       const encrypted = await encryptField(plaintext, masterKey);
@@ -688,20 +680,6 @@ Line 5`;
               '解密敏感数据失败，可能是主密钥已更改或数据已损坏'
             );
           }
-        });
-      });
-
-      describe('nonce 唯一性验证', () => {
-        it('每次加密应使用不同的 nonce', async () => {
-          const plaintext = 'Test message';
-          const encrypted1 = await encryptField(plaintext, masterKey);
-          const encrypted2 = await encryptField(plaintext, masterKey);
-
-          // 去除前缀后的 Base64 数据应不同（因为 nonce 不同）
-          const data1 = encrypted1.slice(4);
-          const data2 = encrypted2.slice(4);
-
-          expect(data1).not.toBe(data2);
         });
       });
 

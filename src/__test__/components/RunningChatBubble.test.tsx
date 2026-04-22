@@ -77,7 +77,7 @@ describe('RunningChatBubble', () => {
       );
 
       // 不应该渲染 ChatBubble（内容为空），应该渲染 Spinner
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
       expect(container.querySelector('svg.animate-spin')).toBeInTheDocument();
     });
 
@@ -94,7 +94,7 @@ describe('RunningChatBubble', () => {
         { store }
       );
 
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
       expect(container.querySelector('svg.animate-spin')).toBeInTheDocument();
     });
 
@@ -114,7 +114,7 @@ describe('RunningChatBubble', () => {
         { store }
       );
 
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
       expect(container.querySelector('svg.animate-spin')).toBeNull();
     });
   });
@@ -138,7 +138,7 @@ describe('RunningChatBubble', () => {
       );
 
       // 应该渲染 ChatBubble，包含流式内容
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeInTheDocument();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
       expect(container.textContent).toContain(streamingContent);
     });
 
@@ -160,7 +160,7 @@ describe('RunningChatBubble', () => {
         { store }
       );
 
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeInTheDocument();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
     });
 
     it('当流式内容更新时，应该正确更新渲染', () => {
@@ -181,7 +181,7 @@ describe('RunningChatBubble', () => {
       );
 
       // 验证初始内容渲染
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeInTheDocument();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
       expect(container.textContent).toContain(initialContent);
     });
   });
@@ -205,7 +205,7 @@ describe('RunningChatBubble', () => {
 
       // 空内容时应该渲染 Spinner，不渲染 ChatBubble
       expect(container.querySelector('svg.animate-spin')).toBeInTheDocument();
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
     });
 
     it('当 currentChatModel 不存在时，不应该渲染任何内容', () => {
@@ -219,7 +219,7 @@ describe('RunningChatBubble', () => {
         { store }
       );
 
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
       expect(container.querySelector('svg.animate-spin')).toBeNull();
     });
 
@@ -250,7 +250,7 @@ describe('RunningChatBubble', () => {
         { store }
       );
 
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
     });
 
     it('当运行中的聊天不是当前模型时，不应该渲染任何内容', () => {
@@ -280,7 +280,7 @@ describe('RunningChatBubble', () => {
         { store }
       );
 
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
     });
   });
 
@@ -303,7 +303,7 @@ describe('RunningChatBubble', () => {
       );
 
       // 有 reasoningContent 时应该渲染 ChatBubble
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeInTheDocument();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
     });
 
     it('应该正确处理 null 的 finishReason', () => {
@@ -324,7 +324,7 @@ describe('RunningChatBubble', () => {
       );
 
       // 应该正常渲染 ChatBubble
-      expect(container.querySelector('[data-testid="chat-bubble"]')).toBeInTheDocument();
+      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
     });
   });
 });

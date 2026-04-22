@@ -29,7 +29,7 @@ vi.mock('@/hooks/redux', () => ({
 // Mock ChatBubble
 vi.mock('@/components/chat/ChatBubble', () => ({
   ChatBubble: ({ role, content, isRunning }: any) => (
-    <div data-testid="chat-bubble" data-role={role} data-content={content} data-running={isRunning} />
+    <div data-testid="assistant-message" data-role={role} data-content={content} data-running={isRunning} />
   ),
 }));
 
@@ -55,7 +55,7 @@ describe('RunningBubble', () => {
       <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
     );
 
-    expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+    expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
     expect(container.querySelector('[data-testid="spinner"]')).toBeNull();
   });
 
@@ -66,7 +66,7 @@ describe('RunningBubble', () => {
       <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
     );
 
-    expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+    expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
   });
 
   it('应该显示 spinner 当正在发送但无历史内容', () => {
@@ -79,7 +79,7 @@ describe('RunningBubble', () => {
     );
 
     expect(container.querySelector('[data-testid="spinner"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-testid="chat-bubble"]')).toBeNull();
+    expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
   });
 
   it('应该显示 spinner 当正在发送但历史内容为空', () => {
@@ -106,7 +106,7 @@ describe('RunningBubble', () => {
       <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
     );
 
-    const bubble = container.querySelector('[data-testid="chat-bubble"]');
+    const bubble = container.querySelector('[data-testid="assistant-message"]');
     expect(bubble).toBeInTheDocument();
     expect(bubble).toHaveAttribute('data-running', 'true');
     expect(bubble).toHaveAttribute('data-content', '正在生成的内容');
@@ -124,6 +124,6 @@ describe('RunningBubble', () => {
       <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
     );
 
-    expect(container.querySelector('[data-testid="chat-bubble"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
   });
 });

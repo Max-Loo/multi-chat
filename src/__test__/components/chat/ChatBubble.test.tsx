@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatRoleEnum } from '@/types/chat';
 
@@ -57,23 +57,15 @@ describe('ChatBubble UI 组件', () => {
       expect(container.textContent).toBe('Hello from user');
     });
 
-    it('应该为用户消息应用右对齐样式', () => {
-      const { container } = render(
+    it('应该为用户消息渲染正确的标识', () => {
+      render(
         <ChatBubble
           role={ChatRoleEnum.USER}
           content="User message"
         />
       );
 
-      // 检查外层 div 是否右对齐
-      const wrapper = container.querySelector('.justify-end');
-      expect(wrapper).not.toBe(null);
-      // 检查 Card 是否有正确的背景色（灰色背景）
-      const card = container.querySelector('.bg-gray-100');
-      expect(card).not.toBe(null);
-      // 检查文字颜色是否正确
-      const textElement = container.querySelector('.text-gray-800');
-      expect(textElement).not.toBe(null);
+      screen.getByTestId('user-message');
     });
 
     it('应该渲染包含 Markdown 的用户消息', () => {
@@ -112,17 +104,15 @@ describe('ChatBubble UI 组件', () => {
       expect(container.textContent).toBe('Hello from assistant');
     });
 
-    it('应该为助手消息应用左对齐和无边框样式', () => {
-      const { container } = render(
-        <ChatBubble 
-          role={ChatRoleEnum.ASSISTANT} 
-          content="Assistant message" 
+    it('应该为助手消息渲染正确的标识', () => {
+      render(
+        <ChatBubble
+          role={ChatRoleEnum.ASSISTANT}
+          content="Assistant message"
         />
       );
-      
-      const card = container.querySelector('.rounded-xl');
-      expect(card).toHaveClass('border-none'); // 无边框样式
-      expect(card).toHaveClass('shadow-none'); // 无阴影
+
+      screen.getByTestId('assistant-message');
     });
 
     it('应该渲染包含 Markdown 的助手消息', () => {

@@ -14,14 +14,14 @@ const Layout: React.FC<LayoutProps> = ({ className = "" }) => {
 
   return (
     <div
-      data-testid="layout"
+      data-testid="layout-root"
       className={`flex h-screen bg-white ${isMobile ? "flex-col" : ""} ${className}`}
     >
       {/* 侧边导航栏：在所有非 Mobile 模式下显示 (方案A) */}
       {!isMobile && <Sidebar />}
 
       {/* 主内容区域 */}
-      <div role="main" className={`flex-1 overflow-y-hidden ${isMobile && "pb-16"}`}>
+      <div role="main" data-testid="layout-main" className={`flex-1 overflow-y-hidden ${isMobile && "pb-16"}`}>
         <Suspense fallback={<PageSkeleton />}>
           <Outlet />
         </Suspense>

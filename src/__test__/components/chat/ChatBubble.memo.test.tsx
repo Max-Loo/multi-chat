@@ -128,10 +128,9 @@ describe('ChatBubble memo 重渲染行为', () => {
 
     rerender(<TrackedChatBubble {...defaultProps} role={ChatRoleEnum.ASSISTANT} />);
 
-    // DOM 结构变化：user 的 justify-end 变为 assistant 的 justify-start
-    const bubble = screen.getByTestId('chat-bubble');
-    expect(bubble.className).toContain('justify-start');
-    expect(bubble.className).not.toContain('justify-end');
+    // role 变化触发重渲染：testid 从 user-message 切换为 assistant-message
+    expect(screen.queryByTestId('user-message')).not.toBeInTheDocument();
+    screen.getByTestId('assistant-message');
   });
 
   it('应该重渲染 当 reasoningContent 不同', () => {

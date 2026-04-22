@@ -49,8 +49,8 @@ vi.mock('@/pages/Chat/components/Panel/Detail/RunningBubble', () => ({
 }));
 
 vi.mock('@/components/chat/ChatBubble', () => ({
-  ChatBubble: ({ content }: any) => (
-    <div data-testid="chat-bubble">{content}</div>
+  ChatBubble: ({ content, role }: any) => (
+    <div data-testid={role === 'user' ? 'user-message' : 'assistant-message'}>{content}</div>
   ),
 }));
 
@@ -95,7 +95,7 @@ describe('Detail 滚动行为', () => {
 
     const { container } = render(<Detail chatModel={chatModel} />);
 
-    const bubbles = container.querySelectorAll('[data-testid="chat-bubble"]');
+    const bubbles = container.querySelectorAll('[data-testid="user-message"], [data-testid="assistant-message"]');
     expect(bubbles).toHaveLength(3);
   });
 
@@ -122,7 +122,7 @@ describe('Detail 滚动行为', () => {
 
     const { container } = render(<Detail chatModel={chatModel} />);
 
-    const bubbles = container.querySelectorAll('[data-testid="chat-bubble"]');
+    const bubbles = container.querySelectorAll('[data-testid="user-message"], [data-testid="assistant-message"]');
     expect(bubbles).toHaveLength(0);
   });
 
