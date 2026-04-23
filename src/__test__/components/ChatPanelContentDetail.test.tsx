@@ -16,13 +16,8 @@ import { chatToMeta } from '@/types/chat';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
 import { asTestType } from '@/__test__/helpers/testing-utils';
-
-// Detail 组件内部使用 ResizeObserver
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
+import { createMockMessage } from '@/__test__/fixtures/chat';
 
 vi.mock('virtua', () => {
   // oxlint-disable-next-line consistent-function-scoping — Vitest vi.mock 工厂函数会被提升，必须内联定义
@@ -53,21 +48,14 @@ describe('ChatPanelContentDetail', () => {
     const chatModel = overrides?.chatModel || defaultChatModel;
 
     const defaultModels: Model[] = [
-      {
+      createMockModel({
         id: 'model-1',
         nickname: 'Model 1',
-        apiKey: 'test-key',
-        apiAddress: 'https://api.test.com',
-        remark: 'Test',
         modelKey: 'model-1',
         modelName: 'Model 1',
         providerName: 'TestProvider',
-        providerKey: 'deepseek' as ModelProviderKeyEnum,
-        isEnable: true,
-        isDeleted: false,
-        createdAt: new Date().toISOString(),
-        updateAt: new Date().toISOString(),
-      },
+        providerKey: ModelProviderKeyEnum.DEEPSEEK,
+      }),
     ];
 
     const chat = {
@@ -178,21 +166,14 @@ describe('ChatPanelContentDetail', () => {
       };
 
       const customModels = [
-        {
+        createMockModel({
           id: 'custom-model-1',
           nickname: 'Custom Model',
-          apiKey: 'custom-key',
-          apiAddress: 'https://api.custom.com',
-          remark: 'Custom',
           modelKey: 'custom-model-1',
           modelName: 'Custom Model Name',
           providerName: 'CustomProvider',
           providerKey: 'custom-provider' as ModelProviderKeyEnum,
-          isEnable: true,
-          isDeleted: false,
-          createdAt: new Date().toISOString(),
-          updateAt: new Date().toISOString(),
-        },
+        }),
       ];
 
       const store = createTestStore({ chatModel, models: customModels });
@@ -207,8 +188,8 @@ describe('ChatPanelContentDetail', () => {
     });
 
     it('应该根据 chatModel 渲染对应的历史记录', () => {
-      const message1 = { id: 'msg-1', role: ChatRoleEnum.USER, content: 'User message 1', timestamp: Date.now() / 1000, modelKey: 'test-model', finishReason: null, raw: null };
-      const message2 = { id: 'msg-2', role: ChatRoleEnum.ASSISTANT, content: 'Assistant response 1', timestamp: Date.now() / 1000, modelKey: 'test-model', finishReason: 'stop', raw: null };
+      const message1 = createMockMessage({ role: ChatRoleEnum.USER, content: 'User message 1' });
+      const message2 = createMockMessage({ role: ChatRoleEnum.ASSISTANT, content: 'Assistant response 1', finishReason: 'stop' });
 
       const chatModel: ChatModel = {
         modelId: 'model-1',
@@ -276,10 +257,10 @@ describe('ChatPanelContentDetail', () => {
   describe('历史消息渲染', () => {
     it('应该渲染多条历史消息', () => {
       const messages = [
-        { id: 'msg-1', role: ChatRoleEnum.USER, content: 'Message 1', timestamp: Date.now() / 1000, modelKey: 'test-model', finishReason: null, raw: null },
-        { id: 'msg-2', role: ChatRoleEnum.ASSISTANT, content: 'Message 2', timestamp: Date.now() / 1000, modelKey: 'test-model', finishReason: 'stop', raw: null },
-        { id: 'msg-3', role: ChatRoleEnum.USER, content: 'Message 3', timestamp: Date.now() / 1000, modelKey: 'test-model', finishReason: null, raw: null },
-        { id: 'msg-4', role: ChatRoleEnum.ASSISTANT, content: 'Message 4', timestamp: Date.now() / 1000, modelKey: 'test-model', finishReason: 'stop', raw: null },
+        createMockMessage({ role: ChatRoleEnum.USER, content: 'Message 1' }),
+        createMockMessage({ role: ChatRoleEnum.ASSISTANT, content: 'Message 2', finishReason: 'stop' }),
+        createMockMessage({ role: ChatRoleEnum.USER, content: 'Message 3' }),
+        createMockMessage({ role: ChatRoleEnum.ASSISTANT, content: 'Message 4', finishReason: 'stop' }),
       ];
 
       const chatModel: ChatModel = {
@@ -300,8 +281,8 @@ describe('ChatPanelContentDetail', () => {
 
     it('应该为每条消息渲染独立的 ChatBubble', () => {
       const messages = [
-        { id: 'msg-1', role: ChatRoleEnum.USER, content: 'User message', timestamp: Date.now() / 1000, modelKey: 'test-model', finishReason: null, raw: null },
-        { id: 'msg-2', role: ChatRoleEnum.ASSISTANT, content: 'Assistant message', timestamp: Date.now() / 1000, modelKey: 'test-model', finishReason: 'stop', raw: null },
+        createMockMessage({ role: ChatRoleEnum.USER, content: 'User message' }),
+        createMockMessage({ role: ChatRoleEnum.ASSISTANT, content: 'Assistant message', finishReason: 'stop' }),
       ];
 
       const chatModel: ChatModel = {

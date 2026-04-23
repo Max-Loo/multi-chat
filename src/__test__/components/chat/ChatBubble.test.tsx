@@ -15,13 +15,10 @@ vi.mock('react-i18next', () => {
 });
 
 // Mock highlight.js
-vi.mock('highlight.js', () => ({
-  default: {
-    highlight: (str: string, _options: { language: string }) => ({ value: str }),
-    highlightAuto: (str: string) => ({ value: str }),
-    getLanguage: (lang: string) => lang !== undefined,
-  },
-}));
+vi.mock('highlight.js', () => {
+  const { highlightJsMockFactory } = require('@/__test__/helpers/mocks/highlight');
+  return highlightJsMockFactory;
+});
 
 // Mock markdown-it
 vi.mock('markdown-it', () => ({

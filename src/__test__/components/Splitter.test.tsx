@@ -15,13 +15,6 @@ import {
 } from '@/__test__/helpers/mocks/panelLayout';
 import { renderWithProviders } from '@/__test__/helpers/render/redux';
 
-// Detail 组件内部使用 ResizeObserver
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 vi.mock('react-i18next', () => {
   const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称' }, common: { loading: 'Loading...' } };
   return globalThis.__createI18nMockReturn(R);

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act, waitFor } from '@testing-library/react';
 import { useBasicModelTable } from '@/hooks/useBasicModelTable';
 import { ModelProviderKeyEnum } from '@/utils/enums';
@@ -7,6 +7,9 @@ import { createModelSliceState, createChatSliceState } from '@/__test__/helpers/
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 
 describe('useBasicModelTable', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
   describe('表格列配置测试', () => {
     it('应返回正确的列定义数组', () => {
       const { result } = renderHookWithProviders(() => useBasicModelTable(), {
@@ -90,7 +93,10 @@ describe('useBasicModelTable', () => {
       result.current.setFilterText('GPT');
 
       // 等待防抖完成（useDebouncedFilter 使用了500ms防抖）
-      await new Promise(resolve => setTimeout(resolve, 600));
+      vi.useFakeTimers();
+      await act(async () => {
+        vi.advanceTimersByTime(600);
+      });
 
       expect(result.current.filteredModels.length).toBeLessThanOrEqual(initialCount);
     });

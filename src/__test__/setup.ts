@@ -13,6 +13,16 @@ import 'fake-indexeddb/auto';
 expect.extend(matchers);
 
 // ========================================
+// 全局 Polyfill
+// ========================================
+// jsdom 不提供 ResizeObserver，为所有测试统一注册空 polyfill
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
+// ========================================
 // 全局 Mock 配置
 // ========================================
 // 注意：vi.mock() 必须在文件顶层静态调用（Vitest 限制）
@@ -155,21 +165,26 @@ function createDefaultMockStreamResult() {
 // Mock Vercel AI SDK
 // 注意：必须使用 vi.fn().mockImplementation() 提供默认返回值
 // 否则 streamText 返回 undefined，导致真实 API 被调用
-vi.mock('ai', () => ({
-  // 提供默认的 mock 实现，返回一个有效的流式结果
-  streamText: vi.fn().mockImplementation(() => createDefaultMockStreamResult()),
-  // 添加 generateText 的 mock（用于 titleGenerator 测试）
-  // 默认返回一个有效的生成结果，避免真实 API 调用
-  generateText: vi.fn().mockResolvedValue({
-    text: 'mock generated text',
-    usage: { promptTokens: 10, completionTokens: 5 },
-    finishReason: 'stop',
-    warnings: [],
-  }),
-  generateId: vi.fn(() => 'mock-generated-id'),
-  // 添加 createIdGenerator 的 mock（用于 fixtures）
-  createIdGenerator: vi.fn(() => vi.fn(() => 'mock-id-with-prefix')),
-}));
+vi.mock('ai', () => {
+  // 递增计数器，确保每次调用生成唯一 ID
+  let _idCounter = 0;
+  let _genCounter = 0;
+
+  return {
+    streamText: vi.fn().mockImplementation(() => createDefaultMockStreamResult()),
+    generateText: vi.fn().mockResolvedValue({
+      text: 'mock generated text',
+      usage: { promptTokens: 10, completionTokens: 5 },
+      finishReason: 'stop',
+      warnings: [],
+    }),
+    generateId: vi.fn(() => `mock-generated-id-${++_idCounter}`),
+    createIdGenerator: vi.fn((options?: { prefix?: string }) => {
+      const prefix = options?.prefix ?? '';
+      return () => `${prefix}${++_genCounter}`;
+    }),
+  };
+});
 
 vi.mock('@ai-sdk/deepseek', () => ({
   createDeepSeek: vi.fn(() => {
@@ -318,12 +333,7 @@ afterEach(() => {
 });
 
 // ========================================
-// 导出测试辅助工具
-// ========================================
-
-export * from './helpers';
-
-// ========================================
+// 抑制测试中的预期 Unhandled Rejection 警告
 // 抑制测试中的预期 Unhandled Rejection 警告
 // ========================================
 // 在测试错误处理场景时，我们会故意创建被拒绝的 Promise

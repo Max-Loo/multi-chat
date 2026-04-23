@@ -1072,7 +1072,7 @@ pnpm test:run
 
 ```typescript
 // Mock 工厂（从 helpers 导入）
-import { createTauriMocks, createCryptoMocks, createStorageMocks } from '@/__test__/helpers/mocks';
+import { createTauriMocks, createStorageMocks } from '@/__test__/helpers/mocks';
 import { createMockModel } from '@/__test__/helpers/fixtures';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 
@@ -1106,13 +1106,12 @@ describe('测试组件', () => {
 });
 ```
 
-### Redux Mock
+### Redux Test State
 
 ```typescript
-import { createMockAbortController, createMockAbortSignal } from '@/__test__/helpers/mocks/redux';
+import { createModelSliceState } from '@/__test__/helpers/mocks/redux';
 
-const abortController = createMockAbortController();
-const abortSignal = createMockAbortSignal(false);
+const modelState = createModelSliceState({ models: [] });
 ```
 
 ### ChatPanel Mock

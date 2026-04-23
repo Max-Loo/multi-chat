@@ -4,7 +4,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { createTauriMocks } from './tauri';
-import { createCryptoMocks } from './crypto';
 import { createStorageMocks } from './storage';
 
 describe('createTauriMocks', () => {
@@ -58,42 +57,6 @@ describe('createTauriMocks', () => {
 
     const result = await mocks.keyring.getPassword('com.test', 'key');
     expect(result).toBe('test-password');
-  });
-});
-
-describe('createCryptoMocks', () => {
-  it('应该创建包含所有加密 API 的 Mock 对象', () => {
-    const mocks = createCryptoMocks();
-
-    expect(mocks.encryptField).toBeDefined();
-    expect(mocks.decryptField).toBeDefined();
-    expect(mocks.isEncrypted).toBeDefined();
-  });
-
-  it('encryptField 应该可以设置返回值', async () => {
-    const mocks = createCryptoMocks();
-
-    mocks.encryptField.mockResolvedValue('enc:test-data');
-
-    const result = await mocks.encryptField('plaintext', 'key');
-    expect(result).toBe('enc:test-data');
-  });
-
-  it('isEncrypted 应该返回布尔值', () => {
-    const mocks = createCryptoMocks();
-
-    mocks.isEncrypted.mockReturnValue(true);
-
-    expect(mocks.isEncrypted('enc:data')).toBe(true);
-  });
-
-  it('resetAll 应该清空所有 Mock', () => {
-    const mocks = createCryptoMocks();
-
-    mocks.encryptField('test', 'key');
-    mocks.resetAll();
-
-    expect(mocks.encryptField).toHaveBeenCalledTimes(0);
   });
 });
 

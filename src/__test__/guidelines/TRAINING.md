@@ -283,16 +283,14 @@ expect(mockFetchData).toHaveBeenCalledWith('/api/data');
 **类型化的 Mock 工厂**：
 
 ```typescript
-interface CryptoMocks {
-  encryptField: Mock<(value: string, key: string) => Promise<string>>;
-  decryptField: Mock<(encryptedValue: string, key: string) => Promise<string>>;
-  isEncrypted: Mock<(value: string) => boolean>;
-}
+import type { StandardMessage } from '@/types/chat';
 
-export const createCryptoMocks = (): CryptoMocks => ({
-  encryptField: vi.fn(),
-  decryptField: vi.fn(),
-  isEncrypted: vi.fn(),
+const createMockPanelMessage = (overrides?: Partial<StandardMessage>): StandardMessage => ({
+  id: 'mock-id',
+  role: 'user',
+  content: 'mock content',
+  timestamp: Date.now(),
+  ...overrides,
 });
 ```
 

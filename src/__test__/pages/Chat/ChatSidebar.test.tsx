@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
@@ -134,6 +134,7 @@ describe('ChatSidebar Component', () => {
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   /**
@@ -233,7 +234,10 @@ describe('ChatSidebar Component', () => {
       const filterInput = screen.getByTestId('filter-input');
       fireEvent.change(filterInput, { target: { value: '聊天 1' } });
 
-      await new Promise(resolve => setTimeout(resolve, 300));
+      vi.useFakeTimers();
+      await act(async () => {
+        vi.advanceTimersByTime(300);
+      });
 
       expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();
     });

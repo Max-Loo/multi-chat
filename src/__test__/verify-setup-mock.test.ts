@@ -21,6 +21,6 @@ describe('Verify Setup.ts Mocks', () => {
   it('generateId should return mock value', () => {
     const id = generateId();
     console.log('Generated id:', id);
-    expect(id).toBe('mock-generated-id');
+    expect(id).toMatch(/^mock-generated-id/);
   });
 });

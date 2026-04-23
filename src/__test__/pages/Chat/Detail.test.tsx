@@ -73,14 +73,6 @@ vi.mock('react-i18next', () =>
   }),
 );
 
-// Mock ResizeObserver（jsdom 不提供）
-// 使用 class 语法确保可以作为构造函数使用
-global.ResizeObserver = class ResizeObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-} as any;
-
 // ========================================
 // 测试常量和辅助函数
 // ========================================

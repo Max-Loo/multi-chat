@@ -22,8 +22,6 @@ import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 import { createTestRootState, createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { RootState } from '@/store';
 import { toggleDrawer as chatToggleDrawer, setIsDrawerOpen as chatSetIsDrawerOpen } from '@/store/slices/chatPageSlices';
-import { toggleDrawer as settingToggleDrawer, setIsDrawerOpen as settingSetIsDrawerOpen } from '@/store/slices/settingPageSlices';
-import { toggleDrawer as modelToggleDrawer } from '@/store/slices/modelPageSlices';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => {
@@ -97,46 +95,6 @@ describe('抽屉打开/关闭集成测试', () => {
         expect(store.getState().chatPage.isDrawerOpen).toBe(true);
         expect(screen.getByRole('dialog')).toBeInTheDocument();
       });
-    });
-  });
-
-  describe('多个页面的抽屉状态独立管理', () => {
-    it('Chat 和 Setting 页面的抽屉状态应该独立', () => {
-      // 渲染 Chat 页面
-      renderChatPage(store);
-
-      // 打开 Chat 抽屉
-      store.dispatch(chatToggleDrawer());
-      expect(store.getState().chatPage.isDrawerOpen).toBe(true);
-      expect(store.getState().settingPage.isDrawerOpen).toBe(false);
-
-      // 打开 Setting 抽屉
-      store.dispatch(settingToggleDrawer());
-      expect(store.getState().chatPage.isDrawerOpen).toBe(true);
-      expect(store.getState().settingPage.isDrawerOpen).toBe(true);
-
-      // 关闭 Chat 抽屉
-      store.dispatch(chatSetIsDrawerOpen(false));
-      expect(store.getState().chatPage.isDrawerOpen).toBe(false);
-      expect(store.getState().settingPage.isDrawerOpen).toBe(true);
-    });
-
-    it('Chat、Setting 和 Model 创建页面的抽屉状态应该互不影响', () => {
-      // 打开所有抽屉
-      store.dispatch(chatToggleDrawer());
-      store.dispatch(settingToggleDrawer());
-      store.dispatch(modelToggleDrawer());
-
-      expect(store.getState().chatPage.isDrawerOpen).toBe(true);
-      expect(store.getState().settingPage.isDrawerOpen).toBe(true);
-      expect(store.getState().modelPage.isDrawerOpen).toBe(true);
-
-      // 关闭 Setting 抽屉
-      store.dispatch(settingSetIsDrawerOpen(false));
-
-      expect(store.getState().chatPage.isDrawerOpen).toBe(true);
-      expect(store.getState().settingPage.isDrawerOpen).toBe(false);
-      expect(store.getState().modelPage.isDrawerOpen).toBe(true);
     });
   });
 

@@ -14,6 +14,7 @@ import {
 } from '@/store/slices/modelSlice';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { createMiddlewareTestStore } from './createMiddlewareTestStore';
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
 
 // Mock 存储层
 vi.mock('@/store/storage', () => ({
@@ -27,20 +28,16 @@ describe('modelMiddleware', () => {
   // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
 
-  // Mock 模型数据（符合 Model 接口）
-  const mockModel = {
+  // Mock 模型数据（使用工厂创建）
+  const mockModel = createMockModel({
     id: 'model1',
     modelKey: 'deepseek-chat',
     modelName: 'DeepSeek Chat',
     providerKey: ModelProviderKeyEnum.DEEPSEEK,
-    apiKey: 'encrypted-key',
-    apiAddress: 'https://api.deepseek.com',
     nickname: 'DeepSeek',
-    isEnable: true,
-    createdAt: '2024-01-01 00:00:00',
-    updateAt: '2024-01-01 00:00:00',
     providerName: 'DeepSeek',
-  };
+    apiAddress: 'https://api.deepseek.com',
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -352,118 +352,24 @@ describe('Crypto 工具函数', () => {
     });
 
     describe('特殊 Unicode 字符处理', () => {
-      describe('CJK 字符测试', () => {
-        it('应该正确处理中文字符', async () => {
-          const chineseText = '你好世界！这是一个加密测试。';
-          const encrypted = await encryptField(chineseText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(chineseText);
-        });
-
-        it('应该正确处理日文字符', async () => {
-          const japaneseText = 'こんにちは！これは暗号化テストです。';
-          const encrypted = await encryptField(japaneseText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(japaneseText);
-        });
-
-        it('应该正确处理韩文字符', async () => {
-          const koreanText = '안녕하세요! 이것은 암호화 테스트입니다.';
-          const encrypted = await encryptField(koreanText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(koreanText);
-        });
-
-        it('应该正确处理混合 CJK 字符', async () => {
-          const mixedCJKText = '中文你好 Japanese 日本語 안녕 Korean';
-          const encrypted = await encryptField(mixedCJKText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(mixedCJKText);
-        });
-      });
-
-      describe('Emoji 字符测试', () => {
-        it('应该正确处理各种 emoji', async () => {
-          const emojiText = '🔐🔑🚀💻🌍⭐🎉😀👍💡';
-          const encrypted = await encryptField(emojiText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(emojiText);
-        });
-
-        it('应该正确处理表情符号序列', async () => {
-          const emojiSequence = '👨‍👩‍👧‍👦👨‍💻👩‍🚀🎅🏽🇨🇳';
-          const encrypted = await encryptField(emojiSequence, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(emojiSequence);
-        });
-
-        it('应该正确处理混合 emoji 和文本', async () => {
-          const mixedEmojiText = 'Hello 🔐 World 🌍 Test 💻 with 😀 emojis!';
-          const encrypted = await encryptField(mixedEmojiText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(mixedEmojiText);
-        });
-      });
-
-      describe('组合字符测试', () => {
-        it('应该正确处理带变音符号的字符', async () => {
-          // 使用组合字符（combining diacritical marks）
-          const combiningChars = 'e\u0301 a\u0300 o\u0302 u\u0308'; // é à ô ü
-          const encrypted = await encryptField(combiningChars, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(combiningChars);
-        });
-
-        it('应该正确处理预组合字符', async () => {
-          // 使用预组合字符（precomposed characters）
-          const precomposedChars = 'é à ô ü ñ ç';
-          const encrypted = await encryptField(precomposedChars, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(precomposedChars);
-        });
-
-        it('应该正确处理混合组合和预组合字符', async () => {
-          const mixedChars = 'café naïve façade';
-          const encrypted = await encryptField(mixedChars, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(mixedChars);
-        });
-      });
-
-      describe('双向文本测试', () => {
-        it('应该正确处理阿拉伯文（从右到左）', async () => {
-          const arabicText = 'مرحبا بالعالم';
-          const encrypted = await encryptField(arabicText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(arabicText);
-        });
-
-        it('应该正确处理希伯来文（从右到左）', async () => {
-          const hebrewText = 'שלום עולם';
-          const encrypted = await encryptField(hebrewText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(hebrewText);
-        });
-
-        it('应该正确处理混合 LTR 和 RTL 文本', async () => {
-          const mixedDirectionText = 'Hello مرحبا World שלום';
-          const encrypted = await encryptField(mixedDirectionText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(mixedDirectionText);
-        });
+      test.each([
+        ['中文', '你好世界！这是一个加密测试。'],
+        ['日文', 'こんにちは！これは暗号化テストです。'],
+        ['韩文', '안녕하세요! 이것은 암호화 테스트입니다.'],
+        ['混合 CJK', '中文你好 Japanese 日本語 안녕 Korean'],
+        ['Emoji', '🔐🔑🚀💻🌍⭐🎉😀👍💡'],
+        ['Emoji 序列', '👨‍👩‍👧‍👦👨‍💻👩‍🚀🎅🏽🇨🇳'],
+        ['混合 Emoji 和文本', 'Hello 🔐 World 🌍 Test 💻 with 😀 emojis!'],
+        ['组合变音符号', 'é à ô ü'],
+        ['预组合字符', 'é à ô ü ñ ç'],
+        ['混合组合字符', 'café naïve façade'],
+        ['阿拉伯文 RTL', 'مرحبا بالعالم'],
+        ['希伯来文 RTL', 'שלום עולם'],
+        ['混合 LTR/RTL', 'Hello مرحبا World שלום'],
+      ])('应该正确处理 %s', async (_label, text) => {
+        const encrypted = await encryptField(text, masterKey);
+        const decrypted = await decryptField(encrypted, masterKey);
+        expect(decrypted).toBe(text);
       });
     });
 
