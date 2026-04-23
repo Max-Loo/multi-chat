@@ -199,10 +199,9 @@ describe('ModelSidebar 组件测试', () => {
       const kimiButton = Array.from(container.querySelectorAll('button[title]')).find(
         btn => btn.getAttribute('title') === 'Kimi'
       )
+      expect(kimiButton).toBeTruthy()
 
-      if (kimiButton) {
-        await user.click(kimiButton)
-      }
+      await user.click(kimiButton!)
 
       expect(onChange).toHaveBeenCalledTimes(1)
       expect(onChange).toHaveBeenCalledWith('moonshotai')
@@ -220,17 +219,16 @@ describe('ModelSidebar 组件测试', () => {
       const deepseekButton = Array.from(container.querySelectorAll('button[title]')).find(
         btn => btn.getAttribute('title') === 'DeepSeek'
       )
+      expect(deepseekButton).toBeTruthy()
 
-      if (deepseekButton) {
-        // 第一次点击
-        await user.click(deepseekButton)
-        expect(onChange).toHaveBeenLastCalledWith('deepseek')
+      // 第一次点击
+      await user.click(deepseekButton!)
+      expect(onChange).toHaveBeenLastCalledWith('deepseek')
 
-        // 第二次点击
-        await user.click(deepseekButton)
-        expect(onChange).toHaveBeenLastCalledWith('deepseek')
-        expect(onChange).toHaveBeenCalledTimes(2)
-      }
+      // 第二次点击
+      await user.click(deepseekButton!)
+      expect(onChange).toHaveBeenLastCalledWith('deepseek')
+      expect(onChange).toHaveBeenCalledTimes(2)
     })
   })
 

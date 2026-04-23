@@ -756,14 +756,17 @@ describe('Keyring 兼容层测试套件', () => {
     });
 
     describe('解密失败', () => {
-      // 注：由于 Web Crypto API 的 mock 在测试环境中的限制，这两个测试难以可靠地实现
-      // 解密失败路径已经在实际使用中验证，这里跳过单元测试
+      // Skip reason: Web Crypto API mock 在 Vitest/happy-dom 环境中不可靠。
+      // subtleCrypto.importKey 和 subtleCrypto.encrypt/decrypt 的 vi.fn() mock 无法准确模拟真实浏览器行为，
+      // 导致解密失败路径的测试结果不稳定。
+      // Verified alternative: 使用真实浏览器进行集成测试验证解密失败路径。
+      // Unblock condition: 使用真正的 Web Crypto API polyfill 替代 vi.fn() mock。
       it.skip('应该抛出"密码读取或解密失败"错误', async () => {
-        // 跳过：Web Crypto API mock 在 Vitest/happy-dom 环境中不可靠
+        // Web Crypto API mock 在 Vitest/happy-dom 环境中不可靠
       });
 
       it.skip('应该记录错误日志到 console.error', async () => {
-        // 跳过：Web Crypto API mock 在 Vitest/happy-dom 环境中不可靠
+        // Web Crypto API mock 在 Vitest/happy-dom 环境中不可靠
       });
     });
 

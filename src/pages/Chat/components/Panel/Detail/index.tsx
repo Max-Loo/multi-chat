@@ -170,6 +170,7 @@ const Detail: React.FC<DetailProps> = ({
           ${scrollbarClassname}
         `}
         ref={scrollContainerRef}
+        data-testid="detail-scroll-container"
       >
     <div ref={titleRef} className="w-full">
       <Title chatModel={chatModel} />

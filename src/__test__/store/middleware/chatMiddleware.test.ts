@@ -192,23 +192,54 @@ describe('chatMiddleware', () => {
       );
     });
 
-    it.skip('应该在消息发送失败时触发保存（需要完整的 state.runningChat）', async () => {
-      // 注意：当消息发送失败时，reducer 需要访问 state.runningChat[chat.id]
-      // 这个测试跳过，因为很难在测试中模拟完整的场景
-      // 在实际使用中，runningChat 会在消息发送前被设置，所以 reducer 不会出错
-      const initialChat = { id: 'chat1', name: 'Chat 1', chatModelList: [] };
+    it('应该在消息发送失败时触发保存', async () => {
+      const chatId = 'chat-fail';
+      const initialChat = { id: chatId, name: 'Chat Fail', chatModelList: [
+        {
+          modelId: 'model-1',
+          chatHistoryList: [],
+        },
+      ] };
 
-      try {
-        await store.dispatch(
-          startSendChatMessage.rejected(
-            new Error('Send failed'),
-            'requestId',
-            { chat: initialChat, message: 'Hello' }
-          )
-        );
-      } catch {
-        // reducer 可能会抛出错误
-      }
+      // 构造完整的 runningChat state，模拟消息发送进行中的状态
+      const preloadedState = createTestRootState({
+        chat: createChatSliceState({
+          chatList: [initialChat],
+          selectedChatId: chatId,
+          runningChat: {
+            [chatId]: {
+              'model-1': {
+                isSending: true,
+                history: { id: 'msg-1', role: ChatRoleEnum.ASSISTANT, content: 'partial response', timestamp: 0, modelKey: 'model-1', finishReason: null },
+              },
+            },
+          },
+        }),
+      });
+
+      // 创建带 preloadedState 的 store
+      const failStore = configureStore({
+        reducer: {
+          models: modelReducer,
+          chat: chatReducer,
+          chatPage: chatPageReducer,
+          appConfig: appConfigReducer,
+          modelProvider: modelProviderReducer,
+          settingPage: settingPageReducer,
+          modelPage: modelPageReducer,
+        },
+        preloadedState,
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware().prepend(saveChatListMiddleware.middleware),
+      });
+
+      await failStore.dispatch(
+        startSendChatMessage.rejected(
+          new Error('Send failed'),
+          'requestId',
+          { chat: initialChat as any, message: 'Hello' }
+        )
+      );
 
       await vi.waitFor(() => {
         expect(mockSaveChatAndIndex).toHaveBeenCalled();

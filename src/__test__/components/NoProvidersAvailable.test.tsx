@@ -38,7 +38,7 @@ describe('NoProvidersAvailable', () => {
     it('应该显示错误图标', () => {
       render(<NoProvidersAvailable />)
       
-      const icon = document.querySelector('.lucide-circle-alert')
+      const icon = screen.getByTestId('no-providers-icon')
       expect(icon).toBeInTheDocument()
     })
   })
@@ -76,7 +76,7 @@ describe('NoProvidersAvailable', () => {
     it('错误图标必须有正确的文本和尺寸', () => {
       render(<NoProvidersAvailable />)
       
-      const icon = document.querySelector('.lucide-circle-alert')
+      const icon = screen.getByTestId('no-providers-icon')
       expect(icon).toHaveClass('h-16', 'w-16')
     })
 
@@ -101,21 +101,21 @@ describe('NoProvidersAvailable', () => {
     it('错误容器必须有正确的样式类名', () => {
       render(<NoProvidersAvailable />)
       
-      const container = document.querySelector('.fixed.inset-0')
+      const container = screen.getByTestId('no-providers-container')
       expect(container).toBeInTheDocument()
     })
 
     it('内容容器必须有正确的布局类名', () => {
       render(<NoProvidersAvailable />)
       
-      const contentContainer = document.querySelector('.flex.max-w-md.flex-col')
+      const contentContainer = screen.getByTestId('no-providers-content')
       expect(contentContainer).toBeInTheDocument()
     })
 
     it('图标必须有正确的颜色类名', () => {
       render(<NoProvidersAvailable />)
       
-      const icon = document.querySelector('.lucide-circle-alert')
+      const icon = screen.getByTestId('no-providers-icon')
       expect(icon).toHaveClass('text-destructive')
     })
   })

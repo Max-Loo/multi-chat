@@ -17,7 +17,7 @@ interface SplitterProps {
 
 const Splitter: React.FC<SplitterProps> = ({ board }) => {
   return (
-    <div className="absolute top-0 left-0 w-full h-full pt-12 pb-30">
+    <div className="absolute top-0 left-0 w-full h-full pt-12 pb-30" data-testid="splitter-container">
       <ResizablePanelGroup orientation="vertical">
         {board.map((row, idx) => (
           <React.Fragment key={idx}>

@@ -61,7 +61,7 @@ describe('ProviderCard', () => {
   it('点击时应该调用 onToggle', () => {
     const onToggle = vi.fn();
 
-    const { container } = render(
+    render(
       <ProviderCard
         provider={mockProvider}
         isExpanded={false}
@@ -70,10 +70,9 @@ describe('ProviderCard', () => {
       />
     );
 
-    // 直接查找带有 .cursor-pointer 类的 Card 元素
-    const cardElement = container.querySelector('.cursor-pointer');
+    const cardElement = screen.getByTestId('provider-card');
     expect(cardElement).toBeInTheDocument();
-    fireEvent.click(cardElement!);
+    fireEvent.click(cardElement);
 
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
@@ -95,7 +94,7 @@ describe('ProviderCard', () => {
 
   // 任务 4.5.1: 收起时不应该显示模型列表
   it('收起时不应该显示模型列表', () => {
-    const { container } = render(
+    render(
       <ProviderCard
         provider={mockProvider}
         isExpanded={false}
@@ -104,8 +103,7 @@ describe('ProviderCard', () => {
       />
     );
 
-    // 检查模型列表不应该显示（使用 container 限制查询范围）
-    expect(container.querySelector('.border-t')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('provider-card-details')).not.toBeInTheDocument();
   });
 
   // 任务 4.5.2: 应该渲染供应商图标（首字母）
@@ -142,7 +140,7 @@ describe('ProviderCard', () => {
     const onToggle = vi.fn();
 
     // 初始收起状态
-    const { container, rerender } = render(
+    const { rerender } = render(
       <ProviderCard
         provider={mockProvider}
         isExpanded={false}
@@ -152,9 +150,9 @@ describe('ProviderCard', () => {
     );
 
     // 点击展开
-    const cardElement = container.querySelector('.cursor-pointer');
+    const cardElement = screen.getByTestId('provider-card');
     expect(cardElement).toBeInTheDocument();
-    fireEvent.click(cardElement!);
+    fireEvent.click(cardElement);
     expect(onToggle).toHaveBeenCalledTimes(1);
 
     // 重新渲染为展开状态
@@ -175,7 +173,7 @@ describe('ProviderCard', () => {
   it('多次点击应该正确切换展开/收起状态', () => {
     const onToggle = vi.fn();
 
-    const { container } = render(
+    render(
       <ProviderCard
         provider={mockProvider}
         isExpanded={false}
@@ -184,7 +182,7 @@ describe('ProviderCard', () => {
       />
     );
 
-    const cardElement = container.querySelector('.cursor-pointer')!;
+    const cardElement = screen.getByTestId('provider-card');
     expect(cardElement).toBeInTheDocument();
 
     // 第一次点击

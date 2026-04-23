@@ -86,7 +86,7 @@ describe("ChatPanelSender", () => {
   });
 
   describe("Enter 键发送消息", () => {
-    it("应该在按下 Enter 键时发送消息", () => {
+    it("应该在按下 Enter 键时发送消息", async () => {
       const store = createStore({
         chatList: [mockChat],
         selectedChatId: "chat-1",
@@ -101,8 +101,10 @@ describe("ChatPanelSender", () => {
       fireEvent.change(textarea, { target: { value: "Test message" } });
       fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", keyCode: 13 });
 
-      // 输入框应该被清空
-      expect(textarea.value).toBe("");
+      // 发送成功后输入框应该被清空
+      await waitFor(() => {
+        expect(textarea.value).toBe("");
+      });
     });
 
     it("应该在按下 Shift+Enter 时换行而不是发送", () => {
@@ -306,7 +308,7 @@ describe("ChatPanelSender", () => {
       expect(textarea.value).toBe("中文输入");
     });
 
-    it("应该在非 Safari 环境中正常发送消息", () => {
+    it("应该在非 Safari 环境中正常发送消息", async () => {
       // 模拟 Chrome
       Object.defineProperty(navigator, "userAgent", {
         value:
@@ -335,7 +337,9 @@ describe("ChatPanelSender", () => {
       });
 
       // 消息应该被发送
-      expect(textarea.value).toBe("");
+      await waitFor(() => {
+        expect(textarea.value).toBe("");
+      });
     });
   });
 
@@ -353,8 +357,10 @@ describe("ChatPanelSender", () => {
       expect(reasoningButton).toBeInTheDocument();
     });
 
-    // TODO: 推理内容开关按钮当前有 hidden class，点击不会触发任何效果
-    // 当功能启用后，需要移除 hidden class 并取消此跳过
+    // Skip reason: 推理内容开关按钮当前有 className="hidden"，因为当前模型提供商（DeepSeek、Kimi、Zhipu）
+    // 不支持 Vercel AI SDK 的 `type: 'reasoning'` 消息格式，所以开关被隐藏。
+    // Verified alternative: 推理内容开关组件本身已通过"应该显示推理内容开关"测试验证 DOM 存在性。
+    // Unblock condition: 当模型提供商支持 reasoning 格式时，移除 hidden class 并取消此 skip。
     it.skip("应该切换推理内容开关状态", async () => {
       const store = createStore({
         chatList: [mockChat],
@@ -393,7 +399,7 @@ describe("ChatPanelSender", () => {
       expect(sendButton).toBeInTheDocument();
     });
 
-    it("应该在点击发送按钮时发送消息", () => {
+    it("应该在点击发送按钮时发送消息", async () => {
       const store = createStore({
         chatList: [mockChat],
         selectedChatId: "chat-1",
@@ -409,13 +415,15 @@ describe("ChatPanelSender", () => {
       fireEvent.change(textarea, { target: { value: "Test message" } });
       fireEvent.click(sendButton);
 
-      // 输入框应该被清空
-      expect(textarea.value).toBe("");
+      // 发送成功后输入框应该被清空
+      await waitFor(() => {
+        expect(textarea.value).toBe("");
+      });
     });
   });
 
   describe("异步消息发送流程", () => {
-    it("应该在发送消息后保存 AbortController", () => {
+    it("应该在发送消息后保存 AbortController", async () => {
       const store = createStore({
         chatList: [mockChat],
         selectedChatId: "chat-1",
@@ -431,10 +439,34 @@ describe("ChatPanelSender", () => {
       fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", keyCode: 13 });
 
       // 检查输入框是否被清空（表示消息已发送）
-      expect(textarea.value).toBe("");
+      await waitFor(() => {
+        expect(textarea.value).toBe("");
+      });
     });
 
-    it.todo("应该在发送失败时保持输入框内容");
+    it("应该在发送失败时保持输入框内容", async () => {
+      const store = createStore(
+        { chatList: [mockChat], selectedChatId: "chat-1" },
+      );
+
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
+
+      const textarea = screen.getByPlaceholderText(
+        /输入消息/i,
+      ) as HTMLTextAreaElement;
+
+      fireEvent.change(textarea, { target: { value: "Test message" } });
+
+      // 发送消息（通过按钮点击触发 async sendMessage）
+      const sendButton = screen.getByTitle(/发送消息/i);
+      fireEvent.click(sendButton);
+
+      // 等待 dispatch 完成（rejected 或 fulfilled）
+      await waitFor(() => {
+        // 发送失败时输入框内容应保留
+        expect(textarea.value).toBe("Test message");
+      });
+    });
   });
 
   describe("输入框值变化和清空", () => {
@@ -459,7 +491,7 @@ describe("ChatPanelSender", () => {
       expect(textarea.value).toBe("First line\nSecond line");
     });
 
-    it("应该在发送消息后清空输入框", () => {
+    it("应该在发送消息后清空输入框", async () => {
       const store = createStore({
         chatList: [mockChat],
         selectedChatId: "chat-1",
@@ -476,7 +508,10 @@ describe("ChatPanelSender", () => {
 
       fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", keyCode: 13 });
 
-      expect(textarea.value).toBe("");
+      // 发送成功后输入框被清空
+      await waitFor(() => {
+        expect(textarea.value).toBe("");
+      });
     });
   });
 

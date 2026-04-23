@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { fireEvent, waitFor, cleanup, screen } from '@testing-library/react';
 import ModelConfigForm from '@/pages/Model/components/ModelConfigForm';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { createDeepSeekProvider, createKimiProvider } from '@/__test__/helpers/fixtures';
@@ -55,7 +55,7 @@ describe('ModelConfigForm', () => {
         { store }
       );
 
-      const form = document.querySelector('form');
+      const form = screen.getByTestId('model-config-form');
       expect(form).toBeInTheDocument();
     });
 
@@ -79,7 +79,7 @@ describe('ModelConfigForm', () => {
         { store }
       );
 
-      const form = document.querySelector('form');
+      const form = screen.getByTestId('model-config-form');
       expect(form).toBeInTheDocument();
     });
   });
@@ -91,7 +91,7 @@ describe('ModelConfigForm', () => {
         { providers: [createDeepSeekProvider()] },
       );
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           onFinish={mockOnFinish}
@@ -99,17 +99,15 @@ describe('ModelConfigForm', () => {
         { store }
       );
 
-      // 获取提交按钮（通过 container 查找，避免多个测试元素干扰）
-      const submitButton = container.querySelector('button[type="submit"]');
+      // 获取提交按钮（通过 data-testid 查找）
+      const submitButton = screen.getByTestId('submit-button');
       expect(submitButton).toBeInTheDocument();
-      
-      if (submitButton) {
-        fireEvent.click(submitButton);
-      }
+
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
-        // 检查是否有错误消息显示 - 查找包含 "Too small" 或 "required" 的错误文本
-        const errorMessages = container.querySelectorAll('.text-destructive');
+        // 检查是否有错误消息显示
+        const errorMessages = screen.getAllByTestId('form-message-error');
         expect(errorMessages.length).toBeGreaterThan(0);
       });
     });
@@ -120,7 +118,7 @@ describe('ModelConfigForm', () => {
         { providers: [createDeepSeekProvider()] },
       );
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           onFinish={mockOnFinish}
@@ -128,20 +126,18 @@ describe('ModelConfigForm', () => {
         { store }
       );
 
-      // 获取输入框（通过 name 属性）
-      const nicknameInput = container.querySelector('input[name="nickname"]');
-      if (nicknameInput) {
-        // 先输入值再清空，触发验证
-        fireEvent.change(nicknameInput, { target: { value: 'test' } });
-        fireEvent.change(nicknameInput, { target: { value: '' } });
-        fireEvent.blur(nicknameInput);
-        
-        // 验证错误显示
-        await waitFor(() => {
-          const errorMsg = container.querySelector('.text-destructive');
-          expect(errorMsg).toBeInTheDocument();
-        });
-      }
+      // 获取输入框（通过 role 和 name 属性）
+      const nicknameInput = screen.getByRole('textbox', { name: /模型昵称/i });
+      // 先输入值再清空，触发验证
+      fireEvent.change(nicknameInput, { target: { value: 'test' } });
+      fireEvent.change(nicknameInput, { target: { value: '' } });
+      fireEvent.blur(nicknameInput);
+
+      // 验证错误显示
+      await waitFor(() => {
+        const errorMsg = screen.getByTestId('form-message-error');
+        expect(errorMsg).toBeInTheDocument();
+      });
     });
   });
 
@@ -152,7 +148,7 @@ describe('ModelConfigForm', () => {
         { providers: [createDeepSeekProvider()] },
       );
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           onFinish={mockOnFinish}
@@ -160,26 +156,22 @@ describe('ModelConfigForm', () => {
         { store }
       );
 
-      // 填写表单 - 通过 container 和 name 属性查找输入框
-      const nicknameInput = container.querySelector('input[name="nickname"]') as HTMLInputElement;
-      const apiKeyInput = container.querySelector('input[name="apiKey"]') as HTMLInputElement;
+      // 填写表单 - 通过语义化查询查找输入框
+      const nicknameInput = screen.getByRole('textbox', { name: /模型昵称/i });
+      const apiKeyInput = screen.getByLabelText(/API 密钥/i) as HTMLInputElement;
 
-      if (nicknameInput && apiKeyInput) {
-        fireEvent.change(nicknameInput, { target: { value: 'Test Model' } });
-        fireEvent.change(apiKeyInput, { target: { value: 'test-api-key' } });
-        
-        // 选择模型 - 使用 RadioGroup 方式（点击 label 而不是 radio input）
-        const firstModelLabel = container.querySelector(`label[for="deepseek-chat"]`);
-        if (firstModelLabel) {
-          fireEvent.click(firstModelLabel);
-        }
+      expect(nicknameInput).toBeInTheDocument();
+      expect(apiKeyInput).toBeInTheDocument();
+      fireEvent.change(nicknameInput, { target: { value: 'Test Model' } });
+      fireEvent.change(apiKeyInput, { target: { value: 'test-api-key' } });
 
-        // 提交表单
-        const submitButton = container.querySelector('button[type="submit"]');
-        if (submitButton) {
-          fireEvent.click(submitButton);
-        }
-      }
+      // 选择模型 - 使用 RadioGroup 方式（点击 label）
+      const firstModelLabel = screen.getByTestId('model-option-deepseek-chat');
+      fireEvent.click(firstModelLabel);
+
+      // 提交表单
+      const submitButton = screen.getByTestId('submit-button');
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
         expect(mockOnFinish).toHaveBeenCalled();
@@ -194,7 +186,7 @@ describe('ModelConfigForm', () => {
         { providers: [createDeepSeekProvider()] },
       );
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ModelConfigForm
           modelProviderKey={ModelProviderKeyEnum.DEEPSEEK}
           modelParams={existingModel}
@@ -203,10 +195,8 @@ describe('ModelConfigForm', () => {
         { store }
       );
 
-      const submitButton = container.querySelector('button[type="submit"]');
-      if (submitButton) {
-        fireEvent.click(submitButton);
-      }
+      const submitButton = screen.getByTestId('submit-button');
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
         expect(mockOnFinish).toHaveBeenCalled();
@@ -236,7 +226,7 @@ describe('ModelConfigForm', () => {
         />
       );
 
-      const form = document.querySelector('form');
+      const form = screen.getByTestId('model-config-form');
       expect(form).toBeInTheDocument();
     });
 
@@ -265,7 +255,7 @@ describe('ModelConfigForm', () => {
         />
       );
 
-      const form = document.querySelector('form');
+      const form = screen.getByTestId('model-config-form');
       expect(form).toBeInTheDocument();
     });
   });
@@ -285,7 +275,7 @@ describe('ModelConfigForm', () => {
         { store }
       );
 
-      const form = document.querySelector('form');
+      const form = screen.getByTestId('model-config-form');
       expect(form).toBeInTheDocument();
     });
   });

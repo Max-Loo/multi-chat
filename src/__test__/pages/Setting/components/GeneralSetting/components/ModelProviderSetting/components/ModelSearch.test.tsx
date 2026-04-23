@@ -105,16 +105,16 @@ describe('ModelSearch', () => {
 
   describe('组件渲染', () => {
     it('应该渲染搜索图标', () => {
-      const { container } = render(<ModelSearch {...defaultProps} />)
-      const svgIcon = container.querySelector('svg')
+      render(<ModelSearch {...defaultProps} />)
+      const svgIcon = screen.getByTestId('model-search-icon')
 
       expect(svgIcon).toBeInTheDocument()
     })
 
-    it('应该正确应用样式类名', () => {
-      const { container } = render(<ModelSearch {...defaultProps} />)
-      const wrapper = container.querySelector('.space-y-2')
-      const searchContainer = container.querySelector('.relative')
+    it('应该正确渲染包装容器', () => {
+      render(<ModelSearch {...defaultProps} />)
+      const wrapper = screen.getByTestId('model-search-wrapper')
+      const searchContainer = screen.getByTestId('model-search-container')
 
       expect(wrapper).toBeInTheDocument()
       expect(searchContainer).toBeInTheDocument()

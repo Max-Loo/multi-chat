@@ -20,8 +20,8 @@ const ModelProviderDisplay = memo<ModelProviderDisplayProps>(({ providerKey }) =
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Avatar className="h-6 w-6">
+    <div className="flex items-center gap-2" data-testid="provider-display">
+      <Avatar className="h-6 w-6" data-testid="provider-avatar">
         <img src={getProviderLogoUrl(provider.providerKey)} alt={provider.providerName} />
       </Avatar>
       <span>{provider.providerName}</span>

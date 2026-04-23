@@ -100,9 +100,9 @@ describe('ToolsBar Component', () => {
 
   describe('默认工具栏渲染', () => {
     it('应该渲染工具栏容器', () => {
-      const { container } = renderToolsBar();
+      renderToolsBar();
 
-      const toolbar = container.querySelector('.flex.items-center.justify-between');
+      const toolbar = screen.getByTestId('tools-bar');
       expect(toolbar).toBeInTheDocument();
     });
 
@@ -115,31 +115,31 @@ describe('ToolsBar Component', () => {
         }),
       });
 
-      const { container } = renderToolsBar({}, store);
+      renderToolsBar({}, store);
 
-      const hideButton = container.querySelector('button[title="隐藏侧边栏"]');
+      const hideButton = screen.getByRole('button', { name: '隐藏侧边栏' });
       expect(hideButton).toBeInTheDocument();
     });
 
     it('应该显示新建聊天按钮', () => {
-      const { container } = renderToolsBar();
+      renderToolsBar();
 
-      const newChatButton = container.querySelector('button[title="新建聊天"]');
+      const newChatButton = screen.getByRole('button', { name: '新建聊天' });
       expect(newChatButton).toBeInTheDocument();
     });
 
     it('当启用搜索时应该显示搜索按钮', () => {
-      const { container } = renderToolsBar({ filterText: '' });
+      renderToolsBar({ filterText: '' });
 
-      const searchButton = container.querySelector('button[title="搜索"]');
+      const searchButton = screen.getByRole('button', { name: '搜索' });
       expect(searchButton).toBeInTheDocument();
     });
 
     it('当禁用搜索时不应该显示搜索按钮', () => {
-      const { container } = renderToolsBar({ filterText: undefined });
+      renderToolsBar({ filterText: undefined });
 
-      const searchButton = container.querySelector('button[title="搜索"]');
-      expect(searchButton).toBeNull();
+      const searchButton = screen.queryByRole('button', { name: '搜索' });
+      expect(searchButton).not.toBeInTheDocument();
     });
 
     it('不在聊天页面时不应该显示隐藏侧边栏按钮', () => {
@@ -151,10 +151,10 @@ describe('ToolsBar Component', () => {
         }),
       });
 
-      const { container } = renderToolsBar({}, store);
+      renderToolsBar({}, store);
 
-      const hideButton = container.querySelector('button[title="隐藏侧边栏"]');
-      expect(hideButton).toBeNull();
+      const hideButton = screen.queryByRole('button', { name: '隐藏侧边栏' });
+      expect(hideButton).not.toBeInTheDocument();
     });
   });
 
@@ -171,37 +171,23 @@ describe('ToolsBar Component', () => {
       const dispatchSpy = vi.spyOn(store, 'dispatch');
       renderToolsBar({}, store);
 
-      // 点击新建聊天按钮
-      const buttons = screen.getAllByRole('button');
-      const newChatButton = buttons.find(btn =>
-        btn.querySelector('svg') && btn.getAttribute('title') === '新建聊天'
-      );
+      const newChatButton = screen.getByRole('button', { name: '新建聊天' });
+      fireEvent.click(newChatButton);
 
-      if (newChatButton) {
-        fireEvent.click(newChatButton);
-
-        // 应该触发 dispatch
-        expect(dispatchSpy).toHaveBeenCalled();
-      }
+      // 应该触发 dispatch
+      expect(dispatchSpy).toHaveBeenCalled();
     });
 
     it('创建新聊天后应该导航到新聊天', () => {
       renderToolsBar();
 
-      // 点击新建聊天按钮
-      const buttons = screen.getAllByRole('button');
-      const newChatButton = buttons.find(btn =>
-        btn.querySelector('svg') && btn.getAttribute('title') === '新建聊天'
-      );
+      const newChatButton = screen.getByRole('button', { name: '新建聊天' });
+      fireEvent.click(newChatButton);
 
-      if (newChatButton) {
-        fireEvent.click(newChatButton);
-
-        // 应该触发导航
-        expect(mockNavigateToChat).toHaveBeenCalledWith({
-          chatId: expect.any(String),
-        });
-      }
+      // 应该触发导航
+      expect(mockNavigateToChat).toHaveBeenCalledWith({
+        chatId: expect.any(String),
+      });
     });
   });
 
@@ -209,125 +195,87 @@ describe('ToolsBar Component', () => {
     it('点击搜索按钮应该进入搜索模式', () => {
       renderToolsBar({ filterText: '' });
 
-      // 点击搜索按钮
-      const buttons = screen.getAllByRole('button');
-      const searchButton = buttons.find(btn =>
-        btn.querySelector('svg') && btn.getAttribute('title') === '搜索'
-      );
+      const searchButton = screen.getByRole('button', { name: '搜索' });
+      fireEvent.click(searchButton);
 
-      if (searchButton) {
-        fireEvent.click(searchButton);
-
-        // 应该显示搜索输入框
-        expect(screen.getByTestId('filter-input')).toBeInTheDocument();
-      }
+      // 应该显示搜索输入框
+      expect(screen.getByTestId('filter-input')).toBeInTheDocument();
     });
 
     it('搜索模式应该显示返回按钮和输入框', () => {
       renderToolsBar({ filterText: '' });
 
-      // 点击搜索按钮
-      const buttons = screen.getAllByRole('button');
-      const searchButton = buttons.find(btn =>
-        btn.querySelector('svg') && btn.getAttribute('title') === '搜索'
-      );
+      const searchButton = screen.getByRole('button', { name: '搜索' });
+      fireEvent.click(searchButton);
 
-      if (searchButton) {
-        fireEvent.click(searchButton);
+      // 应该显示输入框和返回按钮
+      expect(screen.getByTestId('filter-input')).toBeInTheDocument();
 
-        // 应该显示输入框和返回按钮
-        expect(screen.getByTestId('filter-input')).toBeInTheDocument();
-
-        const buttonsInSearch = screen.getAllByRole('button');
-        expect(buttonsInSearch.length).toBeGreaterThan(0);
-      }
+      const buttonsInSearch = screen.getAllByRole('button');
+      expect(buttonsInSearch.length).toBeGreaterThan(0);
     });
 
     it('输入框值变化应该调用 onFilterChange', () => {
       const onFilterChange = vi.fn();
       renderToolsBar({ filterText: '', onFilterChange });
 
-      // 点击搜索按钮
-      const buttons = screen.getAllByRole('button');
-      const searchButton = buttons.find(btn =>
-        btn.querySelector('svg') && btn.getAttribute('title') === '搜索'
-      );
+      const searchButton = screen.getByRole('button', { name: '搜索' });
+      fireEvent.click(searchButton);
 
-      if (searchButton) {
-        fireEvent.click(searchButton);
+      // 输入搜索文本
+      const input = screen.getByTestId('filter-input');
+      fireEvent.change(input, { target: { value: 'test chat' } });
 
-        // 输入搜索文本
-        const input = screen.getByTestId('filter-input');
-        fireEvent.change(input, { target: { value: 'test chat' } });
-
-        // 应该调用 onFilterChange
-        expect(onFilterChange).toHaveBeenCalledWith('test chat');
-      }
+      // 应该调用 onFilterChange
+      expect(onFilterChange).toHaveBeenCalledWith('test chat');
     });
 
     it('点击返回按钮应该退出搜索模式', () => {
       const onFilterChange = vi.fn();
       renderToolsBar({ filterText: 'test', onFilterChange });
 
-      // 点击搜索按钮
-      const buttons = screen.getAllByRole('button');
-      const searchButton = buttons.find(btn =>
-        btn.querySelector('svg') && btn.getAttribute('title') === '搜索'
-      );
+      const searchButton = screen.getByRole('button', { name: '搜索' });
+      fireEvent.click(searchButton);
 
-      if (searchButton) {
-        fireEvent.click(searchButton);
+      // 点击返回按钮（搜索模式下第一个按钮）
+      const buttonsInSearch = screen.getAllByRole('button');
+      const backButton = buttonsInSearch[0];
+      fireEvent.click(backButton);
 
-        // 点击返回按钮（第一个按钮）
-        const buttonsInSearch = screen.getAllByRole('button');
-        const backButton = buttonsInSearch[0];
-        fireEvent.click(backButton);
+      // 应该重置搜索文本并退出搜索模式
+      expect(onFilterChange).toHaveBeenCalledWith('');
 
-        // 应该重置搜索文本并退出搜索模式
-        expect(onFilterChange).toHaveBeenCalledWith('');
-
-        expect(screen.queryByTestId('filter-input')).not.toBeInTheDocument();
-      }
+      expect(screen.queryByTestId('filter-input')).not.toBeInTheDocument();
     });
 
     it('输入框应该存在', () => {
-      // 先渲染并点击搜索按钮进入搜索模式
-      const { container } = renderToolsBar({ filterText: '' });
-      const searchButton = container.querySelector('button[title="搜索"]');
+      renderToolsBar({ filterText: '' });
 
-      if (searchButton) {
-        fireEvent.click(searchButton);
+      const searchButton = screen.getByRole('button', { name: '搜索' });
+      fireEvent.click(searchButton);
 
-        // 输入框应该存在
-        const input = screen.getByTestId('filter-input');
-        expect(input).toBeInTheDocument();
-      }
+      // 输入框应该存在
+      const input = screen.getByTestId('filter-input');
+      expect(input).toBeInTheDocument();
     });
 
     it('退出搜索模式时应该重置 filterText', () => {
       const onFilterChange = vi.fn();
       renderToolsBar({ filterText: 'existing search', onFilterChange });
 
-      // 点击搜索按钮
-      const buttons = screen.getAllByRole('button');
-      const searchButton = buttons.find(btn =>
-        btn.querySelector('svg') && btn.getAttribute('title') === '搜索'
-      );
+      const searchButton = screen.getByRole('button', { name: '搜索' });
+      fireEvent.click(searchButton);
 
-      if (searchButton) {
-        fireEvent.click(searchButton);
+      // 清除之前的调用
+      onFilterChange.mockClear();
 
-        // 清除之前的调用
-        onFilterChange.mockClear();
+      // 点击返回按钮
+      const buttonsInSearch = screen.getAllByRole('button');
+      const backButton = buttonsInSearch[0];
+      fireEvent.click(backButton);
 
-        // 点击返回按钮
-        const buttonsInSearch = screen.getAllByRole('button');
-        const backButton = buttonsInSearch[0];
-        fireEvent.click(backButton);
-
-        // 应该调用 onFilterChange 重置为空字符串
-        expect(onFilterChange).toHaveBeenCalledWith('');
-      }
+      // 应该调用 onFilterChange 重置为空字符串
+      expect(onFilterChange).toHaveBeenCalledWith('');
     });
   });
 
@@ -344,18 +292,11 @@ describe('ToolsBar Component', () => {
       const dispatchSpy = vi.spyOn(store, 'dispatch');
       renderToolsBar({}, store);
 
-      // 点击隐藏侧边栏按钮
-      const buttons = screen.getAllByRole('button');
-      const hideSidebarButton = buttons.find(btn =>
-        btn.querySelector('svg') && btn.getAttribute('title') === '隐藏侧边栏'
-      );
+      const hideSidebarButton = screen.getByRole('button', { name: '隐藏侧边栏' });
+      fireEvent.click(hideSidebarButton);
 
-      if (hideSidebarButton) {
-        fireEvent.click(hideSidebarButton);
-
-        // 应该触发 dispatch
-        expect(dispatchSpy).toHaveBeenCalled();
-      }
+      // 应该触发 dispatch
+      expect(dispatchSpy).toHaveBeenCalled();
     });
 
     it('应该通过 dispatch setIsCollapsed 来折叠侧边栏', () => {
@@ -370,44 +311,37 @@ describe('ToolsBar Component', () => {
       const dispatchSpy = vi.spyOn(store, 'dispatch');
       renderToolsBar({}, store);
 
-      // 点击隐藏侧边栏按钮
-      const buttons = screen.getAllByRole('button');
-      const hideSidebarButton = buttons.find(btn =>
-        btn.querySelector('svg') && btn.getAttribute('title') === '隐藏侧边栏'
+      const hideSidebarButton = screen.getByRole('button', { name: '隐藏侧边栏' });
+      fireEvent.click(hideSidebarButton);
+
+      // 应该调用 setIsCollapsed action
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'chatPage/setIsCollapsed',
+        })
       );
-
-      if (hideSidebarButton) {
-        fireEvent.click(hideSidebarButton);
-
-        // 应该调用 setIsCollapsed action
-        expect(dispatchSpy).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'chatPage/setIsCollapsed',
-          })
-        );
-      }
     });
   });
 
   describe('响应式布局', () => {
     it('工具栏应该使用 flex 布局', () => {
-      const { container } = renderToolsBar();
-      const toolbarDiv = container.querySelector('.flex.items-center.justify-between');
+      renderToolsBar();
+      const toolbarDiv = screen.getByTestId('tools-bar');
       expect(toolbarDiv).toBeInTheDocument();
     });
 
     it('工具栏应该是全宽', () => {
-      const { container } = renderToolsBar();
-      const toolbarDiv = container.querySelector('.w-full');
+      renderToolsBar();
+      const toolbarDiv = screen.getByTestId('tools-bar');
       expect(toolbarDiv).toBeInTheDocument();
     });
   });
 
   describe('按钮样式', () => {
     it('所有按钮应该有固定的尺寸', () => {
-      const { container } = renderToolsBar();
+      renderToolsBar();
 
-      const buttons = container.querySelectorAll('button');
+      const buttons = screen.getAllByRole('button');
       buttons.forEach(button => {
         expect(button.className).toContain('h-8');
         expect(button.className).toContain('w-8');
@@ -415,9 +349,9 @@ describe('ToolsBar Component', () => {
     });
 
     it('所有按钮应该有 hover 效果', () => {
-      const { container } = renderToolsBar();
+      renderToolsBar();
 
-      const buttons = container.querySelectorAll('button');
+      const buttons = screen.getAllByRole('button');
       buttons.forEach(button => {
         expect(button.className).toContain('hover:bg-accent');
       });
@@ -426,41 +360,35 @@ describe('ToolsBar Component', () => {
 
   describe('搜索模式布局', () => {
     it('搜索模式下应该显示输入框', () => {
-      const { container } = renderToolsBar({ filterText: '' });
-      const searchButton = container.querySelector('button[title="搜索"]');
+      renderToolsBar({ filterText: '' });
 
-      if (searchButton) {
-        fireEvent.click(searchButton);
+      const searchButton = screen.getByRole('button', { name: '搜索' });
+      fireEvent.click(searchButton);
 
-        const input = screen.getByTestId('filter-input');
-        expect(input).toBeInTheDocument();
-      }
+      const input = screen.getByTestId('filter-input');
+      expect(input).toBeInTheDocument();
     });
 
     it('搜索模式下应该显示返回按钮', () => {
-      const { container } = renderToolsBar({ filterText: '' });
-      const searchButton = container.querySelector('button[title="搜索"]');
+      renderToolsBar({ filterText: '' });
 
-      if (searchButton) {
-        fireEvent.click(searchButton);
+      const searchButton = screen.getByRole('button', { name: '搜索' });
+      fireEvent.click(searchButton);
 
-        const buttons = container.querySelectorAll('button');
-        expect(buttons.length).toBeGreaterThan(0);
-      }
+      const buttons = screen.getAllByRole('button');
+      expect(buttons.length).toBeGreaterThan(0);
     });
 
     it('搜索模式下输入框应该有正确的样式', () => {
-      const { container } = renderToolsBar({ filterText: '' });
-      const searchButton = container.querySelector('button[title="搜索"]');
+      renderToolsBar({ filterText: '' });
 
-      if (searchButton) {
-        fireEvent.click(searchButton);
+      const searchButton = screen.getByRole('button', { name: '搜索' });
+      fireEvent.click(searchButton);
 
-        const input = screen.getByTestId('filter-input');
-        expect(input).toBeInTheDocument();
-        // FilterInput 组件应该传入 className
-        expect(input.className).toBeDefined();
-      }
+      const input = screen.getByTestId('filter-input');
+      expect(input).toBeInTheDocument();
+      // FilterInput 组件应该传入 className
+      expect(input.className).toBeDefined();
     });
   });
 });

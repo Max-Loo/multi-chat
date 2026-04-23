@@ -95,13 +95,12 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
-      if (input) {
-        fireEvent.change(input, { target: { value: '3' } });
-        await waitFor(() => {
-          expect(setColumnCount).toHaveBeenCalledWith(3);
-        });
-      }
+      const input = container.querySelector('input[type="number"]') as HTMLInputElement;
+      expect(input).toBeInTheDocument();
+      fireEvent.change(input, { target: { value: '3' } });
+      await waitFor(() => {
+        expect(setColumnCount).toHaveBeenCalledWith(3);
+      });
     });
 
     it('应该在列数达到最大值时禁用加按钮', () => {

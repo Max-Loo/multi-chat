@@ -71,9 +71,9 @@ describe('Sidebar 组件测试', () => {
   });
 
   it('应该接受并应用自定义 className', () => {
-    const { container } = render(<Sidebar className="custom-class" />);
+    render(<Sidebar className="custom-class" />);
 
-    const sidebarDiv = container.querySelector('.bg-gray-50');
+    const sidebarDiv = screen.getByTestId('sidebar');
     expect(sidebarDiv).toHaveClass('custom-class');
   });
 

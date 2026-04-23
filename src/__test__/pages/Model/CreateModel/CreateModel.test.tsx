@@ -72,10 +72,10 @@ describe('CreateModel', () => {
 
       renderWithProviders(<CreateModel />, { store, route: '/model/add' });
 
-      const sidebar = document.querySelector('.border-r');
+      const sidebar = screen.getByTestId('model-sidebar');
       expect(sidebar).toBeInTheDocument();
 
-      const formArea = document.querySelector('.w-full');
+      const formArea = screen.getByTestId('model-content');
       expect(formArea).toBeInTheDocument();
     });
 
@@ -100,7 +100,7 @@ describe('CreateModel', () => {
 
       renderWithProviders(<CreateModel />, { store, route: '/model/add' });
 
-      const form = document.querySelector('form');
+      const form = screen.getByTestId('model-config-form');
       expect(form).toBeInTheDocument();
     });
   });
@@ -186,25 +186,26 @@ describe('CreateModel', () => {
 
       renderWithProviders(<CreateModel />, { store, route: '/model/add' });
 
-      // 使用 getByRole 找到输入框
-      const nicknameInput = screen.getAllByRole('textbox').find(input =>
+      // nickname 使用普通 Input，可通过 textbox 角色查找
+      const textboxes = screen.getAllByRole('textbox');
+      const nicknameInput = textboxes.find(input =>
         input.getAttribute('name') === 'nickname'
       );
-      const apiKeyInput = screen.getAllByRole('textbox').find(input =>
-        input.getAttribute('name') === 'apiKey'
-      );
+      expect(nicknameInput).toBeTruthy();
 
-      if (nicknameInput && apiKeyInput) {
-        fireEvent.change(nicknameInput, { target: { value: 'Test Model' } });
-        fireEvent.change(apiKeyInput, { target: { value: 'test-api-key' } });
+      // apiKey 使用 PasswordInput（type="password"），不是 textbox 角色，通过 name 属性查找
+      const apiKeyInput = document.querySelector('input[name="apiKey"]') as HTMLElement;
+      expect(apiKeyInput).toBeTruthy();
 
-        const submitButton = screen.getByRole('button', { name: '提交' });
-        fireEvent.click(submitButton);
+      fireEvent.change(nicknameInput!, { target: { value: 'Test Model' } });
+      fireEvent.change(apiKeyInput, { target: { value: 'test-api-key' } });
 
-        await waitFor(() => {
-          expect(submitButton).toBeInTheDocument();
-        });
-      }
+      const submitButton = screen.getByRole('button', { name: '提交' });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(submitButton).toBeInTheDocument();
+      });
     });
   });
 

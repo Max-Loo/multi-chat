@@ -65,7 +65,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
   );
 
   if (!currentProvider) {
-    return <div className="text-destructive">Provider not found</div>;
+    return <div className="text-destructive" data-testid="provider-error">Provider not found</div>;
   }
 
   const { models: defaultModelList, api: apiUrl } = currentProvider;
@@ -205,6 +205,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
             form.handleSubmit();
           }}
           className="flex flex-wrap gap-4"
+          data-testid="model-config-form"
         >
           <form.Field
             name="nickname"
@@ -375,7 +376,7 @@ const ModelConfigForm: React.FC<ModelConfigFormProps> = ({
           />
 
           <FormItem className="flex items-center justify-end w-full grow">
-            <Button type="submit">{t(($) => $.common.submit)}</Button>
+            <Button type="submit" data-testid="submit-button">{t(($) => $.common.submit)}</Button>
           </FormItem>
         </form>
       </Form>

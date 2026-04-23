@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { PageSkeleton } from '@/components/Skeleton/PageSkeleton';
 
 // Mock useResponsive
@@ -31,8 +31,8 @@ describe('PageSkeleton', () => {
 
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper).toHaveClass('flex');
-    // 桌面端应有侧边栏（w-64）
-    expect(container.querySelector('.w-64')).toBeInTheDocument();
+    // 桌面端应有侧边栏
+    expect(screen.getByTestId('sidebar-skeleton')).toBeInTheDocument();
   });
 
   it('应该渲染移动端布局（无侧边栏）当 isMobile 为 true', () => {
@@ -43,8 +43,8 @@ describe('PageSkeleton', () => {
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper).toHaveClass('flex-col');
     // 移动端不应有侧边栏
-    expect(container.querySelector('.w-64')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('sidebar-skeleton')).not.toBeInTheDocument();
     // 应有底部导航占位
-    expect(container.querySelector('.h-16')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-bottom-nav-placeholder')).toBeInTheDocument();
   });
 });

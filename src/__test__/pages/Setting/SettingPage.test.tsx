@@ -89,10 +89,10 @@ describe('SettingPage Component', () => {
     });
 
     it('应该在内容区显示嵌套路由内容', () => {
-      const { container } = renderSettingPage(<SettingPage />);
+      renderSettingPage(<SettingPage />);
 
       // 验证 Outlet 容器存在
-      const contentArea = container.querySelector('.overflow-y-auto');
+      const contentArea = screen.getByTestId('setting-content');
       expect(contentArea).toBeInTheDocument();
     });
   });

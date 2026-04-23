@@ -47,7 +47,7 @@ vi.mock('@/components/ui/sheet', () => ({
 
 // 测试用复杂子组件
 const ComplexChild = () => (
-  <div className="complex">
+  <div data-testid="complex-child">
     <span>嵌套内容</span>
   </div>
 );
@@ -239,7 +239,7 @@ describe('MobileDrawer 组件', () => {
       );
 
       expect(screen.getByText('嵌套内容')).toBeInTheDocument();
-      expect(document.querySelector('.complex')).toBeInTheDocument();
+      expect(screen.getByTestId('complex-child')).toBeInTheDocument();
     });
   });
 

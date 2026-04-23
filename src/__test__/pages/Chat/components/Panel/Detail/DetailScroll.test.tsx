@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, fireEvent, act } from '@testing-library/react';
+import { render, fireEvent, act, screen } from '@testing-library/react';
 import Detail from '@/pages/Chat/components/Panel/Detail';
 import { ChatModel, StandardMessage, ChatRoleEnum } from '@/types/chat';
 
@@ -93,10 +93,11 @@ describe('Detail 滚动行为', () => {
   it('应该渲染聊天历史消息', () => {
     const chatModel = createChatModelWithHistory(3);
 
-    const { container } = render(<Detail chatModel={chatModel} />);
+    render(<Detail chatModel={chatModel} />);
 
-    const bubbles = container.querySelectorAll('[data-testid="user-message"], [data-testid="assistant-message"]');
-    expect(bubbles).toHaveLength(3);
+    const userMessages = screen.queryAllByTestId('user-message');
+    const assistantMessages = screen.queryAllByTestId('assistant-message');
+    expect(userMessages.length + assistantMessages.length).toBe(3);
   });
 
   it('应该显示错误信息 当 runningChatData 有 errorMessage', () => {
@@ -104,26 +105,27 @@ describe('Detail 滚动行为', () => {
 
     const chatModel = createChatModelWithHistory(0);
 
-    const { container } = render(<Detail chatModel={chatModel} />);
+    render(<Detail chatModel={chatModel} />);
 
-    expect(container.textContent).toContain('请求失败');
+    expect(screen.getByText('请求失败')).toBeInTheDocument();
   });
 
   it('应该渲染 Title 组件', () => {
     const chatModel = createChatModelWithHistory(0);
 
-    const { container } = render(<Detail chatModel={chatModel} />);
+    render(<Detail chatModel={chatModel} />);
 
-    expect(container.querySelector('[data-testid="detail-title"]')).toBeInTheDocument();
+    expect(screen.getByTestId('detail-title')).toBeInTheDocument();
   });
 
   it('应该渲染空列表 当 chatHistoryList 为空数组', () => {
     const chatModel = createChatModelWithHistory(0);
 
-    const { container } = render(<Detail chatModel={chatModel} />);
+    render(<Detail chatModel={chatModel} />);
 
-    const bubbles = container.querySelectorAll('[data-testid="user-message"], [data-testid="assistant-message"]');
-    expect(bubbles).toHaveLength(0);
+    const userMessages = screen.queryAllByTestId('user-message');
+    const assistantMessages = screen.queryAllByTestId('assistant-message');
+    expect(userMessages.length + assistantMessages.length).toBe(0);
   });
 
   it('应该渲染 RunningBubble 组件', () => {
@@ -136,10 +138,10 @@ describe('Detail 滚动行为', () => {
   it('应该设置滚动容器 ref', () => {
     const chatModel = createChatModelWithHistory(0);
 
-    const { container } = render(<Detail chatModel={chatModel} />);
+    render(<Detail chatModel={chatModel} />);
 
-    // 滚动容器存在（带有 overflow-y-auto）
-    const scrollContainer = container.querySelector('.overflow-y-auto');
+    // 滚动容器存在
+    const scrollContainer = screen.getByTestId('detail-scroll-container');
     expect(scrollContainer).toBeInTheDocument();
   });
 });
@@ -228,9 +230,9 @@ describe('Detail 滚动到底部按钮', () => {
 
   it('应该显示滚动到底部按钮 当内容超出容器且不在底部', () => {
     const chatModel = createChatModelWithHistory(3);
-    const { container } = renderAndFlushInitial(chatModel);
+    renderAndFlushInitial(chatModel);
 
-    const scrollContainer = container.querySelector('.overflow-y-auto') as HTMLElement;
+    const scrollContainer = screen.getByTestId('detail-scroll-container');
 
     // 模拟：内容 1000px，容器 300px，scrollTop=100 → 不在底部 (1000-100-300=600 > 24)
     triggerScrollRecheck(scrollContainer, {
@@ -239,15 +241,15 @@ describe('Detail 滚动到底部按钮', () => {
       scrollTop: 100,
     });
 
-    const button = container.querySelector('button[title="滚动到底部"]');
+    const button = screen.getByRole('button', { name: '滚动到底部' });
     expect(button).toBeInTheDocument();
   });
 
   it('应该隐藏按钮 当滚动到底部', () => {
     const chatModel = createChatModelWithHistory(3);
-    const { container } = renderAndFlushInitial(chatModel);
+    renderAndFlushInitial(chatModel);
 
-    const scrollContainer = container.querySelector('.overflow-y-auto') as HTMLElement;
+    const scrollContainer = screen.getByTestId('detail-scroll-container');
 
     // 模拟：在底部 (1000 - 680 - 300 = 20 <= 24)
     triggerScrollRecheck(scrollContainer, {
@@ -256,15 +258,15 @@ describe('Detail 滚动到底部按钮', () => {
       scrollTop: 680,
     });
 
-    const button = container.querySelector('button[title="滚动到底部"]');
+    const button = screen.queryByRole('button', { name: '滚动到底部' });
     expect(button).not.toBeInTheDocument();
   });
 
   it('应该隐藏按钮 当内容不超出容器', () => {
     const chatModel = createChatModelWithHistory(3);
-    const { container } = renderAndFlushInitial(chatModel);
+    renderAndFlushInitial(chatModel);
 
-    const scrollContainer = container.querySelector('.overflow-y-auto') as HTMLElement;
+    const scrollContainer = screen.getByTestId('detail-scroll-container');
 
     // 模拟：内容 200px，容器 300px → 不需要滚动条
     triggerScrollRecheck(scrollContainer, {
@@ -273,15 +275,15 @@ describe('Detail 滚动到底部按钮', () => {
       scrollTop: 0,
     });
 
-    const button = container.querySelector('button[title="滚动到底部"]');
+    const button = screen.queryByRole('button', { name: '滚动到底部' });
     expect(button).not.toBeInTheDocument();
   });
 
   it('应该滚动到底部 当点击按钮', () => {
     const chatModel = createChatModelWithHistory(3);
-    const { container } = renderAndFlushInitial(chatModel);
+    renderAndFlushInitial(chatModel);
 
-    const scrollContainer = container.querySelector('.overflow-y-auto') as HTMLElement;
+    const scrollContainer = screen.getByTestId('detail-scroll-container');
 
     // 先显示按钮
     triggerScrollRecheck(scrollContainer, {
@@ -290,12 +292,12 @@ describe('Detail 滚动到底部按钮', () => {
       scrollTop: 100,
     });
 
-    const button = container.querySelector('button[title="滚动到底部"]');
+    const button = screen.getByRole('button', { name: '滚动到底部' });
     expect(button).toBeInTheDocument();
 
     // 点击按钮
     act(() => {
-      fireEvent.click(button!);
+      fireEvent.click(button);
     });
 
     // scrollTop 应被设置为 scrollHeight
@@ -304,9 +306,9 @@ describe('Detail 滚动到底部按钮', () => {
 
   it('应该通过 ResizeObserver 重新检测滚动状态', () => {
     const chatModel = createChatModelWithHistory(3);
-    const { container } = renderAndFlushInitial(chatModel);
+    renderAndFlushInitial(chatModel);
 
-    const scrollContainer = container.querySelector('.overflow-y-auto') as HTMLElement;
+    const scrollContainer = screen.getByTestId('detail-scroll-container');
 
     // 修改滚动尺寸模拟内容增加
     mockScrollDimensions(scrollContainer, {
@@ -322,7 +324,7 @@ describe('Detail 滚动到底部按钮', () => {
     });
 
     // 按钮应显示（不在底部）
-    const button = container.querySelector('button[title="滚动到底部"]');
+    const button = screen.getByRole('button', { name: '滚动到底部' });
     expect(button).toBeInTheDocument();
   });
 });

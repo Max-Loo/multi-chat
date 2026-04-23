@@ -60,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({
   }, [dispatch]);
 
   return (
-    <div className="relative z-10 flex items-center justify-between w-full h-12 pl-3 pr-3 border-b border-gray-200">
+    <div className="relative z-10 flex items-center justify-between w-full h-12 pl-3 pr-3 border-b border-gray-200" data-testid="chat-panel-header">
       <div className="flex items-center justify-start">
         {/* 打开聊天列表抽屉的按钮 */}
         {isMobile && (
@@ -95,11 +95,13 @@ const Header: React.FC<HeaderProps> = ({
               checked={isSplitter}
               onCheckedChange={setIsSplitter}
               className="mr-2"
+              data-testid="splitter-switch"
             />
             <span>{t(($) => $.chat.maxPerRow)}</span>
             <Input
               type="number"
               className="w-16 h-8"
+              data-testid="column-count-input"
               min={1}
               max={chatModelList.length || 1}
               value={columnCount}
@@ -111,6 +113,7 @@ const Header: React.FC<HeaderProps> = ({
             <Button
               variant="ghost"
               className="ml-1 h-8 w-8 p-0"
+              data-testid="column-plus-btn"
               disabled={columnCount >= chatModelList.length}
               onClick={() => setColumnCount(columnCount + 1)}
             >
@@ -119,6 +122,7 @@ const Header: React.FC<HeaderProps> = ({
             <Button
               variant="ghost"
               className="ml-1 h-8 w-8 p-0"
+              data-testid="column-minus-btn"
               disabled={columnCount <= 1}
               onClick={() => setColumnCount(columnCount - 1)}
             >

@@ -258,6 +258,7 @@ const ChatButton = memo<ChatButtonProps>(({
             <Button
               variant="ghost"
               size="icon"
+              data-testid="chat-menu-trigger"
               className={`p-0 ${
                 isNormalSize
                   ? 'h-8 w-8'

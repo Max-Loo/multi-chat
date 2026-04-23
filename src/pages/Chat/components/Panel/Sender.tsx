@@ -112,7 +112,7 @@ const Sender: React.FC = () => {
   const abortSendEventRef = useRef<AbortController | null>(null);
 
   // 发送消息
-  const sendMessage = (message: string) => {
+  const sendMessage = async (message: string) => {
     if (!isString(message) || !message.trim()) {
       // 空消息不会发送
       return;
@@ -121,12 +121,13 @@ const Sender: React.FC = () => {
       // 没有选中的聊天，无法发送
       return;
     }
-    // 清空现有的输入
-    setText("");
 
     const abortController = new AbortController();
 
-    dispatch(
+    // 将取消事件保存下来，以便中断（在 dispatch 前保存，确保点击停止时可用）
+    abortSendEventRef.current = abortController;
+
+    const result = await dispatch(
       startSendChatMessage(
         {
           chat: selectedChat,
@@ -136,8 +137,10 @@ const Sender: React.FC = () => {
       ),
     );
 
-    // 将取消事件保存下来，以便中断
-    abortSendEventRef.current = abortController;
+    // 发送成功时清空输入框，失败时保留内容以便用户修改后重试
+    if (startSendChatMessage.fulfilled.match(result)) {
+      setText("");
+    }
   };
 
   // 点击发送按钮
@@ -190,7 +193,7 @@ const Sender: React.FC = () => {
   };
 
   return (
-    <div className="relative z-10 px-3 py-2 bg-background border border-gray-300 rounded-lg">
+    <div className="relative z-10 px-3 py-2 bg-background border border-gray-300 rounded-lg" data-testid="chat-panel-sender">
       {/* Flex 容器包裹 Textarea 和工具栏 */}
       <div className="flex flex-col">
         <Textarea

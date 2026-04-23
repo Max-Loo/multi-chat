@@ -26,6 +26,7 @@ const renderOption = (option: ModelDetail) => (
     <RadioGroupItem value={option.modelKey} id={option.modelKey} />
     <label
       htmlFor={option.modelKey}
+      data-testid={`model-option-${option.modelKey}`}
       className="flex-1 cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
     >
       { option.modelName }

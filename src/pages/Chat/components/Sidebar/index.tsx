@@ -33,7 +33,7 @@ const Sidebar: React.FC = () => {
   );
 
   return (
-    <div className="relative flex flex-col items-center justify-start w-full h-full">
+    <div data-testid="chat-sidebar" className="relative flex flex-col items-center justify-start w-full h-full">
       <div className="w-full h-12 p-2 border-b border-gray-100">
         <ToolsBar filterText={filterText} onFilterChange={setFilterText} />
       </div>

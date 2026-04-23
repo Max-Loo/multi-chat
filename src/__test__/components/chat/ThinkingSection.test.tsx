@@ -166,9 +166,7 @@ describe('ThinkingSection UI 组件', () => {
         />
       );
 
-      // 检查是否有加载动画（pulse-fade）
-      const spinner = document.querySelector('.animate-pulse-fade');
-      expect(spinner).not.toBe(null);
+      expect(screen.getByTestId('thinking-loading')).toBeInTheDocument();
     });
 
     it('应该显示"思考中"标题', () => {
@@ -192,8 +190,7 @@ describe('ThinkingSection UI 组件', () => {
         />
       );
 
-      const spinner = document.querySelector('.animate-pulse-fade');
-      expect(spinner).toBe(null);
+      expect(screen.queryByTestId('thinking-loading')).not.toBeInTheDocument();
     });
   });
 
@@ -384,7 +381,7 @@ describe('ThinkingSection UI 组件', () => {
       );
 
       expect(screen.getByText('思考完成')).toBeVisible();
-      expect(document.querySelector('.animate-pulse-fade')).toBe(null);
+      expect(screen.queryByTestId('thinking-loading')).not.toBeInTheDocument();
     });
   });
 
@@ -413,10 +410,8 @@ describe('ThinkingSection UI 组件', () => {
           content="内容"
         />
       );
-      
-      // ChevronRight icon 应该存在
-      const chevronRight = document.querySelector('svg.lucide-chevron-right');
-      expect(chevronRight).not.toBe(null);
+
+      expect(screen.getByTestId('chevron-right')).toBeInTheDocument();
     });
 
     it('应该在展开时显示下箭头图标', () => {
@@ -427,10 +422,8 @@ describe('ThinkingSection UI 组件', () => {
           initiallyExpanded={true}
         />
       );
-      
-      // ChevronDown icon 应该存在
-      const chevronDown = document.querySelector('svg.lucide-chevron-down');
-      expect(chevronDown).not.toBe(null);
+
+      expect(screen.getByTestId('chevron-down')).toBeInTheDocument();
     });
   });
 });

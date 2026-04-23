@@ -27,6 +27,7 @@ export const ProviderCard = React.memo<ProviderCardProps>(
   ({ provider, isExpanded, onToggle, status }) => {
     return (
       <Card
+        data-testid="provider-card"
         className="overflow-hidden transition-all hover:shadow-md cursor-pointer"
         style={{
           willChange: 'transform, opacity',
@@ -46,7 +47,7 @@ export const ProviderCard = React.memo<ProviderCardProps>(
           />
         </div>
         {isExpanded && (
-          <div className="border-t">
+          <div data-testid="provider-card-details" className="border-t">
             <ProviderCardDetails provider={provider} />
           </div>
         )}

@@ -77,22 +77,15 @@ describe('ChatPanel', () => {
     it('应该渲染单模型聊天面板', () => {
       renderChatPanel(1, { chatProps: { name: 'Single Model Chat' } });
 
-      const panel = document.querySelector('.relative.flex.flex-col');
-      expect(panel).toBeInTheDocument();
-
-      const header = document.querySelector('.relative.z-10.flex');
-      expect(header).toBeInTheDocument();
-
-      const sender = document.querySelector('.relative.z-10.w-full');
-      expect(sender).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel-header')).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel-sender')).toBeInTheDocument();
     });
 
     it('应该在单模型时不显示分割模式控制', () => {
       renderChatPanel(1);
 
-      // 不应该显示分割模式开关（只有多模型时才显示）
-      const splitterSwitch = document.querySelector('[role="switch"]');
-      expect(splitterSwitch).not.toBeInTheDocument();
+      expect(screen.queryByRole('switch')).not.toBeInTheDocument();
     });
   });
 
@@ -100,30 +93,21 @@ describe('ChatPanel', () => {
     it('应该渲染多模型聊天面板网格布局', () => {
       renderChatPanel(3, { chatProps: { name: 'Multi Model Chat' } });
 
-      const panel = document.querySelector('.relative.flex.flex-col');
-      expect(panel).toBeInTheDocument();
-
-      // 应该显示分割模式开关（多模型时）
-      const splitterSwitch = document.querySelector('[role="switch"]');
-      expect(splitterSwitch).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
+      expect(screen.getByRole('switch')).toBeInTheDocument();
     });
 
     it('应该显示聊天标题', () => {
       renderChatPanel(2, { chatProps: { name: 'Test Chat Name' } });
 
-      // 应该显示聊天名称
       expect(screen.getByText('Test Chat Name')).toBeInTheDocument();
     });
 
     it('应该显示列数控制按钮', () => {
       renderChatPanel(3);
 
-      const buttons = document.querySelectorAll('button');
-      const plusButton = Array.from(buttons).find(btn => btn.querySelector('svg')?.classList.contains('lucide-plus'));
-      const minusButton = Array.from(buttons).find(btn => btn.querySelector('svg')?.classList.contains('lucide-minus'));
-
-      expect(plusButton).toBeInTheDocument();
-      expect(minusButton).toBeInTheDocument();
+      expect(screen.getByTestId('column-plus-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('column-minus-btn')).toBeInTheDocument();
     });
   });
 
@@ -131,32 +115,21 @@ describe('ChatPanel', () => {
     it('应该在分割模式下启用 ResizablePanel', async () => {
       const { container } = renderChatPanel(2);
 
-      // 点击分割模式开关（使用 role="switch"）
-      const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
-      expect(splitterSwitch).toBeInTheDocument();
+      const splitterSwitch = screen.getByRole('switch');
+      fireEvent.click(splitterSwitch);
 
-      if (splitterSwitch) {
-        fireEvent.click(splitterSwitch);
-
-        // 等待状态更新
-        await waitFor(() => {
-          const resizablePanels = container.querySelectorAll('[data-panel]');
-          expect(resizablePanels.length).toBeGreaterThan(0);
-        });
-      }
+      await waitFor(() => {
+        const resizablePanels = container.querySelectorAll('[data-panel]');
+        expect(resizablePanels.length).toBeGreaterThan(0);
+      });
     });
 
     it('应该在关闭分割模式时使用常规网格布局', () => {
       renderChatPanel(2);
 
-      // 默认情况下，分割模式是关闭的（useState 初始值为 false）
-      const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
-      expect(splitterSwitch).toBeInTheDocument();
+      const splitterSwitch = screen.getByRole('switch');
       expect(splitterSwitch).toHaveAttribute('data-state', 'unchecked');
-
-      // 应该使用常规网格布局（没有 ResizablePanel）
-      const contentContainer = document.querySelector('.absolute.top-0.left-0.w-full');
-      expect(contentContainer).toBeInTheDocument();
+      expect(screen.getByTestId('grid-container')).toBeInTheDocument();
     });
   });
 
@@ -164,25 +137,19 @@ describe('ChatPanel', () => {
     it('应该初始化 columnCount 为模型数量', () => {
       renderChatPanel(3);
 
-      const columnInput = document.querySelector('input[type="number"]') as HTMLInputElement;
-      expect(columnInput).toBeInTheDocument();
+      const columnInput = screen.getByTestId('column-count-input') as HTMLInputElement;
       expect(columnInput.value).toBe('3');
     });
 
     it('应该能够增加列数', () => {
       renderChatPanel(3);
 
-      const columnInput = document.querySelector('input[type="number"]') as HTMLInputElement;
+      const columnInput = screen.getByTestId('column-count-input') as HTMLInputElement;
       const initialValue = parseInt(columnInput.value);
 
-      // 点击增加按钮
-      const buttons = document.querySelectorAll('button');
-      const plusButton = Array.from(buttons).find(btn => btn.querySelector('svg')?.classList.contains('lucide-plus'));
-
-      if (plusButton && initialValue < 3) {
+      const plusButton = screen.getByTestId('column-plus-btn');
+      if (initialValue < 3) {
         fireEvent.click(plusButton);
-
-        // columnCount 应该增加
         expect(parseInt(columnInput.value)).toBe(initialValue + 1);
       }
     });
@@ -190,17 +157,12 @@ describe('ChatPanel', () => {
     it('应该能够减少列数', () => {
       renderChatPanel(3);
 
-      const columnInput = document.querySelector('input[type="number"]') as HTMLInputElement;
+      const columnInput = screen.getByTestId('column-count-input') as HTMLInputElement;
       const initialValue = parseInt(columnInput.value);
 
-      // 点击减少按钮
-      const buttons = document.querySelectorAll('button');
-      const minusButton = Array.from(buttons).find(btn => btn.querySelector('svg')?.classList.contains('lucide-minus'));
-
-      if (minusButton && initialValue > 1) {
+      const minusButton = screen.getByTestId('column-minus-btn');
+      if (initialValue > 1) {
         fireEvent.click(minusButton);
-
-        // columnCount 应该减少
         expect(parseInt(columnInput.value)).toBe(initialValue - 1);
       }
     });
@@ -208,19 +170,14 @@ describe('ChatPanel', () => {
     it('应该限制列数最小值为 1', () => {
       const { unmount } = renderChatPanel(1);
 
-      // 单模型时，columnCount 应该初始化为 1
-      // 注意：单模型可能不显示列数控制，所以这个测试验证初始化逻辑
-      const panel = document.querySelector('.relative.flex.flex-col');
-      expect(panel).toBeInTheDocument();
-
-      // 清理组件
+      expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
       unmount();
     });
 
     it('应该限制列数最大值为模型数量', () => {
       renderChatPanel(2);
 
-      const columnInput = document.querySelector('input[type="number"]') as HTMLInputElement;
+      const columnInput = screen.getByTestId('column-count-input') as HTMLInputElement;
       expect(columnInput.value).toBe('2');
     });
   });
@@ -229,40 +186,26 @@ describe('ChatPanel', () => {
     it('应该在切换分割模式时更新 isSplitter 状态', () => {
       renderChatPanel(2);
 
-      const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
-      expect(splitterSwitch).toBeInTheDocument();
-
-      // 初始状态应该是未选中（useState 初始值为 false）
+      const splitterSwitch = screen.getByRole('switch');
       expect(splitterSwitch).toHaveAttribute('data-state', 'unchecked');
 
-      // 点击开关
       fireEvent.click(splitterSwitch);
-
-      // 状态应该更新为选中
       expect(splitterSwitch).toHaveAttribute('data-state', 'checked');
 
-      // 再次点击
       fireEvent.click(splitterSwitch);
-
-      // 状态应该更新为未选中
       expect(splitterSwitch).toHaveAttribute('data-state', 'unchecked');
     });
 
     it('应该在分割模式下显示不同的布局', async () => {
       const { container } = renderChatPanel(2);
 
-      // 启用分割模式
-      const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
-      if (splitterSwitch) {
-        fireEvent.click(splitterSwitch);
+      const splitterSwitch = screen.getByRole('switch');
+      fireEvent.click(splitterSwitch);
 
-        // 等待状态更新并检查布局
-        await waitFor(() => {
-          // 分割模式下渲染 ResizablePanel（[data-panel] 属性仅分割模式存在）
-          const resizablePanels = container.querySelectorAll('[data-panel]');
-          expect(resizablePanels.length).toBeGreaterThan(0);
-        });
-      }
+      await waitFor(() => {
+        const resizablePanels = container.querySelectorAll('[data-panel]');
+        expect(resizablePanels.length).toBeGreaterThan(0);
+      });
     });
   });
 
@@ -272,64 +215,42 @@ describe('ChatPanel', () => {
       const chat2 = createMockChatWithModels(3, { id: 'chat-2' });
       const { store } = renderChatPanel(0, { chatList: [chat1, chat2], selectedChatId: 'chat-1' });
 
-      // 启用分割模式
-      const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
-      if (splitterSwitch) {
-        fireEvent.click(splitterSwitch);
-        expect(splitterSwitch).toHaveAttribute('data-state', 'checked');
+      const splitterSwitch = screen.getByRole('switch');
+      fireEvent.click(splitterSwitch);
+      expect(splitterSwitch).toHaveAttribute('data-state', 'checked');
 
-        // 切换到不同的聊天（使用 action creator）
-        store.dispatch(setSelectedChatId('chat-2'));
+      store.dispatch(setSelectedChatId('chat-2'));
 
-        // 等待状态更新和重新渲染
-        await waitFor(() => {
-          const newSwitch = document.querySelector('[role="switch"]') as HTMLElement;
-          expect(newSwitch).toBeInTheDocument();
-          // 切换聊天后，useEffect 会重置 isSplitter 为 false
-          expect(newSwitch).toHaveAttribute('data-state', 'unchecked');
-        }, { timeout: 3000 });
-      }
+      await waitFor(() => {
+        const newSwitch = screen.getByRole('switch');
+        expect(newSwitch).toHaveAttribute('data-state', 'unchecked');
+      }, { timeout: 3000 });
     });
 
     it('应该在模型数量变化时重置分割模式', async () => {
       const { store } = renderChatPanel(2);
 
-      // 启用分割模式
-      const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
-      if (splitterSwitch) {
-        fireEvent.click(splitterSwitch);
-        expect(splitterSwitch).toHaveAttribute('data-state', 'checked');
+      const splitterSwitch = screen.getByRole('switch');
+      fireEvent.click(splitterSwitch);
+      expect(splitterSwitch).toHaveAttribute('data-state', 'checked');
 
-        // 模型数量变化：通过 dispatch 更新 Redux state
-        const updatedChat = createMockChatWithModels(3, { id: 'chat-1' });
-        store.dispatch(editChat({ chat: updatedChat }));
+      const updatedChat = createMockChatWithModels(3, { id: 'chat-1' });
+      store.dispatch(editChat({ chat: updatedChat }));
 
-        // 等待 useEffect 触发并重置分割模式
-        await waitFor(() => {
-          const newSwitch = document.querySelector('[role="switch"]') as HTMLElement;
-          expect(newSwitch).toBeInTheDocument();
-          // 模型数量变化后，useEffect 会重置 isSplitter 为 false
-          expect(newSwitch).toHaveAttribute('data-state', 'unchecked');
-        }, { timeout: 3000 });
-      }
+      await waitFor(() => {
+        const newSwitch = screen.getByRole('switch');
+        expect(newSwitch).toHaveAttribute('data-state', 'unchecked');
+      }, { timeout: 3000 });
     });
 
     it('应该通过 useEffect 监听 chatModelList 变化', () => {
       renderChatPanel(2);
 
-      // 验证初始状态
-      const splitterSwitch = document.querySelector('[role="switch"]') as HTMLElement;
+      const splitterSwitch = screen.getByRole('switch');
       expect(splitterSwitch).toHaveAttribute('data-state', 'unchecked');
 
-      // 启用分割模式
-      if (splitterSwitch) {
-        fireEvent.click(splitterSwitch);
-        expect(splitterSwitch).toHaveAttribute('data-state', 'checked');
-
-        // 模型数量变化应该触发 useEffect 重置分割模式
-        // 这个测试验证了 useEffect 的依赖项正确设置为 chatModelList
-        expect(splitterSwitch).toBeInTheDocument();
-      }
+      fireEvent.click(splitterSwitch);
+      expect(splitterSwitch).toHaveAttribute('data-state', 'checked');
     });
   });
 
@@ -337,25 +258,19 @@ describe('ChatPanel', () => {
     it('应该渲染正确的主容器结构', () => {
       renderChatPanel(1);
 
-      // 主容器应该存在
-      const mainContainer = document.querySelector('.relative.flex.flex-col.items-center.justify-start.w-full.h-full');
-      expect(mainContainer).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
     });
 
     it('应该渲染 ChatPanelContent 组件', () => {
       renderChatPanel(1);
 
-      // ChatPanelContent 应该存在（包含内容区域）
-      const contentContainer = document.querySelector('.absolute.top-0.left-0.w-full');
-      expect(contentContainer).toBeInTheDocument();
+      expect(screen.getByTestId('grid-container')).toBeInTheDocument();
     });
 
     it('应该渲染 ChatPanelSender 组件', () => {
       renderChatPanel(1);
 
-      // ChatPanelSender 应该存在（发送框）
-      const senderContainer = document.querySelector('.relative.z-10.w-full');
-      expect(senderContainer).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel-sender')).toBeInTheDocument();
     });
   });
 
@@ -363,17 +278,13 @@ describe('ChatPanel', () => {
     it('应该处理空的 chatModelList', () => {
       renderChatPanel(0);
 
-      // 即使没有模型，组件也应该正常渲染
-      const panel = document.querySelector('.relative.flex.flex-col');
-      expect(panel).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
     });
 
     it('应该处理未命名的聊天', () => {
       renderChatPanel(1, { chatProps: { name: '' } });
 
-      // 应该显示"未命名"的文本
-      const panel = document.querySelector('.relative.flex.flex-col');
-      expect(panel).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
     });
   });
 });

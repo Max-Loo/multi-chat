@@ -133,10 +133,10 @@ describe('ChatButton Component', () => {
 
     it('应该在选中状态时显示背景色', () => {
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
-      const buttonDiv = container.querySelector('.bg-primary\\/20');
-      expect(buttonDiv).toBeInTheDocument();
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      expect(buttonDiv).toHaveClass('bg-primary/20');
     });
 
     it('应该在未选中状态时不显示背景色', () => {
@@ -153,16 +153,16 @@ describe('ChatButton Component', () => {
         }),
       });
 
-      const { container } = renderChatButton(chat, store, false);
-      const buttonDiv = container.querySelector('.bg-primary\\/20');
-      expect(buttonDiv).not.toBeInTheDocument();
+      renderChatButton(chat, store, false);
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      expect(buttonDiv).not.toHaveClass('bg-primary/20');
     });
 
     it('应该渲染下拉菜单按钮', () => {
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
-      const menuButton = container.querySelector('button[class*="p-0"]');
+      const menuButton = screen.getByTestId('chat-menu-trigger');
       expect(menuButton).toBeInTheDocument();
     });
   });
@@ -172,39 +172,35 @@ describe('ChatButton Component', () => {
       const chat = createMockChat({ name: '测试聊天' });
       renderChatButton(chat);
 
-      const buttonDiv = screen.getByText('测试聊天').closest('div');
-      if (buttonDiv) {
-        fireEvent.click(buttonDiv);
-        expect(mockNavigateToChat).toHaveBeenCalledWith({ chatId: chat.id });
-      }
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      fireEvent.click(buttonDiv);
+      expect(mockNavigateToChat).toHaveBeenCalledWith({ chatId: chat.id });
     });
 
     it('点击下拉菜单按钮不应该触发导航', () => {
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
-      const menuButton = container.querySelector('button[class*="p-0"]');
-      if (menuButton) {
-        fireEvent.click(menuButton);
-        expect(mockNavigateToChat).not.toHaveBeenCalled();
-      }
+      const menuButton = screen.getByTestId('chat-menu-trigger');
+      fireEvent.click(menuButton);
+      expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
   });
 
   describe('重命名功能', () => {
     it('应该渲染下拉菜单按钮', () => {
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
-      const menuButton = container.querySelector('button[aria-haspopup="menu"]');
+      const menuButton = screen.getByTestId('chat-menu-trigger');
       expect(menuButton).toBeInTheDocument();
     });
 
     it('下拉菜单按钮应该有正确的 aria 属性', () => {
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
-      const menuButton = container.querySelector('button[aria-haspopup="menu"]');
+      const menuButton = screen.getByTestId('chat-menu-trigger');
       expect(menuButton).toHaveAttribute('aria-haspopup', 'menu');
       expect(menuButton).toHaveAttribute('aria-expanded', 'false');
     });
@@ -217,39 +213,37 @@ describe('ChatButton Component', () => {
 
     it('下拉菜单按钮点击时不应该触发导航', () => {
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
-      const menuButton = container.querySelector('button[aria-haspopup="menu"]');
-      if (menuButton) {
-        fireEvent.click(menuButton);
-        expect(mockNavigateToChat).not.toHaveBeenCalled();
-      }
+      const menuButton = screen.getByTestId('chat-menu-trigger');
+      fireEvent.click(menuButton);
+      expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
   });
 
   describe('组件结构和样式', () => {
     it('聊天按钮应该有正确的样式类', () => {
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
-      const buttonDiv = container.querySelector('.w-full.py-2.px-1');
-      expect(buttonDiv).toBeInTheDocument();
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      expect(buttonDiv).toHaveClass('w-full');
     });
 
     it('应该在选中状态时显示背景色', () => {
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
-      const buttonDiv = container.querySelector('.bg-primary\\/20');
-      expect(buttonDiv).toBeInTheDocument();
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      expect(buttonDiv).toHaveClass('bg-primary/20');
     });
 
     it('下拉菜单按钮应该有正确的图标', () => {
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
-      const menuButton = container.querySelector('button[aria-haspopup="menu"]');
-      expect(menuButton?.querySelector('svg')).toBeInTheDocument();
+      const menuButton = screen.getByTestId('chat-menu-trigger');
+      expect(menuButton.querySelector('svg')).toBeInTheDocument();
     });
   });
 
@@ -320,18 +314,18 @@ describe('ChatButton Component', () => {
       });
 
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
       // 检查按钮容器的 padding
-      const buttonDiv = container.querySelector('.py-2.px-1');
-      expect(buttonDiv).toBeInTheDocument();
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      expect(buttonDiv).toHaveClass('py-2', 'px-1');
 
       // 检查字体大小
       const chatName = screen.getByTestId('chat-name');
       expect(chatName).toHaveClass('text-sm');
 
       // 检查图标大小
-      const menuButton = container.querySelector('button[class*="p-0"]');
+      const menuButton = screen.getByTestId('chat-menu-trigger');
       expect(menuButton).toHaveClass('h-8', 'w-8');
     });
 
@@ -347,18 +341,18 @@ describe('ChatButton Component', () => {
       });
 
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
       // 检查按钮容器的 padding（压缩模式）
-      const buttonDiv = container.querySelector('div[class*="py-1.5"]');
-      expect(buttonDiv).toBeInTheDocument();
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      expect(buttonDiv).toHaveClass('py-1.5', 'px-1');
 
       // 检查字体大小
       const chatName = screen.getByTestId('chat-name');
       expect(chatName).toHaveClass('text-xs');
 
       // 检查图标大小
-      const menuButton = container.querySelector('button[class*="p-0"]');
+      const menuButton = screen.getByTestId('chat-menu-trigger');
       expect(menuButton).toHaveClass('h-7', 'w-7');
     });
 
@@ -374,16 +368,16 @@ describe('ChatButton Component', () => {
       });
 
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
       // 与 compact 模式相同的样式
-      const buttonDiv = container.querySelector('div[class*="py-1.5"]');
-      expect(buttonDiv).toBeInTheDocument();
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      expect(buttonDiv).toHaveClass('py-1.5', 'px-1');
 
       const chatName = screen.getByTestId('chat-name');
       expect(chatName).toHaveClass('text-xs');
 
-      const menuButton = container.querySelector('button[class*="p-0"]');
+      const menuButton = screen.getByTestId('chat-menu-trigger');
       expect(menuButton).toHaveClass('h-7', 'w-7');
     });
 
@@ -399,16 +393,16 @@ describe('ChatButton Component', () => {
       });
 
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
       // 与 desktop 模式相同的样式
-      const buttonDiv = container.querySelector('.py-2.px-1');
-      expect(buttonDiv).toBeInTheDocument();
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      expect(buttonDiv).toHaveClass('py-2', 'px-1');
 
       const chatName = screen.getByTestId('chat-name');
       expect(chatName).toHaveClass('text-sm');
 
-      const menuButton = container.querySelector('button[class*="p-0"]');
+      const menuButton = screen.getByTestId('chat-menu-trigger');
       expect(menuButton).toHaveClass('h-8', 'w-8');
     });
 
@@ -425,13 +419,14 @@ describe('ChatButton Component', () => {
       });
 
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
       // 验证下拉菜单存在
-      const menuButton = container.querySelector('button[aria-haspopup="menu"]');
-      expect(menuButton).toBeInTheDocument();
+      expect(screen.getByTestId('chat-menu-trigger')).toBeInTheDocument();
 
-      // 测试 mobile 模式
+      // 清理后测试 mobile 模式
+      cleanup();
+
       mockUseResponsive.mockReturnValue({
         layoutMode: 'mobile',
         width: 390,
@@ -442,11 +437,10 @@ describe('ChatButton Component', () => {
         isDesktop: false,
       });
 
-      const { container: mobileContainer } = renderChatButton(chat);
+      renderChatButton(chat);
 
       // mobile 模式下拉菜单也应该存在
-      const mobileMenuButton = mobileContainer.querySelector('button[aria-haspopup="menu"]');
-      expect(mobileMenuButton).toBeInTheDocument();
+      expect(screen.getByTestId('chat-menu-trigger')).toBeInTheDocument();
     });
 
     it('移动模式下点击「更多」按钮弹出选项（无长按事件）', () => {
@@ -461,17 +455,15 @@ describe('ChatButton Component', () => {
       });
 
       const chat = createMockChat({ name: '测试聊天' });
-      const { container } = renderChatButton(chat);
+      renderChatButton(chat);
 
       // 点击「更多」按钮应该弹出选项
-      const menuButton = container.querySelector('button[aria-haspopup="menu"]');
+      const menuButton = screen.getByTestId('chat-menu-trigger');
       expect(menuButton).toBeInTheDocument();
 
-      if (menuButton) {
-        // 点击按钮不应触发导航（因为有 stopPropagation）
-        fireEvent.click(menuButton);
-        expect(mockNavigateToChat).not.toHaveBeenCalled();
-      }
+      // 点击按钮不应触发导航（因为有 stopPropagation）
+      fireEvent.click(menuButton);
+      expect(mockNavigateToChat).not.toHaveBeenCalled();
     });
   });
 });

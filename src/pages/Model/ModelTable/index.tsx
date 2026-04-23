@@ -88,6 +88,7 @@ const ModelTable: React.FC = () => {
             <Button
               variant="ghost"
               size="icon"
+              aria-label={t(($) => $.table.operation)}
               onClick={() => handleEditModel(row.original)}
             >
               <Pencil />
@@ -100,6 +101,7 @@ const ModelTable: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label={t(($) => $.model.confirmDelete)}
                   onClick={() => setModelToDelete(row.original)}
                 >
                   <Trash2 />

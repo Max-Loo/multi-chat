@@ -8,7 +8,7 @@ import { useResponsive } from "@/hooks/useResponsive";
  */
 function SidebarSkeleton() {
   return (
-    <div className="flex flex-col w-64 h-full bg-gray-50 border-r border-gray-200">
+    <div className="flex flex-col w-64 h-full bg-gray-50 border-r border-gray-200" data-testid="sidebar-skeleton">
       {/* 顶部工具栏区域 */}
       <div className="w-full h-12 p-2 border-b border-gray-100">
         <Skeleton variant="text" className="w-full h-full" />
@@ -62,7 +62,7 @@ function MainContentSkeleton() {
  * 模拟 BottomNav 的高度占位
  */
 function MobileBottomNavPlaceholder() {
-  return <div className="h-16 bg-gray-50 border-t border-gray-200 shrink-0" />;
+  return <div className="h-16 bg-gray-50 border-t border-gray-200 shrink-0" data-testid="mobile-bottom-nav-placeholder" />;
 }
 
 /**

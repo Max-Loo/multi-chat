@@ -47,13 +47,14 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
         <div className="flex items-center w-full">
           {/* 标题 */}
           <span
+            data-testid={loading ? "thinking-loading" : undefined}
             className={`text-sm text-left mr-2 ${loading && "animate-pulse-fade"}`}
           >
             {title}
           </span>
 
           {/* 右侧：折叠/展开图标 */}
-          {expanded ? <ChevronDown size={4} /> : <ChevronRight size={4} />}
+          {expanded ? <ChevronDown size={4} data-testid="chevron-down" /> : <ChevronRight size={4} data-testid="chevron-right" />}
         </div>
       </Button>
 

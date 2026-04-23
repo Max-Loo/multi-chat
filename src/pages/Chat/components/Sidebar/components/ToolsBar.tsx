@@ -45,11 +45,12 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
 
     // 当开启搜索的时候，变更渲染内容
     return (
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full" data-testid="tools-bar">
         <Button
           variant="ghost"
           className={`rounded-lg p-1 ${isNormalSize ? "h-8 w-8" : "h-7 w-7"}`}
           onClick={quitSearch}
+          aria-label={t(($) => $.common.search)}
         >
           <ArrowLeft size={isNormalSize ? 16 : 15} />
         </Button>
@@ -75,12 +76,14 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
       className={`flex items-center justify-between w-full ${
         isNormalSize ? "" : "gap-1"
       }`}
+      data-testid="tools-bar"
     >
       {isShowChatPage && isNonMobile ? (
         <Button
           variant="ghost"
           className={`rounded p-0 ${isNormalSize ? "h-8 w-8" : "h-7 w-7"}`}
           title={t(($) => $.chat.hideSidebar)}
+          aria-label={t(($) => $.chat.hideSidebar)}
           onClick={collapseSidebar}
         >
           <PanelLeftClose size={isNormalSize ? 16 : 15} />
@@ -94,6 +97,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
             variant="ghost"
             className={`rounded-lg p-0 ${isNormalSize ? "h-8 w-8" : "h-7 w-7"}`}
             title={t(($) => $.common.search)}
+            aria-label={t(($) => $.common.search)}
             data-testid="search-button"
             onClick={() => setIsSearching(true)}
           >
@@ -110,6 +114,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
             data-testid="create-chat-button"
             onClick={createNewChat}
             title={t(($) => $.chat.createChat)}
+            aria-label={t(($) => $.chat.createChat)}
           >
             <Plus size={isNormalSize ? 16 : 15} />
           </Button>

@@ -20,22 +20,7 @@ vi.mock('highlight.js', () => {
   return highlightJsMockFactory;
 });
 
-// Mock markdown-it
-vi.mock('markdown-it', () => ({
-  default: vi.fn(() => ({
-    render: (str: string) => `<p>${str}</p>`,
-  })),
-}));
-
-// Mock DOMPurify
-vi.mock('dompurify', () => ({
-  default: {
-    sanitize: (html: string) => {
-      // 简单的 XSS 清理模拟：移除 script 标签
-      return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-    },
-  },
-}));
+// 使用真实的 markdown-it 和 DOMPurify 进行测试
 
 describe('ChatBubble UI 组件', () => {
   beforeEach(() => {
@@ -51,7 +36,8 @@ describe('ChatBubble UI 组件', () => {
         />
       );
       
-      expect(container.textContent).toBe('Hello from user');
+      // 真实 markdown-it 渲染为 <p>Hello from user</p>，textContent 会带尾部换行
+      expect(container.textContent).toContain('Hello from user');
     });
 
     it('应该为用户消息渲染正确的标识', () => {
@@ -67,14 +53,17 @@ describe('ChatBubble UI 组件', () => {
 
     it('应该渲染包含 Markdown 的用户消息', () => {
       const { container } = render(
-        <ChatBubble 
-          role={ChatRoleEnum.USER} 
-          content="**Bold** and `code`" 
+        <ChatBubble
+          role={ChatRoleEnum.USER}
+          content="**Bold** and `code`"
         />
       );
-      
-      expect(container.textContent).toContain('**Bold**');
-      expect(container.textContent).toContain('`code`');
+
+      // 真实 markdown-it 渲染：**Bold** → <strong>Bold</strong>, `code` → <code>code</code>
+      expect(container.querySelector('strong')).not.toBe(null);
+      expect(container.querySelector('strong')?.textContent).toBe('Bold');
+      expect(container.querySelector('code')).not.toBe(null);
+      expect(container.querySelector('code')?.textContent).toBe('code');
     });
 
     it('应该处理空内容的用户消息', () => {
@@ -98,7 +87,8 @@ describe('ChatBubble UI 组件', () => {
         />
       );
       
-      expect(container.textContent).toBe('Hello from assistant');
+      // 真实 markdown-it 渲染为 <p>Hello from assistant</p>，textContent 会带尾部换行
+      expect(container.textContent).toContain('Hello from assistant');
     });
 
     it('应该为助手消息渲染正确的标识', () => {
@@ -114,14 +104,17 @@ describe('ChatBubble UI 组件', () => {
 
     it('应该渲染包含 Markdown 的助手消息', () => {
       const { container } = render(
-        <ChatBubble 
-          role={ChatRoleEnum.ASSISTANT} 
-          content="# Heading\n\n**Bold** and *italic*" 
+        <ChatBubble
+          role={ChatRoleEnum.ASSISTANT}
+          content="# Heading\n\n**Bold** and *italic*"
         />
       );
-      
-      expect(container.textContent).toContain('# Heading');
-      expect(container.textContent).toContain('**Bold**');
+
+      // 真实 markdown-it 渲染：# Heading → <h1>Heading</h1>, **Bold** → <strong>Bold</strong>
+      expect(container.querySelector('h1')).not.toBe(null);
+      expect(container.querySelector('h1')?.textContent).toContain('Heading');
+      expect(container.querySelector('strong')).not.toBe(null);
+      expect(container.querySelector('strong')?.textContent).toBe('Bold');
     });
 
     it('应该处理空内容的助手消息', () => {
@@ -225,7 +218,8 @@ describe('ChatBubble UI 组件', () => {
         />
       );
       
-      expect(container.textContent).toBe(longContent);
+      // 真实 markdown-it 渲染为 <p>...</p>，textContent 会带尾部换行
+      expect(container.textContent).toContain(longContent);
     });
 
     it('应该处理包含特殊字符的内容', () => {
@@ -302,16 +296,17 @@ describe('ChatBubble UI 组件', () => {
         />
       );
       
-      expect(container.textContent).toBe('Content 1');
-      
+      // 真实 markdown-it 渲染为 <p>...</p>，textContent 会带尾部换行
+      expect(container.textContent).toContain('Content 1');
+
       rerender(
-        <ChatBubble 
-          role={ChatRoleEnum.USER} 
-          content="Content 2" 
+        <ChatBubble
+          role={ChatRoleEnum.USER}
+          content="Content 2"
         />
       );
-      
-      expect(container.textContent).toBe('Content 2');
+
+      expect(container.textContent).toContain('Content 2');
     });
 
     it('应该正确处理 isRunning 状态变化', () => {

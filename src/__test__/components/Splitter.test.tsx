@@ -54,17 +54,15 @@ describe('Splitter', () => {
         board: [[createMockPanelChatModel('model-1')]],
       },
     ])('应该渲染 ResizablePanelGroup ($name)', ({ board }) => {
-      const { container } = renderSplitter(board);
-      expect(container.querySelector('.pt-12.pb-30')).toBeInTheDocument();
+      renderSplitter(board);
+      expect(screen.getByTestId('splitter-container')).toBeInTheDocument();
     });
   });
 
   describe('样式验证', () => {
     it('应该应用正确的容器样式', () => {
-      const { container } = renderSplitter([[createMockPanelChatModel('model-1')]]);
-
-      const splitterContainer = container.querySelector('.pt-12.pb-30');
-      expect(splitterContainer).toBeInTheDocument();
+      renderSplitter([[createMockPanelChatModel('model-1')]]);
+      expect(screen.getByTestId('splitter-container')).toBeInTheDocument();
     });
   });
 

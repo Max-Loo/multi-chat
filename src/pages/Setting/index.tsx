@@ -49,6 +49,7 @@ const SettingPage: React.FC = () => {
 
       {/* 主内容区域 */}
       <div
+        data-testid="setting-content"
         className={`flex-1 w-full h-full overflow-y-auto relative ${isMobile && "pt-12"}`}
       >
         <Outlet />

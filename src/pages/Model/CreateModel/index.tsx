@@ -78,7 +78,7 @@ const CreateModel: React.FC = () => {
 
       {/* 桌面端：直接显示侧边栏（无折叠功能） */}
       {!isMobile && (
-        <div className="h-full border-r border-gray-200 shrink-0">
+        <div className="h-full border-r border-gray-200 shrink-0" data-testid="model-sidebar">
           <ModelSidebar
             value={selectedModelProviderKey}
             onChange={setSelectedModelProviderKey}
@@ -88,6 +88,7 @@ const CreateModel: React.FC = () => {
 
       {/* 主内容区域 */}
       <div
+        data-testid="model-content"
         className={`flex-1 w-full h-full overflow-y-auto p-4 ${isMobile && "mt-12"} ${scrollbarClassname}`}
         onScroll={onScrollEvent}
       >

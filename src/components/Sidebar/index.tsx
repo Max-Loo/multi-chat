@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
 
 
   return (
-    <div className={`w-auto h-full bg-gray-50 border-r border-gray-200 ${className}`}>
+    <div className={`w-auto h-full bg-gray-50 border-r border-gray-200 ${className}`} data-testid="sidebar">
       <div className="flex flex-col items-center py-4 space-y-2">
         {navigationItems.map((item) => {
           const {

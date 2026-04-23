@@ -213,9 +213,9 @@ describe('ModelProviderDisplay', () => {
         ],
       });
 
-      const { container } = renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
+      renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
 
-      const flexContainer = container.querySelector('.flex.items-center.gap-2');
+      const flexContainer = screen.getByTestId('provider-display');
       expect(flexContainer).toBeInTheDocument();
     });
 
@@ -231,9 +231,9 @@ describe('ModelProviderDisplay', () => {
         ],
       });
 
-      const { container } = renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
+      renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
 
-      const avatar = container.querySelector('.h-6.w-6');
+      const avatar = screen.getByTestId('provider-avatar');
       expect(avatar).toBeInTheDocument();
     });
   });

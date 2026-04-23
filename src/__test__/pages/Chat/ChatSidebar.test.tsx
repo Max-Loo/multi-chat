@@ -320,11 +320,9 @@ describe('ChatSidebar Component', () => {
 
     it('桌面模式：应该正确渲染', () => {
       const store = createInitialState();
-      const { container } = renderChatSidebar(store);
+      renderChatSidebar(store);
 
-      // ChatSidebar 使用 w-full 而不是 w-56（宽度由父组件 ChatPage 控制）
-      const sidebarDiv = container.querySelector('.w-full');
-      expect(sidebarDiv).toBeInTheDocument();
+      expect(screen.getByTestId('chat-sidebar')).toBeInTheDocument();
     });
 
     it('紧凑模式：应该正确渲染', () => {
@@ -339,10 +337,9 @@ describe('ChatSidebar Component', () => {
       });
 
       const store = createInitialState();
-      const { container } = renderChatSidebar(store);
+      renderChatSidebar(store);
 
-      const sidebarDiv = container.querySelector('.w-full');
-      expect(sidebarDiv).toBeInTheDocument();
+      expect(screen.getByTestId('chat-sidebar')).toBeInTheDocument();
     });
 
     it('压缩模式：应该正确渲染', () => {
@@ -357,10 +354,9 @@ describe('ChatSidebar Component', () => {
       });
 
       const store = createInitialState();
-      const { container } = renderChatSidebar(store);
+      renderChatSidebar(store);
 
-      const sidebarDiv = container.querySelector('.w-full');
-      expect(sidebarDiv).toBeInTheDocument();
+      expect(screen.getByTestId('chat-sidebar')).toBeInTheDocument();
     });
 
     it('移动模式：应该正确渲染', () => {
@@ -375,11 +371,10 @@ describe('ChatSidebar Component', () => {
       });
 
       const store = createInitialState();
-      const { container } = renderChatSidebar(store);
+      renderChatSidebar(store);
 
       // 移动模式使用正常宽度
-      const sidebarDiv = container.querySelector('.w-full');
-      expect(sidebarDiv).toBeInTheDocument();
+      expect(screen.getByTestId('chat-sidebar')).toBeInTheDocument();
     });
 
     it('layoutMode 变化时应该正确调整', () => {
