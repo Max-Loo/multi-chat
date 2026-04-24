@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import AutoNamingSetting from '@/pages/Setting/components/GeneralSetting/components/AutoNamingSetting';
@@ -67,11 +67,7 @@ describe('AutoNamingSetting', () => {
    * 测试后置处理
    * 在每个测试运行后清除所有 Mock 的调用记录
    */
-  afterEach(() => {
-    vi.clearAllMocks();
-    cleanup();
-  });
-
+  
   /**
    * 组件渲染测试组
    *

@@ -2,9 +2,9 @@
  * Button 组件测试
  */
 
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 /** Mock @radix-ui/react-slot——预构建环境下 forwardRef 不可用 */
 vi.mock('@radix-ui/react-slot', () => ({
@@ -14,10 +14,7 @@ vi.mock('@radix-ui/react-slot', () => ({
 import { Button } from '@/components/ui/button';
 
 describe('Button 组件', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   it('应该渲染按钮文本', () => {
     render(<Button>点击我</Button>);
     expect(screen.getByRole('button')).toHaveTextContent('点击我');

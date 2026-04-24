@@ -125,10 +125,6 @@ describe('chatSlices', () => {
     });
   });
 
-  // initializeChatList 状态转换测试已被删除：
-  // - pending/fulfilled 测试：已被集成测试覆盖
-  // - 保留 rejected 测试以覆盖错误分支
-
   describe('initializeChatList rejected', () => {
     it('应该在 rejected 时恢复 loading 并设置 initializationError', () => {
       // 先设置 loading 状态
@@ -169,14 +165,6 @@ describe('chatSlices', () => {
       expect(result.type).toBe('chat/initialize/rejected');
     });
   });
-
-  // 聊天管理 reducers 测试已被删除：已被 chat-flow.integration.test.ts 覆盖
-  // - 创建新聊天：集成测试覆盖 "创建新会话"
-  // - 编辑聊天名称：集成测试覆盖 "编辑会话名称"
-  // - 软删除聊天：集成测试覆盖 "删除会话"
-  // - 删除选中的聊天：集成测试覆盖 "删除会话" 并验证 selectedChatId
-
-  // 选中聊天管理测试已被删除：已被集成测试覆盖
 
   describe('sendMessage async thunk actions', () => {
     it('应该在 pending 时初始化 runningChat 状态', () => {
@@ -493,6 +481,7 @@ describe('chatSlices', () => {
     });
   });
 
+
   // 聊天列表过滤测试已被删除：集成测试已覆盖软删除和过滤逻辑
 
   describe('releaseCompletedBackgroundChat', () => {
@@ -523,4 +512,5 @@ describe('chatSlices', () => {
       expect(state.activeChatData['chat-a']).toBeDefined();
     });
   });
+
 });

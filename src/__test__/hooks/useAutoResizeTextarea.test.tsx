@@ -65,7 +65,7 @@ describe('useAutoResizeTextarea', () => {
   });
 
   describe('基础功能测试', () => {
-    it('4.2 应该保持最小高度 60px 当单行输入', () => {
+    it('应该保持最小高度 60px 当单行输入', () => {
       let currentHeight = '';
       
       const { rerender } = render(
@@ -101,7 +101,7 @@ describe('useAutoResizeTextarea', () => {
       expect(currentHeight).toBe('60px');
     });
 
-    it('4.6 应该隐藏滚动条 当内容低于最大高度', () => {
+    it('应该隐藏滚动条 当内容低于最大高度', () => {
       let isScrollable = true;
 
       const { rerender } = render(

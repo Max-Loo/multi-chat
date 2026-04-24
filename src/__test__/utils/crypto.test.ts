@@ -2,7 +2,7 @@
  * Crypto 工具函数测试
  */
 
-import { describe, it, expect, test } from 'vitest';
+import { describe, it, expect, test, vi, beforeEach, afterEach } from 'vitest';
 import { encryptField, decryptField, isEncrypted, hexToBytes, bytesToBase64, base64ToBytes } from '@/utils/crypto';
 
 // 测试辅助函数
@@ -683,6 +683,14 @@ Line 5`;
     });
 
     describe('并发和异步测试', () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
       it('并发加密操作应独立完成', async () => {
         const plaintexts = [
           'Message 1',
@@ -718,13 +726,16 @@ Line 5`;
         // 加密
         const encrypted = await encryptField(plaintext, masterKey);
 
-        // 使用 setTimeout 模拟不同的时间点解密
-        const decrypted = await new Promise<string>((resolve) => {
+        // 使用 fakeTimers 模拟不同事件循环中解密
+        const decryptedPromise = new Promise<string>((resolve) => {
           setTimeout(async () => {
             const result = await decryptField(encrypted, masterKey);
             resolve(result);
           }, 10);
         });
+
+        await vi.advanceTimersByTimeAsync(10);
+        const decrypted = await decryptedPromise;
 
         expect(decrypted).toBe(plaintext);
       });

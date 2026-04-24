@@ -13,9 +13,8 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup, waitFor, screen } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { waitFor, screen } from '@testing-library/react';
+import { renderWithProviders } from '@/__test__/helpers/render/redux';
 import { getTestStore, cleanupStore } from '@/__test__/helpers/integration/resetStore';
 import { setAppLanguage } from '@/store/slices/appConfigSlices';
 
@@ -61,7 +60,6 @@ describe('Toast 系统集成测试', () => {
   });
 
   afterEach(async () => {
-    cleanup();
     cleanupStore();
     const { toastQueue } = await import('@/services/toast/toastQueue');
     toastQueue.reset();
@@ -72,13 +70,7 @@ describe('Toast 系统集成测试', () => {
     test('应该完成 Toast 系统初始化', async () => {
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
-      const { container } = render(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ToasterWrapper />
-          </BrowserRouter>
-        </Provider>
-      );
+      const { container } = renderWithProviders(<ToasterWrapper />, { store });
 
       // 等待 Toaster 容器渲染
       const toastContainer = container.querySelector('[data-testid="toast-container"]');
@@ -93,13 +85,7 @@ describe('Toast 系统集成测试', () => {
       const promise = toastQueue.success('初始化前的消息');
 
       // 渲染 ToasterWrapper（触发 markReady → flush）
-      render(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ToasterWrapper />
-          </BrowserRouter>
-        </Provider>
-      );
+      renderWithProviders(<ToasterWrapper />, { store });
 
       // 验证 Promise 被返回
       expect(promise).toBeInstanceOf(Promise);
@@ -116,13 +102,7 @@ describe('Toast 系统集成测试', () => {
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
       // 渲染 ToasterWrapper 完成初始化
-      render(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ToasterWrapper />
-          </BrowserRouter>
-        </Provider>
-      );
+      renderWithProviders(<ToasterWrapper />, { store });
 
       // 等待初始化完成
       await waitFor(() => {
@@ -145,13 +125,7 @@ describe('Toast 系统集成测试', () => {
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
       // 渲染 ToasterWrapper
-      render(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ToasterWrapper />
-          </BrowserRouter>
-        </Provider>
-      );
+      renderWithProviders(<ToasterWrapper />, { store });
 
       // 等待初始化完成
       await waitFor(() => {
@@ -180,13 +154,7 @@ describe('Toast 系统集成测试', () => {
     test('应该不抛出错误当组件卸载', async () => {
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
-      const { unmount } = render(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ToasterWrapper />
-          </BrowserRouter>
-        </Provider>
-      );
+      const { unmount } = renderWithProviders(<ToasterWrapper />, { store });
 
       // 等待初始化完成
       await waitFor(() => {

@@ -8,7 +8,7 @@
  * - 错误处理
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { InitializationManager } from '@/services/initialization/InitializationManager';
 import type { InitStep } from '@/services/initialization';
 import { createMockInitStep, type TestInitStep } from './fixtures';
@@ -322,6 +322,8 @@ describe('InitializationManager', () => {
   });
 
   describe('完整流程测试', () => {
+    beforeEach(() => { vi.useFakeTimers(); });
+    afterEach(() => { vi.useRealTimers(); });
     it('应该成功执行所有步骤', async () => {
       const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
@@ -346,21 +348,21 @@ describe('InitializationManager', () => {
         createMockInitStep({
           name: 'step1',
           execute: vi.fn().mockImplementation(async () => {
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await vi.advanceTimersByTimeAsync(10);
             executionOrder.push('step1');
           }),
         }),
         createMockInitStep({
           name: 'step2',
           execute: vi.fn().mockImplementation(async () => {
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await vi.advanceTimersByTimeAsync(10);
             executionOrder.push('step2');
           }),
         }),
         createMockInitStep({
           name: 'step3',
           execute: vi.fn().mockImplementation(async () => {
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await vi.advanceTimersByTimeAsync(10);
             executionOrder.push('step3');
           }),
         }),

@@ -4,7 +4,7 @@
  * 使用真实的 initSteps 配置进行端到端测试
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { InitializationManager } from '@/services/initialization/InitializationManager';
 import { initSteps } from '@/config/initSteps';
 import type { InitStep } from '@/services/initialization';
@@ -13,8 +13,13 @@ describe('初始化系统集成测试', () => {
   let manager: InitializationManager;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     manager = new InitializationManager();
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('使用真实配置执行初始化', () => {
@@ -100,7 +105,13 @@ describe('初始化系统集成测试', () => {
         }),
       }));
 
-      await manager.runInitialization({ steps: mockSteps });
+      // 使用 fakeTimers 时，需并发推进定时器以解锁内部 setTimeout
+      const initPromise = manager.runInitialization({ steps: mockSteps });
+      // 重复推进定时器，确保每个拓扑排序层级的 setTimeout 都能触发
+      for (let i = 0; i < initSteps.length; i++) {
+        await vi.advanceTimersByTimeAsync(10);
+      }
+      await initPromise;
 
       // 验证无依赖步骤都执行了
       expect(Object.keys(executionTimes).length).toBe(initSteps.length);

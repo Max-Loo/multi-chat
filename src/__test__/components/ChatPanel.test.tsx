@@ -4,8 +4,8 @@
  * 测试聊天面板主容器的各种场景
  */
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import ChatPanel from '@/pages/Chat/components/Panel';
 import { createMockChatWithModels } from '@/__test__/helpers/mocks/chatSidebar';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
@@ -18,9 +18,6 @@ import {
 import { setSelectedChatId, editChat } from '@/store/slices/chatSlices';
 import { chatToMeta } from '@/types/chat';
 
-afterEach(() => {
-  cleanup();
-});
 
 vi.mock('react-i18next', () =>
   globalThis.__mockI18n({
@@ -84,7 +81,7 @@ function renderChatPanel(
 
 
 describe('ChatPanel', () => {
-  describe('4.1.1 测试单模型聊天面板渲染', () => {
+  describe('测试单模型聊天面板渲染', () => {
     it('应该渲染单模型聊天面板', () => {
       renderChatPanel(1, { chatProps: { name: 'Single Model Chat' } });
 
@@ -100,7 +97,7 @@ describe('ChatPanel', () => {
     });
   });
 
-  describe('4.1.2 测试多模型聊天面板网格布局', () => {
+  describe('测试多模型聊天面板网格布局', () => {
     it('应该渲染多模型聊天面板网格布局', () => {
       renderChatPanel(3, { chatProps: { name: 'Multi Model Chat' } });
 
@@ -122,7 +119,7 @@ describe('ChatPanel', () => {
     });
   });
 
-  describe('4.1.3 测试可调整大小的面板布局', () => {
+  describe('测试可调整大小的面板布局', () => {
     it('应该在分割模式下启用 ResizablePanel', async () => {
       const { container } = renderChatPanel(2);
 
@@ -144,7 +141,7 @@ describe('ChatPanel', () => {
     });
   });
 
-  describe('4.1.4 测试 columnCount 状态管理', () => {
+  describe('测试 columnCount 状态管理', () => {
     it('应该初始化 columnCount 为模型数量', () => {
       renderChatPanel(3);
 
@@ -193,7 +190,7 @@ describe('ChatPanel', () => {
     });
   });
 
-  describe('4.1.5 测试 isSplitter 状态切换', () => {
+  describe('测试 isSplitter 状态切换', () => {
     it('应该在切换分割模式时更新 isSplitter 状态', () => {
       renderChatPanel(2);
 
@@ -220,7 +217,7 @@ describe('ChatPanel', () => {
     });
   });
 
-  describe('4.1.6 测试聊天模型变化时重置分割模式', () => {
+  describe('测试聊天模型变化时重置分割模式', () => {
     it('应该在切换到不同的聊天时重置分割模式', async () => {
       const chat1 = createMockChatWithModels(2, { id: 'chat-1' });
       const chat2 = createMockChatWithModels(3, { id: 'chat-2' });

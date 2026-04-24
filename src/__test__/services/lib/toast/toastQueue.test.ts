@@ -42,6 +42,14 @@ describe('ToastQueue', () => {
   });
 
   describe('队列机制', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('应该在初始化前调用 Toast 时入队', async () => {
       const { toastQueue } = await import('@/services/toast/toastQueue');
 
@@ -49,13 +57,11 @@ describe('ToastQueue', () => {
 
       expect(mockToast.success).not.toHaveBeenCalled();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
+      vi.advanceTimersByTime(0);
       expect(mockToast.success).not.toHaveBeenCalled();
     });
 
     it('应该在 markReady 后刷新队列', async () => {
-      vi.useFakeTimers();
-      
       const { toastQueue } = await import('@/services/toast/toastQueue');
 
       void toastQueue.success('消息1');
@@ -71,8 +77,6 @@ describe('ToastQueue', () => {
 
       await vi.advanceTimersByTimeAsync(500);
       expect(mockToast.error).toHaveBeenCalledTimes(1);
-
-      vi.useRealTimers();
     });
 
     it('应该在 markReady 后新 Toast 立即显示', async () => {
@@ -139,6 +143,14 @@ describe('ToastQueue', () => {
   });
 
   describe('异步 Promise', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('应该返回 Promise', async () => {
       const { toastQueue } = await import('@/services/toast/toastQueue');
 
@@ -165,11 +177,11 @@ describe('ToastQueue', () => {
       let resolved = false;
       promise.then(() => { resolved = true; });
 
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.advanceTimersByTimeAsync(0);
       expect(resolved).toBe(false);
 
       toastQueue.markReady();
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.advanceTimersByTimeAsync(0);
       expect(resolved).toBe(true);
     });
   });

@@ -4,8 +4,8 @@
  * 验证对话框渲染、输入、导入流程和验证失败二次确认
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { fireEvent } from '@testing-library/react';
 import { KeyRecoveryDialog } from '@/components/KeyRecoveryDialog';
 
@@ -63,10 +63,7 @@ describe('KeyRecoveryDialog', () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   it('应该渲染对话框内容 当打开时', () => {
     render(<KeyRecoveryDialog {...defaultProps} />);
 

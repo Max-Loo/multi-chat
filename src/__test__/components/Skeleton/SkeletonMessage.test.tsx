@@ -7,16 +7,9 @@
  * - 最后一行缩短
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { SkeletonMessage } from '@/components/Skeleton/SkeletonMessage';
-
-// Mock shadcn Skeleton
-vi.mock('@/components/ui/skeleton', () => ({
-  Skeleton: ({ className, variant }: { className?: string; variant?: string }) => (
-    <div data-testid="skeleton-item" className={className} data-variant={variant} />
-  ),
-}));
 
 describe('SkeletonMessage', () => {
   it('应该使用 flex-row 当 isSelf 为 false（默认）', () => {

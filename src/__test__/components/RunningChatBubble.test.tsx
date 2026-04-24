@@ -5,8 +5,7 @@
  * 不 mock ChatBubble 和 useSelectedChat，通过 Redux state 驱动行为
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createRunningChatEntry } from '@/__test__/helpers/mocks/testState';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
@@ -45,11 +44,7 @@ function createStore(
 }
 
 describe('RunningChatBubble', () => {
-  beforeEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('4.5.1 测试显示加载动画', () => {
     it('当消息正在生成但还没有内容时，应该显示加载状态', () => {
       const chatModel = createMockPanelChatModel('model-1');

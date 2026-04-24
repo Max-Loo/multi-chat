@@ -9,7 +9,7 @@
  * - 通过 Redux store 的 preloadedState 控制组件行为
  */
 
-import { screen, act, cleanup } from '@testing-library/react';
+import { screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Detail from '@/pages/Chat/components/Panel/Detail';
 import { mockContainerMetrics } from '@/__test__/helpers/mocks/scrollMetrics';
@@ -44,17 +44,7 @@ vi.mock('virtua', async () => {
   return { Virtualizer: factory.MockVirtualizer, VList: factory.MockVList };
 });
 
-/**
- * Mock useAdaptiveScrollbar hook
- * 注意：必须包含 isScrolling，Detail 组件在 className 中使用了该值
- */
-vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
-  useAdaptiveScrollbar: () => ({
-    onScrollEvent: vi.fn(),
-    scrollbarClassname: 'custom-scrollbar',
-    isScrolling: false,
-  }),
-}));
+vi.mock('@/hooks/useAdaptiveScrollbar', () => ({ useAdaptiveScrollbar: () => globalThis.__createScrollbarMock() }));
 
 vi.mock('react-i18next', () =>
   globalThis.__mockI18n({
@@ -172,7 +162,6 @@ describe('Detail Component', () => {
   });
 
   afterEach(() => {
-    cleanup();
     vi.useRealTimers();
   });
 

@@ -17,7 +17,7 @@ describe('fake-indexeddb v5 test', () => {
     });
   });
 
-  it('should open database', async () => {
+  it('应该成功打开数据库', async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('test-db', 1);
       request.addEventListener('success', () => resolve(request.result));
@@ -34,7 +34,7 @@ describe('fake-indexeddb v5 test', () => {
     db.close();
   });
 
-  it('should store and retrieve data', async () => {
+  it('应该正确存取数据', async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('test-db', 1);
       request.addEventListener('success', () => resolve(request.result));
@@ -71,7 +71,7 @@ describe('fake-indexeddb v5 test', () => {
     db.close();
   });
 
-  it('should handle transactions correctly', async () => {
+  it('应该正确处理事务', async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('test-db', 1);
       request.addEventListener('success', () => resolve(request.result));

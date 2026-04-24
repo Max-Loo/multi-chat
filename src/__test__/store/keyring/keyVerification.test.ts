@@ -7,17 +7,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { verifyMasterKey, resetVerificationStore } from '@/store/keyring/keyVerification';
 
-// Mock storeUtils 避免真实 IndexedDB 操作
-vi.mock('@/store/storage/storeUtils', () => ({
-  createLazyStore: vi.fn(() => ({
-    get: vi.fn(),
-    set: vi.fn(),
-    init: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn(),
-  })),
-  loadFromStore: vi.fn(),
-}));
-
 // Mock crypto 模块
 vi.mock('@/utils/crypto', () => ({
   decryptField: vi.fn(),

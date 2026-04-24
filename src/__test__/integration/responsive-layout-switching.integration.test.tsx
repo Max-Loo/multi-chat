@@ -7,29 +7,19 @@
  * - 各断点边界正确处理
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup, screen } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import type { EnhancedStore } from '@reduxjs/toolkit';
 import Layout from '@/components/Layout';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createTestRootState, createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { RootState } from '@/store';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => globalThis.__mockI18n());
 
-// 响应式状态 mock
-const mockResponsive = vi.hoisted(() => ({
-  layoutMode: 'desktop' as string,
-  width: 1280,
-  height: 800,
-  isMobile: false,
-  isCompact: false,
-  isCompressed: false,
-  isDesktop: true,
-}));
+// 响应式状态 mock（通过 globalThis.__createResponsiveMock 创建可变对象）
+const mockResponsive = vi.hoisted(() => globalThis.__createResponsiveMock());
 
 vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => mockResponsive,
@@ -62,13 +52,7 @@ function createLayoutTestStore(): EnhancedStore<RootState> {
  * 渲染 Layout 组件
  */
 function renderLayout(store: EnhancedStore<RootState>) {
-  return render(
-    <Provider store={store}>
-      <BrowserRouter>
-        <Layout />
-      </BrowserRouter>
-    </Provider>
-  );
+  return renderWithProviders(<Layout />, { store });
 }
 
 describe('响应式布局模式切换集成测试', () => {
@@ -79,10 +63,7 @@ describe('响应式布局模式切换集成测试', () => {
     setResponsiveMode('desktop');
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   describe('Desktop 模式', () => {
     it('应该渲染 Sidebar 且无底部导航', () => {
       setResponsiveMode('desktop');

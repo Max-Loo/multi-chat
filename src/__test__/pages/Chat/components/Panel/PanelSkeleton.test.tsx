@@ -7,16 +7,9 @@
  * - 消息气泡交替对齐
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import PanelSkeleton from '@/pages/Chat/components/Panel/Skeleton';
-
-// Mock shadcn Skeleton
-vi.mock('@/components/ui/skeleton', () => ({
-  Skeleton: ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
-    <div data-testid="skeleton-item" className={className} style={style} />
-  ),
-}));
 
 describe('PanelSkeleton', () => {
   it('应该渲染 Header 骨架', () => {

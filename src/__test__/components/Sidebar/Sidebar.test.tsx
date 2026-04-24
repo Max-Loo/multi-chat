@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Sidebar from '@/components/Sidebar';
 
@@ -30,7 +30,6 @@ let mockSelectedChat: { id: string } | null = null;
 
 describe('Sidebar 组件测试', () => {
   beforeEach(() => {
-    cleanup();
     vi.clearAllMocks();
     mockLocation = { pathname: '/' };
     mockSelectedChat = null;

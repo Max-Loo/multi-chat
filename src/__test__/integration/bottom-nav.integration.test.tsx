@@ -9,8 +9,8 @@
  * 集成测试关注点：组件渲染和基本交互
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import type { EnhancedStore } from '@reduxjs/toolkit';
@@ -69,11 +69,7 @@ describe('底部导航栏集成测试', () => {
     global.dispatchEvent(new Event('resize'));
   });
 
-  afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('组件渲染', () => {
     it('应该渲染底部导航栏', () => {
       renderBottomNavWithRouter(store);

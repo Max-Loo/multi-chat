@@ -31,13 +31,7 @@ vi.mock('@/pages/Chat/hooks/useIsSending', () => ({
   useIsSending: () => ({ isSending: false }),
 }));
 
-vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
-  useAdaptiveScrollbar: () => ({
-    onScrollEvent: vi.fn(),
-    scrollbarClassname: '',
-    isScrolling: false,
-  }),
-}));
+vi.mock('@/hooks/useAdaptiveScrollbar', () => ({ useAdaptiveScrollbar: () => globalThis.__createScrollbarMock({ scrollbarClassname: '' }) }));
 
 // Mock 子组件
 vi.mock('@/pages/Chat/components/Panel/Detail/Title', () => ({

@@ -1,30 +1,18 @@
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { screen, fireEvent, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatButton from '@/pages/Chat/components/Sidebar/components/ChatButton';
 import { resetTestState } from '@/__test__/helpers/isolation';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { ChatMeta } from '@/types/chat';
 import type { EnhancedStore } from '@reduxjs/toolkit';
 
-// Mock useResponsive from useResponsive hook
+// Mock useResponsive
+const mockUseResponsive = vi.hoisted(() => vi.fn(() => globalThis.__createResponsiveMock()));
 vi.mock('@/hooks/useResponsive', () => ({
-  useResponsive: vi.fn(() => ({
-    layoutMode: 'desktop',
-    width: 1280,
-    height: 800,
-    isMobile: false,
-    isCompact: false,
-    isCompressed: false,
-    isDesktop: true,
-  })),
+  useResponsive: (...args: unknown[]) => mockUseResponsive(...(args as [])),
 }));
-
-import * as useResponsiveModule from '@/hooks/useResponsive';
-const mockUseResponsive = vi.mocked(useResponsiveModule.useResponsive);
 
 vi.mock('react-i18next', () => globalThis.__mockI18n());
 
@@ -48,6 +36,7 @@ vi.mock('@/hooks/useConfirm', () => ({
       warning: mockModalWarning,
     },
   }),
+  ConfirmProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 /**
@@ -85,13 +74,7 @@ function renderChatButton(chat: ReturnType<typeof createMockChat>, store?: Enhan
     }),
   });
 
-  return render(
-    <Provider store={testStore}>
-      <BrowserRouter>
-        <ChatButton chatMeta={meta} isSelected={isSelected} />
-      </BrowserRouter>
-    </Provider>
-  );
+  return renderWithProviders(<ChatButton chatMeta={meta} isSelected={isSelected} />, { store: testStore });
 }
 
 /**
@@ -109,10 +92,7 @@ describe('ChatButton Component', () => {
     await resetTestState();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   describe('组件渲染', () => {
     it('应该渲染聊天按钮', () => {
       const chat = createMockChat({ name: '测试聊天' });
@@ -252,20 +232,7 @@ describe('ChatButton Component', () => {
 
       // 使用相同的 chatMeta 对象重新渲染
       rerender(
-        <Provider store={createTypeSafeTestStore({
-          chat: createChatSliceState({
-            chatMetaList: [meta],
-            selectedChatId: chat.id,
-          }),
-          chatPage: createChatPageSliceState({
-            isShowChatPage: true,
-            isSidebarCollapsed: false,
-          }),
-        })}>
-          <BrowserRouter>
-            <ChatButton chatMeta={meta} isSelected={true} />
-          </BrowserRouter>
-        </Provider>
+        <ChatButton chatMeta={meta} isSelected={true} />
       );
 
       // 组件被 memo，不应该重新渲染
@@ -278,20 +245,7 @@ describe('ChatButton Component', () => {
 
       const updatedMeta = { ...chatToMeta(chat), name: '新名称' };
       rerender(
-        <Provider store={createTypeSafeTestStore({
-          chat: createChatSliceState({
-            chatMetaList: [updatedMeta],
-            selectedChatId: chat.id,
-          }),
-          chatPage: createChatPageSliceState({
-            isShowChatPage: true,
-            isSidebarCollapsed: false,
-          }),
-        })}>
-          <BrowserRouter>
-            <ChatButton chatMeta={updatedMeta} isSelected={true} />
-          </BrowserRouter>
-        </Provider>
+        <ChatButton chatMeta={updatedMeta} isSelected={true} />
       );
 
       expect(screen.getByText('新名称')).toBeInTheDocument();

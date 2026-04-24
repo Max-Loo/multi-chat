@@ -103,8 +103,6 @@ describe("modelProviderSlice", () => {
     store = createTestStore();
   });
 
-  // initialState 测试已被删除：基本的 Redux reducer 测试
-
   describe("clearError", () => {
     it("应该清除错误信息", () => {
       // 先设置一个错误状态
@@ -275,18 +273,6 @@ describe("modelProviderSlice", () => {
         mockFullApiResponse,
       );
     });
-
-    // 刷新失败时保留原有数据测试已被删除：
-    // - 已标记 skip，无法在单元测试中设置 Redux store 的初始状态
-    // - 集成测试 app-loading.integration.test.ts 已覆盖此行为
-
-    // AbortSignal 取消请求测试已被删除：
-    // - 已标记 skip，refreshModelProvider 不接受外部 signal 参数
-    // - 集成测试已覆盖取消场景
-
-    // pending 状态测试已被删除：
-    // - 测试 loading: true 内部状态，属于 Redux Toolkit 自动生成的行为
-    // - 集成测试 app-loading.integration.test.ts 已覆盖加载指示器行为
 
     it("应该正确处理 rejectWithValue", async () => {
       // Mock fetchRemoteData 失败

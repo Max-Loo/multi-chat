@@ -1,10 +1,8 @@
-import { render, screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatContent from '@/pages/Chat/components/Content';
 import { resetTestState } from '@/__test__/helpers/isolation';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 
 /**
  * Mock useCurrentSelectedChat hook
@@ -32,17 +30,9 @@ vi.mock('react-i18next', () =>
  */
 function renderChatContent() {
   const store = createTypeSafeTestStore();
+  const { store: _store, ...result } = renderWithProviders(<ChatContent />, { store });
 
-  return {
-    store,
-    ...render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatContent />
-        </BrowserRouter>
-      </Provider>
-    ),
-  };
+  return { store, ...result };
 }
 
 /**
@@ -59,10 +49,7 @@ describe('ChatContent Component', () => {
     mockUseCurrentSelectedChat.mockReset();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   it('应该显示占位文本 当没有选中聊天', () => {
     mockUseCurrentSelectedChat.mockReturnValue(null);
 

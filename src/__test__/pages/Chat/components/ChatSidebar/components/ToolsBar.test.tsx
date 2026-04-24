@@ -1,10 +1,8 @@
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ToolsBar from '@/pages/Chat/components/Sidebar/components/ToolsBar';
 import { resetTestState } from '@/__test__/helpers/isolation';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { EnhancedStore } from '@reduxjs/toolkit';
 
@@ -72,13 +70,7 @@ function renderToolsBar(props?: {
     ...props,
   };
 
-  return render(
-    <Provider store={testStore}>
-      <BrowserRouter>
-        <ToolsBar {...defaultProps} />
-      </BrowserRouter>
-    </Provider>
-  );
+  return renderWithProviders(<ToolsBar {...defaultProps} />, { store: testStore });
 }
 
 /**
@@ -96,10 +88,7 @@ describe('ToolsBar Component', () => {
     await resetTestState();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   describe('默认工具栏渲染', () => {
     it('应该渲染工具栏容器', () => {
       renderToolsBar();

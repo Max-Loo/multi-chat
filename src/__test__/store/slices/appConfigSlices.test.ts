@@ -89,11 +89,6 @@ describe('appConfigSlices', () => {
     });
   });
 
-  // initializeAppLanguage 状态转换测试已被删除：
-  // - fulfilled/rejected 测试（2 个）：已被集成测试覆盖
-  // - 这些测试验证 Redux Toolkit 自动生成的状态转换，属于内部实现
-  // - 集成测试 settings-change.integration.test.ts 已覆盖语言设置行为
-
   describe('initializeTransmitHistoryReasoning', () => {
     it('应该在 localStorage 存储值为 true 时返回 true', async () => {
       localStorageMock.getItem.mockReturnValue('true');
@@ -159,16 +154,6 @@ describe('appConfigSlices', () => {
       );
     });
   });
-
-  // setAppLanguage 测试已被删除：已被 settings-change.integration.test.ts 覆盖
-
-  // setIncludeReasoningContent 测试已被删除：已被 settings-change.integration.test.ts 覆盖
-
-  // selectIncludeReasoningContent 测试已被删除：已被集成测试覆盖
-
-  // localStorage 持久化测试已被删除：已被集成测试覆盖
-
-  // 配置状态全局同步测试已被删除：已被集成测试覆盖
 
   describe('自动命名功能', () => {
     it('初始值应该为 true', () => {

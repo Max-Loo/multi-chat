@@ -9,8 +9,8 @@
  * - Mock 系统边界（useTranslation、generateCleanHtml）
  */
 
-import { screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RunningBubble from '@/pages/Chat/components/Panel/Detail/RunningBubble';
 import { renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
@@ -99,10 +99,7 @@ describe('RunningBubble Component', () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   it('应该返回 null 当没有运行数据', () => {
     renderRunningBubble();
 

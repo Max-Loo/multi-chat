@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, waitFor, within, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, waitFor, within, fireEvent, act } from '@testing-library/react';
 import { ProviderCardDetails } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ProviderCardDetails';
 import { createMockRemoteProvider, createDeepSeekProvider } from '@/__test__/helpers/fixtures';
 
@@ -74,7 +74,15 @@ describe('ProviderCardDetails', () => {
   });
 
   describe('防抖功能', () => {
-    it('应该在停止输入后 300ms 触发过滤', async () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('应该在停止输入后 300ms 触发过滤', () => {
       const mockProvider = createDeepSeekProvider({
         models: [
           { modelKey: 'deepseek-chat', modelName: 'DeepSeek Chat' },
@@ -96,17 +104,16 @@ describe('ProviderCardDetails', () => {
       expect(within(container).getAllByText('DeepSeek Chat').length).toBeGreaterThan(0);
       expect(within(container).getAllByText('DeepSeek Coder').length).toBeGreaterThan(0);
 
-      // 等待 200ms：过滤仍未发生
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // 推进 200ms：过滤仍未发生
+      act(() => { vi.advanceTimersByTime(200); });
       expect(within(container).getAllByText('DeepSeek Coder').length).toBeGreaterThan(0);
 
-      // 等待到 350ms：过滤应该发生
-      await waitFor(() => {
-        expect(within(container).queryAllByText('DeepSeek Coder').length).toBe(0);
-      }, { timeout: 500 });
+      // 推进到 350ms：过滤应该发生
+      act(() => { vi.advanceTimersByTime(150); });
+      expect(within(container).queryAllByText('DeepSeek Coder').length).toBe(0);
     });
 
-    it('应该重置防抖计时器当用户继续输入', async () => {
+    it('应该重置防抖计时器当用户继续输入', () => {
       const mockProvider = createDeepSeekProvider({
         models: [
           { modelKey: 'deepseek-chat', modelName: 'DeepSeek Chat' },
@@ -120,25 +127,24 @@ describe('ProviderCardDetails', () => {
       // 输入第一个字符
       fireEvent.change(searchInput, { target: { value: 'c' } });
 
-      // 等待 200ms
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // 推进 200ms
+      act(() => { vi.advanceTimersByTime(200); });
 
       // 输入第二个字符（防抖计时器重置）
       fireEvent.change(searchInput, { target: { value: 'ch' } });
 
-      // 等待 200ms（从第二次输入开始算）
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // 再推进 200ms（从第二次输入开始算）
+      act(() => { vi.advanceTimersByTime(200); });
 
-      // 过滤仍未发生（因为总时间从第一次输入算起是 400ms，但从第二次输入算起只有 200ms）
+      // 过滤仍未发生（从第二次输入算起只有 200ms）
       expect(within(container).getAllByText('DeepSeek Coder').length).toBeGreaterThan(0);
 
-      // 再等待 150ms（从第二次输入算起达到 350ms）
-      await waitFor(() => {
-        expect(within(container).queryAllByText('DeepSeek Coder').length).toBe(0);
-      }, { timeout: 500 });
+      // 再推进 150ms（从第二次输入算起达到 350ms）
+      act(() => { vi.advanceTimersByTime(150); });
+      expect(within(container).queryAllByText('DeepSeek Coder').length).toBe(0);
     });
 
-    it('应该快速连续输入时只在最后一次输入后触发一次过滤', async () => {
+    it('应该快速连续输入时只在最后一次输入后触发一次过滤', () => {
       const mockProvider = createDeepSeekProvider({
         models: [
           { modelKey: 'deepseek-chat', modelName: 'DeepSeek Chat' },
@@ -151,24 +157,21 @@ describe('ProviderCardDetails', () => {
 
       // 快速连续输入 3 个字符
       fireEvent.change(searchInput, { target: { value: 'c' } });
-      await new Promise(resolve => setTimeout(resolve, 50));
+      act(() => { vi.advanceTimersByTime(50); });
 
       fireEvent.change(searchInput, { target: { value: 'ch' } });
-      await new Promise(resolve => setTimeout(resolve, 50));
+      act(() => { vi.advanceTimersByTime(50); });
 
       fireEvent.change(searchInput, { target: { value: 'cha' } });
-      await new Promise(resolve => setTimeout(resolve, 50));
+      act(() => { vi.advanceTimersByTime(50); });
 
       // 总共过了 150ms，还未达到 300ms，过滤不应发生
       expect(within(container).getAllByText('DeepSeek Coder').length).toBeGreaterThan(0);
 
-      // 再等待 200ms（总共 350ms），过滤应该发生
-      await waitFor(() => {
-        const coders = within(container).queryAllByText('DeepSeek Coder');
-        const chats = within(container).getAllByText('DeepSeek Chat');
-        expect(coders.length).toBe(0);
-        expect(chats.length).toBeGreaterThan(0);
-      }, { timeout: 500 });
+      // 再推进 300ms，过滤应该发生（从最后一次输入后 300ms）
+      act(() => { vi.advanceTimersByTime(300); });
+      expect(within(container).queryAllByText('DeepSeek Coder').length).toBe(0);
+      expect(within(container).getAllByText('DeepSeek Chat').length).toBeGreaterThan(0);
     });
   });
 

@@ -4,7 +4,7 @@
  * 测试 Listener Middleware 的触发时机和数据持久化副作用
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { saveModelsMiddleware } from '@/store/middleware/modelMiddleware';
 import { saveModelsToJson } from '@/store/storage';
 import {
@@ -27,6 +27,14 @@ describe('modelMiddleware', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   // Reason: Redux Toolkit 严格类型系统限制
   let store: any;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   // Mock 模型数据（使用工厂创建）
   const mockModel = createMockModel({
@@ -81,7 +89,7 @@ describe('modelMiddleware', () => {
       store.dispatch({ type: 'some/other/action' });
 
       // 等待一个微任务周期确保 effect 有机会执行
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.advanceTimersByTimeAsync(0);
 
       // 验证 saveModelsToJson 没有被调用
       expect(mockSaveModelsToJson).not.toHaveBeenCalled();

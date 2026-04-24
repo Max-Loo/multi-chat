@@ -16,8 +16,8 @@
  * - 用户可见行为的完整验证在集成测试中进行
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, cleanup, waitFor, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, waitFor, screen } from '@testing-library/react';
 import { ToasterWrapper } from '@/services/toast/ToasterWrapper';
 import { toastQueue } from '@/services/toast/toastQueue';
 
@@ -84,10 +84,7 @@ describe('ToasterWrapper 组件', () => {
     mockIsMobile = false;
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   describe('响应式状态同步', () => {
     it('应该同步移动端状态到 toastQueue 当 isMobile 为 true', async () => {
       mockIsMobile = true;

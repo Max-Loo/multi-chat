@@ -4,17 +4,14 @@
  * 测试致命错误提示组件的功能和交互
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { FatalErrorScreen } from '@/components/FatalErrorScreen';
 import type { InitError } from '@/services/initialization';
 
-// Mock window.location.reload
+/** 保存原始 window.location 用于测试后恢复 */
+const originalLocation = window.location;
 const mockReload = vi.fn();
-Object.defineProperty(window, 'location', {
-  value: { reload: mockReload },
-  writable: true,
-});
 
 describe('FatalErrorScreen 组件', () => {
   const mockErrors: InitError[] = [
@@ -29,6 +26,19 @@ describe('FatalErrorScreen 组件', () => {
     vi.clearAllMocks();
     // 重置 DEV 模式
     vi.stubEnv('DEV', true);
+    // Mock window.location.reload
+    Object.defineProperty(window, 'location', {
+      value: { reload: mockReload },
+      writable: true,
+    });
+  });
+
+  afterEach(() => {
+    // 恢复原始 window.location
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      writable: true,
+    });
   });
 
   describe('渲染单个错误', () => {

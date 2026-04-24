@@ -4,8 +4,8 @@
  * 测试模型列表的各种场景
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import ModelTable from '@/pages/Model/ModelTable';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
@@ -73,11 +73,7 @@ describe('ModelTable', () => {
     ];
   });
 
-  afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('基础渲染', () => {
     it('应该渲染模型列表', () => {
       const store = createTestStore({ models: mockModels });

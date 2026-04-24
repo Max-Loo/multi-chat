@@ -48,6 +48,30 @@ declare global {
    */
   // eslint-disable-next-line no-var
   var __createToastQueueModuleMock: typeof import('./helpers/mocks/toast').createToastQueueModuleMock;
+
+  /**
+   * useAdaptiveScrollbar mock 工厂函数（由 setup.ts 注册到 globalThis）
+   *
+   * 用于 vi.mock('@/hooks/useAdaptiveScrollbar') 创建共享 mock
+   */
+  // eslint-disable-next-line no-var
+  var __createScrollbarMock: typeof import('./helpers/mocks/scrollbar').createScrollbarMock;
+
+  /**
+   * markdown-it mock 工厂函数（由 setup.ts 注册到 globalThis）
+   *
+   * 用于 vi.mock('markdown-it') 创建共享 mock
+   */
+  // eslint-disable-next-line no-var
+  var __createMarkdownItMock: typeof import('./helpers/mocks/markdown').createMarkdownItMock;
+
+  /**
+   * dompurify mock 工厂函数（由 setup.ts 注册到 globalThis）
+   *
+   * 用于 vi.mock('dompurify') 创建共享 mock
+   */
+  // eslint-disable-next-line no-var
+  var __createDompurifyMock: typeof import('./helpers/mocks/dompurify').createDompurifyMock;
 }
 
 // oxlint-disable-next-line require-module-specifiers

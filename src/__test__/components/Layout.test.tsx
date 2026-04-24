@@ -5,11 +5,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { screen } from '@testing-library/react';
 import Layout from '@/components/Layout';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 
 vi.mock('react-i18next', () => globalThis.__mockI18n());
 
@@ -26,13 +24,7 @@ vi.mock('@/hooks/useResponsive', () => ({
  * 渲染 Layout 组件的辅助函数
  */
 function renderLayout(store: ReturnType<typeof createTypeSafeTestStore>, props?: { className?: string }) {
-  return render(
-    <Provider store={store}>
-        <BrowserRouter>
-          <Layout {...props} />
-        </BrowserRouter>
-    </Provider>
-  );
+  return renderWithProviders(<Layout {...props} />, { store });
 }
 
 describe('Layout 组件', () => {

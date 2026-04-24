@@ -1,10 +1,8 @@
-import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
 import ChatSidebar from '@/pages/Chat/components/Sidebar';
 import { resetTestState } from '@/__test__/helpers/isolation';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 
 // Mock useResponsive hook（可配置）
@@ -23,15 +21,7 @@ vi.mock('@/context/ResponsiveContext', () => ({
   ResponsiveProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-/**
- * Mock useAdaptiveScrollbar hook because it requires window event listeners that are difficult to set up in tests
- */
-vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
-  useAdaptiveScrollbar: () => ({
-    onScrollEvent: vi.fn(),
-    scrollbarClassname: 'custom-scrollbar',
-  }),
-}));
+vi.mock('@/hooks/useAdaptiveScrollbar', () => ({ useAdaptiveScrollbar: () => globalThis.__createScrollbarMock() }));
 
 /**
  * Mock virtua 虚拟滚动组件，在测试环境中渲染为普通 div
@@ -64,6 +54,7 @@ vi.mock('@/hooks/useConfirm', () => ({
       warning: vi.fn(),
     },
   }),
+  ConfirmProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 /**
@@ -115,13 +106,7 @@ function createInitialState() {
  * 渲染 ChatSidebar 组件的辅助函数
  */
 function renderChatSidebar(store: ReturnType<typeof createTypeSafeTestStore>) {
-  return render(
-    <Provider store={store}>
-      <BrowserRouter>
-        <ChatSidebar />
-      </BrowserRouter>
-    </Provider>
-  );
+  return renderWithProviders(<ChatSidebar />, { store });
 }
 
 /**
@@ -140,7 +125,6 @@ describe('ChatSidebar Component', () => {
   });
 
   afterEach(() => {
-    cleanup();
     vi.useRealTimers();
   });
 
@@ -398,13 +382,7 @@ describe('ChatSidebar Component', () => {
         isDesktop: true,
       });
 
-      const { rerender } = render(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ChatSidebar />
-          </BrowserRouter>
-        </Provider>
-      );
+      const { rerender } = renderWithProviders(<ChatSidebar />, { store });
       expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();
 
       // 切换到紧凑模式
@@ -418,13 +396,7 @@ describe('ChatSidebar Component', () => {
         isDesktop: false,
       });
 
-      rerender(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ChatSidebar />
-          </BrowserRouter>
-        </Provider>
-      );
+      rerender(<ChatSidebar />);
 
       expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();
     });
@@ -474,13 +446,7 @@ describe('ChatSidebar Component', () => {
       modes.forEach((mode) => {
         mockUseResponsive.mockReturnValue(mode);
 
-        const { unmount } = render(
-          <Provider store={store}>
-            <BrowserRouter>
-              <ChatSidebar />
-            </BrowserRouter>
-          </Provider>
-        );
+        const { unmount } = renderWithProviders(<ChatSidebar />, { store });
 
         // 验证聊天按钮在所有模式下都存在
         expect(screen.getByTestId('chat-button-chat-1')).toBeInTheDocument();

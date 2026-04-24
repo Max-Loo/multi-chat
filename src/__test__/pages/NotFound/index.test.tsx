@@ -4,8 +4,8 @@
  * 测试 404 页面的功能和交互
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import NotFound from '@/pages/NotFound'
@@ -32,10 +32,6 @@ vi.mock('react-i18next', () =>
 describe('NotFound', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-  })
-
-  afterEach(() => {
-    cleanup()
   })
 
   const renderComponent = () => {

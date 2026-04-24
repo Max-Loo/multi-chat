@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { NoProvidersAvailable } from '@/components/NoProvidersAvailable'
 
 vi.mock('react-i18next', () =>
@@ -12,6 +12,9 @@ vi.mock('react-i18next', () =>
     },
   }));
 
+/** 保存原始 window.location 用于测试后恢复 */
+const originalLocation = window.location;
+
 describe('NoProvidersAvailable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -23,7 +26,11 @@ describe('NoProvidersAvailable', () => {
   })
 
   afterEach(() => {
-    cleanup()
+    // 恢复原始 window.location
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: originalLocation,
+    })
   })
 
   describe('错误信息展示', () => {

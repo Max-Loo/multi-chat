@@ -5,8 +5,8 @@
  * 不 mock useSelectedChat / useIsSending，通过 Redux state 驱动行为
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import ChatPanelContentDetail from '@/pages/Chat/components/Panel/Detail';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import type { ChatModel } from '@/types/chat';
@@ -80,11 +80,7 @@ describe('ChatPanelContentDetail', () => {
     });
   };
 
-  beforeEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('4.3.1 测试渲染单个模型面板', () => {
     it('应该成功渲染单个模型面板', () => {
       const chatModel: ChatModel = {

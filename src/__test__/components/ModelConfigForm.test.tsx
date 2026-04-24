@@ -4,8 +4,8 @@
  * 测试模型配置表单的各种场景
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, waitFor, cleanup, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { fireEvent, waitFor, screen } from '@testing-library/react';
 import ModelConfigForm from '@/pages/Model/components/ModelConfigForm';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { createDeepSeekProvider, createKimiProvider } from '@/__test__/helpers/fixtures';
@@ -42,10 +42,7 @@ describe('ModelConfigForm', () => {
     mockOnFinish = vi.fn<(model: Model) => void>();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   describe('表单渲染', () => {
     it('应该渲染新建模型表单', () => {
       const store = createStore(

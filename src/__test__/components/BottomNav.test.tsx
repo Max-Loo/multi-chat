@@ -4,8 +4,8 @@
  * 测试三个导航项渲染、路由导航、激活状态高亮、仅在Mobile模式显示
  */
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 
 // Mock react-router-dom
 const mockNavigate = vi.fn();
@@ -32,11 +32,7 @@ vi.mock('@/config/navigation', async () => {
 import { BottomNav } from '@/components/BottomNav';
 
 describe('BottomNav 组件', () => {
-  afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('基础渲染', () => {
     it('应该在移动端模式正确渲染', () => {
       render(

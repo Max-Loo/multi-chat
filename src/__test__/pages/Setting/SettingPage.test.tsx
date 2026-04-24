@@ -1,20 +1,12 @@
-import { render, screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import SettingPage from '@/pages/Setting/index';
 import { resetTestState } from '@/__test__/helpers/isolation';
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
-/**
- * Mock useAdaptiveScrollbar hook
- */
-vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
-  useAdaptiveScrollbar: () => ({
-    onScrollEvent: vi.fn(),
-    scrollbarClassname: 'custom-scrollbar',
-  }),
-}));
+vi.mock('@/hooks/useAdaptiveScrollbar', () => ({ useAdaptiveScrollbar: () => globalThis.__createScrollbarMock() }));
 
 /**
  * Mock useResponsive hook（桌面端模式）
@@ -53,10 +45,7 @@ describe('SettingPage Component', () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   /**
    * 测试渲染
    */

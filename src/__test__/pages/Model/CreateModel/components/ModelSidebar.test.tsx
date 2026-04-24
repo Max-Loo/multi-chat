@@ -4,19 +4,14 @@
  * 测试模型供应商侧边栏组件的功能
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { screen, waitFor, cleanup } from '@testing-library/react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import ModelSidebar from '@/pages/Model/CreateModel/components/ModelSidebar'
 import { renderWithProviders, createTypeSafeTestStore } from '@/__test__/helpers/render/redux'
 import { createMockRemoteProviders } from '@/__test__/helpers/fixtures'
 import { createModelProviderSliceState } from '@/__test__/helpers/mocks/testState'
 import { ModelProviderKeyEnum } from '@/utils/enums'
-
-// 每个测试后清理
-afterEach(() => {
-  cleanup()
-})
 
 // Mock react-i18next
 vi.mock('react-i18next', () =>

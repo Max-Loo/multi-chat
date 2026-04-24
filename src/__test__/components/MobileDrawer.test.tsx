@@ -4,8 +4,8 @@
  * 测试抽屉打开/关闭、遮罩点击、ESC键关闭、背景滚动锁定等功能
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { MobileDrawer } from '@/components/MobileDrawer';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
@@ -56,11 +56,7 @@ describe('MobileDrawer 组件', () => {
     mockOnOpenChange = vi.fn();
   });
 
-  afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('基础渲染', () => {
     it('应该正确渲染抽屉组件', () => {
       render(

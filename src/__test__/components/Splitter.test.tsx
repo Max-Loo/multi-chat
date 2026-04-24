@@ -5,8 +5,8 @@
  * 不 mock Detail 子组件，使用 renderWithProviders 渲染完整组件树
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { cleanup, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import Splitter from '@/pages/Chat/components/Panel/Splitter';
 import type { ChatModel } from '@/types/chat';
 import {
@@ -24,11 +24,7 @@ function renderSplitter(board: ChatModel[][]) {
 }
 
 describe('Splitter', () => {
-  beforeEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('ResizablePanel 渲染', () => {
     it.each([
       {

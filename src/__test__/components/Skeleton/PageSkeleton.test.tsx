@@ -11,16 +11,9 @@ import { render, screen } from '@testing-library/react';
 import { PageSkeleton } from '@/components/Skeleton/PageSkeleton';
 
 // Mock useResponsive
-const mockIsMobile = vi.fn();
+const mockIsMobile = vi.hoisted(() => vi.fn(() => false));
 vi.mock('@/hooks/useResponsive', () => ({
-  useResponsive: () => ({ isMobile: mockIsMobile() }),
-}));
-
-// Mock shadcn Skeleton
-vi.mock('@/components/ui/skeleton', () => ({
-  Skeleton: ({ className, variant }: { className?: string; variant?: string }) => (
-    <div data-testid="skeleton-item" className={className} data-variant={variant} />
-  ),
+  useResponsive: () => ({ ...globalThis.__createResponsiveMock(), isMobile: mockIsMobile() }),
 }));
 
 describe('PageSkeleton', () => {

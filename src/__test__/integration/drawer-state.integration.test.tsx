@@ -10,15 +10,13 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup, waitFor, screen, act } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { waitFor, screen, act } from '@testing-library/react';
 import type { EnhancedStore } from '@reduxjs/toolkit';
 
 // 被测试的页面组件
 import ChatPage from '@/pages/Chat';
 
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createTestRootState, createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { RootState } from '@/store';
 import { toggleDrawer as chatToggleDrawer, setIsDrawerOpen as chatSetIsDrawerOpen } from '@/store/slices/chatPageSlices';
@@ -58,13 +56,7 @@ function createDrawerTestStore(): EnhancedStore<RootState> {
  * 渲染带 ResponsiveProvider 的聊天页面
  */
 function renderChatPage(store: EnhancedStore<RootState>) {
-  return render(
-    <Provider store={store}>
-        <BrowserRouter>
-          <ChatPage />
-        </BrowserRouter>
-    </Provider>
-  );
+  return renderWithProviders(<ChatPage />, { store });
 }
 
 describe('抽屉打开/关闭集成测试', () => {
@@ -81,7 +73,6 @@ describe('抽屉打开/关闭集成测试', () => {
 
   afterEach(() => {
     consoleSpy.mockRestore();
-    cleanup();
     vi.clearAllMocks();
   });
 
@@ -96,13 +87,7 @@ describe('抽屉打开/关闭集成测试', () => {
       // 打开抽屉
       store.dispatch(chatToggleDrawer());
 
-      rerender(
-        <Provider store={store}>
-            <BrowserRouter>
-              <ChatPage />
-            </BrowserRouter>
-        </Provider>
-      );
+      rerender(<ChatPage />);
       flushRadixTimers();
 
       await waitFor(() => {
@@ -118,13 +103,7 @@ describe('抽屉打开/关闭集成测试', () => {
 
       // 打开抽屉
       store.dispatch(chatToggleDrawer());
-      rerender(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ChatPage />
-          </BrowserRouter>
-        </Provider>
-      );
+      rerender(<ChatPage />);
       flushRadixTimers();
 
       await waitFor(() => {
@@ -133,13 +112,7 @@ describe('抽屉打开/关闭集成测试', () => {
 
       // 模拟遮罩点击关闭抽屉
       store.dispatch(chatSetIsDrawerOpen(false));
-      rerender(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ChatPage />
-          </BrowserRouter>
-        </Provider>
-      );
+      rerender(<ChatPage />);
       flushRadixTimers();
 
       await waitFor(() => {
@@ -153,13 +126,7 @@ describe('抽屉打开/关闭集成测试', () => {
 
       // 打开抽屉
       store.dispatch(chatToggleDrawer());
-      rerender(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ChatPage />
-          </BrowserRouter>
-        </Provider>
-      );
+      rerender(<ChatPage />);
       flushRadixTimers();
 
       await waitFor(() => {
@@ -168,13 +135,7 @@ describe('抽屉打开/关闭集成测试', () => {
 
       // 模拟 ESC 键关闭抽屉
       store.dispatch(chatSetIsDrawerOpen(false));
-      rerender(
-        <Provider store={store}>
-          <BrowserRouter>
-            <ChatPage />
-          </BrowserRouter>
-        </Provider>
-      );
+      rerender(<ChatPage />);
       flushRadixTimers();
 
       await waitFor(() => {

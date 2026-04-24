@@ -4,8 +4,8 @@
  * 测试推理内容折叠组件的各种场景
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThinkingSection } from '@/components/chat/ThinkingSection';
 
@@ -15,39 +15,14 @@ vi.mock('highlight.js', () => {
   return highlightJsMockFactory;
 });
 
-// Mock markdown-it
-vi.mock('markdown-it', () => ({
-  default: vi.fn(() => ({
-    render: (str: string) => {
-      // 简单的 markdown 渲染模拟
-      return str
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // **粗体**
-        .replace(/\*(.+?)\*/g, '<em>$1</em>') // *斜体*
-        .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code>$2</code></pre>') // 代码块
-        .replace(/\n/g, '<br>'); // 换行
-    },
-  })),
-}));
+// Mock markdown-it（使用共享 mock 工厂）
+vi.mock('markdown-it', () => globalThis.__createMarkdownItMock());
 
-// Mock DOMPurify
-vi.mock('dompurify', () => ({
-  default: {
-    sanitize: (html: string) => {
-      // 简单的 XSS 清理模拟：移除 script 标签和危险的 HTML 属性
-      return html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/onerror=["'][^"']*["']/gi, '')
-        .replace(/onload=["'][^"']*["']/gi, '');
-    },
-  },
-}));
+// Mock DOMPurify（使用共享 mock 工厂）
+vi.mock('dompurify', () => globalThis.__createDompurifyMock());
 
 describe('ThinkingSection UI 组件', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    cleanup();
-  });
-
+  
   describe('基础渲染', () => {
     it('应该正确渲染推理内容区域', () => {
       render(

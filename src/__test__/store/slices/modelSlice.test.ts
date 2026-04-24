@@ -37,13 +37,6 @@ vi.mock('@/store/storage/chatStorage', () => ({
   saveChatsToJson: vi.fn(() => Promise.resolve(undefined)),
 }));
 
-// Mock storeUtils 模块
-vi.mock('@/store/storage/storeUtils', () => ({
-  createLazyStore: vi.fn(() => ({})),
-  saveToStore: vi.fn(() => Promise.resolve()),
-  loadFromStore: vi.fn(() => Promise.resolve([])),
-}));
-
 import { configureStore } from '@reduxjs/toolkit';
 import modelReducer, {
   clearError,
@@ -86,14 +79,6 @@ describe('modelSlice', () => {
       });
     });
   });
-
-
-
-  // 模型管理 reducers 测试已被删除：已被 model-config.integration.test.ts 覆盖
-  // - 创建新模型：集成测试覆盖 "添加模型配置"
-  // - 编辑模型：集成测试覆盖 "编辑模型配置"
-  // - 软删除模型：集成测试覆盖 "删除模型配置"
-  // - 编辑不存在模型：集成测试覆盖 "编辑模型配置" 的错误场景
 
   describe('initializeModels rejected', () => {
     it('应该在 rejected 时恢复 loading 并设置 initializationError', () => {
@@ -147,7 +132,6 @@ describe('modelSlice', () => {
     });
   });
 
-  // 保留边缘情况测试
   it('应该在编辑不存在模型时不修改状态', () => {
     const model1 = createMockModel({ id: 'model-1', nickname: 'Model 1' });
     const model2 = createMockModel({ id: 'model-2', nickname: 'Model 2' });
@@ -192,10 +176,7 @@ describe('modelSlice', () => {
     });
   });
 
-  // 模型列表过滤测试已被删除：集成测试已覆盖软删除和过滤逻辑
-
   describe('软删除模型查找', () => {
-    // 保留软删除模型查找测试：验证软删除逻辑
     it('应该查找已删除的模型', () => {
       const model = createMockModel();
       store.dispatch(createModel({ model }));

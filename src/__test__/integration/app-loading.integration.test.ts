@@ -27,12 +27,6 @@ vi.mock('@/store/storage/chatStorage', () => ({
   saveChatsToJson: vi.fn(() => Promise.resolve(undefined)),
 }));
 
-vi.mock('@/store/storage/storeUtils', () => ({
-  createLazyStore: vi.fn(() => ({})),
-  saveToStore: vi.fn(() => Promise.resolve()),
-  loadFromStore: vi.fn(() => Promise.resolve([])),
-}));
-
 import { loadModelsFromJson } from '@/store/storage/modelStorage';
 import modelReducer, { initializeModels } from '@/store/slices/modelSlice';
 
@@ -92,6 +86,8 @@ describe('应用加载集成测试', () => {
     });
 
     test('应该正确显示加载指示器', async () => {
+      vi.useFakeTimers();
+
       // Given: 存储中有模型数据
       const mockModels: Model[] = [createMockModel()];
       vi.mocked(loadModelsFromJson).mockImplementation(
@@ -105,9 +101,14 @@ describe('应用加载集成测试', () => {
       // Then: 应显示加载指示器（loading = true）
       expect(store.getState().models.loading).toBe(true);
 
+      // 快进时间让 setTimeout 回调执行
+      await vi.runAllTimersAsync();
+
       // Then: 加载完成后应隐藏指示器
       await initPromise;
       expect(store.getState().models.loading).toBe(false);
+
+      vi.useRealTimers();
     });
 
     test('应该处理空模型列表', async () => {
@@ -179,21 +180,29 @@ vi.mocked(loadModelsFromJson).mockImplementation(async () => {
     });
 
     test('应该处理网络超时', async () => {
+      vi.useFakeTimers();
+
       // Given: 模拟网络超时
 vi.mocked(loadModelsFromJson).mockImplementation(
-        () => new Promise((_, reject) => 
+        () => new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Request timeout')), 100)
         )
       );
 
       // When: 初始化模型
       const store = createTestStore();
-      await store.dispatch(initializeModels());
+      const initPromise = store.dispatch(initializeModels());
+
+      // 快进时间让 setTimeout 回调执行
+      await vi.runAllTimersAsync();
+      await initPromise;
 
       // Then: 应设置错误
       const state = store.getState();
       expect(state.models.initializationError).toBe('Request timeout');
       expect(state.models.loading).toBe(false);
+
+      vi.useRealTimers();
     });
   });
 
@@ -308,6 +317,8 @@ vi.mocked(loadModelsFromJson).mockResolvedValue({ models: mockModels, decryption
     });
 
     test('应该处理初始化过程中的状态更新', async () => {
+      vi.useFakeTimers();
+
       // Given: 模拟异步加载
       const mockModels: Model[] = [createMockModel()];
 vi.mocked(loadModelsFromJson).mockImplementation(
@@ -321,12 +332,17 @@ vi.mocked(loadModelsFromJson).mockImplementation(
       // Then: 应处于加载状态
       expect(store.getState().models.loading).toBe(true);
 
+      // 快进时间让 setTimeout 回调执行
+      await vi.runAllTimersAsync();
+
       // When: 完成加载
       await initPromise;
 
       // Then: 应完成加载
       expect(store.getState().models.loading).toBe(false);
       expect(store.getState().models.models).toEqual(mockModels);
+
+      vi.useRealTimers();
     });
   });
 
@@ -336,6 +352,8 @@ vi.mocked(loadModelsFromJson).mockImplementation(
 
   describe('UI 状态同步', () => {
     test('应该正确同步加载状态到 UI', async () => {
+      vi.useFakeTimers();
+
       // Given: 模拟异步加载
       const mockModels: Model[] = [createMockModel()];
 vi.mocked(loadModelsFromJson).mockImplementation(
@@ -344,21 +362,26 @@ vi.mocked(loadModelsFromJson).mockImplementation(
 
       // When: 初始化模型
       const store = createTestStore();
-      
+
       // Then: 初始状态应为 false
       expect(store.getState().models.loading).toBe(false);
 
       // When: 开始加载
       const initPromise = store.dispatch(initializeModels());
-      
+
       // Then: 加载中应为 true（UI 应显示加载指示器）
       expect(store.getState().models.loading).toBe(true);
 
+      // 快进时间让 setTimeout 回调执行
+      await vi.runAllTimersAsync();
+
       // When: 加载完成
       await initPromise;
-      
+
       // Then: 加载完成应为 false（UI 应隐藏加载指示器）
       expect(store.getState().models.loading).toBe(false);
+
+      vi.useRealTimers();
     });
 
     test('应该正确同步错误状态到 UI', async () => {

@@ -10,8 +10,8 @@
  * 覆盖率目标：60%+
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { render, screen, cleanup, fireEvent } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen, fireEvent } from "@testing-library/react"
 import LanguageSetting from "@/pages/Setting/components/GeneralSetting/components/LanguageSetting"
 import { resetTestState } from "../../helpers/isolation"
 
@@ -100,10 +100,6 @@ describe("LanguageSetting 组件", () => {
     await resetTestState()
     mockDispatch.mockClear()
     mockSetAppLanguage.mockClear()
-  })
-
-  afterEach(() => {
-    cleanup()
   })
 
   describe("渲染测试", () => {

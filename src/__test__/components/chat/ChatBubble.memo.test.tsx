@@ -10,8 +10,8 @@
  * - 通过 DOM 断言验证 role/reasoningContent/isRunning 变化导致的重渲染
  */
 
-import { render, screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatRoleEnum } from '@/types/chat';
@@ -62,10 +62,7 @@ describe('ChatBubble memo 重渲染行为', () => {
     mockGenerateCleanHtml.mockClear();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   it('应该不重渲染 当四个关键 props（role/content/reasoningContent/isRunning）都相同', () => {
     const { rerender } = render(<TrackedChatBubble {...defaultProps} />);
 

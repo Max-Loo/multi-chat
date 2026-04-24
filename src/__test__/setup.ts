@@ -186,90 +186,45 @@ vi.mock('ai', () => {
   };
 });
 
+/**
+ * 创建 AI SDK provider mock 对象
+ * 统一 deepseek/moonshotai/zhipu 三种 provider 的 mock 逻辑
+ */
+function createMockAIProvider(providerName: string) {
+  return vi.fn((modelId: string) => ({
+    provider: providerName as typeof providerName,
+    modelId,
+    specificationVersion: 'v1' as const,
+    supportsImageUrls: false,
+    supportsUrl: false,
+    supportsToolCallStreaming: false,
+    supportsToolCalls: false,
+    supportsStructuredGeneration: false,
+    supportsObjectGeneration: false,
+    defaultTemperature: 0.7,
+    defaultMaxTokens: 4096,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    doStream: vi.fn().mockResolvedValue({ stream: [] as any }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    doGenerate: vi.fn().mockResolvedValue({
+      text: 'mock generated text',
+      usage: { promptTokens: 10, completionTokens: 5 },
+      finishReason: 'stop',
+      warnings: [],
+    }),
+  }));
+}
+
 vi.mock('@ai-sdk/deepseek', () => ({
-  createDeepSeek: vi.fn(() => {
-    // 返回一个函数，该函数返回一个 mock provider 对象
-    // 这个 mock provider 对象需要满足 Vercel AI SDK 的接口
-    return vi.fn((modelId: string) => ({
-      provider: 'deepseek' as const,
-      modelId,
-      // 添加其他必要的属性和方法
-      specificationVersion: 'v1' as const,
-      supportsImageUrls: false,
-      supportsUrl: false,
-      supportsToolCallStreaming: false,
-      supportsToolCalls: false,
-      supportsStructuredGeneration: false,
-      supportsObjectGeneration: false,
-      defaultTemperature: 0.7,
-      defaultMaxTokens: 4096,
-      // 添加一个 dummy 的 doStream 方法
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      doStream: vi.fn().mockResolvedValue({ stream: [] as any }),
-      // 添加 doGenerate 方法以支持 generateText
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      doGenerate: vi.fn().mockResolvedValue({
-        text: 'mock generated text',
-        usage: { promptTokens: 10, completionTokens: 5 },
-        finishReason: 'stop',
-        warnings: [],
-      }),
-    }));
-  }),
+  createDeepSeek: vi.fn(() => createMockAIProvider('deepseek')),
 }));
 
 vi.mock('@ai-sdk/moonshotai', () => ({
-  createMoonshotAI: vi.fn(() => {
-    return vi.fn((modelId: string) => ({
-      provider: 'moonshotai' as const,
-      modelId,
-      specificationVersion: 'v1' as const,
-      supportsImageUrls: false,
-      supportsUrl: false,
-      supportsToolCallStreaming: false,
-      supportsToolCalls: false,
-      supportsStructuredGeneration: false,
-      supportsObjectGeneration: false,
-      defaultTemperature: 0.7,
-      defaultMaxTokens: 4096,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      doStream: vi.fn().mockResolvedValue({ stream: [] as any }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      doGenerate: vi.fn().mockResolvedValue({
-        text: 'mock generated text',
-        usage: { promptTokens: 10, completionTokens: 5 },
-        finishReason: 'stop',
-        warnings: [],
-      }),
-    }));
-  }),
+  createMoonshotAI: vi.fn(() => createMockAIProvider('moonshotai')),
 }));
 
 vi.mock('zhipu-ai-provider', () => ({
-  createZhipu: vi.fn(() => {
-    return vi.fn((modelId: string) => ({
-      provider: 'zhipu' as const,
-      modelId,
-      specificationVersion: 'v1' as const,
-      supportsImageUrls: false,
-      supportsUrl: false,
-      supportsToolCallStreaming: false,
-      supportsToolCalls: false,
-      supportsStructuredGeneration: false,
-      supportsObjectGeneration: false,
-      defaultTemperature: 0.7,
-      defaultMaxTokens: 4096,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      doStream: vi.fn().mockResolvedValue({ stream: [] as any }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      doGenerate: vi.fn().mockResolvedValue({
-        text: 'mock generated text',
-        usage: { promptTokens: 10, completionTokens: 5 },
-        finishReason: 'stop',
-        warnings: [],
-      }),
-    }));
-  }),
+  createZhipu: vi.fn(() => createMockAIProvider('zhipu')),
 }));
 
 // 注意：不全局 mock utils 模块，因为它包含真实的时间戳函数
@@ -289,6 +244,9 @@ import { createMemoryStorageMock } from './helpers/mocks/storage';
 import { createResponsiveMock } from './helpers/mocks/responsive';
 import { createTauriCompatModuleMock } from './helpers/mocks/tauriCompat';
 import { createToastQueueModuleMock } from './helpers/mocks/toast';
+import { createScrollbarMock } from './helpers/mocks/scrollbar';
+import { createMarkdownItMock } from './helpers/mocks/markdown';
+import { createDompurifyMock } from './helpers/mocks/dompurify';
 
 // 将 i18n mock 工厂函数注册到 globalThis，供测试文件中的 vi.mock 工厂使用
 // vi.mock 的工厂函数存在 hoisting 限制，无法使用常规 import
@@ -321,6 +279,28 @@ globalThis.__createTauriCompatModuleMock = __tauriCompatModuleMock;
 var __toastModuleMock = createToastQueueModuleMock;
 globalThis.__createToastQueueModuleMock = __toastModuleMock;
 
+// 将 useAdaptiveScrollbar mock 工厂注册到 globalThis，供组件测试复用
+// eslint-disable-next-line no-var
+var __scrollbarMock = createScrollbarMock;
+globalThis.__createScrollbarMock = __scrollbarMock;
+
+// 全局 mock Skeleton 组件，消除多个测试文件的重复定义
+vi.mock('@/components/ui/skeleton', async () => {
+  const { createElement } = await import('react');
+  return {
+    Skeleton: ({ className, variant, style }: Record<string, unknown>) =>
+      createElement('div', { 'data-testid': 'skeleton-item', className, 'data-variant': variant, style }),
+  };
+});
+
+// 将 markdown-it / dompurify mock 工厂注册到 globalThis，供 ThinkingSection 等测试使用
+// eslint-disable-next-line no-var
+var __markdownItMock = createMarkdownItMock;
+globalThis.__createMarkdownItMock = __markdownItMock;
+// eslint-disable-next-line no-var
+var __dompurifyMock = createDompurifyMock;
+globalThis.__createDompurifyMock = __dompurifyMock;
+
 // 初始化全局 Mock 系统（临时禁用）
 // setupGlobalMocks({ isTauri: true });
 
@@ -338,7 +318,6 @@ afterEach(() => {
 });
 
 // ========================================
-// 抑制测试中的预期 Unhandled Rejection 警告
 // 抑制测试中的预期 Unhandled Rejection 警告
 // ========================================
 // 在测试错误处理场景时，我们会故意创建被拒绝的 Promise

@@ -17,13 +17,7 @@ import { resetTestState } from "../../helpers/isolation"
 import { exportDeletedChats } from "@/services/chatExport"
 import { toastQueue } from "@/services/toast"
 
-// Mock useAdaptiveScrollbar hook
-vi.mock("@/hooks/useAdaptiveScrollbar", () => ({
-  useAdaptiveScrollbar: () => ({
-    scrollbarClassname: "custom-scrollbar-class",
-    onScrollEvent: vi.fn(),
-  }),
-}))
+vi.mock('@/hooks/useAdaptiveScrollbar', () => ({ useAdaptiveScrollbar: () => globalThis.__createScrollbarMock() }));
 
 vi.mock('react-i18next', () => globalThis.__mockI18n({ common: { language: '语言' }, setting: { autoNaming: { title: '自动命名', description: '自动为聊天生成标题，默认开启' }, modelProvider: { refreshButton: '刷新模型供应商' }, chatExport: { title: '聊天导出', description: '导出聊天数据为 JSON 文件', exportAll: '导出所有聊天', exportDeleted: '导出已删除聊天', exportSuccess: '导出成功', exportFailed: '导出失败', noDeletedChats: '没有已删除的聊天' } } }));
 
@@ -52,10 +46,6 @@ vi.mock("@/services/chatExport", () => ({
 describe("GeneralSetting 组件", () => {
   beforeEach(async () => {
     await resetTestState()
-  })
-
-  afterEach(() => {
-    cleanup()
   })
 
   describe("渲染测试", () => {

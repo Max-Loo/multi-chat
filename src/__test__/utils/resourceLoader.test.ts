@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ResourceLoader } from '@/utils/resourceLoader';
 
 // Mock resource type
@@ -66,6 +66,9 @@ describe('ResourceLoader', () => {
   });
 
   describe('并发请求同一资源', () => {
+    beforeEach(() => { vi.useFakeTimers(); });
+    afterEach(() => { vi.useRealTimers(); });
+
     it('应该只执行一次加载操作，所有调用者共享同一个 Promise', async () => {
       const resource: MockResource = { name: 'test', value: 42 };
       let loadCount = 0;
@@ -81,11 +84,13 @@ describe('ResourceLoader', () => {
       });
 
       // 并发请求同一资源
-      const [result1, result2, result3] = await Promise.all([
+      const allPromise = Promise.all([
         loader.load('test-resource'),
         loader.load('test-resource'),
         loader.load('test-resource'),
       ]);
+      await vi.advanceTimersByTimeAsync(100);
+      const [result1, result2, result3] = await allPromise;
 
       expect(result1).toEqual(resource);
       expect(result2).toEqual(resource);
@@ -213,6 +218,7 @@ describe('ResourceLoader', () => {
     });
 
     it('加载中应该返回 loading 状态', async () => {
+      vi.useFakeTimers();
       mockLoaderFn.mockImplementation(
         () =>
           new Promise((resolve) => {
@@ -232,7 +238,9 @@ describe('ResourceLoader', () => {
       expect(state?.status).toBe('loading');
       expect(state?.retryCount).toBe(1);
 
+      await vi.advanceTimersByTimeAsync(100);
       await loadPromise;
+      vi.useRealTimers();
     });
 
     it('加载成功后应该返回 loaded 状态', async () => {

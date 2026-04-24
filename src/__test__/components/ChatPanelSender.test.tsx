@@ -9,7 +9,6 @@ import {
   screen,
   fireEvent,
   waitFor,
-  cleanup,
 } from "@testing-library/react";
 import React from "react";
 import ChatPanelSender from "@/pages/Chat/components/Panel/Sender";
@@ -51,10 +50,7 @@ describe("ChatPanelSender", () => {
     mockChat = createMockChat({ id: "chat-1", name: "Test Chat" });
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   describe("基础消息发送功能", () => {
     it("应该渲染输入框和发送按钮", () => {
       const store = createStore({
@@ -520,12 +516,11 @@ describe("ChatPanelSender", () => {
   });
 
   describe("自动调整高度功能", () => {
-    it("5.1 应该保持最小高度 当单行输入", () => {
+    it("应该保持最小高度 当单行输入", () => {
       const store = createStore({
         chatList: [mockChat],
         selectedChatId: "chat-1",
       });
-
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(
@@ -542,12 +537,11 @@ describe("ChatPanelSender", () => {
   });
 
   describe("布局和样式", () => {
-    it("7.1 应该使用 flex 布局结构", () => {
+    it("应该使用 flex 布局结构", () => {
       const store = createStore({
         chatList: [mockChat],
         selectedChatId: "chat-1",
       });
-
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(/输入消息/i);
@@ -557,12 +551,11 @@ describe("ChatPanelSender", () => {
       expect(sendButton).toBeInTheDocument();
     });
 
-    it("7.2 外层容器应该有细灰色边框", () => {
+    it("外层容器应该有细灰色边框", () => {
       const store = createStore({
         chatList: [mockChat],
         selectedChatId: "chat-1",
       });
-
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(/输入消息/i);
@@ -572,12 +565,11 @@ describe("ChatPanelSender", () => {
       expect(textarea).toBeEnabled();
     });
 
-    it("7.3 工具栏应该独立于 Textarea 区域", () => {
+    it("工具栏应该独立于 Textarea 区域", () => {
       const store = createStore({
         chatList: [mockChat],
         selectedChatId: "chat-1",
       });
-
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const textarea = screen.getByPlaceholderText(/输入消息/i);
@@ -593,12 +585,11 @@ describe("ChatPanelSender", () => {
       expect(textareaParent).toBe(buttonParent?.parentElement);
     });
 
-    it("7.4 发送按钮应该可点击且尺寸适当", () => {
+    it("发送按钮应该可点击且尺寸适当", () => {
       const store = createStore({
         chatList: [mockChat],
         selectedChatId: "chat-1",
       });
-
       renderWithProviders(React.createElement(ChatPanelSender), { store });
 
       const sendButton = screen.getByTitle(/发送消息/i);

@@ -5,8 +5,8 @@
  * 不 mock Detail 子组件，使用 renderWithProviders 渲染完整组件树
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { cleanup, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import Grid from '@/pages/Chat/components/Panel/Grid';
 import type { ChatModel } from '@/types/chat';
 import {
@@ -18,11 +18,7 @@ import { renderWithProviders } from '@/__test__/helpers/render/redux';
 vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 describe('Grid', () => {
-  beforeEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('列表转二维网格', () => {
     it('应该将 board 渲染为网格布局', () => {
       const store = createPanelLayoutStore();

@@ -7,16 +7,9 @@
  * - 自定义高度和间距
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { SkeletonList } from '@/components/Skeleton/SkeletonList';
-
-// Mock shadcn Skeleton
-vi.mock('@/components/ui/skeleton', () => ({
-  Skeleton: ({ className, variant }: { className?: string; variant?: string }) => (
-    <div data-testid="skeleton-item" className={className} data-variant={variant} />
-  ),
-}));
 
 describe('SkeletonList', () => {
   it('应该渲染默认 5 个骨架项', () => {

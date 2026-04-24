@@ -3,8 +3,8 @@
  * 测试模型详情标题组件的渲染和功能
  */
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import DetailTitle from '@/pages/Chat/components/Panel/Detail/Title';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
@@ -30,10 +30,7 @@ const createTestStore = (models: ReturnType<typeof createMockModel>[] = []) => {
 };
 
 describe('DetailTitle', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   describe('6.1 测试正常状态渲染（Logo + 昵称）', () => {
     it('应该显示「昵称 (模型名)」格式', () => {
       const testModel = createMockModel({
