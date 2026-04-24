@@ -22,10 +22,7 @@ vi.mock('@/hooks/redux', () => ({
   }),
 }));
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock ProviderLogo
 vi.mock('@/components/ProviderLogo', () => ({
@@ -124,7 +121,7 @@ describe('Title', () => {
     render(<Title chatModel={createMockPanelChatModel('model-1')} />);
 
     const badges = screen.getAllByTestId('badge');
-    const disabledBadge = badges.find((b) => b.textContent === '已禁用');
+    const disabledBadge = badges.find((b) => b.textContent === '被禁用');
     expect(disabledBadge).toBeDefined();
     expect(disabledBadge).toHaveAttribute('data-variant', 'secondary');
   });

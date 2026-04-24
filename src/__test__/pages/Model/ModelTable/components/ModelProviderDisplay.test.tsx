@@ -12,10 +12,7 @@ import { createModelProviderSliceState } from '@/__test__/helpers/mocks/testStat
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
-vi.mock('react-i18next', () => {
-  const R = { common: { confirm: '确认', cancel: '取消' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * 创建测试用 Redux store

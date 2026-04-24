@@ -11,10 +11,14 @@ import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers
 import { createModelSliceState, createModelProviderSliceState, createModelPageSliceState } from '@/__test__/helpers/mocks/testState';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
-vi.mock('react-i18next', () => {
-  const R = { model: { modelNickname: '模型昵称', apiKey: 'API 密钥', apiAddress: 'API 地址', model: '模型', addModelSuccess: '添加成功', addModelFailed: '添加失败' }, common: { remark: '备注', submit: '提交' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    model: {
+      addModelSuccess: '添加成功',
+      addModelFailed: '添加失败',
+      apiKey: 'API 密钥',
+    },
+  }));
 
 // Mock react-router-dom
 vi.mock('react-router-dom', async () => {

@@ -2,14 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import AutoNamingSetting from '@/pages/Setting/components/GeneralSetting/components/AutoNamingSetting';
-import appConfigReducer from '@/store/slices/appConfigSlices';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
-vi.mock('react-i18next', () => {
-  const R = { setting: { autoNaming: { title: '自动命名', description: '自动为聊天生成标题，默认开启' } } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  setting: { autoNaming: { title: '自动命名', description: '自动为聊天生成标题，默认开启' } },
+}));
 
 /**
  * AutoNamingSetting 组件单元测试
@@ -38,17 +36,8 @@ describe('AutoNamingSetting', () => {
    * });
    * ```
    */
-  function setup(preloadedState = {}) {
-    /**
-     * 创建 Redux store
-     * 配置 appConfig reducer 用于管理应用配置状态
-     */
-    const store = configureStore({
-      reducer: {
-        appConfig: appConfigReducer,
-      },
-      preloadedState,
-    });
+  function setup(preloadedState: Record<string, unknown> = {}) {
+    const store = createTypeSafeTestStore(preloadedState);
 
     /**
      * 渲染组件

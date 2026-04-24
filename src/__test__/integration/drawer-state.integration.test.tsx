@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup, waitFor, screen } from '@testing-library/react';
+import { render, cleanup, waitFor, screen, act } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import type { EnhancedStore } from '@reduxjs/toolkit';
@@ -23,16 +23,26 @@ import { createTestRootState, createAppConfigSliceState, createChatPageSliceStat
 import type { RootState } from '@/store';
 import { toggleDrawer as chatToggleDrawer, setIsDrawerOpen as chatSetIsDrawerOpen } from '@/store/slices/chatPageSlices';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => {
-  const R = { common: { search: '搜索' }, chat: { hideSidebar: '隐藏侧边栏', showSidebar: '显示侧边栏', createChat: '创建聊天', unnamed: '未命名', rename: '重命名', delete: '删除' }, navigation: { chat: '聊天', model: '模型', setting: '设置', mobileDrawer: { title: '侧边栏', description: '侧边栏', ariaDescription: '抽屉内容' } }, setting: { openMenu: '打开菜单' }, model: { openMenu: '打开菜单' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  chat: { hideSidebar: '隐藏侧边栏' },
+  setting: { openMenu: '打开菜单' },
+  model: { openMenu: '打开菜单' },
+}));
 
 // Mock useResponsive 为移动端模式（抽屉才显示）
 vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => globalThis.__createResponsiveMock({ layoutMode: 'mobile', width: 600, height: 844, isMobile: true, isDesktop: false }),
 }));
+
+/**
+ * 刷新 Radix UI 内部的 setTimeout(fn, 0) 回调
+ * 短暂启用 fake timers 来执行所有待处理的定时器，然后恢复真实定时器
+ */
+function flushRadixTimers() {
+  vi.useFakeTimers();
+  act(() => { vi.runAllTimers() });
+  vi.useRealTimers();
+}
 
 /**
  * 创建测试用 Redux Store
@@ -59,15 +69,18 @@ function renderChatPage(store: EnhancedStore<RootState>) {
 
 describe('抽屉打开/关闭集成测试', () => {
   let store: EnhancedStore<RootState>;
+  let consoleSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     store = createDrawerTestStore();
     // 设置移动端窗口尺寸
     global.innerWidth = 600;
     global.dispatchEvent(new Event('resize'));
+    consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
+    consoleSpy.mockRestore();
     cleanup();
     vi.clearAllMocks();
   });
@@ -90,6 +103,7 @@ describe('抽屉打开/关闭集成测试', () => {
             </BrowserRouter>
         </Provider>
       );
+      flushRadixTimers();
 
       await waitFor(() => {
         expect(store.getState().chatPage.isDrawerOpen).toBe(true);
@@ -111,6 +125,7 @@ describe('抽屉打开/关闭集成测试', () => {
           </BrowserRouter>
         </Provider>
       );
+      flushRadixTimers();
 
       await waitFor(() => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -125,6 +140,7 @@ describe('抽屉打开/关闭集成测试', () => {
           </BrowserRouter>
         </Provider>
       );
+      flushRadixTimers();
 
       await waitFor(() => {
         expect(store.getState().chatPage.isDrawerOpen).toBe(false);
@@ -144,6 +160,7 @@ describe('抽屉打开/关闭集成测试', () => {
           </BrowserRouter>
         </Provider>
       );
+      flushRadixTimers();
 
       await waitFor(() => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -158,6 +175,7 @@ describe('抽屉打开/关闭集成测试', () => {
           </BrowserRouter>
         </Provider>
       );
+      flushRadixTimers();
 
       await waitFor(() => {
         expect(store.getState().chatPage.isDrawerOpen).toBe(false);
@@ -165,4 +183,5 @@ describe('抽屉打开/关闭集成测试', () => {
       });
     });
   });
+
 });

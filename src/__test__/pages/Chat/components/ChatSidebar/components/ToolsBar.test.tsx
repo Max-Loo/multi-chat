@@ -12,10 +12,12 @@ vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => globalThis.__createResponsiveMock(),
 }));
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { hideSidebar: '隐藏侧边栏', createChat: '新建聊天' }, common: { search: '搜索' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    chat: {
+      createChat: '新建聊天',
+    },
+  }));
 
 /**
  * Mock useNavigateToPage hook

@@ -15,10 +15,7 @@ import {
 } from '@/__test__/helpers/mocks/panelLayout';
 import { renderWithProviders } from '@/__test__/helpers/render/redux';
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称' }, common: { loading: 'Loading...' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /** 渲染 Splitter 的辅助函数 */
 function renderSplitter(board: ChatModel[][]) {

@@ -26,10 +26,7 @@ vi.mock('@/hooks/useResponsive', () => ({
 import * as useResponsiveModule from '@/hooks/useResponsive';
 const mockUseResponsive = vi.mocked(useResponsiveModule.useResponsive);
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { unnamed: '未命名' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * Mock useNavigateToPage hook

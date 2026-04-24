@@ -19,10 +19,13 @@ afterEach(() => {
 })
 
 // Mock react-i18next
-vi.mock('react-i18next', () => {
-  const R = { model: { modelProvider: '模型供应商', searchModel: '搜索模型...' }, common: { confirm: '确认', cancel: '取消' } };
-  return globalThis.__createI18nMockReturn(R);
-})
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    model: {
+      modelProvider: '模型供应商',
+      searchModel: '搜索模型...',
+    },
+  }));
 
 /**
  * 创建测试用 Redux store

@@ -126,9 +126,49 @@ describe('chatSlices', () => {
   });
 
   // initializeChatList 状态转换测试已被删除：
-  // - pending/fulfilled/rejected 测试（3 个）：已被集成测试覆盖
-  // - 这些测试验证 Redux Toolkit 自动生成的状态转换，属于内部实现
-  // - 集成测试 app-loading.integration.test.ts 已覆盖用户可见行为
+  // - pending/fulfilled 测试：已被集成测试覆盖
+  // - 保留 rejected 测试以覆盖错误分支
+
+  describe('initializeChatList rejected', () => {
+    it('应该在 rejected 时恢复 loading 并设置 initializationError', () => {
+      // 先设置 loading 状态
+      store.dispatch(initializeChatList.pending('init-req'));
+      expect(store.getState().chat.loading).toBe(true);
+
+      // 触发 rejected
+      store.dispatch(initializeChatList.rejected(new Error('Storage read failed'), 'init-req'));
+
+      const state = store.getState().chat;
+      expect(state.loading).toBe(false);
+      expect(state.initializationError).toBe('Storage read failed');
+      // 聊天列表不应被修改
+      expect(state.chatList).toEqual([]);
+    });
+
+    it('应该在 loadChatsFromJson 抛出异常时正确处理错误', async () => {
+      // 设置 mock 使加载抛出异常
+      mockLoadChatsFromJson.mockRejectedValue(new Error('Disk I/O error'));
+
+      const result = await store.dispatch(initializeChatList());
+
+      const state = store.getState().chat;
+      expect(state.loading).toBe(false);
+      expect(state.initializationError).toContain('Disk I/O error');
+      expect(state.chatList).toEqual([]);
+      expect(result.type).toBe('chat/initialize/rejected');
+    });
+
+    it('应该在 loadChatsFromJson 抛出非 Error 类型时使用默认错误消息', async () => {
+      mockLoadChatsFromJson.mockRejectedValue('unexpected string');
+
+      const result = await store.dispatch(initializeChatList());
+
+      const state = store.getState().chat;
+      expect(state.loading).toBe(false);
+      expect(state.initializationError).toBe('Failed to initialize chat data');
+      expect(result.type).toBe('chat/initialize/rejected');
+    });
+  });
 
   // 聊天管理 reducers 测试已被删除：已被 chat-flow.integration.test.ts 覆盖
   // - 创建新聊天：集成测试覆盖 "创建新会话"

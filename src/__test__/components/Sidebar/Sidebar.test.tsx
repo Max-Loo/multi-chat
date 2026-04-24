@@ -21,10 +21,7 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
   }),
 }));
 
-vi.mock('react-i18next', () => {
-  const R = { navigation: { chat: '聊天', model: '模型', setting: '设置' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 const mockNavigate = vi.fn();
 const mockNavigateToChat = vi.fn();

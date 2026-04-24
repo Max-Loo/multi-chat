@@ -57,21 +57,11 @@ vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
 }));
 
 vi.mock('react-i18next', () =>
-  globalThis.__createI18nMockReturn({
+  globalThis.__mockI18n({
     chat: {
       scrollToBottom: '回到底部',
-      thinking: '思考中...',
-      thinkingComplete: '思考完成',
-      modelDeleted: '模型已删除',
-      deleted: '已删除',
-      disabled: '已禁用',
-      supplier: '供应商',
-      model: '模型',
-      nickname: '昵称',
     },
-    common: { loading: '加载中' },
-  }),
-);
+  }));
 
 // ========================================
 // 测试常量和辅助函数

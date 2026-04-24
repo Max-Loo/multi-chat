@@ -29,12 +29,7 @@ vi.mock('@/utils/markdown', () => ({
   generateCleanHtml: vi.fn((content: string) => `<p>${content}</p>`),
 }));
 
-vi.mock('react-i18next', () =>
-  globalThis.__createI18nMockReturn({
-    chat: { thinking: '思考中...', thinkingComplete: '思考完成' },
-    common: { loading: '加载中' },
-  }),
-);
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // ========================================
 // 测试常量和辅助函数

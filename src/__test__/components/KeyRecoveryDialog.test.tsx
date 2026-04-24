@@ -10,7 +10,7 @@ import { fireEvent } from '@testing-library/react';
 import { KeyRecoveryDialog } from '@/components/KeyRecoveryDialog';
 
 vi.mock('react-i18next', () =>
-  globalThis.__createI18nMockReturn({
+  globalThis.__mockI18n({
     common: {
       keyRecovery: {
         title: 'title',
@@ -21,7 +21,6 @@ vi.mock('react-i18next', () =>
         mismatchWarning: 'mismatchWarning',
         forceImport: 'forceImport',
       },
-      cancel: 'mockCancel',
     },
   }),
 );

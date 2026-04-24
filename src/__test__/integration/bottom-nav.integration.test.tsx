@@ -20,10 +20,7 @@ import { createAppConfigSliceState, createChatPageSliceState } from '@/__test__/
 import type { RootState } from '@/store';
 
 // Mock react-i18next
-vi.mock('react-i18next', () => {
-  const R = { nav: { chat: '聊天', model: '模型', setting: '设置' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock useResponsive 为移动端模式（底部导航栏才显示）
 vi.mock('@/hooks/useResponsive', () => ({

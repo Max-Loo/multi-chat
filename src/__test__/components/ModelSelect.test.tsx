@@ -15,10 +15,23 @@ import { createChatSliceState, createModelSliceState, createModelProviderSliceSt
 import { asTestType } from '@/__test__/helpers/testing-utils';
 import { chatToMeta } from '@/types/chat';
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { selectModelHint: '请选择至少一个模型', configureChatSuccess: '配置聊天成功', configureChatFailed: '配置聊天失败', searchPlaceholder: '搜索模型...' }, model: { openProviderList: '打开供应商列表' }, common: { confirm: '确认', remark: '备注' }, table: { nickname: '模型名称', modelProvider: '模型供应商', modelName: '模型', lastUpdateTime: '更新时间', createTime: '创建时间' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    chat: {
+      selectModelHint: '请选择至少一个模型',
+      configureChatSuccess: '配置聊天成功',
+      configureChatFailed: '配置聊天失败',
+      searchPlaceholder: '搜索模型...',
+    },
+    model: { openProviderList: '打开供应商列表' },
+    table: {
+      nickname: '模型名称',
+      modelProvider: '模型供应商',
+      modelName: '模型',
+      lastUpdateTime: '更新时间',
+      createTime: '创建时间',
+    },
+  }));
 
 // Mock toastQueue
 vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());

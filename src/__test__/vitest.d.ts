@@ -10,6 +10,14 @@ declare global {
   var __createI18nMockReturn: typeof import('./helpers/mocks/i18n').createI18nMockReturn;
 
   /**
+   * mockI18n 封装函数（由 setup.ts 注册到 globalThis）
+   *
+   * 提供带高频默认翻译键的 i18n mock，替代手动定义 const R = {...} 样板
+   */
+  // eslint-disable-next-line no-var
+  var __mockI18n: typeof import('./helpers/mocks/i18n').mockI18n;
+
+  /**
    * 内存存储 mock 工厂函数（由 setup.ts 注册到 globalThis）
    *
    * 用于 vi.mock 工厂中创建基于 Map 的存储 mock，供集成测试使用

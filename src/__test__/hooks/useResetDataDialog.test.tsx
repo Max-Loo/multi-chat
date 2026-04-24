@@ -1,20 +1,9 @@
-import { render, renderHook, screen } from '@testing-library/react';
+import { render, renderHook, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act } from '@testing-library/react';
 import { useResetDataDialog } from '@/hooks/useResetDataDialog';
 
 // Mock react-i18next 提供对话框文本
-vi.mock('react-i18next', () => {
-  const R = {
-    common: {
-      cancel: '取消',
-      resetConfirmTitle: '确认重置',
-      resetConfirmDescription: '此操作将清除所有数据',
-      resetConfirmAction: '确认重置',
-    },
-  };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock resetAllData 避免真实重置操作
 const mockResetAllData = vi.fn();
@@ -98,6 +87,21 @@ describe('useResetDataDialog', () => {
       expect(mockResetAllData).toHaveBeenCalledTimes(1);
     });
 
+    it('应该调用 window.location.reload 当重置成功时', async () => {
+      mockResetAllData.mockResolvedValue(undefined);
+      const { result } = renderHook(() => useResetDataDialog());
+
+      act(() => {
+        result.current.setIsDialogOpen(true);
+      });
+
+      await act(async () => {
+        await result.current.handleConfirmReset();
+      });
+
+      expect(window.location.reload).toHaveBeenCalledTimes(1);
+    });
+
     it('应该设置 isResetting 为 true 当重置进行中', async () => {
       let resolveReset: () => void;
       mockResetAllData.mockReturnValue(new Promise<void>((resolve) => {
@@ -128,6 +132,21 @@ describe('useResetDataDialog', () => {
   });
 
   describe('确认重置失败流程', () => {
+    it('应该不调用 window.location.reload 当 resetAllData 失败', async () => {
+      mockResetAllData.mockRejectedValue(new Error('重置失败'));
+      const { result } = renderHook(() => useResetDataDialog());
+
+      act(() => {
+        result.current.setIsDialogOpen(true);
+      });
+
+      await act(async () => {
+        await result.current.handleConfirmReset();
+      });
+
+      expect(window.location.reload).not.toHaveBeenCalled();
+    });
+
     it('应该恢复 isResetting 和 isDialogOpen 当 resetAllData 失败', async () => {
       mockResetAllData.mockRejectedValue(new Error('重置失败'));
       const { result } = renderHook(() => useResetDataDialog());
@@ -160,6 +179,41 @@ describe('useResetDataDialog', () => {
 
       expect(consoleErrorSpy).toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('确认按钮样式', () => {
+    it('应该使用 destructive 样式 当确认按钮渲染时', () => {
+      const { result } = renderHook(() => useResetDataDialog());
+
+      act(() => {
+        result.current.setIsDialogOpen(true);
+      });
+
+      const dialog = result.current.renderResetDialog();
+      render(<>{dialog}</>);
+
+      const confirmButton = screen.getByRole('button', { name: '确认重置' });
+      expect(confirmButton.className).toContain('destructive');
+    });
+  });
+
+  describe('并发双击防护', () => {
+    it('应该在第一次确认后锁定 isResetting 防止重复调用', async () => {
+      mockResetAllData.mockReturnValue(new Promise<void>(() => {}));
+      const { result } = renderHook(() => useResetDataDialog());
+
+      act(() => {
+        result.current.setIsDialogOpen(true);
+      });
+
+      act(() => {
+        result.current.handleConfirmReset();
+      });
+
+      // isResetting 为 true → UI 层按钮 disabled → 阻止用户重复点击
+      expect(result.current.isResetting).toBe(true);
+      expect(mockResetAllData).toHaveBeenCalledTimes(1);
     });
   });
 

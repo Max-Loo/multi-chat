@@ -23,10 +23,9 @@ vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => globalThis.__createResponsiveMock(),
 }));
 
-vi.mock('react-i18next', () => {
-  const R = { setting: { generalSetting: '通用设置', keyManagement: { title: '密钥管理' }, toastTest: 'Toast 测试' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  setting: { generalSetting: '通用设置', keyManagement: { title: '密钥管理' }, toastTest: 'Toast 测试' },
+}));
 
 /**
  * 渲染 SettingPage 组件的辅助函数

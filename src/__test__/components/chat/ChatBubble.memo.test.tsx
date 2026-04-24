@@ -27,12 +27,7 @@ vi.mock('@/utils/markdown', () => ({
   generateCleanHtml: (content: string) => mockGenerateCleanHtml(content),
 }));
 
-vi.mock('react-i18next', () =>
-  globalThis.__createI18nMockReturn({
-    chat: { thinking: '思考中...', thinkingComplete: '思考完成' },
-    common: { loading: '加载中' },
-  }),
-);
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // ========================================
 // 渲染次数追踪 wrapper
@@ -117,7 +112,7 @@ describe('ChatBubble memo 重渲染行为', () => {
     );
 
     // 无 reasoningContent 时，不应有 ThinkingSection 相关内容
-    expect(screen.queryByText('思考完成')).not.toBeInTheDocument();
+    expect(screen.queryByText('思考完毕')).not.toBeInTheDocument();
 
     // reasoningContent 变化触发重渲染，ThinkingSection 出现
     rerender(
@@ -129,7 +124,7 @@ describe('ChatBubble memo 重渲染行为', () => {
       />
     );
 
-    expect(screen.getByText('思考完成')).toBeInTheDocument();
+    expect(screen.getByText('思考完毕')).toBeInTheDocument();
   });
 
   it('应该重渲染 当 isRunning 不同', () => {
@@ -142,8 +137,8 @@ describe('ChatBubble memo 重渲染行为', () => {
       />
     );
 
-    // isRunning=false 且 content="" → thinkingLoading=false → 显示 "思考完成"
-    expect(screen.getByText('思考完成')).toBeInTheDocument();
+    // isRunning=false 且 content="" → thinkingLoading=false → 显示 "思考完毕"
+    expect(screen.getByText('思考完毕')).toBeInTheDocument();
 
     // isRunning=true 且 content="" → thinkingLoading=true → 显示 "思考中..."
     rerender(

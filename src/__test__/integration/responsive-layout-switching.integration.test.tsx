@@ -18,10 +18,7 @@ import { createTestRootState, createAppConfigSliceState, createChatPageSliceStat
 import type { RootState } from '@/store';
 
 // Mock react-i18next
-vi.mock('react-i18next', () => {
-  const R = { common: { search: '搜索' }, chat: { hideSidebar: '隐藏侧边栏', showSidebar: '显示侧边栏', createChat: '创建聊天', unnamed: '未命名', rename: '重命名', delete: '删除' }, navigation: { chat: '聊天', model: '模型', setting: '设置', mobileDrawer: { title: '侧边栏', description: '侧边栏', ariaDescription: '抽屉内容' } } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // 响应式状态 mock
 const mockResponsive = vi.hoisted(() => ({

@@ -25,10 +25,14 @@ import {
 } from "@/__test__/helpers/mocks/testState";
 import { createMockModel } from "@/__test__/helpers/fixtures/model";
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { sendMessage: "发送消息", stopSending: "停止发送", typeMessage: "输入消息...", transmitHistoryReasoning: "包含推理内容" }, common: { confirm: "确认", cancel: "取消" } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    chat: {
+      transmitHistoryReasoning: "包含推理内容",
+      sendMessage: '发送消息',
+      stopSending: '停止发送',
+    },
+  }));
 
 const createStore = (
   chatOverrides?: Parameters<typeof createChatSliceState>[0],

@@ -22,10 +22,21 @@ afterEach(() => {
   cleanup();
 });
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { showSidebar: '显示侧边栏', unnamed: '未命名', enableSplitter: '启用分割模式', maxPerRow: '每行最多', itemsUnit: '项', modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称', sendMessage: '发送消息', stopSending: '停止发送', typeMessage: '输入消息...', transmitHistoryReasoning: '包含推理内容', transmitHistoryReasoningHint: '是否在聊天历史中传输推理内容', createChat: '创建聊天' }, navigation: { openChatList: '打开聊天列表', createChat: '创建聊天' }, common: { cancel: '取消' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    chat: {
+      enableSplitter: '启用分割模式',
+      maxPerRow: '每行最多',
+      itemsUnit: '项',
+      transmitHistoryReasoning: '包含推理内容',
+      transmitHistoryReasoningHint: '是否在聊天历史中传输推理内容',
+      createChat: '创建聊天',
+    },
+    navigation: {
+      openChatList: '打开聊天列表',
+      createChat: '创建聊天',
+    },
+  }));
 
 /**
  * 将 Chat 对象列表拆分为 chatMetaList + activeChatData + sendingChatIds

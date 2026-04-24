@@ -2,10 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { ErrorAlert } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ErrorAlert';
 
-vi.mock('react-i18next', () => {
-  const R = { setting: { modelProvider: { refreshFailedPrefix: '模型供应商加载失败：' } } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  setting: { modelProvider: { refreshFailedPrefix: '模型供应商加载失败：' } },
+}));
 
 describe('ErrorAlert', () => {
   beforeEach(() => {

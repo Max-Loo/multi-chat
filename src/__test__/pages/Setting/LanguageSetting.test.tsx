@@ -57,10 +57,7 @@ vi.mock("sonner", () => ({
   },
 }))
 
-vi.mock('react-i18next', () => {
-  const R = { common: { language: '语言' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({ common: { language: '语言' } }));
 
 // 简化 Mock UI 组件，但保留 onValueChange 回调执行
 vi.mock("@/components/ui/select", () => ({

@@ -9,10 +9,12 @@ import { render, screen } from '@testing-library/react';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatRoleEnum } from '@/types/chat';
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { thinking: '思考中......', thinkingComplete: '思考完毕' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    chat: {
+      thinkingComplete: '思考完毕',
+    },
+  }));
 
 // Mock highlight.js
 vi.mock('highlight.js', () => {

@@ -433,16 +433,33 @@ describe('Keyring 迁移模块测试套件', () => {
   });
 
   describe('边界情况测试', () => {
-    // Skip reason: 模块缓存隔离问题 —— vi.mock 的状态在此文件中的测试之间泄漏，
-    // 即使调用 clearAllMocks()，被 mock 的模块仍保留前一个测试的状态。
-    // Verified alternative: 使用动态 import 配合隔离策略，核心迁移功能已通过其他测试用例验证。
-    // Unblock condition: 改进测试隔离机制或将相关测试拆分到独立文件中。
-    it.skip('IndexedDB 不可用时应该静默失败', async () => {
-      // 模块缓存隔离问题导致此测试需要完全独立的测试环境
+    it('IndexedDB 不可用时应该静默失败', async () => {
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      // 移除 indexedDB 使其不可用
+      vi.stubGlobal('indexedDB', undefined);
+
+      const { migrateKeyringV1ToV2 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      // 迁移不应抛出异常，应静默完成
+      const result = await migrateKeyringV1ToV2();
+
+      expect(result.migrated).toBe(false);
+      expect(result.reset).toBe(false);
     });
 
-    it.skip('没有 IndexedDB 记录时应该跳过迁移', async () => {
-      // 模块缓存隔离问题导致此测试需要完全独立的测试环境
+    it('没有 IndexedDB 记录时应该跳过迁移', async () => {
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      // beforeEach 已创建空的 IDBFactory，无任何记录
+      const { migrateKeyringV1ToV2 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const result = await migrateKeyringV1ToV2();
+
+      expect(result.migrated).toBe(false);
+      expect(result.reset).toBe(false);
     });
   });
 });

@@ -51,6 +51,7 @@ import modelReducer, {
   createModel,
   editModel,
   deleteModel,
+  initializeModels,
 } from '@/store/slices/modelSlice';
 
 describe('modelSlice', () => {
@@ -93,6 +94,58 @@ describe('modelSlice', () => {
   // - 编辑模型：集成测试覆盖 "编辑模型配置"
   // - 软删除模型：集成测试覆盖 "删除模型配置"
   // - 编辑不存在模型：集成测试覆盖 "编辑模型配置" 的错误场景
+
+  describe('initializeModels rejected', () => {
+    it('应该在 rejected 时恢复 loading 并设置 initializationError', () => {
+      // 先添加模型验证回滚
+      store.dispatch(createModel({ model: createMockModel({ id: 'existing-model' }) }));
+      expect(store.getState().models.models).toHaveLength(1);
+
+      // 设置 loading 状态
+      store.dispatch(initializeModels.pending('init-req'));
+      expect(store.getState().models.loading).toBe(true);
+
+      // 触发 rejected
+      store.dispatch(initializeModels.rejected(new Error('Storage corrupted'), 'init-req'));
+
+      const state = store.getState().models;
+      expect(state.loading).toBe(false);
+      expect(state.initializationError).toBe('Storage corrupted');
+      // 现有模型列表不变
+      expect(state.models).toHaveLength(1);
+    });
+
+    it('应该在 loadModelsFromJson 抛出异常时正确处理错误', async () => {
+      // 先添加一个模型验证回滚
+      store.dispatch(createModel({ model: createMockModel({ id: 'existing' }) }));
+
+      // 设置 mock 使加载抛出异常
+      mockLoadModelsFromJson.mockRejectedValue(new Error('Network timeout'));
+
+      // 执行 thunk
+      const result = await store.dispatch(initializeModels());
+
+      const state = store.getState().models;
+      expect(state.loading).toBe(false);
+      expect(state.initializationError).toContain('Network timeout');
+      // 现有模型列表不变
+      expect(state.models).toHaveLength(1);
+      // thunk 应该被 rejected
+      expect(result.type).toBe('models/initialize/rejected');
+    });
+
+    it('应该在 loadModelsFromJson 抛出非 Error 类型时使用默认错误消息', async () => {
+      // 设置 mock 使加载抛出非 Error 类型
+      mockLoadModelsFromJson.mockRejectedValue('string error');
+
+      const result = await store.dispatch(initializeModels());
+
+      const state = store.getState().models;
+      expect(state.loading).toBe(false);
+      expect(state.initializationError).toBe('Failed to initialize model data');
+      expect(result.type).toBe('models/initialize/rejected');
+    });
+  });
 
   // 保留边缘情况测试
   it('应该在编辑不存在模型时不修改状态', () => {

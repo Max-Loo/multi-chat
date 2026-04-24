@@ -15,10 +15,7 @@ import { createMockPanelMessage } from '@/__test__/helpers/mocks/chatPanel';
 import { ChatRoleEnum } from '@/types/chat';
 import { chatToMeta } from '@/types/chat';
 
-vi.mock('react-i18next', () => {
-  const R = { common: { loading: 'Loading...' }, chat: { thinking: '思考中......', thinkingComplete: '思考完毕' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 const TEST_CHAT_ID = 'test-chat-1';
 

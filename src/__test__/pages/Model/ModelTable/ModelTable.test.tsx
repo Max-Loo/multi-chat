@@ -14,14 +14,22 @@ import type { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
-vi.mock('react-i18next', () => {
-  const R = {
-    model: { addModel: '添加模型', searchPlaceholder: '搜索模型...', noModelData: '暂无模型数据', confirmDelete: '确认删除', confirmDeleteDescription: '确认要删除模型 {{nickname}} 吗？', deleteModelSuccess: '删除成功', deleteModelFailed: '删除失败', dataLoadFailed: '数据加载失败', operationFailed: '操作失败', fixErrorReload: '修复错误后重新加载' },
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    model: {
+      addModel: '添加模型',
+      searchPlaceholder: '搜索模型...',
+      noModelData: '暂无模型数据',
+      confirmDelete: '确认删除',
+      confirmDeleteDescription: '确认要删除模型 {{nickname}} 吗？',
+      deleteModelSuccess: '删除成功',
+      deleteModelFailed: '删除失败',
+      dataLoadFailed: '数据加载失败',
+      operationFailed: '操作失败',
+      fixErrorReload: '修复错误后重新加载',
+    },
     table: { loading: '加载中...', operation: '操作' },
-    common: { cancel: '取消', confirm: '确认' },
-  };
-  return globalThis.__createI18nMockReturn(R);
-});
+  }));
 
 /**
  * 创建测试用 Redux store

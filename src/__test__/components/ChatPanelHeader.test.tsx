@@ -14,13 +14,14 @@ import {
   createChatPageSliceState,
 } from '@/__test__/helpers/mocks/testState';
 
-vi.mock('react-i18next', () => {
-  const R = {
-    chat: { showSidebar: '显示侧边栏', unnamed: '未命名', enableSplitter: '启用分割模式', maxPerRow: '每行最多', itemsUnit: '项' },
-    common: { confirm: '确认', cancel: '取消' },
-  };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    chat: {
+      enableSplitter: '启用分割模式',
+      maxPerRow: '每行最多',
+      itemsUnit: '项',
+    },
+  }));
 
 /**
  * 创建测试用 store

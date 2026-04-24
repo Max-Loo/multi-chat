@@ -65,13 +65,9 @@ Object.defineProperty(window, 'location', {
 });
 
 vi.mock('react-i18next', () =>
-  globalThis.__createI18nMockReturn({
+  globalThis.__mockI18n({
     common: {
       resetAllData: '重置所有数据并重新开始',
-      resetConfirmTitle: '确认重置所有数据',
-      resetConfirmDescription: '将清除所有已保存的模型配置和聊天记录，生成新的加密密钥。此操作不可撤销。',
-      resetConfirmAction: '确认重置',
-      cancel: '取消',
       refreshPage: '刷新页面',
       initializationFailed: '初始化失败',
       initializationFailedDescription: '应用初始化过程中发生错误',

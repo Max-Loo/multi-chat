@@ -11,10 +11,7 @@ import { Provider } from 'react-redux';
 import Layout from '@/components/Layout';
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
-vi.mock('react-i18next', () => {
-  const R = {};
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * Mock useResponsive hook，支持切换 isMobile 返回值

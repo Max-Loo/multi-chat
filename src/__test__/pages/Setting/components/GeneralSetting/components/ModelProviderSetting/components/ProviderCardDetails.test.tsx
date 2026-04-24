@@ -3,10 +3,9 @@ import { render, waitFor, within, fireEvent } from '@testing-library/react';
 import { ProviderCardDetails } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ProviderCardDetails';
 import { createMockRemoteProvider, createDeepSeekProvider } from '@/__test__/helpers/fixtures';
 
-vi.mock('react-i18next', () => {
-  const R = { setting: { modelProvider: { modelCount: '共 {{count}} 个模型', searchPlaceholder: '搜索模型', searchResult: '找到 {{count}} 个模型', totalModels: '共 {{count}} 个模型' } } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  setting: { modelProvider: { modelCount: '共 {{count}} 个模型', searchPlaceholder: '搜索模型', searchResult: '找到 {{count}} 个模型', totalModels: '共 {{count}} 个模型' } },
+}));
 
 describe('ProviderCardDetails', () => {
   describe('搜索过滤逻辑', () => {

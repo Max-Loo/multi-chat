@@ -11,10 +11,7 @@ import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers
 import { createMockModel, createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用' }, common: { confirm: '确认', cancel: '取消' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * 创建测试用的 Redux store
@@ -158,7 +155,7 @@ describe('DetailTitle', () => {
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
-      const disabledBadge = screen.getByText('已禁用');
+      const disabledBadge = screen.getByText('被禁用');
       expect(disabledBadge).toBeInTheDocument();
     });
 

@@ -12,10 +12,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import FilterInput from '@/components/FilterInput';
 
-vi.mock('react-i18next', () => {
-  const R = { common: { search: '搜索...' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 describe('FilterInput', () => {
   it('应该渲染输入框和搜索图标', () => {
@@ -29,7 +26,7 @@ describe('FilterInput', () => {
     render(<FilterInput value="" onChange={vi.fn()} />);
 
     const input = screen.getByTestId('filter-input');
-    expect(input).toHaveAttribute('placeholder', '搜索...');
+    expect(input).toHaveAttribute('placeholder', '搜索');
   });
 
   it('应该显示自定义 placeholder 当传入 placeholder prop', () => {

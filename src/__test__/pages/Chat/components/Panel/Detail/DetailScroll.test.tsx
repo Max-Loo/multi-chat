@@ -61,10 +61,7 @@ vi.mock('virtua', async () => {
   return { Virtualizer: MockVirtualizer, VList: MockVList };
 });
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { scrollToBottom: '滚动到底部' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * 创建带历史的 ChatModel

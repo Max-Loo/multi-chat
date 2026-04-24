@@ -12,10 +12,15 @@ import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers
 import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
-vi.mock('react-i18next', () => {
-  const R = { model: { editModel: '编辑模型', editModelDescription: '编辑模型描述', editModelSuccess: '编辑成功', editModelFailed: '编辑失败', modelNickname: '模型昵称', apiKey: 'API 密钥', apiAddress: 'API 地址', model: '模型' }, common: { remark: '备注', submit: '提交' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    model: {
+      editModel: '编辑模型',
+      editModelDescription: '编辑模型描述',
+      editModelSuccess: '编辑成功',
+      editModelFailed: '编辑失败',
+    },
+  }));
 
 // Mock sonner
 vi.mock('sonner', () => ({

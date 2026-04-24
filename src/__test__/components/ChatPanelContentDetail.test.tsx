@@ -25,10 +25,7 @@ vi.mock('virtua', () => {
   return { Virtualizer: V, VList: V };
 });
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称', thinking: '思考中......', thinkingComplete: '思考完毕', scrollToBottom: '滚动到底部' }, common: { loading: 'Loading...' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 describe('ChatPanelContentDetail', () => {
   /**

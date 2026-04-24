@@ -3,10 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ProviderCard } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ProviderCard';
 import type { RemoteProviderData } from '@/services/modelRemote';
 
-vi.mock('react-i18next', () => {
-  const R = { setting: { modelProvider: { status: { available: '可用', unavailable: '不可用' }, modelCount: '共 {{count}} 个模型', clickToViewDetails: '点击查看详情', searchPlaceholder: '搜索模型', searchResult: '找到 {{count}} 个模型', totalModels: '共 {{count}} 个模型', noModels: '暂无模型' } } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  setting: { modelProvider: { status: { available: '可用', unavailable: '不可用' }, modelCount: '共 {{count}} 个模型', clickToViewDetails: '点击查看详情', searchPlaceholder: '搜索模型', searchResult: '找到 {{count}} 个模型', totalModels: '共 {{count}} 个模型', noModels: '暂无模型' } },
+}));
 
 const mockProvider: RemoteProviderData = {
   providerKey: 'deepseek',

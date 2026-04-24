@@ -21,10 +21,7 @@ vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => globalThis.__createResponsiveMock({ isMobile: true, layoutMode: 'mobile', isDesktop: false }),
 }));
 
-vi.mock('react-i18next', () => {
-  const R = { nav: { chat: '聊天', model: '模型', setting: '设置' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock navigation配置（使用共享 mock）
 vi.mock('@/config/navigation', async () => {

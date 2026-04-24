@@ -43,10 +43,17 @@ vi.mock('virtua', () => ({
   Virtualizer: ({ children, ...props }: any) => <div {...props}>{children}</div>,
 }));
 
-vi.mock('react-i18next', () => {
-  const R = { common: { search: '搜索', confirm: '确认', cancel: '取消' }, chat: { hideSidebar: '隐藏侧边栏', showSidebar: '显示侧边栏', createChat: '创建聊天', unnamed: '未命名', rename: '重命名', delete: '删除', confirmDelete: '确认删除', deleteChatConfirm: '确定删除该聊天？', deleteChatSuccess: '删除成功', deleteChatFailed: '删除失败', editChatSuccess: '编辑成功', editChatFailed: '编辑失败' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    chat: {
+      confirmDelete: '确认删除',
+      deleteChatConfirm: '确定删除该聊天？',
+      deleteChatSuccess: '删除成功',
+      deleteChatFailed: '删除失败',
+      editChatSuccess: '编辑成功',
+      editChatFailed: '编辑失败',
+    },
+  }));
 
 /**
  * Mock useConfirm hook because it requires ConfirmProvider context which is complex to set up in tests

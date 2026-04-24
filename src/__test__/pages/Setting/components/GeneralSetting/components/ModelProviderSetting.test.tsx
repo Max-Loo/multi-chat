@@ -2,17 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import ModelProviderSetting from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting';
-import modelProviderReducer from '@/store/slices/modelProviderSlice';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
-vi.mock('react-i18next', () => {
-  const R = {
-    setting: { modelProvider: { title: '模型供应商', refreshButton: '刷新模型供应商', refreshing: '刷新中...', refreshFailedPrefix: '刷新失败:' } },
-    model: { noModelData: '暂无模型供应商数据' },
-  };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  setting: { modelProvider: { title: '模型供应商', refreshButton: '刷新模型供应商', refreshing: '刷新中...', refreshFailedPrefix: '刷新失败:' } },
+  model: { noModelData: '暂无模型供应商数据' },
+}));
 
 /**
  * Mock sonner toast 模块
@@ -54,17 +50,8 @@ describe('ModelProviderSetting', () => {
    * });
    * ```
    */
-  function setup(preloadedState = {}) {
-    /**
-     * 创建 Redux store
-     * 配置 modelProvider reducer 用于管理供应商状态
-     */
-    const store = configureStore({
-      reducer: {
-        modelProvider: modelProviderReducer,
-      },
-      preloadedState,
-    });
+  function setup(preloadedState: Record<string, unknown> = {}) {
+    const store = createTypeSafeTestStore(preloadedState);
 
     /**
      * 渲染组件

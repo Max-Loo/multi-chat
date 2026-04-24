@@ -14,10 +14,16 @@ import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers
 import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import type { Model } from '@/types/model';
 
-vi.mock('react-i18next', () => {
-  const R = { model: { modelNickname: '模型昵称', apiKey: 'API 密钥', apiAddress: 'API 地址', model: '模型', modelNicknameRequired: '请输入模型昵称', apiKeyRequired: '请输入 API 密钥', apiAddressRequired: '请输入 API 地址', modelRequired: '请选择模型' }, common: { remark: '备注', submit: '提交' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    model: {
+      modelNicknameRequired: '请输入模型昵称',
+      apiKeyRequired: '请输入 API 密钥',
+      apiAddressRequired: '请输入 API 地址',
+      modelRequired: '请选择模型',
+      apiKey: 'API 密钥',
+    },
+  }));
 
 const createStore = (
   modelsOverrides?: Parameters<typeof createModelSliceState>[0],

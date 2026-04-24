@@ -20,10 +20,14 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
-vi.mock('react-i18next', () => {
-  const R = { common: { pageNotFound: 'common.pageNotFound', pageNotFoundDescription: 'common.pageNotFoundDescription', goBack: 'common.goBack' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    common: {
+      pageNotFound: 'common.pageNotFound',
+      pageNotFoundDescription: 'common.pageNotFoundDescription',
+      goBack: 'common.goBack',
+    },
+  }));
 
 describe('NotFound', () => {
   beforeEach(() => {

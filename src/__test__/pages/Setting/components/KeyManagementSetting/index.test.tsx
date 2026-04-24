@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '@/__test__/helpers/render/redux';
@@ -6,30 +6,23 @@ import KeyManagementSetting from '@/pages/Setting/components/KeyManagementSettin
 import { toastQueue } from '@/services/toast';
 
 // Mock react-i18next
-vi.mock('react-i18next', () => {
-  const R = {
-    common: {
-      cancel: '取消',
-      hide: '隐藏',
-      resetConfirmTitle: '确认重置',
-      resetConfirmDescription: '此操作将清除所有数据',
-      resetConfirmAction: '确认重置',
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  common: {
+    hide: '隐藏',
+  },
+  setting: {
+    keyManagement: {
+      exportKey: '导出密钥',
+      exportKeyDescription: '导出密钥描述',
+      exportKeyDialogDescription: '密钥对话框描述',
+      exportSuccess: '复制成功',
+      exportFailed: '导出失败',
+      copyToClipboard: '复制到剪贴板',
+      resetAllData: '重置所有数据',
+      resetAllDataDescription: '重置数据描述',
     },
-    setting: {
-      keyManagement: {
-        exportKey: '导出密钥',
-        exportKeyDescription: '导出密钥描述',
-        exportKeyDialogDescription: '密钥对话框描述',
-        exportSuccess: '复制成功',
-        exportFailed: '导出失败',
-        copyToClipboard: '复制到剪贴板',
-        resetAllData: '重置所有数据',
-        resetAllDataDescription: '重置数据描述',
-      },
-    },
-  };
-  return globalThis.__createI18nMockReturn(R);
-});
+  },
+}));
 
 // Mock useScrollContainer 避免真实 DOM 测量
 vi.mock('@/hooks/useScrollContainer', () => ({
@@ -137,6 +130,45 @@ describe('KeyManagementSetting', () => {
     });
   });
 
+  describe('导出加载中状态', () => {
+    it('应该显示取消文本和禁用操作按钮 当正在导出时', async () => {
+      mockExportMasterKey.mockReturnValue(new Promise(() => {}));
+      renderKeyManagement();
+
+      const exportButtons = screen.getAllByRole('button', { name: '导出密钥' });
+      fireEvent.click(exportButtons[0]);
+
+      await waitFor(() => {
+        const cancelButton = screen.getByRole('button', { name: '取消' });
+        expect(cancelButton).toBeInTheDocument();
+      });
+
+      const disabledActionButton = screen.getByRole('button', { name: '...' });
+      expect(disabledActionButton).toBeDisabled();
+    });
+  });
+
+  describe('导出成功后取消关闭对话框', () => {
+    it('应该关闭对话框 当导出成功后点击隐藏按钮', async () => {
+      mockExportMasterKey.mockResolvedValue('test-key-cancel');
+      renderKeyManagement();
+
+      const exportButtons = screen.getAllByRole('button', { name: '导出密钥' });
+      fireEvent.click(exportButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('test-key-cancel')).toBeInTheDocument();
+      });
+
+      const hideButton = screen.getByRole('button', { name: '隐藏' });
+      fireEvent.click(hideButton);
+
+      await waitFor(() => {
+        expect(screen.queryByDisplayValue('test-key-cancel')).not.toBeInTheDocument();
+      });
+    });
+  });
+
   describe('密钥复制失败流程', () => {
     it('应该显示错误 toast 当复制失败时', async () => {
       mockExportMasterKey.mockResolvedValue('test-key');
@@ -157,6 +189,28 @@ describe('KeyManagementSetting', () => {
         expect(toastQueue.error).toHaveBeenCalledWith('导出失败');
       });
     });
+
+    it('应该保持对话框打开 当复制失败时', async () => {
+      mockExportMasterKey.mockResolvedValue('test-key-copy-fail');
+      mockCopyToClipboard.mockRejectedValue(new Error('复制失败'));
+      renderKeyManagement();
+
+      const exportButtons = screen.getAllByRole('button', { name: '导出密钥' });
+      fireEvent.click(exportButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('test-key-copy-fail')).toBeInTheDocument();
+      });
+
+      const copyButton = screen.getByRole('button', { name: '复制到剪贴板' });
+      fireEvent.click(copyButton);
+
+      await waitFor(() => {
+        expect(toastQueue.error).toHaveBeenCalledWith('导出失败');
+      });
+
+      expect(screen.getByDisplayValue('test-key-copy-fail')).toBeInTheDocument();
+    });
   });
 
   describe('数据重置对话框集成', () => {
@@ -170,6 +224,29 @@ describe('KeyManagementSetting', () => {
       await waitFor(() => {
         expect(screen.getByRole('alertdialog')).toBeInTheDocument();
       });
+    });
+
+    it('应该调用 resetAllData 并刷新页面 当确认重置时', async () => {
+      mockResetAllData.mockResolvedValue(undefined);
+      renderKeyManagement();
+
+      const resetButton = screen.getByRole('button', { name: '重置所有数据' });
+      fireEvent.click(resetButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '确认重置' })).toBeInTheDocument();
+      });
+
+      const confirmButton = screen.getByRole('button', { name: '确认重置' });
+      await act(async () => {
+        fireEvent.click(confirmButton);
+      });
+
+      await waitFor(() => {
+        expect(mockResetAllData).toHaveBeenCalledTimes(1);
+      });
+
+      expect(window.location.reload).toHaveBeenCalled();
     });
   });
 });

@@ -9,7 +9,7 @@ import ChatButton from '@/pages/Chat/components/Sidebar/components/ChatButton'
 import type { ChatButtonProps } from '@/pages/Chat/components/Sidebar/components/ChatButton'
 import type { Chat } from '@/types/chat'
 import { chatToMeta } from '@/types/chat'
-import { createTestStore } from '@/__test__/helpers/render/redux'
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux'
 import { createMockChatList } from '@/__test__/helpers/mocks/chatSidebar'
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState'
 import { setSelectedChatId } from '@/store/slices/chatSlices'
@@ -18,7 +18,7 @@ import { setSelectedChatId } from '@/store/slices/chatSlices'
  * 创建性能测试用的 store
  */
 function createPerfStore(chatList: Chat[], selectedChatId: string) {
-  return createTestStore({
+  return createTypeSafeTestStore({
     chat: createChatSliceState({
       selectedChatId,
       chatMetaList: chatList.map(chatToMeta),
@@ -40,10 +40,7 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
   }),
 }))
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { unnamed: '未命名', rename: '重命名', delete: '删除' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 vi.mock('@/hooks/useConfirm', () => ({
   useConfirm: () => ({

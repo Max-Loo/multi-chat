@@ -13,7 +13,7 @@ import type { InitResult } from '@/services/initialization';
 vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());
 
 vi.mock('react-i18next', () =>
-  globalThis.__createI18nMockReturn({
+  globalThis.__mockI18n({
     common: {
       decryptionFailureMessage: '2 个模型的 API Key 无法解密',
       decryptionFailureImport: '导入密钥',

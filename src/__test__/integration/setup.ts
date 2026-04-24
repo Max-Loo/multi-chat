@@ -1,7 +1,7 @@
 import { expect } from "vitest";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import "fake-indexeddb/auto";
-import { createI18nMockReturn } from "@/__test__/helpers/mocks/i18n";
+import { createI18nMockReturn, mockI18n } from "@/__test__/helpers/mocks/i18n";
 import { createResponsiveMock } from "@/__test__/helpers/mocks/responsive";
 import { createTauriCompatModuleMock } from "@/__test__/helpers/mocks/tauriCompat";
 import { createMemoryStorageMock } from "@/__test__/helpers/mocks/storage";
@@ -17,6 +17,7 @@ import { createMemoryStorageMock } from "@/__test__/helpers/mocks/storage";
 // 将 mock 工厂函数注册到 globalThis，供测试文件中的 vi.mock 工厂使用
 // vi.mock 的工厂函数存在 hoisting 限制，无法使用常规 import
 globalThis.__createI18nMockReturn = createI18nMockReturn;
+globalThis.__mockI18n = mockI18n;
 globalThis.__createResponsiveMock = createResponsiveMock;
 globalThis.__createTauriCompatModuleMock = createTauriCompatModuleMock;
 globalThis.__createMemoryStorageMock = createMemoryStorageMock;

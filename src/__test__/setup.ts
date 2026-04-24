@@ -284,7 +284,7 @@ vi.mock('zhipu-ai-provider', () => ({
 // ========================================
 
 import { setupCustomAssertions } from './helpers/assertions/setup';
-import { createI18nMockReturn } from './helpers/mocks/i18n';
+import { createI18nMockReturn, mockI18n } from './helpers/mocks/i18n';
 import { createMemoryStorageMock } from './helpers/mocks/storage';
 import { createResponsiveMock } from './helpers/mocks/responsive';
 import { createTauriCompatModuleMock } from './helpers/mocks/tauriCompat';
@@ -295,6 +295,11 @@ import { createToastQueueModuleMock } from './helpers/mocks/toast';
 // eslint-disable-next-line no-var
 var __i18nMock: typeof createI18nMockReturn = createI18nMockReturn;
 globalThis.__createI18nMockReturn = __i18nMock;
+
+// 将 mockI18n 封装函数注册到 globalThis，提供带默认翻译键的便捷 mock
+// eslint-disable-next-line no-var
+var __mockI18nFn: typeof mockI18n = mockI18n;
+globalThis.__mockI18n = __mockI18nFn;
 
 // 将内存存储 mock 工厂函数注册到 globalThis，供集成测试的 vi.mock 工厂使用
 // eslint-disable-next-line no-var

@@ -15,14 +15,17 @@ vi.mock('@/hooks/useCurrentSelectedChat', () => ({
   useCurrentSelectedChat: () => mockUseCurrentSelectedChat(),
 }));
 
-vi.mock('react-i18next', () => {
-  const R = {
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
     chat: { selectChatToStart: '选择一个聊天开始对话' },
-    table: { nickname: '昵称', modelProvider: '模型提供商', modelName: '模型名称', lastUpdateTime: '最后更新时间', createTime: '创建时间' },
-    common: { remark: '备注' },
-  };
-  return globalThis.__createI18nMockReturn(R);
-});
+    table: {
+      nickname: '昵称',
+      modelProvider: '模型提供商',
+      modelName: '模型名称',
+      lastUpdateTime: '最后更新时间',
+      createTime: '创建时间',
+    },
+  }));
 
 /**
  * 渲染 ChatContent 组件的辅助函数

@@ -2,10 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { NoProvidersAvailable } from '@/components/NoProvidersAvailable'
 
-vi.mock('react-i18next', () => {
-  const R = { common: { noProvidersAvailable: '无可用模型供应商', noProvidersDescription: '请检查网络连接或稍后重试', noProvidersHint: '您可以尝试刷新页面', reload: '重新加载' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    common: {
+      noProvidersAvailable: '无可用模型供应商',
+      noProvidersDescription: '请检查网络连接或稍后重试',
+      noProvidersHint: '您可以尝试刷新页面',
+      reload: '重新加载',
+    },
+  }));
 
 describe('NoProvidersAvailable', () => {
   beforeEach(() => {
