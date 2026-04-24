@@ -20,7 +20,7 @@
 // fake-indexeddb 必须在最顶部导入
 import 'fake-indexeddb/auto';
 
-import { describe, test, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import { encryptField, decryptField } from '@/utils/crypto';
 import {
   generateMasterKey,
@@ -127,7 +127,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   // ========================================
 
   describe('使用生成的主密钥进行加密/解密', () => {
-    test('生成密钥后加密明文：应返回有效的 enc: 前缀密文', async () => {
+    it('生成密钥后加密明文：应返回有效的 enc: 前缀密文', async () => {
       // Given: 生成主密钥
       const masterKey = generateMasterKey();
 
@@ -141,7 +141,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(ciphertext.length).toBeGreaterThan(4); // 至少有 "enc:" + 一些数据
     });
 
-    test('使用相同密钥解密密文：应返回原始明文', async () => {
+    it('使用相同密钥解密密文：应返回原始明文', async () => {
       // Given: 生成主密钥并加密明文
       const masterKey = generateMasterKey();
       const plaintext = 'Hello, World!';
@@ -154,7 +154,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(decrypted).toBe(plaintext);
     });
 
-    test('加密 Unicode 字符并解密：应无字符编码损失', async () => {
+    it('加密 Unicode 字符并解密：应无字符编码损失', async () => {
       // Given: 生成主密钥
       const masterKey = generateMasterKey();
 
@@ -170,7 +170,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       }
     });
 
-    test('密钥长度验证：应为 64 字符的有效 hex 字符串', () => {
+    it('密钥长度验证：应为 64 字符的有效 hex 字符串', () => {
       // When: 生成主密钥
       const masterKey = generateMasterKey();
 
@@ -186,7 +186,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   // ========================================
 
   describe('使用初始化的主密钥进行加密/解密', () => {
-    test('首次启动生成新密钥并加密：应成功加密并存储密钥', async () => {
+    it('首次启动生成新密钥并加密：应成功加密并存储密钥', async () => {
       // Given: Keyring 中无密钥（已通过 beforeEach 清理）
 
       // When: 初始化主密钥
@@ -207,7 +207,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(secondKey).toBe(masterKey);
     });
 
-    test('已有密钥时复用并加密：应返回现有密钥', async () => {
+    it('已有密钥时复用并加密：应返回现有密钥', async () => {
       // Given: 已初始化密钥
       const { key: firstKey } = await initializeMasterKey();
 
@@ -225,7 +225,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(ciphertext).toMatch(/^enc:/);
     });
 
-    test('使用初始化密钥进行往返加密/解密：应无数据损失', async () => {
+    it('使用初始化密钥进行往返加密/解密：应无数据损失', async () => {
       // Given: 初始化主密钥
       const { key: masterKey } = await initializeMasterKey();
 
@@ -244,7 +244,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   // ========================================
 
   describe('密钥重新生成后旧数据无法解密', () => {
-    test('重新生成密钥后解密旧数据失败：应抛出解密失败错误', async () => {
+    it('重新生成密钥后解密旧数据失败：应抛出解密失败错误', async () => {
       // Given: 使用旧密钥加密明文
       const oldKey = generateMasterKey();
       const plaintext = 'Sensitive data';
@@ -259,7 +259,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       );
     });
 
-    test('密钥丢失后解密失败：应抛出解密失败错误', async () => {
+    it('密钥丢失后解密失败：应抛出解密失败错误', async () => {
       // Given: 使用密钥加密明文
       const oldKey = generateMasterKey();
       const plaintext = 'Sensitive data';
@@ -276,7 +276,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       );
     });
 
-    test('部分错误的密钥解密失败：AES-GCM 认证标签应验证失败', async () => {
+    it('部分错误的密钥解密失败：AES-GCM 认证标签应验证失败', async () => {
       // Given: 使用密钥 A 加密明文
       const keyA = generateMasterKey();
       const plaintext = 'Test data';
@@ -297,7 +297,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   // ========================================
 
   describe('密钥导出与加密操作兼容性', () => {
-    test('导出密钥后用于加密：应成功加密', async () => {
+    it('导出密钥后用于加密：应成功加密', async () => {
       // Given: 初始化主密钥
       const { key: masterKey } = await initializeMasterKey();
 
@@ -315,7 +315,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(ciphertext).toMatch(/^enc:/);
     });
 
-    test('导出密钥后用于解密：应往返一致', async () => {
+    it('导出密钥后用于解密：应往返一致', async () => {
       // Given: 初始化密钥并加密明文
       const { key: masterKey } = await initializeMasterKey();
       const plaintext = 'Test data';
@@ -332,7 +332,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
     // Skip reason: fake-indexedDB mock 在此测试场景中导致死锁，重置 keyring 后调用 exportMasterKey 触发 mock 死锁。
     // Verified alternative: 生产环境验证正常，密钥不存在时导出逻辑已在实际使用中验证。
     // Unblock condition: 升级 fake-indexedDB 版本或改进 mock 策略以避免死锁。
-    test.skip('密钥不存在时导出失败：应抛出错误', async () => {
+    it.skip('密钥不存在时导出失败：应抛出错误', async () => {
       // fake-indexedDB 6.2.5 环境下会导致超时，原因：重置 keyring 后调用 exportMasterKey 会导致 mock 死锁
       // Given: 重置 keyring（确保没有存储的密钥）
       await keyringManager.reset();
@@ -350,7 +350,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   // ========================================
 
   describe('Tauri 和 Web 环境集成行为', () => {
-    test('Tauri 环境密钥初始化与加密：应输出系统存储警告', async () => {
+    it('Tauri 环境密钥初始化与加密：应输出系统存储警告', async () => {
       // Given: Tauri 环境
       mockIsTauri.mockReturnValue(true);
 
@@ -369,7 +369,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(ciphertext).toMatch(/^enc:/);
     });
 
-    test('Web 环境密钥初始化与加密：应输出浏览器存储警告', async () => {
+    it('Web 环境密钥初始化与加密：应输出浏览器存储警告', async () => {
       // Given: Web 环境
       mockIsTauri.mockReturnValue(false);
 
@@ -388,7 +388,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(ciphertext).toMatch(/^enc:/);
     });
 
-    test('Tauri 环境 Keyring 异常时加密失败：应抛出系统存储错误', async () => {
+    it('Tauri 环境 Keyring 异常时加密失败：应抛出系统存储错误', async () => {
       // Given: Tauri 环境
       mockIsTauri.mockReturnValue(true);
 
@@ -409,7 +409,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(ciphertext).toMatch(/^enc:/);
     });
 
-    test('Web 环境 Keyring 异常时加密失败：应抛出浏览器存储错误', async () => {
+    it('Web 环境 Keyring 异常时加密失败：应抛出浏览器存储错误', async () => {
       // Given: Web 环境
       mockIsTauri.mockReturnValue(false);
 
@@ -434,7 +434,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   // ========================================
 
   describe('测试隔离与验证', () => {
-    test('每个测试用例独立执行：无状态共享', async () => {
+    it('每个测试用例独立执行：无状态共享', async () => {
       // Given: 初始化第一个密钥
       const { key: key1 } = await initializeMasterKey();
 
@@ -452,12 +452,12 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(key2).not.toBe(key1);
     });
 
-    test('环境检测 Mock 正常工作：使用 vi.mocked', () => {
+    it('环境检测 Mock 正常工作：使用 vi.mocked', () => {
       // Then: Mock 函数应为 Vitest mock 函数
       expect(vi.isMockFunction(mockIsTauri)).toBe(true);
     });
 
-    test('添加清晰的断言错误消息：便于调试', async () => {
+    it('添加清晰的断言错误消息：便于调试', async () => {
       // Given: 生成主密钥
       const masterKey = generateMasterKey();
 

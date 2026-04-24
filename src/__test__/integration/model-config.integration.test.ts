@@ -12,7 +12,7 @@
  * 测试隔离：使用真实加密逻辑和真实 modelStorage 代码路径，仅 mock 外部 API（keyring 系统密钥链、chatService、tauriCompat 存储后端）
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { encryptField, decryptField } from '@/utils/crypto';
 
 // Mock keyring 模块（系统密钥链为外部依赖）
@@ -141,7 +141,7 @@ describe('模型配置集成测试', () => {
   // ========================================
 
   describe('添加模型配置', () => {
-    test('应该成功添加模型配置：API Key 加密 → 真实存储 → Redux → UI', async () => {
+    it('应该成功添加模型配置：API Key 加密 → 真实存储 → Redux → UI', async () => {
       const modelConfig = createDeepSeekModel();
 
       // When: 通过真实存储层保存模型配置
@@ -167,7 +167,7 @@ describe('模型配置集成测试', () => {
       expect(state.models.models[0]).toEqual(modelConfig);
     });
 
-    test('应该正确加密并读回多个模型配置', async () => {
+    it('应该正确加密并读回多个模型配置', async () => {
       const models = [
         createDeepSeekModel({ id: 'model-1', apiKey: 'sk-key-alpha', nickname: 'Alpha' }),
         createDeepSeekModel({ id: 'model-2', apiKey: 'sk-key-beta', nickname: 'Beta' }),
@@ -195,7 +195,7 @@ describe('模型配置集成测试', () => {
   // ========================================
 
   describe('使用模型配置进行聊天', () => {
-    test('应该成功使用模型配置进行聊天：解密 API Key → 调用 API', async () => {
+    it('应该成功使用模型配置进行聊天：解密 API Key → 调用 API', async () => {
       const modelConfig = createDeepSeekModel();
 
       const messages: StandardMessage[] = [];
@@ -220,7 +220,7 @@ describe('模型配置集成测试', () => {
       expect(finalResponse.finishReason).toBe('stop');
     });
 
-    test('应该处理无效的 API Key', async () => {
+    it('应该处理无效的 API Key', async () => {
       const modelConfig = createDeepSeekModel();
 
       mockStreamChatCompletion.mockImplementation(async function* () {
@@ -256,7 +256,7 @@ describe('模型配置集成测试', () => {
   // ========================================
 
   describe('编辑模型配置', () => {
-    test('应该成功编辑模型配置：加载 → 修改 → 保存 → 读回验证', async () => {
+    it('应该成功编辑模型配置：加载 → 修改 → 保存 → 读回验证', async () => {
       const originalModel = createDeepSeekModel({ id: 'model-edit-1', apiKey: 'sk-original-key' });
 
       // 保存原始配置
@@ -286,7 +286,7 @@ describe('模型配置集成测试', () => {
       expect(loadedModel?.apiKey).toBe('sk-original-key');
     });
 
-    test('应该成功修改 API Key（重新加密）', async () => {
+    it('应该成功修改 API Key（重新加密）', async () => {
       const originalModel = createDeepSeekModel({ id: 'model-edit-apikey', apiKey: 'sk-old-key' });
 
       // 保存原始配置
@@ -309,7 +309,7 @@ describe('模型配置集成测试', () => {
   // ========================================
 
   describe('删除模型配置', () => {
-    test('应该成功删除模型配置：清理加密数据', async () => {
+    it('应该成功删除模型配置：清理加密数据', async () => {
       const modelToDelete = createDeepSeekModel({ id: 'model-delete-1' });
 
       await saveModelsToJson([modelToDelete]);
@@ -330,7 +330,7 @@ describe('模型配置集成测试', () => {
       expect(loadedModels).toHaveLength(0);
     });
 
-    test('应该保留未删除的模型', async () => {
+    it('应该保留未删除的模型', async () => {
       const model1 = createDeepSeekModel({ id: 'model-keep', apiKey: 'sk-key-keep' });
       const model2 = createDeepSeekModel({ id: 'model-remove', apiKey: 'sk-key-remove' });
 
@@ -356,7 +356,7 @@ describe('模型配置集成测试', () => {
   // ========================================
 
   describe('数据完整性', () => {
-    test('应该验证加密数据完整性：写入 → 读回 → 修改密文 → 解密失败', async () => {
+    it('应该验证加密数据完整性：写入 → 读回 → 修改密文 → 解密失败', async () => {
       const model = createDeepSeekModel({ apiKey: 'sk-integrity-test' });
 
       // 保存并加载
@@ -374,7 +374,7 @@ describe('模型配置集成测试', () => {
       await expect(decryptField(tamperedEncrypted, masterKey)).rejects.toThrow();
     });
 
-    test('应该检测重复模型', async () => {
+    it('应该检测重复模型', async () => {
       const model1 = createDeepSeekModel({ id: 'model-dup-1', apiKey: 'sk-test-1' });
       const model2 = createDeepSeekModel({ id: 'model-dup-2', apiKey: 'sk-test-2' });
 

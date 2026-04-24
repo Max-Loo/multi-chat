@@ -4,7 +4,6 @@
  * 提供统一的 Mock 工厂函数，用于创建 Tauri API、加密、存储等模块的 Mock 实例
  */
 
-export * from './tauri';
 export * from './toast';
 export * from './storage';
 export * from './types';
@@ -19,7 +18,6 @@ export {
   createChatPageSliceState,
   createAppConfigSliceState,
   createModelProviderSliceState,
-  createSettingPageSliceState,
   createModelPageSliceState,
   createTestRootState,
 } from './testState';

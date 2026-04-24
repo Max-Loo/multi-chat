@@ -494,6 +494,26 @@ Line 5`;
         });
       });
 
+      describe('密钥格式边缘用例', () => {
+        it('无效 hex 字符串的密钥：hex 验证错误被包装为加密错误', async () => {
+          const invalidKey = 'g'.repeat(64);
+          const plaintext = 'Test data';
+
+          await expect(encryptField(plaintext, invalidKey)).rejects.toThrow(
+            '加密敏感数据失败，请检查主密钥是否有效'
+          );
+        });
+
+        it('奇数长度 hex 字符串的密钥：长度错误被包装为加密错误', async () => {
+          const oddLengthKey = 'a'.repeat(63);
+          const plaintext = 'Test data';
+
+          await expect(encryptField(plaintext, oddLengthKey)).rejects.toThrow(
+            '加密敏感数据失败，请检查主密钥是否有效'
+          );
+        });
+      });
+
       describe('特殊密钥值测试', () => {
         it('应该正确处理所有位为 0 的密钥', async () => {
           const allZerosKey = '0'.repeat(64);

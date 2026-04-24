@@ -1,7 +1,7 @@
 /**
  * React Router 测试 Mock 工厂
  *
- * 提供 React Router hooks 和相关功能的 Mock 创建函数
+ * 提供路由结构测试所需的类型定义和辅助函数
  */
 
 import { vi } from 'vitest';
@@ -48,13 +48,6 @@ export const createMockSearchParams = (
  * 创建嵌套路由参数 Mock
  * @param params 嵌套路由参数对象
  * @returns Mock 的嵌套路由参数
- *
- * @example
- * // 创建嵌套路由参数：/chat/:chatId/model/:modelId
- * const nestedParams = createNestedRouteParams({
- *   chatId: 'chat-123',
- *   modelId: 'model-456',
- * });
  */
 export const createNestedRouteParams = (params: Record<string, string>): Record<string, string> => {
   return { ...params };
@@ -65,13 +58,6 @@ export const createNestedRouteParams = (params: Record<string, string>): Record<
  * @param pathname 路径名
  * @param queryParams 查询参数对象
  * @returns Mock 的 Location 对象
- *
- * @example
- * // 创建包含查询参数的 location：/chat?chatId=123&modelId=456
- * const location = createMockLocationWithQuery('/chat', {
- *   chatId: '123',
- *   modelId: '456',
- * });
  */
 export const createMockLocationWithQuery = (
   pathname: string,
@@ -95,27 +81,13 @@ export const createMockLocationWithQuery = (
 
 /**
  * 创建带有嵌套路由参数的 React Router Mock
- * @param config Mock 配置选项（支持嵌套路由参数）
+ * @param config Mock 配置选项
  * @returns React Router Mock 对象
- *
- * @example
- * // 为 /chat/:chatId/model/:modelId 创建 Mock
- * const mocks = createReactRouterMocksWithNestedParams({
- *   pathname: '/chat/chat-123/model/model-456',
- *   params: {
- *     chatId: 'chat-123',
- *     modelId: 'model-456',
- *   },
- * });
  */
 export const createReactRouterMocksWithNestedParams = (config?: {
-  /** 当前路径名 */
   pathname?: string;
-  /** 嵌套路由参数 */
   params?: Record<string, string>;
-  /** 查询参数 */
   queryParams?: Record<string, string>;
-  /** hash 值 */
   hash?: string;
 }): ReactRouterMocks => {
   const {
@@ -156,9 +128,6 @@ export const createReactRouterMocksWithNestedParams = (config?: {
 
 /**
  * React 元素的类型信息（用于测试中访问组件名和 props）
- *
- * React Router 内部路由节点携带的 React 元素包含 type 和 props，
- * 但这些不在 RouteObject 公开类型中，此处补充测试所需的类型定义。
  */
 export interface ReactElementLike {
   type?: { name?: string; _payload?: unknown; _ctor?: unknown };
@@ -167,11 +136,6 @@ export interface ReactElementLike {
 
 /**
  * 测试用路由节点类型，包含测试所需的全部字段
- *
- * Reason: createBrowserRouter 返回的 router.routes 是 @remix-run/router
- * 内部类型 AggressiveRouteObject，不完整暴露 children、element 等属性。
- * RouteObject 是 IndexRouteObject | NonIndexRouteObject 联合类型，
- * 不能用 interface extends，因此独立定义测试所需的类型替代 as any。
  */
 export interface TestRouteObject {
   path?: string;
@@ -185,7 +149,7 @@ export interface TestRouteObject {
 /**
  * 递归检查路由树是否包含指定属性
  * @param routes 路由列表
- * @param propName 属性名（如 'loader'、'action'、'path'）
+ * @param propName 属性名
  * @param predicate 属性值断言函数
  */
 export const hasRouteProperty = (
@@ -218,4 +182,3 @@ export function getRootRoute(routerInstance: Router): TestRouteObject {
 export function getRootChildren(routerInstance: Router): TestRouteObject[] {
   return getRootRoute(routerInstance).children ?? [];
 }
-

@@ -105,7 +105,7 @@ export const createModelProviderSliceState = (overrides?: Partial<ModelProviderS
  * 创建 SettingPage slice 默认状态
  * @param overrides 要覆盖的状态字段
  */
-export const createSettingPageSliceState = (overrides?: Partial<SettingPageSliceState>): SettingPageSliceState => ({
+const createSettingPageSliceState = (overrides?: Partial<SettingPageSliceState>): SettingPageSliceState => ({
   isDrawerOpen: false,
   ...overrides,
 });

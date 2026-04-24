@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { test, expect, beforeEach, vi } from 'vitest';
+import { it, expect, beforeEach, vi } from 'vitest';
 import { initializeMasterKey } from '@/store/keyring/masterKey';
 
 // Mock @/utils/tauriCompat/env 模块中的 isTauri 函数
@@ -29,7 +29,7 @@ beforeEach(async () => {
   mockIsTauri.mockReturnValue(false);
 });
 
-test('mock isTauri works', async () => {
+it('mock isTauri works', async () => {
   expect(mockIsTauri()).toBe(false);
   
   const { key } = await initializeMasterKey();

@@ -12,7 +12,7 @@
  * 使用 screen.findByText() 验证用户可见行为
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { waitFor, screen } from '@testing-library/react';
 import { renderWithProviders } from '@/__test__/helpers/render/redux';
 import { getTestStore, cleanupStore } from '@/__test__/helpers/integration/resetStore';
@@ -67,7 +67,7 @@ describe('Toast 系统集成测试', () => {
   });
 
   describe('应用启动初始化', () => {
-    test('应该完成 Toast 系统初始化', async () => {
+    it('应该完成 Toast 系统初始化', async () => {
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
       const { container } = renderWithProviders(<ToasterWrapper />, { store });
@@ -77,7 +77,7 @@ describe('Toast 系统集成测试', () => {
       expect(toastContainer).toBeInTheDocument();
     });
 
-    test('应该在初始化前缓存 Toast 请求，初始化后渲染到 DOM', async () => {
+    it('应该在初始化前缓存 Toast 请求，初始化后渲染到 DOM', async () => {
       const { toastQueue } = await import('@/services/toast/toastQueue');
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
@@ -97,7 +97,7 @@ describe('Toast 系统集成测试', () => {
   });
 
   describe('Redux + toastQueue 集成', () => {
-    test('应该将 Toast 消息渲染到 DOM：Redux 触发 toastQueue.success', async () => {
+    it('应该将 Toast 消息渲染到 DOM：Redux 触发 toastQueue.success', async () => {
       const { toastQueue } = await import('@/services/toast/toastQueue');
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
@@ -120,7 +120,7 @@ describe('Toast 系统集成测试', () => {
   });
 
   describe('边界情况', () => {
-    test('应该处理快速连续的 Toast 调用', async () => {
+    it('应该处理快速连续的 Toast 调用', async () => {
       const { toastQueue } = await import('@/services/toast/toastQueue');
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
@@ -151,7 +151,7 @@ describe('Toast 系统集成测试', () => {
       );
     });
 
-    test('应该不抛出错误当组件卸载', async () => {
+    it('应该不抛出错误当组件卸载', async () => {
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
       const { unmount } = renderWithProviders(<ToasterWrapper />, { store });

@@ -1,10 +1,4 @@
-# 集成测试覆盖规范
-
-## Purpose
-
-定义集成测试的 mock 策略对齐和命名风格统一标准，确保集成测试使用 globalThis 工厂函数创建 mock，并统一使用 `it()` 声明测试用例。
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: 集成测试 mock 策略审查与对齐
 

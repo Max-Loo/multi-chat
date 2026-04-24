@@ -16,7 +16,7 @@
  * - 每个测试后清理副作用
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, waitFor } from '@testing-library/react';
 import { getTestStore, resetStore } from '@/__test__/helpers/integration/resetStore';
 import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
@@ -87,7 +87,7 @@ describe('自动命名功能集成测试', () => {
     resetStore();
   });
 
-  test('场景 1：新建聊天首次收到 AI 回复后应该自动生成标题', async () => {
+  it('场景 1：新建聊天首次收到 AI 回复后应该自动生成标题', async () => {
     // Arrange: 创建新聊天（标题为空）
     const model = createDeepSeekModel();
     const chat = {
@@ -131,7 +131,7 @@ describe('自动命名功能集成测试', () => {
     expect(chatStorage.saveChatAndIndex).toHaveBeenCalled();
   });
 
-  test('场景 2：用户手动命名后不再触发自动命名', async () => {
+  it('场景 2：用户手动命名后不再触发自动命名', async () => {
     // Arrange: 创建聊天并手动设置标题
     const model = createDeepSeekModel();
     const chat = {
@@ -185,7 +185,7 @@ describe('自动命名功能集成测试', () => {
     expect(updatedChat?.isManuallyNamed).toBe(true);
   });
 
-  test('场景 3：全局开关关闭时不触发自动命名', async () => {
+  it('场景 3：全局开关关闭时不触发自动命名', async () => {
     // Arrange: 关闭全局开关
     store.dispatch(setAutoNamingEnabled(false));
 
@@ -232,7 +232,7 @@ describe('自动命名功能集成测试', () => {
     expect(updatedChat?.name).toBeUndefined();
   });
 
-  test('场景 4：多模型竞态条件 - 只应该生成一次标题', async () => {
+  it('场景 4：多模型竞态条件 - 只应该生成一次标题', async () => {
     // Arrange: 创建新聊天
     const model1 = createDeepSeekModel({ id: 'model-1' });
     const model2 = createDeepSeekModel({ id: 'model-2' });

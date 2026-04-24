@@ -1,10 +1,4 @@
-# Crypto 输入验证测试规范
-
-## Purpose
-
-定义 crypto 测试文件的清理与重组策略：删除冗余测试文件、重定位 crypto-storage 测试为加密业务策略测试、迁移边缘用例。
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: crypto-simple.test.ts 必须删除
 
