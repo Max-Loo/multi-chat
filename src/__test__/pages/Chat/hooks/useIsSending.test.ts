@@ -4,7 +4,7 @@
  * 测试策略：Mock useSelectedChat 和 useAppSelector（均依赖 Redux），验证发送状态汇总逻辑
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 // Mock useSelectedChat because it depends on useCurrentSelectedChat (Redux)
@@ -24,10 +24,6 @@ import type { Chat } from '@/types/chat';
 
 describe('useIsSending', () => {
   const mockChat: Chat = { id: 'chat-1' };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   it('应该返回 false 当无选中聊天', () => {
     vi.mocked(useSelectedChat).mockReturnValue({

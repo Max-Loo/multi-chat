@@ -7,7 +7,7 @@
  * - 密钥导入导出流程（导出 → 导入 → 数据恢复）
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FatalErrorScreen } from '@/components/FatalErrorScreen';
 import type { InitError } from '@/services/initialization';
@@ -86,10 +86,6 @@ vi.mock('react-i18next', () =>
 );
 
 describe('主密钥恢复功能集成测试', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });

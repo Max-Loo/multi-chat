@@ -32,7 +32,6 @@ describe('useCreateChat', () => {
   const mockNavigateToChat = vi.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.mocked(useNavigateToChat).mockReturnValue({
       navigateToChat: mockNavigateToChat,
       clearChatIdParam: vi.fn(),

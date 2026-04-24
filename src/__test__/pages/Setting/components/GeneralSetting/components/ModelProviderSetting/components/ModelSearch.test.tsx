@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { ModelSearch } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ModelSearch'
@@ -8,9 +8,6 @@ vi.mock('react-i18next', () => globalThis.__mockI18n({
 }));
 
 describe('ModelSearch', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
 
   const defaultProps = {
     value: '',

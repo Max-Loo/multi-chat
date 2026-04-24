@@ -24,10 +24,7 @@ beforeEach(async () => {
   
   // 清理 localStorage
   localStorage.clear();
-  
-  // 重置 Mock 状态
-  vi.clearAllMocks();
-  
+
   // 设置默认为 Web 环境
   mockIsTauri.mockReturnValue(false);
 });

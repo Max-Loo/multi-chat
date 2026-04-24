@@ -30,7 +30,6 @@ let mockSelectedChat: { id: string } | null = null;
 
 describe('Sidebar 组件测试', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     mockLocation = { pathname: '/' };
     mockSelectedChat = null;
   });

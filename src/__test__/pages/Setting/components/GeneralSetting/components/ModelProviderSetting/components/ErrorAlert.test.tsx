@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ErrorAlert } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ErrorAlert';
 
@@ -7,11 +7,8 @@ vi.mock('react-i18next', () => globalThis.__mockI18n({
 }));
 
 describe('ErrorAlert', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
-  
+
   describe('错误信息展示', () => {
     it('应该显示错误信息当 error 不为 null', () => {
       const errorMessage = '网络连接失败';

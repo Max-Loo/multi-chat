@@ -23,7 +23,6 @@ describe('FatalErrorScreen 组件', () => {
   ];
 
   beforeEach(() => {
-    vi.clearAllMocks();
     // 重置 DEV 模式
     vi.stubEnv('DEV', true);
     // Mock window.location.reload

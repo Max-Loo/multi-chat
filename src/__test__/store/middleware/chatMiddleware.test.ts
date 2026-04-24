@@ -160,7 +160,6 @@ describe('chatMiddleware', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createMiddlewareTestStore(saveChatListMiddleware.middleware);
   });
 

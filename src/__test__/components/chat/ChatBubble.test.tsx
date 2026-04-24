@@ -4,7 +4,7 @@
  * 测试新实现的聊天气泡组件的各种场景
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatRoleEnum } from '@/types/chat';
@@ -25,10 +25,6 @@ vi.mock('highlight.js', () => {
 // 使用真实的 markdown-it 和 DOMPurify 进行测试
 
 describe('ChatBubble UI 组件', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('用户消息渲染', () => {
     it('应该正确渲染用户消息', () => {
       const { container } = render(

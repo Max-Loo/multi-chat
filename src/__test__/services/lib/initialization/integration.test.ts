@@ -15,7 +15,6 @@ describe('初始化系统集成测试', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     manager = new InitializationManager();
-    vi.clearAllMocks();
   });
 
   afterEach(() => {

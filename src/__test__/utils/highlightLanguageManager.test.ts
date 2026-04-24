@@ -45,9 +45,6 @@ describe('HighlightLanguageManager', () => {
     // 每个测试前创建新实例
     manager = HighlightLanguageManager.getInstance();
 
-    // 重置所有 mock
-    vi.clearAllMocks();
-
     // 重置 loadLanguageModule 为默认成功行为
     vi.mocked(loadLanguageModule).mockResolvedValue({
       default: () => ({ contains: [] }), /* mock language definition */

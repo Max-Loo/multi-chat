@@ -10,7 +10,7 @@
  */
 
 import { screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import RunningBubble from '@/pages/Chat/components/Panel/Detail/RunningBubble';
 import { renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
@@ -95,11 +95,8 @@ function renderRunningBubble(runningChatData?: Parameters<typeof createPreloaded
 // ========================================
 
 describe('RunningBubble Component', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
-  
+
   it('应该返回 null 当没有运行数据', () => {
     renderRunningBubble();
 

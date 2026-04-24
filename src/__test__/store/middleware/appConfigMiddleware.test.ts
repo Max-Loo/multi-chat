@@ -32,7 +32,6 @@ describe('appConfigMiddleware', () => {
   let store: ReturnType<typeof createMiddlewareTestStore>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createMiddlewareTestStore(saveDefaultAppLanguage.middleware);
 
     // 重置 localStorage mock

@@ -36,7 +36,6 @@ import { verifyMasterKey } from '@/store/keyring/keyVerification';
 describe('masterKey 完整测试套件', () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.clearAllMocks();
 
     // Mock keyring 实例方法
     vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);

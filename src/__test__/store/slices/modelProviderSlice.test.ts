@@ -32,7 +32,7 @@ import { ALLOWED_REMOTE_MODEL_PROVIDERS } from "@/services/modelRemote/config";
 import {
   createDeepSeekProvider,
   createMockRemoteProviders,
-} from "@/__test__/fixtures/modelProvider";
+} from "@/__test__/helpers/fixtures";
 
 // Mock 服务层依赖
 vi.mock("@/services/modelRemote", () => ({
@@ -99,7 +99,6 @@ describe("modelProviderSlice", () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createTestStore();
   });
 

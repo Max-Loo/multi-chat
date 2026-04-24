@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { useConfirm, ConfirmProvider } from '@/hooks/useConfirm';
 import { render, screen } from '@testing-library/react';
 
@@ -10,10 +10,6 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 describe('useConfirm', () => {
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   describe('ConfirmProvider 渲染测试', () => {
     it('应该成功渲染 ConfirmProvider', () => {

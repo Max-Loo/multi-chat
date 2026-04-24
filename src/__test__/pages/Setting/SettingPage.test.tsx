@@ -42,7 +42,6 @@ function renderSettingPage(ui: React.ReactElement) {
 describe('SettingPage Component', () => {
   beforeEach(async () => {
     await resetTestState();
-    vi.clearAllMocks();
   });
 
   

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 /**
  * titleGenerator 单元测试
@@ -144,10 +144,6 @@ describe('buildTitlePrompt', () => {
 });
 
 describe('generateChatTitleService', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('应该返回经过后处理的标题', async () => {
     const messages: StandardMessage[] = [
       createUserMessage('介绍一下 React'),

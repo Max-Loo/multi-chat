@@ -25,7 +25,6 @@ function withMockedDatabases(
 describe('resetTestState', () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.clearAllMocks();
   });
 
   it('应该清空 localStorage', async () => {

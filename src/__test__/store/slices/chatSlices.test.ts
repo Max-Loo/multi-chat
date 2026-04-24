@@ -102,7 +102,6 @@ describe('chatSlices', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     // 重置 mock 返回默认值
     mockLoadChatIndex.mockResolvedValue([]);
     mockPreloadProviders.mockClear();

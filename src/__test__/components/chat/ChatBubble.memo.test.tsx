@@ -57,7 +57,6 @@ describe('ChatBubble memo 重渲染行为', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     renderTracker.mockClear();
     mockGenerateCleanHtml.mockClear();
   });

@@ -73,7 +73,6 @@ describe('抽屉打开/关闭集成测试', () => {
 
   afterEach(() => {
     consoleSpy.mockRestore();
-    vi.clearAllMocks();
   });
 
   describe('Chat 页面抽屉', () => {

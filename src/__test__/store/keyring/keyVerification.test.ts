@@ -25,7 +25,6 @@ describe('verifyMasterKey', () => {
   const testKey = 'a'.repeat(64);
 
   beforeEach(() => {
-    vi.clearAllMocks();
     resetVerificationStore();
   });
 

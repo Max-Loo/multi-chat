@@ -18,7 +18,6 @@ describe('InitializationManager', () => {
 
   beforeEach(() => {
     manager = new InitializationManager();
-    vi.clearAllMocks();
   });
 
   describe('实例化', () => {

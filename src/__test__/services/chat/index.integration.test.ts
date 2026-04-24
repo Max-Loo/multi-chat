@@ -98,8 +98,6 @@ let dependencies: {
 };
 
 beforeEach(() => {
-  vi.clearAllMocks();
-
   mockStreamText = vi.fn();
   mockGenerateId = vi.fn(() => 'test-conversation-id');
 

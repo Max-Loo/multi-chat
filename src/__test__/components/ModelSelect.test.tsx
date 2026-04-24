@@ -86,7 +86,6 @@ describe('ModelSelect 用户交互测试', () => {
 
   beforeEach(() => {
     store = createModelSelectStore();
-    vi.clearAllMocks();
   });
 
   /**

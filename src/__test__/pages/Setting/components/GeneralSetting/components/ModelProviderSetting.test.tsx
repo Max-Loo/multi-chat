@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { Provider } from 'react-redux';
@@ -73,18 +73,6 @@ describe('ModelProviderSetting', () => {
    * 测试前置处理
    * 在每个测试运行前清除所有 Mock 的调用记录
    */
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  /**
-   * 测试后置处理
-   * 在每个测试运行后清除所有 Mock 的调用记录
-   */
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
   /**
    * 组件渲染测试组
    *

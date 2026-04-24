@@ -17,7 +17,6 @@ const originalLocation = window.location;
 
 describe('NoProvidersAvailable', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     // Mock window.location.reload
     Object.defineProperty(window, 'location', {
       writable: true,

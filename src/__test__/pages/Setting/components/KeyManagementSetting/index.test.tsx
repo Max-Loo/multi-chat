@@ -57,7 +57,6 @@ const renderKeyManagement = () => renderWithProviders(<KeyManagementSetting />);
 
 describe('KeyManagementSetting', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     Object.defineProperty(window, 'location', {
       value: { reload: vi.fn() },
       writable: true,

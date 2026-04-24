@@ -19,7 +19,6 @@ vi.mock('@/utils/tauriCompat/env', () => ({
 describe('Keyring 迁移模块测试套件', () => {
   // 全局 beforeEach：清理所有 Mock 和状态
   beforeEach(() => {
-    vi.clearAllMocks();
     localStorage.clear();
 
     // 使用 fake-indexeddb 替换全局 indexedDB

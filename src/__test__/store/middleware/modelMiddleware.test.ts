@@ -48,7 +48,6 @@ describe('modelMiddleware', () => {
   });
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createMiddlewareTestStore(saveModelsMiddleware.middleware);
   });
 

@@ -24,7 +24,7 @@
 
 
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, afterEach, vi } from 'vitest';
 
 import { encryptField, decryptField, isEncrypted } from '@/utils/crypto';
 
@@ -58,16 +58,6 @@ vi.mock('@/store/storage/modelStorage', () => ({
 
 
 describe('Crypto 加密/解密单元测试', () => {
-
-  beforeEach(() => {
-
-    // 每个测试用例前重置 Mock 状态
-
-    vi.clearAllMocks();
-
-  });
-
-
 
   afterEach(() => {
 

@@ -4,7 +4,7 @@
  * 测试模型供应商展示组件的各种场景
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import ModelProviderDisplay from '@/pages/Model/ModelTable/components/ModelProviderDisplay';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
@@ -28,11 +28,8 @@ const createTestStore = (
 
 
 describe('ModelProviderDisplay', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
-  
+
   describe('正常状态渲染', () => {
     it('应该显示供应商图标和名称', () => {
       const store = createTestStore({

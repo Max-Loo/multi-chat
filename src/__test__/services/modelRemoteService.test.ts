@@ -23,7 +23,7 @@ import {
   createKimiApiResponse,
   createOpenAIApiResponse,
   createMockApiResponse,
-} from '@/__test__/fixtures/modelProvider';
+} from '@/__test__/helpers/fixtures';
 
 const API_URL = 'https://models.dev/api.json';
 
@@ -59,7 +59,6 @@ describe('modelRemoteService', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     mockCreateLazyStore.mockReturnValue(mockStore as ReturnType<typeof createLazyStore>);
   });
 

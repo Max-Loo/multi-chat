@@ -4,7 +4,7 @@
  * 测试 Markdown 解析、代码高亮和 XSS 防护功能
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { generateCleanHtml } from '@/utils/markdown';
 
 // Mock HighlightLanguageManager
@@ -29,10 +29,6 @@ vi.mock('@/utils/highlightLanguageManager', () => ({
 // }));
 
 describe('Markdown 渲染工具', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('4.10 测试标题（#）正确渲染', () => {
     it('应该渲染一级标题', () => {
       const markdown = '# Heading 1';

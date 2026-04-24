@@ -4,7 +4,7 @@
  * 测试策略：Mock useCurrentSelectedChat（依赖 Redux），验证数据规范化逻辑
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 // Mock useCurrentSelectedChat because it depends on Redux store
@@ -17,10 +17,6 @@ import { useSelectedChat } from '@/pages/Chat/hooks/useSelectedChat';
 import type { Chat } from '@/types/chat';
 
 describe('useSelectedChat', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('应该返回选中聊天的数据 当有选中聊天', () => {
     const mockChat: Chat = {
       id: 'chat-1',

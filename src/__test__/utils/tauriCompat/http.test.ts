@@ -23,7 +23,6 @@ vi.mock('@/utils/tauriCompat/env', () => ({
 
 describe('tauriCompat/http', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     mockIsTauri.mockReturnValue(false);
     mockTauriFetch.mockReset();
   });

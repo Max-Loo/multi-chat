@@ -11,7 +11,7 @@
  * 测试隔离：使用真实的 Redux store 和异步初始化逻辑
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, afterEach, vi } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import { Model } from '@/types/model';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
@@ -42,10 +42,6 @@ function createTestStore() {
 }
 
 describe('应用加载集成测试', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });

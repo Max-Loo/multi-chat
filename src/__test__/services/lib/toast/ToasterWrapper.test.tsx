@@ -80,7 +80,6 @@ const mockedToastQueue = vi.mocked(toastQueue);
 
 describe('ToasterWrapper 组件', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     mockIsMobile = false;
   });
 

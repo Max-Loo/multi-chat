@@ -78,9 +78,9 @@ describe('自动命名功能集成测试', () => {
   let store: ReturnType<typeof getTestStore>;
 
   beforeEach(async () => {
+    vi.clearAllMocks();
     await clearIndexedDB();
     store = getTestStore();
-    vi.clearAllMocks();
   });
 
   afterEach(() => {

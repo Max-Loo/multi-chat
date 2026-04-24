@@ -71,7 +71,6 @@ describe('appConfigSlices', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     // 重置 mock 返回默认值
     mockGetDefaultAppLanguage.mockResolvedValue('en');
     localStorageMock.clear();

@@ -4,7 +4,7 @@
  * 测试模型供应商侧边栏组件的功能
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import ModelSidebar from '@/pages/Model/CreateModel/components/ModelSidebar'
@@ -42,7 +42,6 @@ describe('ModelSidebar 组件测试', () => {
   beforeEach(() => {
     store = createTestStore()
     user = userEvent.setup()
-    vi.clearAllMocks()
   })
 
   describe('4.1 供应商列表渲染', () => {

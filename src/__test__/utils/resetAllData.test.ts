@@ -28,7 +28,6 @@ vi.mock('@/utils/tauriCompat', async (importOriginal) => {
 describe('resetAllData', () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.clearAllMocks();
     vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
     vi.spyOn(keyring, 'deletePassword').mockResolvedValue(undefined);
     vi.spyOn(keyring, 'resetState').mockImplementation(() => {});

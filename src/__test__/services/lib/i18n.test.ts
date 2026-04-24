@@ -463,9 +463,6 @@ describe("i18n module", () => {
 
   describe("changeAppLanguage", () => {
     beforeEach(() => {
-      // 重置所有 mock 调用历史和行为
-      vi.clearAllMocks();
-
       // 重新设置默认行为
       mockI18nInit.mockImplementation((_config) => {
         mockI18nInstance.isInitialized = true;

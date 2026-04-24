@@ -62,7 +62,6 @@ describe('modelSlice', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     // 重置 mock 返回默认值
     mockLoadModelsFromJson.mockResolvedValue([]);
     store = createTestStore();

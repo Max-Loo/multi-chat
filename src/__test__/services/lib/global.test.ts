@@ -15,9 +15,6 @@ describe('global.ts 模块测试', () => {
   let openSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    // 清除所有 mocks
-    vi.clearAllMocks();
-
     // 清除 localStorage
     localStorage.clear();
 

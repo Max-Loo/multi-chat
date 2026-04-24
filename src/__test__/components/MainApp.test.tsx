@@ -4,7 +4,7 @@
  * 验证 decryptionFailureCount Toast 行为和 KeyRecoveryDialog 触发
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { createMainApp } from '@/MainApp';
 import type { InitResult } from '@/services/initialization';
@@ -76,10 +76,6 @@ const createMockResult = (overrides: Partial<InitResult> = {}): InitResult => ({
 });
 
 describe('MainApp', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('应该在 decryptionFailureCount > 0 时显示 Toast 警告', () => {
     const MainApp = createMainApp(createMockResult({ decryptionFailureCount: 2 }));
     render(<MainApp />);

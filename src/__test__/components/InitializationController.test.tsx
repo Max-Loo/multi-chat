@@ -78,7 +78,6 @@ const mockInitSteps = [
 
 describe('InitializationController', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     mockRunInitialization = vi.fn();
 
     // Mock InitializationManager 类

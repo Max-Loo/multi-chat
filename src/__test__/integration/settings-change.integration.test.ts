@@ -33,7 +33,6 @@ describe('设置变更集成测试', () => {
     localStorage.clear();
     cleanupStore();
     testStore = getTestStore();
-    vi.clearAllMocks();
   });
 
   afterEach(() => {

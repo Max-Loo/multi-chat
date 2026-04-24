@@ -13,7 +13,6 @@ vi.mock('@/utils/resetAllData', () => ({
 
 describe('useResetDataDialog', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     // 阻止 window.location.reload 在测试中刷新页面
     Object.defineProperty(window, 'location', {
       value: { reload: vi.fn() },

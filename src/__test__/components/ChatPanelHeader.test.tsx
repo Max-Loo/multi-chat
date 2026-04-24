@@ -57,7 +57,6 @@ const createStore = (chat?: Chat, isSidebarCollapsed = false) => {
 
 describe('ChatPanelHeader', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     // 清理 DOM
     document.body.innerHTML = '';
   });
