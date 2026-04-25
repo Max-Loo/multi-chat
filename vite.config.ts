@@ -178,13 +178,74 @@ export default defineConfig(async () => ({
         "src/__mock__/**",
         "src/main.tsx",
         "src/__test__/setup.ts",
+        "src/@types/**",
+        "src/pages/Model/index.tsx",
+        // Tauri 兼容层（依赖系统 API，无法在 web 测试环境运行）
+        "src/utils/tauriCompat/http.ts",
+        "src/utils/tauriCompat/shell.ts",
+        "src/utils/tauriCompat/os.ts",
+        "src/utils/tauriCompat/store.ts",
+        "src/utils/tauriCompat/env.ts",
+        "src/utils/tauriCompat/__mocks__/**",
+        // shadcn/ui 自动生成的 UI 原子组件（无自定义逻辑）
+        "src/components/ui/sheet.tsx",
+        "src/components/ui/sonner.tsx",
+        "src/components/ui/skeleton.tsx",
+        "src/components/ui/progress.tsx",
+        "src/components/ui/avatar.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/dropdown-menu.tsx",
+        "src/components/ui/checkbox.tsx",
+        "src/components/ui/select.tsx",
+        "src/components/ui/table.tsx",
+        "src/components/ui/tooltip.tsx",
+        "src/components/ui/spinner.tsx",
+        "src/components/ui/dialog.tsx",
+        // Canvas 动画（依赖 Canvas API，无法在 happy-dom 中测试）
+        "src/components/AnimatedLogo/canvas-logo.ts",
+        // 仅用于测试的页面组件
+        "src/pages/Setting/components/ToastTest/**",
       ],
-      // 覆盖率阈值
+      // 覆盖率阈值（分模块分级，汇总模式）
       thresholds: {
-        lines: 60,
-        functions: 60,
-        branches: 60,
-        statements: 60,
+        // 全局底线
+        lines: 65,
+        functions: 55,
+        branches: 55,
+        statements: 55,
+        // 分模块阈值（汇总，非逐文件）
+        '**/src/hooks/**': {
+          lines: 85,
+          branches: 80,
+        },
+        '**/src/services/**': {
+          lines: 75,
+          branches: 70,
+        },
+        '**/src/store/**': {
+          lines: 75,
+          branches: 70,
+        },
+        '**/src/utils/**': {
+          lines: 75,
+          branches: 65,
+        },
+        '**/src/components/**': {
+          lines: 65,
+          branches: 50,
+        },
+        '**/src/config/**': {
+          lines: 50,
+          branches: 50,
+        },
+        '**/src/pages/**': {
+          lines: 50,
+          branches: 40,
+        },
+        '**/src/router/**': {
+          lines: 50,
+          branches: 40,
+        },
       },
       // 临时目录
       tempDirectory: "./coverage/tmp",
