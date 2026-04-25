@@ -199,6 +199,10 @@ export default defineConfig(async () => ({
         "src/components/ui/dialog.tsx",
         // Canvas 动画（依赖 Canvas API，无法在 happy-dom 中测试）
         "src/components/AnimatedLogo/canvas-logo.ts",
+        // 第三方库薄包装（clsx + twMerge 一行组合，不含业务逻辑）
+        "src/utils/utils.ts",
+        // 纯动态 import 映射（46 个 switch case，已被上层测试完整 mock）
+        "src/utils/highlightLanguageIndex.ts",
         // 仅用于测试的页面组件
         "src/pages/Setting/components/ToastTest/**",
       ],
