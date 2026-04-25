@@ -9,11 +9,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThinkingSection } from '@/components/chat/ThinkingSection';
 
-// Mock highlight.js
-vi.mock('highlight.js', () => {
-  const { highlightJsMockFactory } = require('@/__test__/helpers/mocks/highlight');
-  return highlightJsMockFactory;
-});
+// Mock highlight.js（使用共享 mock 工厂）
+vi.mock('highlight.js', () => globalThis.__createHighlightJsMock());
 
 // Mock markdown-it（使用共享 mock 工厂）
 vi.mock('markdown-it', () => globalThis.__createMarkdownItMock());

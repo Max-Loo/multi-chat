@@ -18,8 +18,6 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@/test-helpers": ["./src/__test__/helpers/index"],
-      "@/test-helpers/*": ["./src/__test__/helpers/*"],
       "@components/*": ["./src/components/*"],
       "@pages/*": ["./src/pages/*"],
       "@routes/*": ["src/router/*"],

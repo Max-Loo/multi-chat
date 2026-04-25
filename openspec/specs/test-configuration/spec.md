@@ -80,27 +80,15 @@
 
 ### Requirement: 全局测试辅助工具导入
 
-系统 SHALL 在 `setup.ts` 中自动导入全局测试辅助工具，使其在所有测试中可用。
+系统 SHALL 在 `setup.ts` 中自动导入全局测试辅助工具，使其在所有测试中可用。测试辅助工具统一通过 `@/__test__/helpers` 路径导入，该路径通过 `@/` → `src/` 别名自然解析。
 
 #### Scenario: 导入自定义断言
-- **WHEN** `setup.ts` 导入 `@/test-helpers/assertions`
+- **WHEN** `setup.ts` 导入 `@/__test__/helpers/assertions`
 - **THEN** 系统所有测试文件可直接使用自定义断言函数
 
 #### Scenario: 扩展 Vitest matchers
 - **WHEN** `setup.ts` 调用 `expect.extend(customMatchers)`
 - **THEN** 系统所有测试可使用扩展的断言方法
-
-### Requirement: 测试辅助工具路径别名
-
-系统 SHALL 配置 `@/test-helpers` 路径别名，指向 `src/__test__/helpers` 目录。
-
-#### Scenario: 配置 vite.config.ts 别名
-- **WHEN** `vite.config.ts` 的 `resolve.alias` 包含 `@/test-helpers`
-- **THEN** 系统 `import { ... } from '@/test-helpers/mocks'` 正确解析
-
-#### Scenario: 配置 tsconfig.json 别名
-- **WHEN** `tsconfig.json` 的 `compilerOptions.paths` 包含 `@/test-helpers/*`
-- **THEN** 系统 TypeScript 提供正确的类型提示
 
 ### Requirement: 禁止全局 dangerouslyIgnoreUnhandledErrors
 
@@ -135,4 +123,4 @@
 
 #### Scenario: 创建统一导出文件
 - **WHEN** 测试需要使用辅助工具
-- **THEN** 系统可通过 `import { ... } from '@/test-helpers'` 导入所有工具
+- **THEN** 系统可通过 `import { ... } from '@/__test__/helpers'` 导入所有工具

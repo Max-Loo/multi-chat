@@ -15,6 +15,7 @@ import { createToastQueueModuleMock } from '@/__test__/helpers/mocks/toast';
 import { createScrollbarMock } from '@/__test__/helpers/mocks/scrollbar';
 import { createMarkdownItMock } from '@/__test__/helpers/mocks/markdown';
 import { createDompurifyMock } from '@/__test__/helpers/mocks/dompurify';
+import { createHighlightJsMock } from '@/__test__/helpers/mocks/highlight';
 
 // 扩展 Vitest 的 expect 断言（@testing-library/jest-dom）
 expect.extend(matchers);
@@ -73,3 +74,7 @@ globalThis.__createMarkdownItMock = __markdownItMock;
 // eslint-disable-next-line no-var
 var __dompurifyMock = createDompurifyMock;
 globalThis.__createDompurifyMock = __dompurifyMock;
+
+// eslint-disable-next-line no-var
+var __highlightJsMock = createHighlightJsMock;
+globalThis.__createHighlightJsMock = __highlightJsMock;

@@ -72,6 +72,14 @@ declare global {
    */
   // eslint-disable-next-line no-var
   var __createDompurifyMock: typeof import('./helpers/mocks/dompurify').createDompurifyMock;
+
+  /**
+   * highlight.js mock 工厂函数（由 setup.ts 注册到 globalThis）
+   *
+   * 用于 vi.mock('highlight.js') 创建共享 mock
+   */
+  // eslint-disable-next-line no-var
+  var __createHighlightJsMock: typeof import('./helpers/mocks/highlight').createHighlightJsMock;
 }
 
 // oxlint-disable-next-line require-module-specifiers

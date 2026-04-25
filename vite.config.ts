@@ -114,11 +114,6 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@/test-helpers": path.resolve(
-        __dirname,
-        "./src/__test__/helpers/index.ts",
-      ),
-      "@/test-helpers/*": path.resolve(__dirname, "./src/__test__/helpers/*"),
       // 配置 highlight.js 别名，用于动态导入
       "/@highlight.js": path.resolve(__dirname, "./node_modules/highlight.js"),
     },

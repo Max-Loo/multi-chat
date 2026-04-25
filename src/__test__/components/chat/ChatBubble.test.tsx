@@ -16,11 +16,8 @@ vi.mock('react-i18next', () =>
     },
   }));
 
-// Mock highlight.js
-vi.mock('highlight.js', () => {
-  const { highlightJsMockFactory } = require('@/__test__/helpers/mocks/highlight');
-  return highlightJsMockFactory;
-});
+// Mock highlight.js（使用共享 mock 工厂）
+vi.mock('highlight.js', () => globalThis.__createHighlightJsMock());
 
 // 使用真实的 markdown-it 和 DOMPurify 进行测试
 
