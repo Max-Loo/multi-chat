@@ -127,6 +127,7 @@ export default defineConfig(async () => ({
   // Vitest 测试配置
   test: {
     environment: "happy-dom",
+    globals: true,
     setupFiles: ["./src/__test__/setup.ts"],
     include: ["src/__test__/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist", "src/__test__/integration/**"],

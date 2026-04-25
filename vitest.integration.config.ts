@@ -19,6 +19,24 @@ export default defineConfig({
     // 仅运行集成测试
     include: ['src/__test__/integration/**/*.test.{ts,tsx}'],
     exclude: ['node_modules/', 'dist/'],
+
+    // 优化依赖项预构建（与 vite.config.ts 同步）
+    deps: {
+      optimizer: {
+        web: {
+          include: [
+            'use-sync-external-store',
+            'cookie',
+            'react',
+            'react-dom',
+            'react/jsx-runtime',
+            'react-redux',
+            'react-remove-scroll',
+            '@radix-ui/react-slot',
+          ],
+        },
+      },
+    },
   },
 
   resolve: {
