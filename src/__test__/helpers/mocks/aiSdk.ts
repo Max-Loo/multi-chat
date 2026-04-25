@@ -1,8 +1,10 @@
 /**
  * Vercel AI SDK Mock 辅助函数
  *
- * 提供创建模拟 streamText 返回值的工具函数
+ * 提供创建模拟 streamText 返回值和 AI SDK provider mock 的工具函数
  */
+
+import { vi } from 'vitest';
 
 /**
  * AI SDK 错误类型，扩展 Error 添加网络请求相关属性
@@ -95,4 +97,35 @@ export function createMockStreamResult(
       [Symbol.asyncIterator]: mockStream,
     },
   };
+}
+
+/**
+ * 创建 AI SDK provider mock 对象
+ * 统一 deepseek/moonshotai/zhipu 等多种 provider 的 mock 逻辑
+ *
+ * @param providerName provider 标识名称（如 'deepseek'、'moonshotai'、'zhipu'）
+ */
+export function createMockAIProvider(providerName: string) {
+  return vi.fn((modelId: string) => ({
+    provider: providerName as typeof providerName,
+    modelId,
+    specificationVersion: 'v1' as const,
+    supportsImageUrls: false,
+    supportsUrl: false,
+    supportsToolCallStreaming: false,
+    supportsToolCalls: false,
+    supportsStructuredGeneration: false,
+    supportsObjectGeneration: false,
+    defaultTemperature: 0.7,
+    defaultMaxTokens: 4096,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    doStream: vi.fn().mockResolvedValue({ stream: [] as any }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    doGenerate: vi.fn().mockResolvedValue({
+      text: 'mock generated text',
+      usage: { promptTokens: 10, completionTokens: 5 },
+      finishReason: 'stop',
+      warnings: [],
+    }),
+  }));
 }

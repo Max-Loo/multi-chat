@@ -1,90 +1,12 @@
 /**
  * 全局 Mock 层
  *
- * 包含所有 vi.mock() 调用和辅助函数，供单元测试使用
+ * 包含所有 vi.mock() 调用，供单元测试使用
  * 注意：vi.mock() 必须在文件顶层静态调用（Vitest 限制）
  */
 
 import { vi } from 'vitest';
-
-// ========================================
-// 辅助函数
-// ========================================
-
-// 创建默认的模拟流生成器
-async function* createDefaultMockStream() {
-  // 默认返回空流
-}
-
-// 创建模拟的流式响应结果
-function createDefaultMockStreamResult() {
-  return {
-    // AsyncIterable 接口
-    [Symbol.asyncIterator]: createDefaultMockStream,
-
-    // Thenable 接口 - 用于 await 获取元数据
-    // eslint-disable-next-line unicorn/no-thenable
-    then: (callback: (value: unknown) => unknown) => {
-      return Promise.resolve({
-        finishReason: Promise.resolve('stop'),
-        rawFinishReason: Promise.resolve('stop'),
-        usage: Promise.resolve({
-          inputTokens: 10,
-          outputTokens: 5,
-          totalTokens: 15,
-        }),
-        response: Promise.resolve({
-          id: 'resp-123',
-          modelId: 'deepseek-chat',
-          timestamp: new Date('2024-01-01T00:00:00.000Z'),
-          headers: { 'content-type': 'application/json', 'x-request-id': 'req-123' },
-        }),
-        request: Promise.resolve({
-          body: '{"model":"deepseek-chat","messages":[]}',
-        }),
-        providerMetadata: Promise.resolve({}),
-        warnings: Promise.resolve([]),
-        sources: Promise.resolve([]),
-        toDataStreamResponse: () => new Response(),
-        toTextStreamResponse: () => new Response(),
-      }).then(callback);
-    },
-
-    // fullStream 属性
-    fullStream: {
-      [Symbol.asyncIterator]: createDefaultMockStream,
-    },
-  };
-}
-
-/**
- * 创建 AI SDK provider mock 对象
- * 统一 deepseek/moonshotai/zhipu 三种 provider 的 mock 逻辑
- */
-function createMockAIProvider(providerName: string) {
-  return vi.fn((modelId: string) => ({
-    provider: providerName as typeof providerName,
-    modelId,
-    specificationVersion: 'v1' as const,
-    supportsImageUrls: false,
-    supportsUrl: false,
-    supportsToolCallStreaming: false,
-    supportsToolCalls: false,
-    supportsStructuredGeneration: false,
-    supportsObjectGeneration: false,
-    defaultTemperature: 0.7,
-    defaultMaxTokens: 4096,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    doStream: vi.fn().mockResolvedValue({ stream: [] as any }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    doGenerate: vi.fn().mockResolvedValue({
-      text: 'mock generated text',
-      usage: { promptTokens: 10, completionTokens: 5 },
-      finishReason: 'stop',
-      warnings: [],
-    }),
-  }));
-}
+import { createMockStreamResult, createMockAIProvider } from '@/__test__/helpers/mocks/aiSdk';
 
 // ========================================
 // 全局 Mock 配置
@@ -184,7 +106,7 @@ vi.mock('ai', () => {
   let _genCounter = 0;
 
   return {
-    streamText: vi.fn().mockImplementation(() => createDefaultMockStreamResult()),
+    streamText: vi.fn().mockImplementation(() => createMockStreamResult()),
     generateText: vi.fn().mockResolvedValue({
       text: 'mock generated text',
       usage: { promptTokens: 10, completionTokens: 5 },
