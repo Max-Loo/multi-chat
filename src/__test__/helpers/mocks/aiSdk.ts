@@ -8,7 +8,15 @@ import { vi } from 'vitest';
 
 /**
  * AI SDK 错误类型，扩展 Error 添加网络请求相关属性
- * 替代运行时通过 as any 给 Error 注入额外属性的模式
+ *
+ * 替代运行时通过 as any 给 Error 注入额外属性的模式，提供类型安全的错误对象构造。
+ *
+ * @example
+ * ```typescript
+ * const error: AIError = createMockNetworkError('Connection refused', 500);
+ * expect(error.statusCode).toBe(500);
+ * expect(error.response?.status).toBe(500);
+ * ```
  */
 export interface AIError extends Error {
   statusCode?: number;
@@ -21,17 +29,43 @@ export interface AIError extends Error {
 }
 
 /**
- * 创建模拟的流式响应结果
+ * 创建模拟的 streamText 返回值
  *
- * streamText 返回的对象结构：
- * - fullStream: AsyncIterable (用于 for await...of 消费流)
- * - 元数据字段: Promise (finishReason, usage, response, request 等)
+ * 返回对象同时实现 AsyncIterable 和 Thenable 接口，可配合 `for await...of` 消费流，
+ * 也可通过 `await result` 获取元数据（finishReason、usage、response 等）。
  *
- * 注意：返回的对象既是 AsyncIterable 又是 Thenable
+ * @param streamItems - 流式事件数组，如 `[{ type: 'text-delta', text: 'Hello' }]`
+ * @param options - 可选配置
+ * @param options.streamError - 在流中抛出的错误，传入后 `await result` 会 reject
+ * @returns 模拟的 streamText 返回对象
  *
- * @param streamItems 流式事件数组
- * @param options 可选配置项
- * @param options.streamError 在流中抛出的错误（如果提供）
+ * @example
+ * ```typescript
+ * // 基本使用：模拟流式文本响应
+ * const mockResult = createMockStreamResult([
+ *   { type: 'text-delta', text: 'Hello' },
+ *   { type: 'text-delta', text: ' World' },
+ * ]);
+ * mockStreamText.mockReturnValueOnce(mockResult as any);
+ *
+ * // 消费流
+ * for await (const event of mockResult.fullStream) {
+ *   console.log(event);
+ * }
+ *
+ * // 获取元数据
+ * const metadata = await mockResult;
+ * expect(metadata.finishReason).resolves.toBe('stop');
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // 模拟流中途出错
+ * const errorResult = createMockStreamResult(
+ *   [{ type: 'text-delta', text: 'partial' }],
+ *   { streamError: new Error('Stream aborted') }
+ * );
+ * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createMockStreamResult(
@@ -101,9 +135,22 @@ export function createMockStreamResult(
 
 /**
  * 创建 AI SDK provider mock 对象
- * 统一 deepseek/moonshotai/zhipu 等多种 provider 的 mock 逻辑
  *
- * @param providerName provider 标识名称（如 'deepseek'、'moonshotai'、'zhipu'）
+ * 返回一个 `vi.fn()`，调用时生成带有标准 AI SDK LanguageModel 属性的 mock 对象。
+ * 统一 deepseek/moonshotai/zhipu 等多种 provider 的 mock 逻辑。
+ *
+ * @param providerName - provider 标识名称（如 `'deepseek'`、`'moonshotai'`、`'zhipu'`）
+ * @returns `vi.fn()` 工厂，接收 modelId 返回 mock LanguageModel 对象
+ *
+ * @example
+ * ```typescript
+ * const mockDeepSeek = createMockAIProvider('deepseek');
+ * const model = mockDeepSeek('deepseek-chat');
+ * // model = { provider: 'deepseek', modelId: 'deepseek-chat', doStream: vi.fn(), ... }
+ *
+ * // 配合 provider factory 使用
+ * vi.mocked(createDeepSeek).mockImplementation(() => mockDeepSeek);
+ * ```
  */
 export function createMockAIProvider(providerName: string) {
   return vi.fn((modelId: string) => ({
