@@ -14,15 +14,7 @@ import type { ChatSliceState } from '@/store/slices/chatSlices';
 /**
  * Mock useResponsive hook（可变状态控制 mobile/desktop）
  */
-const mockResponsive = vi.fn(() => ({
-  layoutMode: 'desktop' as string,
-  width: 1280,
-  height: 800,
-  isMobile: false,
-  isCompact: false,
-  isCompressed: false,
-  isDesktop: true,
-}));
+const mockResponsive = vi.fn();
 
 vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => mockResponsive(),

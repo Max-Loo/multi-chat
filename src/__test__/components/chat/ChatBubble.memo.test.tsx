@@ -21,7 +21,7 @@ import { ChatRoleEnum } from '@/types/chat';
 // ========================================
 
 /** mock generateCleanHtml 并导出 spy */
-const mockGenerateCleanHtml = vi.fn((content: string) => `<p>${content}</p>`);
+const mockGenerateCleanHtml = vi.fn();
 
 vi.mock('@/utils/markdown', () => ({
   generateCleanHtml: (content: string) => mockGenerateCleanHtml(content),
@@ -58,7 +58,7 @@ describe('ChatBubble memo 重渲染行为', () => {
 
   beforeEach(() => {
     renderTracker.mockClear();
-    mockGenerateCleanHtml.mockClear();
+    mockGenerateCleanHtml.mockImplementation((content: string) => `<p>${content}</p>`);
   });
 
   

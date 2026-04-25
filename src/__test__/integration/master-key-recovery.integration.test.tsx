@@ -7,13 +7,13 @@
  * - 密钥导入导出流程（导出 → 导入 → 数据恢复）
  */
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FatalErrorScreen } from '@/components/FatalErrorScreen';
 import type { InitError } from '@/services/initialization';
 
 // Mock resetAllData
-const mockResetAllData = vi.fn().mockResolvedValue(undefined);
+const mockResetAllData = vi.fn();
 vi.mock('@/utils/resetAllData', () => ({
   resetAllData: (...args: unknown[]) => mockResetAllData(...args),
 }));
@@ -86,6 +86,10 @@ vi.mock('react-i18next', () =>
 );
 
 describe('主密钥恢复功能集成测试', () => {
+  beforeEach(() => {
+    mockResetAllData.mockResolvedValue(undefined);
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });

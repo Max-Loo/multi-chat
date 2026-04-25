@@ -13,6 +13,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import LanguageSetting from "@/pages/Setting/components/GeneralSetting/components/LanguageSetting"
+import { changeAppLanguage } from "@/services/i18n"
 import { resetTestState } from "../../helpers/isolation"
 
 // 创建 mock 函数（在 vi.mock 之外定义）
@@ -37,15 +38,12 @@ vi.mock("@/store/slices/appConfigSlices", () => ({
 }))
 
 // Mock i18n functions - 在 factory 内部创建所有内容
-vi.mock("@/services/i18n", () => {
-  const mockChangeAppLanguage = vi.fn().mockResolvedValue({ success: true })
-  return {
-    changeAppLanguage: mockChangeAppLanguage,
-    getLanguageLabel: (lang: string) => lang,
-    initI18n: vi.fn(),
-    getInitI18nPromise: vi.fn(),
-  }
-})
+vi.mock("@/services/i18n", () => ({
+  changeAppLanguage: vi.fn(),
+  getLanguageLabel: (lang: string) => lang,
+  initI18n: vi.fn(),
+  getInitI18nPromise: vi.fn(),
+}))
 
 // Mock sonner toast - 在 factory 内部创建
 vi.mock("sonner", () => ({
@@ -100,6 +98,7 @@ describe("LanguageSetting 组件", () => {
     await resetTestState()
     mockDispatch.mockClear()
     mockSetAppLanguage.mockClear()
+    vi.mocked(changeAppLanguage).mockResolvedValue({ success: true })
   })
 
   describe("渲染测试", () => {

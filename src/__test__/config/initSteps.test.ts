@@ -21,7 +21,7 @@ function createMockContext(existingResults?: Record<string, unknown>): Execution
 }
 
 // Mock 外部依赖以隔离 execute 函数测试
-const mockDispatch = vi.fn((...args: unknown[]) => args[0]);
+const mockDispatch = vi.fn();
 const mockGetState = vi.fn();
 
 vi.mock('@/store', () => ({
@@ -261,6 +261,7 @@ describe('initSteps 配置验证', () => {
 describe('initSteps execute 函数', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDispatch.mockImplementation((...args: unknown[]) => args[0]);
   });
 
   describe('keyringMigration', () => {

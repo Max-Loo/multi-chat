@@ -6,15 +6,7 @@ import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers
 import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 
 // Mock useResponsive hook（可配置）
-const mockUseResponsive = vi.fn(() => ({
-  layoutMode: 'desktop',
-  width: 1280,
-  height: 800,
-  isMobile: false,
-  isCompact: false,
-  isCompressed: false,
-  isDesktop: true,
-}));
+const mockUseResponsive = vi.fn();
 
 vi.mock('@/context/ResponsiveContext', () => ({
   useResponsive: () => mockUseResponsive(),
@@ -122,6 +114,15 @@ function renderChatSidebar(store: ReturnType<typeof createTypeSafeTestStore>) {
 describe('ChatSidebar Component', () => {
   beforeEach(async () => {
     await resetTestState();
+    mockUseResponsive.mockReturnValue({
+      layoutMode: 'desktop',
+      width: 1280,
+      height: 800,
+      isMobile: false,
+      isCompact: false,
+      isCompressed: false,
+      isDesktop: true,
+    });
   });
 
   afterEach(() => {

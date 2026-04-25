@@ -19,6 +19,7 @@ setupCustomAssertions();
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 // ========================================
@@ -28,21 +29,22 @@ afterEach(() => {
 // 这些 Promise 会被测试代码正确处理，但 Vitest 仍会报告为 "unhandled"
 // 添加一个全局处理器来抑制这些预期的警告
 
+/** 预期的错误模式，用于抑制测试中已知的 unhandled rejection */
+const EXPECTED_ERROR_PATTERNS = [
+  'Network error',
+  'Request timeout',
+  'API Error',
+  'Invalid JSON response',
+  'Connection refused',
+  'Failed to fetch',
+];
+
 if (typeof window !== 'undefined' && 'addEventListener' in window) {
   window.addEventListener('unhandledrejection', (event) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const errorMessage = (event.reason as any)?.message || String(event.reason);
 
-    const expectedErrorPatterns = [
-      'Network error',
-      'Request timeout',
-      'API Error',
-      'Invalid JSON response',
-      'Connection refused',
-      'Failed to fetch',
-    ];
-
-    const isExpectedError = expectedErrorPatterns.some(pattern =>
+    const isExpectedError = EXPECTED_ERROR_PATTERNS.some(pattern =>
       errorMessage.includes(pattern)
     );
 
@@ -55,16 +57,7 @@ if (typeof window !== 'undefined' && 'addEventListener' in window) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const errorMessage = (reason as any)?.message || String(reason);
 
-    const expectedErrorPatterns = [
-      'Network error',
-      'Request timeout',
-      'API Error',
-      'Invalid JSON response',
-      'Connection refused',
-      'Failed to fetch',
-    ];
-
-    const isExpectedError = expectedErrorPatterns.some(pattern =>
+    const isExpectedError = EXPECTED_ERROR_PATTERNS.some(pattern =>
       errorMessage.includes(pattern)
     );
 
