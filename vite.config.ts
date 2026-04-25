@@ -127,19 +127,19 @@ export default defineConfig(async () => ({
     include: ["src/__test__/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist", "src/__test__/integration/**"],
 
-    // 并行执行配置
-    pool: "threads",
-    singleThread: false,
-    minThreads: 1,
-    maxThreads: 2, // 多线程执行单元测试
-    useAtomics: true, // 使用 Atomics API 提升性能
+    // 使用 forks 池避免 react-redux ESM 模块初始化竞态
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        maxForks: 2,
+      },
+    },
 
     // 优化依赖项预构建
     deps: {
       optimizer: {
         web: {
-          // 预构建 CommonJS/ESM 模块以解决兼容性问题
-          // react-redux: ESM 初始化时访问 React.version，需预构建确保 React 先解析
+          // 预构建 CommonJS/ESM 模块以优化依赖解析速度
           include: [
             "use-sync-external-store",
             "cookie",

@@ -12,6 +12,14 @@ export default defineConfig({
     maxConcurrency: 1,
     isolate: true,
 
+    // 使用 forks 池避免 react-redux ESM 模块初始化竞态
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        maxForks: 1, // 保持串行语义
+      },
+    },
+
     // 环境
     environment: 'happy-dom',
     globals: true,

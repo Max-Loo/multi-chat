@@ -124,3 +124,33 @@
 #### Scenario: 创建统一导出文件
 - **WHEN** 测试需要使用辅助工具
 - **THEN** 系统可通过 `import { ... } from '@/__test__/helpers'` 导入所有工具
+
+### Requirement: 并行执行使用 forks 池
+
+系统 SHALL 使用 `pool: "forks"` 替代 `pool: "threads"` 执行测试，消除 react-redux ESM 模块初始化竞态。
+
+#### Scenario: 单元测试使用 forks 池
+
+- **WHEN** Vitest 使用 `vite.config.ts` 中的 test 配置
+- **THEN** `pool` SHALL 为 `"forks"`
+- **THEN** `poolOptions.forks.maxForks` SHALL 为 2
+
+#### Scenario: 集成测试使用 forks 池
+
+- **WHEN** Vitest 使用 `vitest.integration.config.ts`
+- **THEN** `pool` SHALL 为 `"forks"`
+- **THEN** `poolOptions.forks.maxForks` SHALL 为 1（保持串行语义）
+
+### Requirement: 移除 threads 相关配置
+
+系统 SHALL NOT 包含以下过时的 threads 池配置项：
+- `pool: "threads"`
+- `singleThread`
+- `minThreads`
+- `maxThreads`
+- `useAtomics`
+
+#### Scenario: 配置文件不含 threads 相关字段
+
+- **WHEN** 检查 `vite.config.ts` 的 test 配置块
+- **THEN** SHALL NOT 存在 `singleThread`、`minThreads`、`maxThreads`、`useAtomics` 字段
