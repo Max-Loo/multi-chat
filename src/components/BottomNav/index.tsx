@@ -42,7 +42,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="border-t bg-background h-16 fixed bottom-0 left-0 w-full z-50">
+    <nav aria-label="底部导航" className="border-t bg-background h-16 fixed bottom-0 left-0 w-full z-50">
       <div className="flex h-full items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.IconComponent;

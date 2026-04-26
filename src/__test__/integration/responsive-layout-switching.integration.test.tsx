@@ -75,7 +75,7 @@ describe('响应式布局模式切换集成测试', () => {
       const children = Array.from(layoutRoot.children);
       expect(children.indexOf(main)).toBeGreaterThan(0);
       // 无底部导航（排除 Sidebar 的 nav）
-      expect(layoutRoot.querySelector('nav:not([aria-label="主导航"])')).toBeNull();
+      expect(screen.queryByRole('navigation', { name: '底部导航' })).toBeNull();
     });
   });
 
@@ -89,7 +89,7 @@ describe('响应式布局模式切换集成测试', () => {
       const main = screen.getByRole('main');
       expect(layoutRoot.children[0]).toBe(main);
       // 有底部导航
-      expect(layoutRoot.querySelector('nav')).not.toBeNull();
+      expect(screen.getByRole('navigation', { name: '底部导航' })).toBeInTheDocument();
     });
   });
 
@@ -98,15 +98,13 @@ describe('响应式布局模式切换集成测试', () => {
       // Desktop 模式
       setResponsiveMode('desktop');
       const { unmount: unmountDesktop } = renderLayout(store);
-      const desktopLayout = screen.getByTestId('layout-root');
-      expect(desktopLayout.querySelector('nav:not([aria-label="主导航"])')).toBeNull();
+      expect(screen.queryByRole('navigation', { name: '底部导航' })).toBeNull();
       unmountDesktop();
 
       // Mobile 模式
       setResponsiveMode('mobile');
       renderLayout(store);
-      const mobileLayout = screen.getByTestId('layout-root');
-      expect(mobileLayout.querySelector('nav')).not.toBeNull();
+      expect(screen.getByRole('navigation', { name: '底部导航' })).toBeInTheDocument();
     });
   });
 
