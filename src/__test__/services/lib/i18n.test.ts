@@ -347,10 +347,10 @@ describe("i18n module", () => {
           });
 
           // 重新导入模块以应用新的 mock
-          const { initI18n, resetInitI18nForTest } = await import("@/services/i18n");
+          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
 
           // 重置单例以允许重新初始化
-          resetInitI18nForTest();
+          resetI18nForTest();
 
           await initI18n();
 
@@ -367,10 +367,10 @@ describe("i18n module", () => {
           });
 
           // 重新导入模块以应用新的 mock
-          const { initI18n, resetInitI18nForTest } = await import("@/services/i18n");
+          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
 
           // 重置单例以允许重新初始化
-          resetInitI18nForTest();
+          resetI18nForTest();
 
           await initI18n();
 
@@ -387,10 +387,10 @@ describe("i18n module", () => {
           });
 
           // 重新导入模块以应用新的 mock
-          const { initI18n, resetInitI18nForTest } = await import("@/services/i18n");
+          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
 
           // 重置单例以允许重新初始化
-          resetInitI18nForTest();
+          resetI18nForTest();
 
           await initI18n();
 
@@ -406,10 +406,10 @@ describe("i18n module", () => {
           });
 
           // 重新导入模块以应用新的 mock
-          const { initI18n, resetInitI18nForTest } = await import("@/services/i18n");
+          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
 
           // 重置单例以允许重新初始化
-          resetInitI18nForTest();
+          resetI18nForTest();
 
           await initI18n();
 

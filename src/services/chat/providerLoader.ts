@@ -32,17 +32,19 @@ export type ProviderFactory = (config: ProviderConfig) => (modelId: string) => L
 class ProviderSDKLoaderClass {
   private loader: ResourceLoader<ProviderFactory>;
   private allProviderKeys: ModelProviderKeyEnum[];
+  private abortController: AbortController;
 
   constructor() {
     // 创建 ResourceLoader 实例，最多缓存 10 个供应商 SDK
     this.loader = new ResourceLoader<ProviderFactory>(10);
+    this.abortController = new AbortController();
     this.allProviderKeys = this.registerProviders();
-    
+
     // 监听网络恢复事件，自动重试失败的加载
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
         this.handleNetworkRecover();
-      });
+      }, { signal: this.abortController.signal });
     }
   }
 
@@ -135,6 +137,17 @@ class ProviderSDKLoaderClass {
     // 更精确的策略需要 ResourceLoader 暴露遍历状态的方法
     console.log('Network recovered, retrying to load all provider SDKs...');
     this.preloadProviders(this.allProviderKeys);
+  }
+
+  /**
+   * 重置全部内部状态（仅用于测试）
+   * 清理 ResourceLoader 缓存 + 移除事件监听器
+   */
+  resetForTest(): void {
+    this.loader.clearAll();
+    this.abortController.abort();
+    this.abortController = new AbortController();
+    this.allProviderKeys = this.registerProviders();
   }
 }
 

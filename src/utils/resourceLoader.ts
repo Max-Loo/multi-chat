@@ -366,4 +366,15 @@ export class ResourceLoader<T> {
     this.states.delete(key);
     return this.load(key);
   }
+
+  /**
+   * 清理全部内部状态（仅用于测试）
+   */
+  clearAll(): void {
+    this.registry.clear();
+    this.cache.clear();
+    this.states.clear();
+    this.loadingPromises.clear();
+    this.lruList.length = 0;
+  }
 }

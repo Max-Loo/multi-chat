@@ -12,12 +12,73 @@ import { setupCustomAssertions } from '../helpers/assertions/setup';
 setupCustomAssertions();
 
 // ========================================
+// 模块状态重置函数（首次调用时延迟加载）
+// ========================================
+
+let _resetChatMiddleware: (() => void) | null = null;
+let _resetChatsStore: (() => void) | null = null;
+let _resetModelsStore: (() => void) | null = null;
+let _resetI18nForTest: (() => void) | null = null;
+let _providerLoaderReset: (() => void) | null = null;
+let _keyringResetState: (() => void) | null = null;
+let _toastQueueReset: (() => void) | null = null;
+let _loaded = false;
+
+function ensureResetFnsLoaded() {
+  if (_loaded) return;
+  // 使用 require 同步加载，避免与 vitest mock 系统冲突
+  // 这些 import 在 afterEach 中首次触发，此时所有 vi.mock 已生效
+  try { _resetChatMiddleware = require('@/store/middleware/chatMiddleware').resetChatMiddleware; } catch { /* 模块不可用 */ }
+  try { _resetChatsStore = require('@/store/storage/chatStorage').resetChatsStore; } catch { /* 模块不可用 */ }
+  try { _resetModelsStore = require('@/store/storage/modelStorage').resetModelsStore; } catch { /* 模块不可用 */ }
+  try { _resetI18nForTest = require('@/services/i18n').resetI18nForTest; } catch { /* 模块不可用 */ }
+  try {
+    const { getProviderSDKLoader } = require('@/services/chat/providerLoader');
+    const loader = getProviderSDKLoader();
+    _providerLoaderReset = loader.resetForTest.bind(loader);
+  } catch { /* 模块不可用 */ }
+  try {
+    const { keyring } = require('@/utils/tauriCompat/keyring');
+    _keyringResetState = keyring.resetState.bind(keyring);
+  } catch { /* 模块不可用 */ }
+  try {
+    const { toastQueue } = require('@/services/toast/toastQueue');
+    _toastQueueReset = toastQueue.reset.bind(toastQueue);
+  } catch { /* 模块不可用 */ }
+  _loaded = true;
+}
+
+// ========================================
+// 排除的 reset 函数说明
+// ========================================
+// highlightLanguageManager._resetInstance()：仅在 highlight 相关的少数测试中影响状态，
+// 且这些测试已通过 vi.mock 全局 mock 了 highlight.js，无跨测试泄漏风险
+// codeBlockUpdater.cleanupPendingUpdates()：仅在代码块渲染的集成测试中使用，
+// Map 中的 pending updates 在测试结束时自然失效（组件卸载后回调不再触发）
+
+// ========================================
 // 测试环境清理
 // ========================================
 
 // 在每个测试后清理所有 Mock 和状态
 afterEach(() => {
   cleanup();
+
+  // 首次调用时加载 reset 函数
+  ensureResetFnsLoaded();
+
+  // 消费者层 reset
+  _resetChatMiddleware?.();
+  _resetChatsStore?.();
+  _resetModelsStore?.();
+  // 服务层 reset
+  _resetI18nForTest?.();
+  _providerLoaderReset?.();
+  // 基础设施层 reset
+  _keyringResetState?.();
+  _toastQueueReset?.();
+
+  // mock 清理（最后执行）
   vi.clearAllMocks();
   vi.restoreAllMocks();
 });

@@ -83,6 +83,13 @@ saveChatListMiddleware.startListening({
   },
 });
 
+/**
+ * 重置聊天中间件状态（仅用于测试）
+ */
+export const resetChatMiddleware = (): void => {
+  generatingTitleChatIds.clear();
+};
+
 // 保存聊天数据到存储
 saveChatListMiddleware.startListening({
   // 需要触发保存聊天记录的

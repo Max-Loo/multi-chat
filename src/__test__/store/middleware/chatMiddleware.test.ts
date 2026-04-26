@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
-import { saveChatListMiddleware } from '@/store/middleware/chatMiddleware';
+import { saveChatListMiddleware, resetChatMiddleware } from '@/store/middleware/chatMiddleware';
 import { saveChatAndIndex, deleteChatFromStorage } from '@/store/storage';
 import chatReducer, {
   createChat,
@@ -490,6 +490,7 @@ describe('chatMiddleware', () => {
     });
   });
 
+<<<<<<< HEAD
   describe('后台聊天发送结束后回收 activeChatData', () => {
     it('应该在 fulfilled 且非当前选中时回收 activeChatData', async () => {
       const chatA = { id: 'bg-chat-a', name: 'Chat A', chatModelList: [] };
@@ -559,6 +560,27 @@ describe('chatMiddleware', () => {
 
       const state = store.getState().chat;
       expect(state.activeChatData['bg-chat-d']).toBeDefined();
+    });
+  });
+
+  describe('resetChatMiddleware()', () => {
+    it('应该在自动命名触发后清理 generatingTitleChatIds', async () => {
+      const chatId = 'reset-test-chat';
+      const { store: autoStore, dispatchedActions } = createAutoNamingStore(createState({ id: chatId }, true));
+
+      autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(dispatchedActions)).toBe(1);
+      });
+
+      resetChatMiddleware();
+
+      // 重置后，同一 chatId 应能再次触发（内存锁已清理）
+      const { store: autoStore2, dispatchedActions: actions2 } = createAutoNamingStore(createState({ id: chatId }, true));
+      autoStore2.dispatch(createFulfilledAction(chatId, 'model-auto'));
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(actions2)).toBe(1);
+      });
     });
   });
 });

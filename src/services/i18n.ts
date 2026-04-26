@@ -181,12 +181,26 @@ type InitI18nPromise = Promise<TFunction<"translation", undefined>>;
 let initI18nPromise: InitI18nPromise | null = null;
 
 /**
- * 重置 i18n 初始化单例（仅用于测试）
+ * 重置 i18n 全部内部状态（仅用于测试）
+ * 清理 loadedLanguages、loadingPromises、languageResourcesCache 和 initI18nPromise
  * @internal
  */
-export const resetInitI18nForTest = () => {
+export const resetI18nForTest = () => {
+  loadedLanguages.clear();
+  loadingPromises.clear();
+  languageResourcesCache.clear();
   initI18nPromise = null;
+
+  // 重新填充默认值
+  loadedLanguages.add('en');
+  languageResourcesCache.set('en', EN_RESOURCES);
 };
+
+/**
+ * @deprecated 使用 resetI18nForTest() 替代
+ * @internal
+ */
+export const resetInitI18nForTest = resetI18nForTest;
 
 /**
  * 初始化 i18n 配置

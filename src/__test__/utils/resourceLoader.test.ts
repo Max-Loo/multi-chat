@@ -528,6 +528,39 @@ describe('ResourceLoader', () => {
     });
   });
 
+  describe('clearAll() 方法', () => {
+    it('应该清理 registry、cache、states、loadingPromises 和 lruList', async () => {
+      const resource: MockResource = { name: 'test', value: 42 };
+      mockLoaderFn.mockResolvedValue(resource);
+
+      loader.register('test-resource', { loader: mockLoaderFn });
+      await loader.load('test-resource');
+
+      expect(loader.isLoaded('test-resource')).toBe(true);
+
+      loader.clearAll();
+
+      expect(loader.isLoaded('test-resource')).toBe(false);
+      expect(loader.getState('test-resource')).toBeUndefined();
+    });
+
+    it('清理后应能重新注册并加载', async () => {
+      const resource: MockResource = { name: 'test', value: 42 };
+      mockLoaderFn.mockResolvedValue(resource);
+
+      loader.register('test-resource', { loader: mockLoaderFn });
+      await loader.load('test-resource');
+      loader.clearAll();
+
+      mockLoaderFn.mockResolvedValue({ name: 'new', value: 99 });
+      loader.register('test-resource', { loader: mockLoaderFn });
+      const result = await loader.load('test-resource');
+
+      expect(result).toEqual({ name: 'new', value: 99 });
+      expect(mockLoaderFn).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('reset() 和 forceReload() 方法', () => {
     it('reset() 应该重置资源状态', async () => {
       const error = new Error('Load failed');

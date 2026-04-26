@@ -107,8 +107,27 @@ describe('ProviderSDKLoader', () => {
     it('应该返回同一个实例', () => {
       const loader1 = getProviderSDKLoader();
       const loader2 = getProviderSDKLoader();
-      
+
       expect(loader1).toBe(loader2);
+    });
+  });
+
+  describe('resetForTest()', () => {
+    it('应该清理已加载的 SDK 缓存', async () => {
+      await loader.loadProvider(ModelProviderKeyEnum.DEEPSEEK);
+      expect(loader.isProviderLoaded(ModelProviderKeyEnum.DEEPSEEK)).toBe(true);
+
+      loader.resetForTest();
+
+      expect(loader.isProviderLoaded(ModelProviderKeyEnum.DEEPSEEK)).toBe(false);
+    });
+
+    it('重置后应能重新加载', async () => {
+      await loader.loadProvider(ModelProviderKeyEnum.DEEPSEEK);
+      loader.resetForTest();
+
+      const createDeepSeek = await loader.loadProvider(ModelProviderKeyEnum.DEEPSEEK);
+      expect(typeof createDeepSeek).toBe('function');
     });
   });
 });

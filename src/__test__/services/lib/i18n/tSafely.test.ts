@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { resetInitI18nForTest, tSafely } from '@/services/i18n';
+import { resetI18nForTest, tSafely } from '@/services/i18n';
 import i18n from 'i18next';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
 describe('tSafely', () => {
   beforeEach(() => {
     // 重置 i18n 初始化状态
-    resetInitI18nForTest();
+    resetI18nForTest();
   });
 
   afterEach(async () => {
