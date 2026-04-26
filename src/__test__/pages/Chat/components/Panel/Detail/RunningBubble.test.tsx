@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import RunningBubble from '@/pages/Chat/components/Panel/Detail/RunningBubble';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
 
@@ -42,7 +42,6 @@ vi.mock('@/components/ui/spinner', () => ({
 
 describe('RunningBubble', () => {
   beforeEach(() => {
-    // 重置 mock 数据
     Object.keys(mockRunningChat).forEach((key) => delete mockRunningChat[key]);
   });
 
@@ -51,22 +50,18 @@ describe('RunningBubble', () => {
       'model-1': { isSending: false, history: null },
     };
 
-    const { container } = render(
-      <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
-    );
+    render(<RunningBubble chatModel={createMockPanelChatModel('model-1')} />);
 
-    expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
-    expect(container.querySelector('[data-testid="spinner"]')).toBeNull();
+    expect(screen.queryByTestId('assistant-message')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('spinner')).not.toBeInTheDocument();
   });
 
   it('应该不渲染可见内容 当 chatData 为 undefined', () => {
     mockRunningChat['chat-1'] = {};
 
-    const { container } = render(
-      <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
-    );
+    render(<RunningBubble chatModel={createMockPanelChatModel('model-1')} />);
 
-    expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
+    expect(screen.queryByTestId('assistant-message')).not.toBeInTheDocument();
   });
 
   it('应该显示 spinner 当正在发送但无历史内容', () => {
@@ -74,12 +69,10 @@ describe('RunningBubble', () => {
       'model-1': { isSending: true, history: null },
     };
 
-    const { container } = render(
-      <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
-    );
+    render(<RunningBubble chatModel={createMockPanelChatModel('model-1')} />);
 
-    expect(container.querySelector('[data-testid="spinner"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
+    expect(screen.getByTestId('spinner')).toBeInTheDocument();
+    expect(screen.queryByTestId('assistant-message')).not.toBeInTheDocument();
   });
 
   it('应该显示 spinner 当正在发送但历史内容为空', () => {
@@ -87,11 +80,9 @@ describe('RunningBubble', () => {
       'model-1': { isSending: true, history: { content: '', reasoningContent: '' } },
     };
 
-    const { container } = render(
-      <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
-    );
+    render(<RunningBubble chatModel={createMockPanelChatModel('model-1')} />);
 
-    expect(container.querySelector('[data-testid="spinner"]')).toBeInTheDocument();
+    expect(screen.getByTestId('spinner')).toBeInTheDocument();
   });
 
   it('应该渲染 ChatBubble 当有运行中的内容', () => {
@@ -102,11 +93,9 @@ describe('RunningBubble', () => {
       },
     };
 
-    const { container } = render(
-      <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
-    );
+    render(<RunningBubble chatModel={createMockPanelChatModel('model-1')} />);
 
-    const bubble = container.querySelector('[data-testid="assistant-message"]');
+    const bubble = screen.getByTestId('assistant-message');
     expect(bubble).toBeInTheDocument();
     expect(bubble).toHaveAttribute('data-running', 'true');
     expect(bubble).toHaveAttribute('data-content', '正在生成的内容');
@@ -120,10 +109,8 @@ describe('RunningBubble', () => {
       },
     };
 
-    const { container } = render(
-      <RunningBubble chatModel={createMockPanelChatModel('model-1')} />
-    );
+    render(<RunningBubble chatModel={createMockPanelChatModel('model-1')} />);
 
-    expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
+    expect(screen.getByTestId('assistant-message')).toBeInTheDocument();
   });
 });

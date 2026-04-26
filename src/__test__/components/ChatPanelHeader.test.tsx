@@ -66,7 +66,7 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={setColumnCount}
@@ -76,7 +76,7 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
+      const input = screen.getByRole('spinbutton');
       expect(input).toBeInTheDocument();
       expect((input as HTMLInputElement)?.value).toBe('2');
     });
@@ -85,7 +85,7 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={setColumnCount}
@@ -95,7 +95,7 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]') as HTMLInputElement;
+      const input = screen.getByRole('spinbutton') as HTMLInputElement;
       expect(input).toBeInTheDocument();
       fireEvent.change(input, { target: { value: '3' } });
       await waitFor(() => {
@@ -107,7 +107,7 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={setColumnCount}
@@ -117,7 +117,7 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
+      const input = screen.getByRole('spinbutton');
       expect(input?.getAttribute('max')).toBe('2');
     });
 
@@ -125,7 +125,7 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={1}
           setColumnCount={setColumnCount}
@@ -135,7 +135,7 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
+      const input = screen.getByRole('spinbutton');
       expect(input?.getAttribute('min')).toBe('1');
     });
 
@@ -338,7 +338,7 @@ describe('ChatPanelHeader', () => {
 
       const store = createStore(threeModelsChat);
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
@@ -348,7 +348,7 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
+      const input = screen.getByRole('spinbutton');
       expect(input?.getAttribute('max')).toBe('3');
     });
   });

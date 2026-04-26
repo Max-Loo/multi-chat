@@ -14,7 +14,7 @@ const PanelSkeleton: React.FC<SkeletonProps> = ({
   columnCount = 1,
 }) => {
   return (
-    <div className="relative flex flex-col items-center justify-start w-full h-full">
+    <div className="relative flex flex-col items-center justify-start w-full h-full" aria-hidden="true">
       {/* 头部骨架屏（高度 h-12） */}
       <div data-testid="skeleton-header" className="relative z-10 flex items-center justify-between w-full h-12 pl-3 pr-3 border-b">
         {/* 左侧区域：聊天名称 */}

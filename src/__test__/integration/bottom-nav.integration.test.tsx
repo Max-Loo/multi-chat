@@ -130,7 +130,7 @@ describe('底部导航栏集成测试', () => {
       const buttons = screen.getAllByRole('button');
       const chatButton = buttons.find((btn) => btn.textContent?.includes('聊天'));
 
-      expect(chatButton).toHaveClass('bg-blue-100');
+      expect(chatButton).toHaveAttribute('aria-current', 'page');
     });
 
     it('在 /model 路径时模型按钮应该有激活样式', () => {
@@ -139,7 +139,7 @@ describe('底部导航栏集成测试', () => {
       const buttons = screen.getAllByRole('button');
       const modelButton = buttons.find((btn) => btn.textContent?.includes('模型'));
 
-      expect(modelButton).toHaveClass('bg-emerald-100');
+      expect(modelButton).toHaveAttribute('aria-current', 'page');
     });
 
     it('在 /setting 路径时设置按钮应该有激活样式', () => {
@@ -148,24 +148,7 @@ describe('底部导航栏集成测试', () => {
       const buttons = screen.getAllByRole('button');
       const settingButton = buttons.find((btn) => btn.textContent?.includes('设置'));
 
-      expect(settingButton).toHaveClass('bg-violet-100');
-    });
-  });
-
-  describe('样式和布局', () => {
-    it('应该有正确的固定定位类', () => {
-      renderBottomNavWithRouter(store);
-
-      const nav = screen.getByRole('navigation');
-      expect(nav).toHaveClass('border-t', 'bg-background', 'h-16');
-    });
-
-    it('应该使用 flex 布局均匀分布导航项', () => {
-      renderBottomNavWithRouter(store);
-
-      const nav = screen.getByRole('navigation');
-      const containerDiv = nav.querySelector('div');
-      expect(containerDiv).toHaveClass('flex', 'items-center', 'justify-around');
+      expect(settingButton).toHaveAttribute('aria-current', 'page');
     });
   });
 
@@ -176,7 +159,7 @@ describe('底部导航栏集成测试', () => {
       const buttons = screen.getAllByRole('button');
       const modelButton = buttons.find((btn) => btn.textContent?.includes('模型'));
 
-      expect(modelButton).toHaveClass('bg-emerald-100');
+      expect(modelButton).toHaveAttribute('aria-current', 'page');
     });
 
     it('根路径 / 不应该激活任何按钮', () => {
@@ -186,9 +169,7 @@ describe('底部导航栏集成测试', () => {
 
       // 没有按钮应该有激活样式
       buttons.forEach((button) => {
-        expect(button).not.toHaveClass('bg-blue-100');
-        expect(button).not.toHaveClass('bg-emerald-100');
-        expect(button).not.toHaveClass('bg-violet-100');
+        expect(button).not.toHaveAttribute('aria-current', 'page');
       });
     });
   });

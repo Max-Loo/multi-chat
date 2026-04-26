@@ -121,14 +121,13 @@ describe('ChatPanel', () => {
 
   describe('测试可调整大小的面板布局', () => {
     it('应该在分割模式下启用 ResizablePanel', async () => {
-      const { container } = renderChatPanel(2);
+      renderChatPanel(2);
 
       const splitterSwitch = screen.getByRole('switch');
       fireEvent.click(splitterSwitch);
 
       await waitFor(() => {
-        const resizablePanels = container.querySelectorAll('[data-panel]');
-        expect(resizablePanels.length).toBeGreaterThan(0);
+        expect(screen.getByTestId('splitter-container')).toBeInTheDocument();
       });
     });
 
@@ -205,14 +204,13 @@ describe('ChatPanel', () => {
     });
 
     it('应该在分割模式下显示不同的布局', async () => {
-      const { container } = renderChatPanel(2);
+      renderChatPanel(2);
 
       const splitterSwitch = screen.getByRole('switch');
       fireEvent.click(splitterSwitch);
 
       await waitFor(() => {
-        const resizablePanels = container.querySelectorAll('[data-panel]');
-        expect(resizablePanels.length).toBeGreaterThan(0);
+        expect(screen.getByTestId('splitter-container')).toBeInTheDocument();
       });
     });
   });

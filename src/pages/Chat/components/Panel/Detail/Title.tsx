@@ -63,7 +63,7 @@ const Title = memo<DetailTitleProps>(({ chatModel }) => {
               providerName={currentModel.providerName}
               size={24}
             />
-            <span className="truncate">{displayName}</span>
+            <h3 className="truncate">{displayName}</h3>
             {statusTag}
           </div>
         </TooltipTrigger>

@@ -93,8 +93,8 @@ describe('DetailTitle', () => {
     });
   });
 
-  describe('6.3 测试长文本截断样式', () => {
-    it('应该为显示名称容器添加 truncate 类', () => {
+  describe('6.3 测试语义化标题元素', () => {
+    it('应该使用 heading 元素显示模型名称', () => {
       const testModel = createMockModel({
         nickname: '这是一个非常长的昵称用于测试截断效果',
         modelName: 'very-long-model-name-for-testing',
@@ -104,8 +104,9 @@ describe('DetailTitle', () => {
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
-      const displayNameElement = screen.getByText(/这是一个非常长的昵称用于测试截断效果/);
-      expect(displayNameElement).toHaveClass('truncate');
+      const heading = screen.getByRole('heading');
+      expect(heading).toBeInTheDocument();
+      expect(heading.textContent).toContain('这是一个非常长的昵称用于测试截断效果');
     });
   });
 

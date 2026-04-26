@@ -42,6 +42,7 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
         variant="ghost"
         size="sm"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="w-full font-normal hover:bg-muted/50"
       >
         <div className="flex items-center w-full">

@@ -90,13 +90,12 @@ describe('ChatPanelContentDetail', () => {
 
       const store = createTestStore({ chatModel });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
         { store }
       );
 
-      expect(container.firstChild).toBeDefined();
-      expect(container.querySelector('div')).toBeInTheDocument();
+      expect(screen.getByText('Model 1 (Model 1)')).toBeInTheDocument();
     });
 
     it('应该渲染包含滚动容器的面板', () => {
@@ -107,13 +106,12 @@ describe('ChatPanelContentDetail', () => {
 
       const store = createTestStore({ chatModel });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
         { store }
       );
 
-      const scrollContainer = container.querySelector('div.overflow-y-auto');
-      expect(scrollContainer).toBeInTheDocument();
+      expect(screen.getByRole('log')).toBeInTheDocument();
     });
 
     it('应该渲染模型标题（DetailTitle）', () => {
@@ -141,13 +139,13 @@ describe('ChatPanelContentDetail', () => {
 
       const store = createTestStore({ chatModel });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
         { store }
       );
 
       // runningChat 为空，RunningBubble 返回 null，不应有 spinner
-      expect(container.querySelector('svg.animate-spin')).toBeNull();
+      expect(screen.queryByRole('status')).toBeNull();
     });
   });
 
@@ -209,13 +207,12 @@ describe('ChatPanelContentDetail', () => {
 
       const store = createTestStore({ chatModel });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
         { store }
       );
 
-      expect(container.firstChild).toBeDefined();
-      expect(container.querySelector('div')).toBeInTheDocument();
+      expect(screen.getByText('Model 1 (Model 1)')).toBeInTheDocument();
     });
 
     it('应该处理 null 或 undefined 的 chatHistoryList', () => {
@@ -238,12 +235,12 @@ describe('ChatPanelContentDetail', () => {
         chatHistoryList: asTestType<ChatModel['chatHistoryList']>(undefined),
       };
 
-      const { container: container2 } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel2} />,
         { store }
       );
 
-      expect(container2.firstChild).toBeDefined();
+      expect(screen.getAllByText('Model 1 (Model 1)').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -339,7 +336,7 @@ describe('ChatPanelContentDetail', () => {
   });
 
   describe('滚动条自适应', () => {
-    it('应该默认应用正确的类名', () => {
+    it('应该渲染带 log 角色的滚动容器', () => {
       const chatModel: ChatModel = {
         modelId: 'model-1',
         chatHistoryList: [],
@@ -347,14 +344,12 @@ describe('ChatPanelContentDetail', () => {
 
       const store = createTestStore({ chatModel });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
         { store }
       );
 
-      const scrollContainer = container.querySelector('div.overflow-y-auto');
-      expect(scrollContainer).toBeInTheDocument();
-      expect(scrollContainer).toHaveClass('scrollbar-none');
+      expect(screen.getByRole('log', { name: '聊天消息' })).toBeInTheDocument();
     });
   });
 
@@ -376,13 +371,13 @@ describe('ChatPanelContentDetail', () => {
 
       const store = createTestStore({ chatModel, runningChat });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelContentDetail chatModel={chatModel} />,
         { store }
       );
 
       // isSending=true 且无 history 时应该显示 Spinner
-      expect(container.querySelector('svg.animate-spin')).toBeInTheDocument();
+      expect(screen.getByRole('status')).toBeInTheDocument();
     });
   });
 });

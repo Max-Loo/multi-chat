@@ -28,11 +28,19 @@ export const ProviderCard = React.memo<ProviderCardProps>(
     return (
       <Card
         data-testid="provider-card"
+        tabIndex={0}
+        aria-expanded={isExpanded}
         className="overflow-hidden transition-all hover:shadow-md cursor-pointer"
         style={{
           willChange: 'transform, opacity',
         }}
         onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onToggle()
+          }
+        }}
       >
         <div className="p-4 space-y-3">
           <ProviderCardHeader

@@ -132,18 +132,7 @@ describe('MobileDrawer 组件', () => {
     });
   });
 
-  describe('样式和布局', () => {
-    it('应该应用正确的宽度样式（w-fit max-w-[85vw] sm:max-w-md）', () => {
-      render(
-        <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
-          <div>内容</div>
-        </MobileDrawer>
-      );
-
-      const content = screen.getByTestId('sheet-content');
-      expect(content).toHaveClass('w-fit', 'max-w-[85vw]', 'sm:max-w-md');
-    });
-
+  describe('布局行为', () => {
     it('应该从左侧滑出（side="left"）', () => {
       render(
         <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>

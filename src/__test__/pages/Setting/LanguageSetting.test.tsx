@@ -118,10 +118,9 @@ describe("LanguageSetting 组件", () => {
     })
 
     it("应该应用自定义 className", () => {
-      const { container } = render(<LanguageSetting className="custom-class" />)
+      render(<LanguageSetting className="custom-class" />)
 
-      const wrapper = container.querySelector(".custom-class")
-      expect(wrapper).toBeInTheDocument()
+      expect(screen.getByTestId("language-setting")).toHaveClass("custom-class")
     })
   })
 

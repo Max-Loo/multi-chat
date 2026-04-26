@@ -126,7 +126,7 @@ const ModelSelect: React.FC = () => {
 
   return (
     <>
-      <div className="flex justify-between w-full h-12 pl-4 pr-4">
+      <div className="flex justify-between w-full h-12 pl-4 pr-4" role="toolbar" aria-label="模型选择工具栏">
         <div className="flex flex-wrap items-center justify-start h-full">
           {/* 打开模型供应商列表的按钮 */}
           {isMobile && (
@@ -145,6 +145,7 @@ const ModelSelect: React.FC = () => {
               variant="outline"
               size="sm"
               className="mr-2"
+              aria-label="清除选中"
               onClick={() => {
                 // 清空所有选中
                 setCheckedModelIdList([]);

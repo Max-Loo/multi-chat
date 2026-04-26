@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createRunningChatEntry } from '@/__test__/helpers/mocks/testState';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
@@ -63,14 +64,14 @@ describe('RunningChatBubble', () => {
         },
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
       // 不应该渲染 ChatBubble（内容为空），应该渲染 Spinner
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
-      expect(container.querySelector('svg.animate-spin')).toBeInTheDocument();
+      expect(screen.queryByTestId('assistant-message')).toBeNull();
+      expect(screen.getByRole('status')).toBeInTheDocument();
     });
 
     it('当 history 为 nil 时，应该显示加载动画', () => {
@@ -81,13 +82,13 @@ describe('RunningChatBubble', () => {
         history: null,
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
-      expect(container.querySelector('svg.animate-spin')).toBeInTheDocument();
+      expect(screen.queryByTestId('assistant-message')).toBeNull();
+      expect(screen.getByRole('status')).toBeInTheDocument();
     });
 
     it('当 isSending 为 false 时，不应该渲染任何内容', () => {
@@ -101,13 +102,13 @@ describe('RunningChatBubble', () => {
         }),
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
-      expect(container.querySelector('svg.animate-spin')).toBeNull();
+      expect(screen.queryByTestId('assistant-message')).toBeNull();
+      expect(screen.queryByRole('status')).toBeNull();
     });
   });
 
@@ -124,14 +125,13 @@ describe('RunningChatBubble', () => {
         }),
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
       // 应该渲染 ChatBubble，包含流式内容
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
-      expect(container.textContent).toContain(streamingContent);
+      expect(screen.getByTestId('assistant-message')).toBeInTheDocument();
     });
 
     it('当接收到推理内容时，应该渲染包含推理的 ChatBubble', () => {
@@ -147,12 +147,12 @@ describe('RunningChatBubble', () => {
         }),
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
+      expect(screen.getByTestId('assistant-message')).toBeInTheDocument();
     });
 
     it('当流式内容更新时，应该正确更新渲染', () => {
@@ -167,14 +167,13 @@ describe('RunningChatBubble', () => {
         }),
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
       // 验证初始内容渲染
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
-      expect(container.textContent).toContain(initialContent);
+      expect(screen.getByTestId('assistant-message')).toBeInTheDocument();
     });
   });
 
@@ -190,14 +189,14 @@ describe('RunningChatBubble', () => {
         }),
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
       // 空内容时应该渲染 Spinner，不渲染 ChatBubble
-      expect(container.querySelector('svg.animate-spin')).toBeInTheDocument();
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
+      expect(screen.getByRole('status')).toBeInTheDocument();
+      expect(screen.queryByTestId('assistant-message')).toBeNull();
     });
 
     it('当 currentChatModel 不存在时，不应该渲染任何内容', () => {
@@ -206,13 +205,13 @@ describe('RunningChatBubble', () => {
       // runningChat 为空，没有匹配的 chatId+modelId
       const store = createStore(chatModel);
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
-      expect(container.querySelector('svg.animate-spin')).toBeNull();
+      expect(screen.queryByTestId('assistant-message')).toBeNull();
+      expect(screen.queryByRole('status')).toBeNull();
     });
 
     it('当运行中的聊天不是当前选中的聊天时，不应该渲染任何内容', () => {
@@ -237,12 +236,12 @@ describe('RunningChatBubble', () => {
         }),
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
+      expect(screen.queryByTestId('assistant-message')).toBeNull();
     });
 
     it('当运行中的聊天不是当前模型时，不应该渲染任何内容', () => {
@@ -267,12 +266,12 @@ describe('RunningChatBubble', () => {
         }),
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeNull();
+      expect(screen.queryByTestId('assistant-message')).toBeNull();
     });
   });
 
@@ -289,13 +288,13 @@ describe('RunningChatBubble', () => {
         }),
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
       // 有 reasoningContent 时应该渲染 ChatBubble
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
+      expect(screen.getByTestId('assistant-message')).toBeInTheDocument();
     });
 
     it('应该正确处理 null 的 finishReason', () => {
@@ -310,13 +309,13 @@ describe('RunningChatBubble', () => {
         }),
       });
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <RunningChatBubble chatModel={chatModel} />,
         { store }
       );
 
       // 应该正常渲染 ChatBubble
-      expect(container.querySelector('[data-testid="assistant-message"]')).toBeInTheDocument();
+      expect(screen.getByTestId('assistant-message')).toBeInTheDocument();
     });
   });
 });

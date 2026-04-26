@@ -74,8 +74,8 @@ describe('响应式布局模式切换集成测试', () => {
       const main = screen.getByRole('main');
       const children = Array.from(layoutRoot.children);
       expect(children.indexOf(main)).toBeGreaterThan(0);
-      // 无底部导航
-      expect(layoutRoot.querySelector('nav')).toBeNull();
+      // 无底部导航（排除 Sidebar 的 nav）
+      expect(layoutRoot.querySelector('nav:not([aria-label="主导航"])')).toBeNull();
     });
   });
 
@@ -99,7 +99,7 @@ describe('响应式布局模式切换集成测试', () => {
       setResponsiveMode('desktop');
       const { unmount: unmountDesktop } = renderLayout(store);
       const desktopLayout = screen.getByTestId('layout-root');
-      expect(desktopLayout.querySelector('nav')).toBeNull();
+      expect(desktopLayout.querySelector('nav:not([aria-label="主导航"])')).toBeNull();
       unmountDesktop();
 
       // Mobile 模式

@@ -45,7 +45,7 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
     // 用户对话气泡
     case ChatRoleEnum.USER: {
       return (
-        <div className="flex justify-end w-full mt-3 mr-2" data-testid="user-message">
+        <div className="flex justify-end w-full mt-3 mr-2" data-testid="user-message" aria-label="用户消息">
           <Card className="bg-gray-100 text-gray-800 max-w-[80%] border-none shadow-none">
             <div
               className="p-4"
@@ -60,7 +60,7 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
     // AI 助手对话气泡
     case ChatRoleEnum.ASSISTANT: {
       return (
-        <div className="flex justify-start w-full mt-3 ml-2" data-testid="assistant-message">
+        <div className="flex justify-start w-full mt-3 ml-2" data-testid="assistant-message" aria-label="助手消息">
           <Card className="border-none shadow-none max-w-[80%]">
             <div className="w-full">
               {/* 推理内容区域 */}

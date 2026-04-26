@@ -42,6 +42,7 @@ const SendButton: React.FC<SendButtonProps> = ({
       `}
         onClick={onClick}
         disabled={disabled}
+        aria-label={isSending ? t(($) => $.chat.stopSending) : t(($) => $.chat.sendMessage)}
         title={
           isSending
             ? t(($) => $.chat.stopSending)
@@ -193,7 +194,7 @@ const Sender: React.FC = () => {
   };
 
   return (
-    <div className="relative z-10 px-3 py-2 bg-background border border-gray-300 rounded-lg" data-testid="chat-panel-sender">
+    <form className="relative z-10 px-3 py-2 bg-background border border-gray-300 rounded-lg" data-testid="chat-panel-sender">
       {/* Flex 容器包裹 Textarea 和工具栏 */}
       <div className="flex flex-col">
         <Textarea
@@ -252,7 +253,7 @@ const Sender: React.FC = () => {
           <SendButton isSending={isSending} onClick={onClickSendBtn} />
         </div>
       </div>
-    </div>
+    </form>
   );
 };
 

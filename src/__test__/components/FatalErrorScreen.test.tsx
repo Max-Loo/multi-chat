@@ -48,9 +48,10 @@ describe('FatalErrorScreen 组件', () => {
     });
 
     it('应该显示刷新按钮', () => {
-      const { container } = render(<FatalErrorScreen errors={mockErrors} />);
+      render(<FatalErrorScreen errors={mockErrors} />);
 
-      const buttons = container.querySelectorAll('button');
+      // 刷新按钮存在
+      const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThan(0);
     });
   });
@@ -85,10 +86,10 @@ describe('FatalErrorScreen 组件', () => {
 
   describe('刷新按钮交互', () => {
     it('应该调用 window.location.reload', () => {
-      const { container } = render(<FatalErrorScreen errors={mockErrors} />);
+      render(<FatalErrorScreen errors={mockErrors} />);
 
-      const button = container.querySelector('button');
-      button?.click();
+      const button = screen.getAllByRole('button')[0];
+      button.click();
 
       expect(mockReload).toHaveBeenCalledTimes(1);
     });
@@ -104,11 +105,10 @@ describe('FatalErrorScreen 组件', () => {
         originalError: new Error('Stack trace'),
       };
 
-      const { container } = render(<FatalErrorScreen errors={[errorWithStack]} />);
+      render(<FatalErrorScreen errors={[errorWithStack]} />);
 
-      // 检查错误详情是否存在（使用 details 元素）
-      const details = container.querySelector('details');
-      expect(details).toBeInTheDocument();
+      // 检查错误详情是否存在（details 元素隐式 role 为 group）
+      expect(screen.getByRole('group')).toBeInTheDocument();
     });
 
     it('应该 details 元素可展开/收起', () => {
@@ -120,10 +120,9 @@ describe('FatalErrorScreen 组件', () => {
         originalError: new Error('Stack trace'),
       };
 
-      const { container } = render(<FatalErrorScreen errors={[errorWithStack]} />);
+      render(<FatalErrorScreen errors={[errorWithStack]} />);
 
-      const details = container.querySelector('details');
-      expect(details).toBeInTheDocument();
+      expect(screen.getByRole('group')).toBeInTheDocument();
     });
 
     it('应该显示错误堆栈或序列化对象', () => {
@@ -136,11 +135,10 @@ describe('FatalErrorScreen 组件', () => {
         originalError: customError,
       };
 
-      const { container } = render(<FatalErrorScreen errors={[errorWithObject]} />);
+      render(<FatalErrorScreen errors={[errorWithObject]} />);
 
-      const pre = container.querySelector('pre');
-      expect(pre).toBeInTheDocument();
-      expect(pre?.textContent).toContain('ERR_001');
+      // 验证序列化内容存在
+      expect(screen.getByText(/ERR_001/)).toBeInTheDocument();
     });
   });
 
@@ -154,11 +152,10 @@ describe('FatalErrorScreen 组件', () => {
         originalError: new Error('Stack trace'),
       };
 
-      const { container } = render(<FatalErrorScreen errors={[errorWithStack]} />);
+      render(<FatalErrorScreen errors={[errorWithStack]} />);
 
       // 检查错误详情不存在
-      const details = container.querySelector('details');
-      expect(details).not.toBeInTheDocument();
+      expect(screen.queryByRole('group')).not.toBeInTheDocument();
     });
   });
 
@@ -209,10 +206,9 @@ describe('FatalErrorScreen 组件', () => {
         message: '没有原始错误',
       };
 
-      const { container } = render(<FatalErrorScreen errors={[errorWithoutOriginal]} />);
+      render(<FatalErrorScreen errors={[errorWithoutOriginal]} />);
 
-      const details = container.querySelector('details');
-      expect(details).not.toBeInTheDocument();
+      expect(screen.queryByRole('group')).not.toBeInTheDocument();
     });
   });
 
@@ -225,10 +221,10 @@ describe('FatalErrorScreen 组件', () => {
         originalError: new Error('Key error'),
       };
 
-      const { container } = render(<FatalErrorScreen errors={[masterKeyError]} />);
+      render(<FatalErrorScreen errors={[masterKeyError]} />);
 
       // masterKey 错误时应渲染 3 个按钮：刷新、导入密钥、重置
-      const buttons = container.querySelectorAll('button');
+      const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThanOrEqual(3);
     });
 
@@ -240,10 +236,10 @@ describe('FatalErrorScreen 组件', () => {
         originalError: new Error('i18n error'),
       };
 
-      const { container } = render(<FatalErrorScreen errors={[i18nError]} />);
+      render(<FatalErrorScreen errors={[i18nError]} />);
 
       // 非 masterKey 错误时只渲染 2 个按钮：刷新、重置
-      const buttons = container.querySelectorAll('button');
+      const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBe(2);
     });
 
@@ -254,9 +250,9 @@ describe('FatalErrorScreen 组件', () => {
         originalError: new Error('unknown'),
       };
 
-      const { container } = render(<FatalErrorScreen errors={[unknownError]} />);
+      render(<FatalErrorScreen errors={[unknownError]} />);
 
-      const buttons = container.querySelectorAll('button');
+      const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBe(2);
     });
 
@@ -266,9 +262,9 @@ describe('FatalErrorScreen 组件', () => {
         { severity: 'fatal', message: '密钥错误', stepName: 'masterKey', originalError: new Error('key') },
       ];
 
-      const { container } = render(<FatalErrorScreen errors={errors} />);
+      render(<FatalErrorScreen errors={errors} />);
 
-      const buttons = container.querySelectorAll('button');
+      const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThanOrEqual(3);
     });
   });

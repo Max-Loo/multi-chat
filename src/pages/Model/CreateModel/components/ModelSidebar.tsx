@@ -61,7 +61,8 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
   const containerPadding = !isDesktop ? "p-1" : "p-2";
 
   return (
-    <div
+    <nav
+      aria-label="模型供应商导航"
       className={`flex flex-col items-center justify-start h-full w-60 ${containerPadding}`}
     >
       {/* 表头部分 */}
@@ -98,6 +99,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
               className={`${buttonClassName} ${
                 provider.providerKey === selectedModelKey && "bg-gray-200"
               }`}
+              aria-current={provider.providerKey === selectedModelKey ? 'page' : undefined}
               title={provider.providerName}
               onClick={() =>
                 onChange(provider.providerKey as ModelProviderKeyEnum)
@@ -116,7 +118,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 };
 

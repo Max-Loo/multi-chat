@@ -497,6 +497,71 @@ it('应该显示消息列表', () => {
 });
 ```
 
+## 三层语义断言模型
+
+测试断言应优先使用语义化查询，避免依赖 CSS 类名或 DOM 结构：
+
+### 层级 1：ARIA 标准语义（首选）
+
+使用 ARIA 角色、属性和语义 HTML 元素进行查询和断言：
+
+```typescript
+// ✅ 语义角色查询
+screen.getByRole('button', { name: '发送' })
+screen.getByRole('navigation', { name: '主导航' })
+screen.getByRole('heading', { level: 1 })
+screen.getByRole('switch')
+
+// ✅ ARIA 属性断言（选中状态、展开状态）
+expect(button).toHaveAttribute('aria-current', 'page')
+expect(card).toHaveAttribute('aria-expanded', 'true')
+expect(container).toHaveAttribute('aria-hidden', 'true')
+
+// ✅ 语义 HTML 元素
+screen.getByRole('log', { name: '聊天消息' })  // role="log"
+screen.getByRole('status')                       // role="status"
+screen.getByRole('alert')                        // role="alert"
+```
+
+### 层级 2：data-* 自定义语义
+
+当 ARIA 标准无法表达时，使用 `data-variant` 传递组件显示变体：
+
+```typescript
+// 组件：<div data-variant={isCompact ? 'compact' : 'default'}>
+expect(element).toHaveAttribute('data-variant', 'compact')
+expect(element).toHaveAttribute('data-variant', 'default')
+```
+
+### 层级 3：删除纯装饰断言
+
+以下断言应直接删除，不替换：
+
+```typescript
+// ❌ 纯装饰 CSS 类（如 bg-primary/20、py-2、px-1、h-16、w-16）
+expect(element).toHaveClass('bg-primary/20')
+expect(element).toHaveClass('h-16', 'w-16', 'text-destructive')
+
+// ❌ 布局 CSS 类（如 flex、w-full、border-t）
+expect(element).toHaveClass('flex')
+expect(element).toHaveClass('w-full')
+```
+
+### 保留例外
+
+以下场景允许保留非语义断言：
+
+- **className 透传测试**：验证 `className` prop 正确传递
+- **边框分隔符**：`toHaveClass('border-r')`、`toHaveClass('border-b')`（布局行为）
+- **屏幕阅读器专用样式**：`toHaveClass('sr-only')`（可访问性相关）
+- **Markdown/安全测试**：`container.querySelector('strong')`、`container.querySelector('script')`（无 ARIA role 的 HTML 元素）
+
+### 禁止规则
+
+- **禁止 `container.querySelector`**：使用 `screen.getByRole`、`screen.getByTestId`、`screen.getByText` 等替代
+- **禁止 `container.querySelectorAll`**：使用 `screen.getAllByRole`、`screen.getAllByTestId` 等替代
+- **例外**：第三方组件内部属性（如 `[data-panel]`）或无 ARIA role 的 HTML 元素查询
+
 ## 检查清单
 
 编写测试时，使用以下检查清单：
@@ -509,6 +574,9 @@ it('应该显示消息列表', () => {
 - [ ] 不断言内部函数调用（如 expect(handleError).toHaveBeenCalled()）
 - [ ] 不 Mock 子组件
 - [ ] 测试在重构后仍通过（无需修改）
+- [ ] 使用语义查询（getByRole/getByLabelText）而非 container.querySelector
+- [ ] 状态断言使用 ARIA 属性（aria-current/aria-expanded/aria-selected）而非 CSS 类
+- [ ] 不对纯装饰 CSS 类写断言（颜色、尺寸、间距）
 
 ## 相关文档
 

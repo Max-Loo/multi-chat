@@ -45,7 +45,7 @@ describe('Sidebar 组件测试', () => {
     expect(screen.getByTitle('设置')).toBeInTheDocument();
   });
 
-  it('导航项应该包含正确的图标、文本和样式类', () => {
+  it('导航项应该包含正确的图标和文本', () => {
     render(<Sidebar />);
 
     const chatButton = screen.getByTitle('聊天');
@@ -55,21 +55,13 @@ describe('Sidebar 组件测试', () => {
     expect(chatButton).toBeInTheDocument();
     expect(modelButton).toBeInTheDocument();
     expect(settingButton).toBeInTheDocument();
-
-    expect(chatButton).toHaveClass('text-blue-400!');
-    expect(modelButton).toHaveClass('text-emerald-400!');
-    expect(settingButton).toHaveClass('text-violet-400!');
-
-    expect(chatButton).toHaveClass('w-10', 'h-10');
-    expect(modelButton).toHaveClass('w-10', 'h-10');
-    expect(settingButton).toHaveClass('w-10', 'h-10');
   });
 
   it('应该接受并应用自定义 className', () => {
     render(<Sidebar className="custom-class" />);
 
-    const sidebarDiv = screen.getByTestId('sidebar');
-    expect(sidebarDiv).toHaveClass('custom-class');
+    const nav = screen.getByRole('navigation');
+    expect(nav).toHaveClass('custom-class');
   });
 
   it('在 /chat 路由时，聊天导航项应显示激活状态', () => {
@@ -79,8 +71,7 @@ describe('Sidebar 组件测试', () => {
 
     const chatButton = screen.getByTitle('聊天');
 
-    expect(chatButton).toHaveClass('bg-blue-100!', 'text-blue-500!');
-    expect(chatButton).not.toHaveClass('hover:text-blue-500!', 'hover:bg-blue-100!');
+    expect(chatButton).toHaveAttribute('aria-current', 'page');
   });
 
   it('在 /model 路由时，模型导航项应显示激活状态', () => {
@@ -90,8 +81,7 @@ describe('Sidebar 组件测试', () => {
 
     const modelButton = screen.getByTitle('模型');
 
-    expect(modelButton).toHaveClass('bg-emerald-100!', 'text-emerald-500!');
-    expect(modelButton).not.toHaveClass('hover:text-emerald-500!', 'hover:bg-emerald-100!');
+    expect(modelButton).toHaveAttribute('aria-current', 'page');
   });
 
   it('在 /setting 路由时，设置导航项应显示激活状态', () => {
@@ -101,8 +91,7 @@ describe('Sidebar 组件测试', () => {
 
     const settingButton = screen.getByTitle('设置');
 
-    expect(settingButton).toHaveClass('bg-violet-100!', 'text-violet-500!');
-    expect(settingButton).not.toHaveClass('hover:text-violet-500!', 'hover:bg-violet-100!');
+    expect(settingButton).toHaveAttribute('aria-current', 'page');
   });
 
   it('在子路径 /chat/123 时，聊天导航项应显示激活状态', () => {
@@ -112,7 +101,7 @@ describe('Sidebar 组件测试', () => {
 
     const chatButton = screen.getByTitle('聊天');
 
-    expect(chatButton).toHaveClass('bg-blue-100!', 'text-blue-500!');
+    expect(chatButton).toHaveAttribute('aria-current', 'page');
   });
 
   it('点击非激活导航项应触发导航', () => {

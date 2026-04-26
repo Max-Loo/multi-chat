@@ -70,11 +70,10 @@ describe('Toast 系统集成测试', () => {
     it('应该完成 Toast 系统初始化', async () => {
       const { ToasterWrapper } = await import('@/services/toast/ToasterWrapper');
 
-      const { container } = renderWithProviders(<ToasterWrapper />, { store });
+      renderWithProviders(<ToasterWrapper />, { store });
 
       // 等待 Toaster 容器渲染
-      const toastContainer = container.querySelector('[data-testid="toast-container"]');
-      expect(toastContainer).toBeInTheDocument();
+      expect(await screen.findByTestId('toast-container')).toBeInTheDocument();
     });
 
     it('应该在初始化前缓存 Toast 请求，初始化后渲染到 DOM', async () => {

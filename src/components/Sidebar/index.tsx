@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
 
 
   return (
-    <div className={`w-auto h-full bg-gray-50 border-r border-gray-200 ${className}`} data-testid="sidebar">
+    <nav aria-label="主导航" className={`w-auto h-full bg-gray-50 border-r border-gray-200 ${className}`}>
       <div className="flex flex-col items-center py-4 space-y-2">
         {navigationItems.map((item) => {
           const {
@@ -86,6 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
               key={id}
               variant="ghost"
               title={item.name}
+              aria-current={isActive ? 'page' : undefined}
               onClick={() => handleNavigation(item)}
               className={`
                 flex items-center justify-center
@@ -99,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 };
 

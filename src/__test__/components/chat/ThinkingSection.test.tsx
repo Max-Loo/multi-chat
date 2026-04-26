@@ -358,21 +358,45 @@ describe('ThinkingSection UI 组件', () => {
   });
 
   describe('可访问性', () => {
-    it('应该有可访问的按钮标签', () => {
-      const { container } = render(
+    it('按钮应该有 aria-expanded 属性反映展开状态', () => {
+      render(
         <ThinkingSection
           title="推理过程"
           content="内容"
         />
       );
 
-      // 查找按钮元素
-      const button = container.querySelector('button');
-      expect(button).not.toBe(null);
-      if (button) {
-        // 检查按钮的标签名
-        expect(button.tagName.toLowerCase()).toBe('button');
-      }
+      const button = screen.getByRole('button', { name: /推理过程/ });
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('展开后按钮的 aria-expanded 应变为 true', async () => {
+      const user = userEvent.setup();
+      render(
+        <ThinkingSection
+          title="推理过程"
+          content="内容"
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /推理过程/ });
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+
+      await user.click(button);
+      expect(button).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('初始展开时 aria-expanded 应为 true', () => {
+      render(
+        <ThinkingSection
+          title="推理过程"
+          content="内容"
+          initiallyExpanded={true}
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /推理过程/ });
+      expect(button).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('应该在折叠时显示右箭头图标', () => {

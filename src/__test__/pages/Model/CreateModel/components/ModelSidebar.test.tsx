@@ -34,7 +34,6 @@ const createTestStore = (providers?: ReturnType<typeof createMockRemoteProviders
   })
 }
 
-
 describe('ModelSidebar 组件测试', () => {
   let store: ReturnType<typeof createTestStore>
   let user: ReturnType<typeof userEvent.setup>
@@ -65,16 +64,15 @@ describe('ModelSidebar 组件测试', () => {
       })
       const onChange = vi.fn()
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
         { store: emptyStore })
 
-      // 验证没有渲染供应商按钮
-      const buttons = container.querySelectorAll('button[title]')
-      expect(buttons.length).toBe(0)
+      // 验证没有供应商按钮（通过 title 属性查询）
+      expect(screen.queryByRole('button', { name: /DeepSeek/ })).not.toBeInTheDocument()
     })
 
     it('应该显示选中状态', () => {
@@ -87,9 +85,8 @@ describe('ModelSidebar 组件测试', () => {
         />,
         { store })
 
-      // 查找包含 DeepSeek 文本的按钮
-      const deepseekButton = screen.getAllByText('DeepSeek')[0].closest('button')
-      expect(deepseekButton).toHaveClass('bg-gray-200')
+      const deepseekButton = screen.getByRole('button', { name: /DeepSeek/ })
+      expect(deepseekButton).toHaveAttribute('aria-current', 'page')
     })
 
     it('应该只显示一个选中状态', () => {
@@ -102,15 +99,13 @@ describe('ModelSidebar 组件测试', () => {
         />,
         { store })
 
-      // 验证 DeepSeek 被选中
-      const deepseekButton = screen.getAllByText('DeepSeek')[0].closest('button')
-      expect(deepseekButton).toHaveClass('bg-gray-200')
+      const deepseekButton = screen.getByRole('button', { name: /DeepSeek/ })
+      const kimiButton = screen.getByRole('button', { name: /Kimi/ })
+      const zhipuButton = screen.getByRole('button', { name: /ZhipuAI/ })
 
-      // 验证其他供应商未被选中
-      const kimiButton = screen.getAllByText('Kimi')[0].closest('button')
-      const zhipuButton = screen.getAllByText('ZhipuAI')[0].closest('button')
-      expect(kimiButton).not.toHaveClass('bg-gray-200')
-      expect(zhipuButton).not.toHaveClass('bg-gray-200')
+      expect(deepseekButton).toHaveAttribute('aria-current', 'page')
+      expect(kimiButton).not.toHaveAttribute('aria-current')
+      expect(zhipuButton).not.toHaveAttribute('aria-current')
     })
   })
 
@@ -124,7 +119,6 @@ describe('ModelSidebar 组件测试', () => {
         />,
         { store })
 
-      // 验证搜索框存在（使用 getAll 并检查长度）
       const filterInputs = screen.getAllByPlaceholderText('搜索模型...')
       expect(filterInputs.length).toBeGreaterThan(0)
     })
@@ -141,7 +135,6 @@ describe('ModelSidebar 组件测试', () => {
       const filterInput = screen.getAllByPlaceholderText('搜索模型...')[0]
       await user.type(filterInput, 'deep')
 
-      // 验证输入框的值
       expect(filterInput).toHaveValue('deep')
     })
 
@@ -156,11 +149,9 @@ describe('ModelSidebar 组件测试', () => {
 
       const filterInput = screen.getAllByPlaceholderText('搜索模型...')[0]
 
-      // 输入文本
       await user.type(filterInput, 'deep')
       expect(filterInput).toHaveValue('deep')
 
-      // 清空文本
       await user.clear(filterInput)
       expect(filterInput).toHaveValue('')
     })
@@ -177,7 +168,6 @@ describe('ModelSidebar 组件测试', () => {
       const filterInput = screen.getAllByPlaceholderText('搜索模型...')[0]
       await user.type(filterInput, 'xyz')
 
-      // 验证输入成功
       expect(filterInput).toHaveValue('xyz')
     })
   })
@@ -185,20 +175,15 @@ describe('ModelSidebar 组件测试', () => {
   describe('4.3 选中状态切换', () => {
     it('应该调用 onChange 回调', async () => {
       const onChange = vi.fn()
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
         { store })
 
-      // 查找 Kimi 按钮并点击
-      const kimiButton = Array.from(container.querySelectorAll('button[title]')).find(
-        btn => btn.getAttribute('title') === 'Kimi'
-      )
-      expect(kimiButton).toBeTruthy()
-
-      await user.click(kimiButton!)
+      const kimiButton = screen.getByRole('button', { name: /Kimi/ })
+      await user.click(kimiButton)
 
       expect(onChange).toHaveBeenCalledTimes(1)
       expect(onChange).toHaveBeenCalledWith('moonshotai')
@@ -206,24 +191,19 @@ describe('ModelSidebar 组件测试', () => {
 
     it('应该允许重复选择同一供应商', async () => {
       const onChange = vi.fn()
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ModelSidebar
           value={ModelProviderKeyEnum.DEEPSEEK}
           onChange={onChange}
         />,
         { store })
 
-      const deepseekButton = Array.from(container.querySelectorAll('button[title]')).find(
-        btn => btn.getAttribute('title') === 'DeepSeek'
-      )
-      expect(deepseekButton).toBeTruthy()
+      const deepseekButton = screen.getByRole('button', { name: /DeepSeek/ })
 
-      // 第一次点击
-      await user.click(deepseekButton!)
+      await user.click(deepseekButton)
       expect(onChange).toHaveBeenLastCalledWith('deepseek')
 
-      // 第二次点击
-      await user.click(deepseekButton!)
+      await user.click(deepseekButton)
       expect(onChange).toHaveBeenLastCalledWith('deepseek')
       expect(onChange).toHaveBeenCalledTimes(2)
     })
@@ -239,9 +219,7 @@ describe('ModelSidebar 组件测试', () => {
         />,
         { store })
 
-      // 查找所有按钮
       const buttons = screen.getAllByRole('button')
-      // 第一个按钮应该是返回按钮（带箭头图标）
       expect(buttons.length).toBeGreaterThan(0)
     })
 
@@ -287,7 +265,6 @@ describe('ModelSidebar 组件测试', () => {
         />,
         { store })
 
-      // 初始状态验证
       expect(screen.getAllByText('DeepSeek')[0]).toBeInTheDocument()
       expect(screen.getAllByText('Kimi')[0]).toBeInTheDocument()
       expect(screen.getAllByText('ZhipuAI')[0]).toBeInTheDocument()
@@ -334,12 +311,10 @@ describe('ModelSidebar 组件测试', () => {
         { store })
 
       const filterInput = screen.getAllByPlaceholderText('搜索模型...')[0]
-      
-      // 输入后清空
+
       await user.type(filterInput, 'test')
       await user.clear(filterInput)
 
-      // 验证仍然显示所有供应商
       await waitFor(() => {
         expect(screen.getAllByText('DeepSeek')[0]).toBeInTheDocument()
         expect(screen.getAllByText('Kimi')[0]).toBeInTheDocument()
@@ -358,7 +333,7 @@ describe('ModelSidebar 组件测试', () => {
         />,
         { store })
 
-      const deepseekButton = screen.getAllByText('DeepSeek')[0].closest('button')
+      const deepseekButton = screen.getByRole('button', { name: /DeepSeek/ })
       expect(deepseekButton).toHaveAttribute('title', 'DeepSeek')
     })
 

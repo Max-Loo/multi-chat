@@ -82,8 +82,9 @@ const SettingSidebar: React.FC = () => {
   }`;
 
   return (
-    <div
+    <nav
       ref={scrollContainerRef}
+      aria-label="设置导航"
       className={`p-2 overflow-y-auto w-full h-full
       flex flex-col justify-start items-center
       ${scrollbarClassname}
@@ -96,13 +97,14 @@ const SettingSidebar: React.FC = () => {
             variant="default"
             size="lg"
             className={buttonClassName}
+            aria-current={selectedBtnPath === item.path ? 'page' : undefined}
             onClick={() => onClickSettingBtn(item)}
           >
             {item.name}
           </Button>
         );
       })}
-    </div>
+    </nav>
   );
 };
 

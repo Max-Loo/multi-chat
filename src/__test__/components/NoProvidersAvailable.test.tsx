@@ -48,8 +48,8 @@ describe('NoProvidersAvailable', () => {
 
     it('应该显示错误图标', () => {
       render(<NoProvidersAvailable />)
-      
-      const icon = screen.getByTestId('no-providers-icon')
+
+      const icon = screen.getByRole('img')
       expect(icon).toBeInTheDocument()
     })
   })
@@ -84,11 +84,16 @@ describe('NoProvidersAvailable', () => {
   })
 
   describe('可访问性', () => {
-    it('错误图标必须有正确的文本和尺寸', () => {
+    it('错误容器必须有 alert 角色', () => {
       render(<NoProvidersAvailable />)
-      
-      const icon = screen.getByTestId('no-providers-icon')
-      expect(icon).toHaveClass('h-16', 'w-16')
+
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+
+    it('错误图标必须有 img 角色', () => {
+      render(<NoProvidersAvailable />)
+
+      expect(screen.getByRole('img')).toBeInTheDocument()
     })
 
     it('重新加载按钮必须可键盘访问', () => {
@@ -109,25 +114,10 @@ describe('NoProvidersAvailable', () => {
   })
 
   describe('样式和布局', () => {
-    it('错误容器必须有正确的样式类名', () => {
+    it('错误容器必须正确渲染', () => {
       render(<NoProvidersAvailable />)
-      
-      const container = screen.getByTestId('no-providers-container')
-      expect(container).toBeInTheDocument()
-    })
 
-    it('内容容器必须有正确的布局类名', () => {
-      render(<NoProvidersAvailable />)
-      
-      const contentContainer = screen.getByTestId('no-providers-content')
-      expect(contentContainer).toBeInTheDocument()
-    })
-
-    it('图标必须有正确的颜色类名', () => {
-      render(<NoProvidersAvailable />)
-      
-      const icon = screen.getByTestId('no-providers-icon')
-      expect(icon).toHaveClass('text-destructive')
+      expect(screen.getByRole('alert')).toBeInTheDocument()
     })
   })
 })

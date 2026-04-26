@@ -166,7 +166,7 @@ export const InitializationController: React.FC<
 
   // 渲染进度条 UI
   return (
-    <div className="flex items-center justify-center w-full h-dvh bg-background">
+    <div className="flex items-center justify-center w-full h-dvh bg-background" role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-8 w-80">
         {/* Logo 动画 - 与进度条对齐（不包括百分比） */}
         <div className="w-full pr-10 flex justify-center">

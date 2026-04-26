@@ -143,6 +143,60 @@ vi.mock('@/utils/idb', () => ({ /* ... */ }));
 - **仅允许两种 `any` 场景**：第三方库类型过于复杂、或测试框架无法推断正确类型，且必须注释说明原因
 - **示例**：`vi.mocked(streamText).mockReturnValueOnce(mockResult as any)`
 
+## 语义查询规范
+
+### 三层断言模型
+
+测试断言应遵循三层优先级：
+
+1. **ARIA 标准语义**（首选）：`getByRole`、`getByLabelText`、`toHaveAttribute('aria-*')`
+2. **data-* 自定义语义**：`data-variant` 传递组件显示变体（如 `compact`/`default`）
+3. **删除纯装饰断言**：不替换，直接删除 CSS 类断言
+
+### 查询优先级
+
+```
+getByRole > getByLabelText > getByPlaceholderText > getByText > getByTestId
+```
+
+### 禁止使用
+
+- **`container.querySelector`**：使用 `screen.getByRole`、`screen.getByTestId` 等替代
+- **`container.querySelectorAll`**：使用 `screen.getAllByRole`、`screen.getAllByTestId` 等替代
+- **`toHaveClass` 对纯装饰 CSS**：如颜色（`bg-*`）、尺寸（`h-*`、`w-*`）、间距（`p-*`、`m-*`）
+
+### 语义断言示例
+
+```typescript
+// ✅ ARIA 属性断言状态
+expect(button).toHaveAttribute('aria-current', 'page')
+expect(card).toHaveAttribute('aria-expanded', 'true')
+expect(skeleton).toHaveAttribute('aria-hidden', 'true')
+
+// ✅ data-variant 断言组件变体
+expect(element).toHaveAttribute('data-variant', 'compact')
+
+// ✅ 语义角色查询
+screen.getByRole('navigation', { name: '主导航' })
+screen.getByRole('heading', { level: 1 })
+screen.getByRole('button', { name: /发送/ })
+
+// ❌ CSS 类断言状态
+expect(element).toHaveClass('bg-primary/20')
+expect(element).toHaveClass('bg-gray-200')
+
+// ❌ container.querySelector
+container.querySelector('[data-testid="xxx"]')  // → screen.getByTestId('xxx')
+container.querySelector('svg.animate-spin')      // → screen.getByRole('status')
+```
+
+### 允许的例外
+
+- **className 透传测试**：验证 `className` prop 正确传递到 DOM
+- **边框分隔符**：`toHaveClass('border-r')`、`toHaveClass('border-b')`（网格分隔行为）
+- **屏幕阅读器样式**：`toHaveClass('sr-only')`（可访问性相关）
+- **第三方组件内部属性**：如 `[data-panel]`（react-resizable-panels 内部属性）
+
 ## 测试编写规范
 
 ### 测试文件组织

@@ -44,7 +44,7 @@ describe('SettingPage Component', () => {
     await resetTestState();
   });
 
-  
+
   /**
    * 测试渲染
    */
@@ -52,15 +52,13 @@ describe('SettingPage Component', () => {
     it('应该正确渲染侧边栏（包含导航按钮）', () => {
       renderSettingPage(<SettingPage />);
 
-      // 通过用户可见文本验证 SettingSidebar 真实渲染
       expect(screen.getByText('通用设置')).toBeInTheDocument();
     });
 
     it('应该包含正确的布局结构', () => {
-      const { container } = renderSettingPage(<SettingPage />);
+      renderSettingPage(<SettingPage />);
 
-      expect(container.firstChild).toBeInTheDocument();
-      expect(container.firstChild).toHaveClass('flex');
+      expect(screen.getByRole('navigation', { name: '设置导航' })).toBeInTheDocument();
     });
   });
 
@@ -71,14 +69,12 @@ describe('SettingPage Component', () => {
     it('应该支持侧边栏导航功能', () => {
       renderSettingPage(<SettingPage />);
 
-      // 通过语义化查询验证导航按钮存在
       expect(screen.getByRole('button', { name: '通用设置' })).toBeInTheDocument();
     });
 
     it('应该在内容区显示嵌套路由内容', () => {
       renderSettingPage(<SettingPage />);
 
-      // 验证 Outlet 容器存在
       const contentArea = screen.getByTestId('setting-content');
       expect(contentArea).toBeInTheDocument();
     });

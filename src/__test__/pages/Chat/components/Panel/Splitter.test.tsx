@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import Splitter from '@/pages/Chat/components/Panel/Splitter';
 import { ChatModel } from '@/types/chat';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
@@ -39,14 +39,10 @@ describe('Splitter', () => {
       [createMockPanelChatModel('m3'), createMockPanelChatModel('m4')],
     ];
 
-    const { container } = render(<Splitter board={board} />);
+    render(<Splitter board={board} />);
 
-    const panels = container.querySelectorAll('[data-testid="resizable-panel"]');
-    // 2 行 + 每行 2 个 = 6 panels
-    expect(panels).toHaveLength(6);
-
-    const details = container.querySelectorAll('[data-testid="detail"]');
-    expect(details).toHaveLength(4);
+    expect(screen.getAllByTestId('resizable-panel')).toHaveLength(6);
+    expect(screen.getAllByTestId('detail')).toHaveLength(4);
   });
 
   it('应该计算正确的 defaultSize 当 board 为 2 行', () => {
@@ -55,12 +51,9 @@ describe('Splitter', () => {
       [createMockPanelChatModel('m2')],
     ];
 
-    const { container } = render(<Splitter board={board} />);
+    render(<Splitter board={board} />);
 
-    const panels = container.querySelectorAll('[data-testid="resizable-panel"]');
-    // 布局结构：行面板(50) > 面板组 > 列面板(100)，行面板(50) > 面板组 > 列面板(100)
-    // querySelectorAll 按文档顺序：[行面板50, 列面板100, 行面板50, 列面板100]
-    // 行面板 defaultSize = 100 / 2 = 50
+    const panels = screen.getAllByTestId('resizable-panel');
     expect(panels[0]).toHaveAttribute('data-default-size', '50');
     expect(panels[2]).toHaveAttribute('data-default-size', '50');
   });
@@ -71,13 +64,11 @@ describe('Splitter', () => {
       [createMockPanelChatModel('m3'), createMockPanelChatModel('m4')],
     ];
 
-    const { container } = render(<Splitter board={board} />);
+    render(<Splitter board={board} />);
 
-    const handles = container.querySelectorAll('[data-testid="resizable-handle"]');
-    // 1 行间 handle + 2 列间 handles (每行 1 个) = 3
+    const handles = screen.getAllByTestId('resizable-handle');
     expect(handles).toHaveLength(3);
 
-    // 所有 handle 都应有 withHandle
     handles.forEach((h) => {
       expect(h).toHaveAttribute('data-with-handle', 'true');
     });
@@ -86,12 +77,9 @@ describe('Splitter', () => {
   it('应该渲染单行单列 当 board 为 1x1', () => {
     const board = [[createMockPanelChatModel('m1')]];
 
-    const { container } = render(<Splitter board={board} />);
+    render(<Splitter board={board} />);
 
-    const panels = container.querySelectorAll('[data-testid="resizable-panel"]');
-    expect(panels).toHaveLength(2); // 1 行面板 + 1 列面板
-
-    const handles = container.querySelectorAll('[data-testid="resizable-handle"]');
-    expect(handles).toHaveLength(0);
+    expect(screen.getAllByTestId('resizable-panel')).toHaveLength(2);
+    expect(screen.queryAllByTestId('resizable-handle')).toHaveLength(0);
   });
 });

@@ -103,7 +103,7 @@ const ChatPage: React.FC = () => {
 
       {/* 非 Mobile 模式：直接显示侧边栏 */}
       {!isMobile && (
-        <div
+        <aside
           data-testid="chat-sidebar"
           className={`
             h-full overflow-hidden border-r border-gray-200 shrink-0
@@ -112,20 +112,21 @@ const ChatPage: React.FC = () => {
             ${isSidebarCollapsed ? (isDesktop ? "-ml-56" : "-ml-48") + " -translate-x-full opacity-0" : "ml-0 translate-x-0 opacity-100"}
             ${isDesktop ? "w-56" : "w-48"}
           `}
+          aria-label="聊天列表"
         >
           <Sidebar />
-        </div>
+        </aside>
       )}
 
       {/* 主内容 */}
-      <div
+      <main
         data-testid="chat-content"
         className={`
           h-full grow overflow-x-auto
         `}
       >
         <Content />
-      </div>
+      </main>
     </div>
   );
 };

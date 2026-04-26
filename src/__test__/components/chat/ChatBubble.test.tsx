@@ -106,8 +106,7 @@ describe('ChatBubble UI 组件', () => {
       );
 
       // 真实 markdown-it 渲染：# Heading → <h1>Heading</h1>, **Bold** → <strong>Bold</strong>
-      expect(container.querySelector('h1')).not.toBe(null);
-      expect(container.querySelector('h1')?.textContent).toContain('Heading');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Heading');
       expect(container.querySelector('strong')).not.toBe(null);
       expect(container.querySelector('strong')?.textContent).toBe('Bold');
     });

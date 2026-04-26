@@ -171,6 +171,8 @@ const Detail: React.FC<DetailProps> = ({
         `}
         ref={scrollContainerRef}
         data-testid="detail-scroll-container"
+        role="log"
+        aria-label="聊天消息"
       >
     <div ref={titleRef} className="w-full">
       <Title chatModel={chatModel} />
@@ -214,6 +216,7 @@ const Detail: React.FC<DetailProps> = ({
         onClick={scrollToBottom}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full h-10 w-10 bg-gray-900 text-white shadow-md hover:shadow-lg hover:bg-gray-800 transition-all z-50"
         title={t($ => $.chat.scrollToBottom)}
+        aria-label={t($ => $.chat.scrollToBottom)}
         size="icon"
       >
         {isSending ? <>
