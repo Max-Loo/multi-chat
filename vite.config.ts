@@ -129,11 +129,7 @@ export default defineConfig(async () => ({
 
     // 使用 forks 池避免 react-redux ESM 模块初始化竞态
     pool: "forks",
-    poolOptions: {
-      forks: {
-        maxForks: 2,
-      },
-    },
+    maxForks: 2,
 
     // 优化依赖项预构建
     deps: {

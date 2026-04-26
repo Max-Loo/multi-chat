@@ -41,7 +41,6 @@ import {
   deleteChatFromStorage,
   migrateOldChatStorage,
 } from '@/store/storage/chatStorage';
-
 describe('聊天存储', () => {
 
   /** 每个测试前清空 Map 存储，确保测试隔离 */

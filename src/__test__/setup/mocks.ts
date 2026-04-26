@@ -15,14 +15,6 @@ import { createMockStreamResult, createMockAIProvider } from '@/__test__/helpers
 // Mock storeUtils 以防止存储模块初始化时触发真实的 IndexedDB
 // 必须在最前面 Mock，因为其他存储模块依赖它
 vi.mock('@/store/storage/storeUtils', () => ({
-  createLazyStore: vi.fn(() => ({
-    init: vi.fn().mockResolvedValue(undefined),
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(undefined),
-    delete: vi.fn().mockResolvedValue(undefined),
-    keys: vi.fn().mockResolvedValue([]),
-    save: vi.fn().mockResolvedValue(undefined),
-  })),
   saveToStore: vi.fn().mockResolvedValue(undefined),
   loadFromStore: vi.fn().mockResolvedValue([]),
 }));
@@ -59,15 +51,7 @@ vi.mock('@/utils/tauriCompat/http', () => ({
 }));
 
 vi.mock('@/utils/tauriCompat/store', () => ({
-  createLazyStore: vi.fn().mockReturnValue({
-    init: vi.fn().mockResolvedValue(undefined),
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(undefined),
-    delete: vi.fn().mockResolvedValue(undefined),
-    keys: vi.fn().mockResolvedValue([]),
-    save: vi.fn().mockResolvedValue(undefined),
-    isSupported: vi.fn().mockReturnValue(true),
-  }),
+  createLazyStore: vi.fn(() => globalThis.__createMemoryStorageMock()),
 }));
 
 // Mock env 模块（必须在桶模块 mock 之前，因为 importOriginal 会触发 keyring/keyringMigration 加载 env）
@@ -90,7 +74,6 @@ vi.mock('@/utils/tauriCompat', async (importOriginal) => {
     locale: vi.fn(),
     fetch: vi.fn(),
     getFetchFunc: vi.fn(),
-    createLazyStore: vi.fn(),
   };
 });
 

@@ -12,7 +12,6 @@
 const storeMap = new Map<string, unknown>();
 
 vi.mock('@/store/storage/storeUtils', () => ({
-  createLazyStore: vi.fn(() => globalThis.__createMemoryStorageMock(storeMap)),
   saveToStore: vi.fn(async (store: { init: () => Promise<void>; set: (k: string, v: unknown) => Promise<void>; save: () => Promise<void> }, key: string, data: unknown) => {
     await store.init();
     await store.set(key, data);
@@ -22,6 +21,10 @@ vi.mock('@/store/storage/storeUtils', () => ({
     await store.init();
     return (await store.get(key)) ?? defaultValue;
   }),
+}));
+
+vi.mock('@/utils/tauriCompat/store', () => ({
+  createLazyStore: vi.fn(() => globalThis.__createMemoryStorageMock(storeMap)),
 }));
 
 import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vitest';

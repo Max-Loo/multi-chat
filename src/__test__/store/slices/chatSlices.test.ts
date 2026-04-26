@@ -38,7 +38,7 @@ vi.mock('@/store/storage', () => ({
   migrateOldChatStorage: vi.fn(() => Promise.resolve(undefined)),
   loadModelsFromJson: vi.fn(() => Promise.resolve([])),
   saveModelsToJson: vi.fn(() => Promise.resolve(undefined)),
-  createLazyStore: vi.fn(() => ({})),
+  createLazyStore: vi.fn(() => globalThis.__createMemoryStorageMock()),
   saveToStore: vi.fn(() => Promise.resolve()),
   loadFromStore: vi.fn(() => Promise.resolve()),
 }));

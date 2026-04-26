@@ -5,7 +5,8 @@
 import type { Model } from "@/types/model";
 import { encryptField, decryptField, isEncrypted } from "@/utils/crypto";
 import { getMasterKey } from "@/store/keyring/masterKey";
-import { createLazyStore, saveToStore, loadFromStore } from "./storeUtils";
+import { saveToStore, loadFromStore } from "./storeUtils";
+import { createLazyStore } from "@/utils/tauriCompat";
 import type { StoreCompat } from "@/utils/tauriCompat";
 
 /**

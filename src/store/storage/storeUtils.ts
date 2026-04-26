@@ -3,16 +3,7 @@
  * 提供通用的 Store 创建、保存和加载函数
  * 使用 Store 兼容层，自动适配 Tauri 和 Web 环境
  */
-import { createLazyStore as createCompatStore, type StoreCompat } from '@/utils/tauriCompat';
-
-/**
- * 创建 LazyStore 实例的工厂函数
- * @param filename - 存储文件名
- * @returns StoreCompat 实例
- */
-export const createLazyStore = (filename: string): StoreCompat => {
-  return createCompatStore(filename);
-};
+import type { StoreCompat } from '@/utils/tauriCompat';
 
 /**
  * 通用的保存数据到 Store 函数
