@@ -194,7 +194,7 @@ const Sender: React.FC = () => {
   };
 
   return (
-    <form className="relative z-10 px-3 py-2 bg-background border border-gray-300 rounded-lg" data-testid="chat-panel-sender">
+    <form className="relative z-10 px-3 py-2 bg-background border border-gray-300 rounded-lg" data-testid="chat-panel-sender" onSubmit={(e) => e.preventDefault()}>
       {/* Flex 容器包裹 Textarea 和工具栏 */}
       <div className="flex flex-col">
         <Textarea
