@@ -10,6 +10,7 @@ const GeneralSetting: React.FC = () => {
   return (
     <div
       ref={scrollContainerRef}
+      data-testid="scroll-container"
       className={`flex flex-col items-center justify-start
       w-full h-full px-4
       overflow-y-auto bg-gray-100

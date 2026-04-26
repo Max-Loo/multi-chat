@@ -33,5 +33,6 @@
   "supplier": "Supplier",
   "model": "Model",
   "nickname": "Nickname",
-  "shiftDeleteChat": "Shift+Click to quick delete"
+  "shiftDeleteChat": "Shift+Click to quick delete",
+  "moreActions": "More actions"
 }

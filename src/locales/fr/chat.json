@@ -33,5 +33,6 @@
   "supplier": "Fournisseur",
   "model": "Modèle",
   "nickname": "Surnom",
-  "shiftDeleteChat": "Shift+Clic pour suppression rapide"
+  "shiftDeleteChat": "Shift+Clic pour suppression rapide",
+  "moreActions": "Plus d'actions"
 }

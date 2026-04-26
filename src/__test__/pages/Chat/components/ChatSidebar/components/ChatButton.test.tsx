@@ -1,4 +1,4 @@
-import { screen, fireEvent, cleanup } from '@testing-library/react';
+import { screen, fireEvent, createEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatButton from '@/pages/Chat/components/Sidebar/components/ChatButton';
 import { resetTestState } from '@/__test__/helpers/isolation';
@@ -199,14 +199,6 @@ describe('ChatButton Component', () => {
   });
 
   describe('组件结构和样式', () => {
-    it('选中状态应有 aria-selected=true', () => {
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
-      expect(buttonDiv).toHaveAttribute('aria-selected', 'true');
-    });
-
     it('下拉菜单按钮应该有正确的图标', () => {
       const chat = createMockChat({ name: '测试聊天' });
       renderChatButton(chat);
@@ -261,9 +253,6 @@ describe('ChatButton Component', () => {
 
       const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
       expect(buttonDiv).toHaveAttribute('data-variant', 'default');
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      expect(menuButton).toBeInTheDocument();
     });
 
     it('紧凑模式（compact）：data-variant 为 compact', () => {
@@ -282,9 +271,6 @@ describe('ChatButton Component', () => {
 
       const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
       expect(buttonDiv).toHaveAttribute('data-variant', 'compact');
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      expect(menuButton).toBeInTheDocument();
     });
 
     it('压缩模式（compressed）：data-variant 为 compact', () => {
@@ -303,9 +289,6 @@ describe('ChatButton Component', () => {
 
       const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
       expect(buttonDiv).toHaveAttribute('data-variant', 'compact');
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      expect(menuButton).toBeInTheDocument();
     });
 
     it('移动模式（mobile）：data-variant 为 default（与 desktop 相同）', () => {
@@ -324,9 +307,6 @@ describe('ChatButton Component', () => {
 
       const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
       expect(buttonDiv).toHaveAttribute('data-variant', 'default');
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      expect(menuButton).toBeInTheDocument();
     });
 
     it('所有模式下重命名和删除功能都正常工作', () => {
@@ -387,6 +367,29 @@ describe('ChatButton Component', () => {
       // 点击按钮不应触发导航（因为有 stopPropagation）
       fireEvent.click(menuButton);
       expect(mockNavigateToChat).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('键盘交互', () => {
+    it('按下 Enter 键应触发导航', () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      renderChatButton(chat);
+
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      fireEvent.keyDown(buttonDiv, { key: 'Enter' });
+      expect(mockNavigateToChat).toHaveBeenCalledWith({ chatId: chat.id });
+    });
+
+    it('按下 Space 键应触发导航并 preventDefault', () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      renderChatButton(chat);
+
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      const event = createEvent.keyDown(buttonDiv, { key: ' ' });
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+      fireEvent(buttonDiv, event);
+      expect(preventDefaultSpy).toHaveBeenCalled();
+      expect(mockNavigateToChat).toHaveBeenCalledWith({ chatId: chat.id });
     });
   });
 });

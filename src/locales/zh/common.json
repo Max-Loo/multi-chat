@@ -34,6 +34,7 @@
   "decryptionFailureMessage": "{{count}} 个模型的 API Key 无法解密，请导入正确的加密密钥恢复数据。",
   "decryptionFailureImport": "导入密钥",
   "decryptionFailureDismiss": "我知道了",
+  "errorIcon": "错误",
   "keyRecovery": {
     "title": "导入密钥",
     "description": "输入您的备份密钥以恢复加密数据",

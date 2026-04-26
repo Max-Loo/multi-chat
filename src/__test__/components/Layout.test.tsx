@@ -118,6 +118,7 @@ describe('Layout 组件', () => {
       expect(Array.from(desktopLayout.children).indexOf(desktopMain)).toBeGreaterThan(0);
       // 桌面端只有侧边栏导航，无底部导航
       expect(screen.getByRole('navigation', { name: '主导航' })).toBeInTheDocument();
+      expect(screen.queryByRole('navigation', { name: '底部导航' })).toBeNull();
       unmount();
 
       // 移动端：main 是第一个子元素（无 Sidebar），有底部导航

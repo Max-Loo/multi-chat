@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, createEvent } from '@testing-library/react';
 import { ProviderCard } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ProviderCard';
 import type { RemoteProviderData } from '@/services/modelRemote';
 
@@ -195,5 +195,44 @@ describe('ProviderCard', () => {
     // 第三次点击
     fireEvent.click(cardElement);
     expect(onToggle).toHaveBeenCalledTimes(3);
+  });
+
+  describe('键盘交互', () => {
+    it('按下 Enter 键应调用 onToggle', () => {
+      const onToggle = vi.fn();
+
+      render(
+        <ProviderCard
+          provider={mockProvider}
+          isExpanded={false}
+          onToggle={onToggle}
+          status="available"
+        />
+      );
+
+      const cardElement = screen.getByTestId('provider-card');
+      fireEvent.keyDown(cardElement, { key: 'Enter' });
+      expect(onToggle).toHaveBeenCalledTimes(1);
+    });
+
+    it('按下 Space 键应调用 onToggle 并 preventDefault', () => {
+      const onToggle = vi.fn();
+
+      render(
+        <ProviderCard
+          provider={mockProvider}
+          isExpanded={false}
+          onToggle={onToggle}
+          status="available"
+        />
+      );
+
+      const cardElement = screen.getByTestId('provider-card');
+      const event = createEvent.keyDown(cardElement, { key: ' ' });
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+      fireEvent(cardElement, event);
+      expect(preventDefaultSpy).toHaveBeenCalled();
+      expect(onToggle).toHaveBeenCalledTimes(1);
+    });
   });
 });

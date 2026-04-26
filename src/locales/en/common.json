@@ -34,6 +34,7 @@
   "decryptionFailureMessage": "{{count}} model(s) have API keys that cannot be decrypted. Please import the correct encryption key to recover.",
   "decryptionFailureImport": "Import Key",
   "decryptionFailureDismiss": "I Understand",
+  "errorIcon": "Error",
   "keyRecovery": {
     "title": "Import Key",
     "description": "Enter your backup key to recover encrypted data",

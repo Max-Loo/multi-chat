@@ -21,6 +21,7 @@ describe('SkeletonMessage', () => {
     const { container } = render(<SkeletonMessage isSelf />);
 
     expect(container.firstChild).toBeInTheDocument();
+    expect(container.firstChild).toHaveClass('flex-row-reverse');
   });
 
   it('应该有 aria-hidden 属性', () => {

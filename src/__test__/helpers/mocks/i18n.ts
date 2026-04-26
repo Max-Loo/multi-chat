@@ -70,6 +70,7 @@ export const DEFAULT_I18N_RESOURCES = {
     stopSending: '停止发送',
     typeMessage: '请输入消息...',
     scrollToBottom: '滚动到底部',
+    moreActions: '更多操作',
   },
   navigation: {
     chat: '聊天',

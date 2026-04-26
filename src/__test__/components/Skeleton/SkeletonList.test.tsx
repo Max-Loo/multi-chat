@@ -21,6 +21,7 @@ describe('SkeletonList', () => {
     const { container } = render(<SkeletonList count={3} />);
 
     expect(container.firstChild).toBeInTheDocument();
+    expect((container.firstChild as HTMLElement).children.length).toBe(3);
   });
 
   it('应该有 aria-hidden 属性', () => {

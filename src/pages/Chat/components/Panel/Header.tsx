@@ -114,7 +114,7 @@ const Header: React.FC<HeaderProps> = ({
               variant="ghost"
               className="ml-1 h-8 w-8 p-0"
               data-testid="column-plus-btn"
-              aria-label="增加列数"
+              aria-label={t(($) => $.chat.increaseColumns)}
               disabled={columnCount >= chatModelList.length}
               onClick={() => setColumnCount(columnCount + 1)}
             >
@@ -124,7 +124,7 @@ const Header: React.FC<HeaderProps> = ({
               variant="ghost"
               className="ml-1 h-8 w-8 p-0"
               data-testid="column-minus-btn"
-              aria-label="减少列数"
+              aria-label={t(($) => $.chat.decreaseColumns)}
               disabled={columnCount <= 1}
               onClick={() => setColumnCount(columnCount - 1)}
             >

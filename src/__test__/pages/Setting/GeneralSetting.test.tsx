@@ -69,15 +69,13 @@ describe("GeneralSetting 组件", () => {
 
   describe("滚动测试", () => {
     it("应该渲染滚动容器且触发滚动不崩溃", () => {
-      const { container } = renderWithProviders(<GeneralSetting />)
+      renderWithProviders(<GeneralSetting />)
 
-      const scrollContainer = container.firstElementChild
+      const scrollContainer = screen.getByTestId("scroll-container")
       expect(scrollContainer).toBeInTheDocument()
 
-      if (scrollContainer) {
-        const scrollEvent = new Event("scroll", { bubbles: true })
-        scrollContainer.dispatchEvent(scrollEvent)
-      }
+      const scrollEvent = new Event("scroll", { bubbles: true })
+      scrollContainer.dispatchEvent(scrollEvent)
     })
   })
 

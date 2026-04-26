@@ -34,6 +34,7 @@
   "decryptionFailureMessage": "{{count}} modèle(s) ont des clés API qui ne peuvent pas être déchiffrées. Veuillez importer la clé de chiffrement correcte pour récupérer.",
   "decryptionFailureImport": "Importer la clé",
   "decryptionFailureDismiss": "Je comprends",
+  "errorIcon": "Erreur",
   "keyRecovery": {
     "title": "Importer la clé",
     "description": "Entrez votre clé de sauvegarde pour récupérer les données chiffrées",

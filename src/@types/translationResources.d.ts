@@ -40,7 +40,8 @@ interface Resources {
       model: string;
       nickname: string;
       shiftDeleteChat: string;
-    };
+      moreActions: string;
+      renameChat: string;    };
     common: {
       submit: string;
       language: string;
@@ -77,6 +78,7 @@ interface Resources {
       decryptionFailureMessage: string;
       decryptionFailureImport: string;
       decryptionFailureDismiss: string;
+      errorIcon: string;
       keyRecovery: {
         title: string;
         description: string;

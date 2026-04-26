@@ -19,7 +19,7 @@ export const NoProvidersAvailable: React.FC = () => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background" data-testid="no-providers-container" role="alert">
       <div className="flex max-w-md flex-col items-center gap-6 text-center p-6" data-testid="no-providers-content">
-        <AlertCircle className="h-16 w-16 text-destructive" data-testid="no-providers-icon" role="img" aria-label="错误" />
+        <AlertCircle className="h-16 w-16 text-destructive" data-testid="no-providers-icon" role="img" aria-label={t($ => $.common.errorIcon)} />
 
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold">{t($ => $.common.noProvidersAvailable)}</h2>

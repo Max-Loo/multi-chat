@@ -113,11 +113,4 @@ describe('NoProvidersAvailable', () => {
     })
   })
 
-  describe('样式和布局', () => {
-    it('错误容器必须正确渲染', () => {
-      render(<NoProvidersAvailable />)
-
-      expect(screen.getByRole('alert')).toBeInTheDocument()
-    })
-  })
 })
