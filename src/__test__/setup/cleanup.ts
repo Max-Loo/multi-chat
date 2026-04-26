@@ -1,15 +1,11 @@
 /**
  * 测试清理层
  *
- * 包含自定义断言、afterEach 清理钩子和 unhandledrejection 抑制逻辑
+ * 包含 afterEach 清理钩子和 unhandledrejection 抑制逻辑
  */
 
 import { vi, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import { setupCustomAssertions } from '../helpers/assertions/setup';
-
-// 扩展自定义断言
-setupCustomAssertions();
 
 // ========================================
 // 模块状态重置函数（首次调用时延迟加载）

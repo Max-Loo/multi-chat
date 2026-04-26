@@ -7,28 +7,6 @@
 import { vi } from 'vitest';
 
 /**
- * AI SDK 错误类型，扩展 Error 添加网络请求相关属性
- *
- * 替代运行时通过 as any 给 Error 注入额外属性的模式，提供类型安全的错误对象构造。
- *
- * @example
- * ```typescript
- * const error: AIError = createMockNetworkError('Connection refused', 500);
- * expect(error.statusCode).toBe(500);
- * expect(error.response?.status).toBe(500);
- * ```
- */
-export interface AIError extends Error {
-  statusCode?: number;
-  response?: {
-    status: number;
-    statusText: string;
-    json?: () => Promise<unknown>;
-  };
-  code?: string;
-}
-
-/**
  * 创建模拟的 streamText 返回值
  *
  * 返回对象同时实现 AsyncIterable 和 Thenable 接口，可配合 `for await...of` 消费流，

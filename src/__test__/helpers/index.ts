@@ -10,9 +10,6 @@ export * from './mocks';
 // 测试数据工厂
 export * from './fixtures';
 
-// 自定义断言
-export * from './assertions';
-
 // 环境隔离
 export * from './isolation';
 

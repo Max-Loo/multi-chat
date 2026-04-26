@@ -29,7 +29,6 @@ src/__test__/
 │   ├── fixtures/                # 测试数据工厂
 │   │   ├── model.ts             # Model 数据
 │   │   └── modelProvider.ts     # 供应商数据
-│   ├── assertions/              # 自定义断言
 │   ├── isolation/               # 环境隔离
 │   ├── render/                  # 渲染辅助工具
 │   └── integration/             # 集成测试工具
@@ -199,10 +198,7 @@ import { createMockModel } from '@/__test__/helpers/fixtures';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 
 // Fixtures（从 fixtures 导入）
-import { createMockMessage, createMockMessages } from '@/__test__/fixtures/chat';
-
-// 自定义断言
-import { toBeEncrypted, toBeValidMasterKey } from '@/__test__/helpers/assertions';
+import { createMockMessage, createUserMessage, createAssistantMessage } from '@/__test__/fixtures/chat';
 
 // 环境隔离
 import { resetTestState } from '@/__test__/helpers/isolation';
@@ -299,7 +295,7 @@ const model = mockDeepSeek('deepseek-chat');
 ### Message Fixtures
 
 ```typescript
-import { createMockMessage, createMockMessages } from '@/__test__/fixtures/chat';
+import { createMockMessage, createUserMessage, createAssistantMessage } from '@/__test__/fixtures/chat';
 
 // 创建单条消息
 const userMessage = createMockMessage({
@@ -312,11 +308,6 @@ const assistantMessage = createMockMessage({
   role: 'assistant',
   content: 'I am doing well!',
   reasoningContent: 'Let me think...',
-});
-
-// 批量创建消息
-const messages = createMockMessages(5, {
-  role: 'user',
 });
 ```
 
@@ -345,18 +336,6 @@ const chat = createMockChat({
 });
 ```
 
-## 自定义断言
-
-```typescript
-import { toBeEncrypted, toBeValidMasterKey } from '@/__test__/helpers/assertions';
-
-// 断言值是加密格式
-expect(encryptedValue).toBeEncrypted();
-
-// 断言值是有效的主密钥
-expect(masterKey).toBeValidMasterKey();
-```
-
 ## 环境隔离
 
 ```typescript
@@ -367,22 +346,6 @@ describe('测试套件', () => {
     resetTestState();
   });
 });
-```
-
-## 性能测试工具
-
-```typescript
-import { measurePerformance, expectDuration } from '@/__test__/helpers/isolation/performance';
-
-// 测量执行时间
-const { result, duration } = await measurePerformance(async () => {
-  return await someAsyncOperation();
-});
-
-// 期望执行时间在阈值内
-await expectDuration(async () => {
-  await someOperation();
-}, 1000); // 1 秒内完成
 ```
 
 ## 测试覆盖率

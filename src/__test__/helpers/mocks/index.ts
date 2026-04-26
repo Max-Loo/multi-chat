@@ -6,7 +6,6 @@
 
 export * from './toast';
 export * from './storage';
-export * from './types';
 export * from './router';
 export * from './chatPanel';
 export * from './chatSidebar';

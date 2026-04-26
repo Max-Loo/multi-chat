@@ -4,7 +4,7 @@
 
 提供测试辅助工具库，包含测试数据工厂（fixtures）、断言辅助函数、Mock 调用验证工具，提高测试编写效率和可读性。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Model 数据工厂
 
@@ -46,27 +46,6 @@
 
 ---
 
-### Requirement: 自定义断言函数
-
-系统 SHALL 提供加密相关的自定义断言函数。
-
-#### Scenario: 断言加密格式
-
-- **WHEN** 调用 `expect(value).toBeEncrypted()`
-- **THEN** 系统验证 `value` 以 `'enc:'` 前缀开头
-
-#### Scenario: 断言有效密钥格式
-
-- **WHEN** 调用 `expect(key).toBeValidMasterKey()`
-- **THEN** 系统验证 `key` 为 64 个十六进制字符
-
-#### Scenario: 断言 Mock 调用
-
-- **WHEN** 调用 `expect(mockFn).toHaveBeenCalledWithService('com.test.app')`
-- **THEN** 系统验证 Mock 以指定 service 参数被调用
-
----
-
 ### Requirement: Mock 调用验证工具
 
 系统 SHALL 提供 Mock 调用相关的验证工具函数。
@@ -81,22 +60,6 @@
 
 - **WHEN** 调用 `verifyMockCalledWith(mockFn, { service: 'com.test' })`
 - **THEN** 系统验证 Mock 至少有一次调用包含指定参数
-
----
-
-### Requirement: 性能测试工具
-
-系统 SHALL 提供性能测试辅助函数。
-
-#### Scenario: 测量执行时间
-
-- **WHEN** 调用 `measurePerformance(async () => { ... })`
-- **THEN** 系统返回执行时间和结果
-
-#### Scenario: 验证性能阈值
-
-- **WHEN** 调用 `expectDuration(asyncFn, 1000)` 且执行时间 < 1000ms
-- **THEN** 断言通过
 
 ---
 

@@ -19,24 +19,6 @@
 import { vi } from 'vitest';
 
 /**
- * 创建单个 MediaQueryList mock 对象
- * @param query 媒体查询字符串
- * @param matches 是否匹配
- */
-export function createMediaQueryListMock(query: string, matches: boolean = false) {
-  return {
-    matches,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  };
-}
-
-/**
  * 创建 matchMedia mock 函数
  *
  * 返回一个 mock 函数，调用时生成 MediaQueryList 对象。
@@ -45,7 +27,16 @@ export function createMediaQueryListMock(query: string, matches: boolean = false
  * @param defaultMatches 默认匹配状态（默认 false）
  */
 export function createMockMatchMedia(defaultMatches: boolean = false) {
-  return vi.fn((query: string) => createMediaQueryListMock(query, defaultMatches));
+  return vi.fn((query: string) => ({
+    matches: defaultMatches,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
 }
 
 /**
