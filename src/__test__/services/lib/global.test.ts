@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { interceptClickAToJump, getDefaultAppLanguage, LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
+import { interceptClickAToJump, getDefaultAppLanguage, getLanguageLabel, LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
 import { locale, shell } from '@/utils/tauriCompat';
 
 describe('global.ts 模块测试', () => {
@@ -305,7 +305,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该正确处理所有支持的语言', async () => {
         const supportedLanguages = ['zh', 'en', 'fr'];
-        
+
         for (const lang of supportedLanguages) {
           localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, lang);
           const result = await getDefaultAppLanguage();
@@ -313,6 +313,66 @@ describe('global.ts 模块测试', () => {
           expect(result.migrated).toBe(false);
         }
       });
+    });
+
+    describe('外层异常处理', () => {
+      it('locale 首次抛异常，catch 内 locale 返回支持的语言，应降级到系统语言', async () => {
+        vi.mocked(locale)
+          .mockRejectedValueOnce(new Error('locale failed'))
+          .mockResolvedValueOnce('zh-CN');
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('zh');
+        expect(result.migrated).toBe(false);
+        expect(result.fallbackReason).toBe('system-lang');
+      });
+
+      it('locale 首次抛异常，catch 内 locale 返回不支持的语言，应降级到英文', async () => {
+        vi.mocked(locale)
+          .mockRejectedValueOnce(new Error('locale failed'))
+          .mockResolvedValueOnce('de-DE');
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('en');
+        expect(result.migrated).toBe(false);
+        expect(result.fallbackReason).toBe('default');
+      });
+
+      it('locale 首次抛异常，catch 内 locale 也抛异常，应降级到英文', async () => {
+        vi.mocked(locale)
+          .mockRejectedValueOnce(new Error('locale failed'))
+          .mockRejectedValueOnce(new Error('locale failed again'));
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('en');
+        expect(result.migrated).toBe(false);
+        expect(result.fallbackReason).toBe('default');
+      });
+
+      it('locale 首次抛异常，catch 内 locale 返回空字符串，应降级到英文', async () => {
+        vi.mocked(locale)
+          .mockRejectedValueOnce(new Error('locale failed'))
+          .mockResolvedValueOnce('');
+
+        const result = await getDefaultAppLanguage();
+
+        expect(result.lang).toBe('en');
+        expect(result.migrated).toBe(false);
+        expect(result.fallbackReason).toBe('default');
+      });
+    });
+  });
+
+  describe('getLanguageLabel', () => {
+    it('传入支持的语言代码应返回对应的显示标签', () => {
+      expect(getLanguageLabel('zh')).toBe('中文');
+    });
+
+    it('传入不支持的语言代码应返回原代码字符串', () => {
+      expect(getLanguageLabel('unknown')).toBe('unknown');
     });
   });
 
