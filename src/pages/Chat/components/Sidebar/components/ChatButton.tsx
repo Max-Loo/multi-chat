@@ -219,7 +219,7 @@ const ChatButton = memo<ChatButtonProps>(({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <span className="flex items-center min-w-0 pl-2">
+      <span className="flex items-center flex-1 overflow-hidden min-w-0 pl-2">
         <span
           data-testid="chat-name"
           className={`truncate ${
