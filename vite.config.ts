@@ -13,6 +13,79 @@ const packageJson = JSON.parse(
 // //@ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
+/**
+ * 从模块路径中提取实际包名，兼容 pnpm 存储路径格式
+ * @param id 模块路径
+ * @returns 包名（如 "react"、"@ai-sdk/deepseek"），非 node_modules 模块返回 null
+ */
+function getPackageName(id: string): string | null {
+  const match = id.match(
+    /node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?(@[^/]+\/[^/]+|[^/]+)/,
+  );
+  return match ? match[1] : null;
+}
+
+/** 包名精确匹配 → chunk 映射 */
+const packageChunkMap: Record<string, string> = {
+  // React 生态
+  react: "vendor-react",
+  "react-dom": "vendor-react",
+  scheduler: "vendor-react",
+  "loose-envify": "vendor-react",
+  // Redux 生态
+  "react-redux": "vendor-redux",
+  redux: "vendor-redux",
+  immer: "vendor-redux",
+  reselect: "vendor-redux",
+  // Router
+  "react-router": "vendor-router",
+  // i18n
+  i18next: "vendor-i18n",
+  "react-i18next": "vendor-i18n",
+  // Zod
+  zod: "vendor-zod",
+  // Markdown
+  "markdown-it": "vendor-markdown",
+  dompurify: "vendor-markdown",
+  // AI SDK
+  ai: "vendor-ai",
+  "zhipu-ai-provider": "vendor-ai",
+  // Icons
+  "lucide-react": "vendor-icons",
+  // UI 工具
+  "class-variance-authority": "vendor-ui-utils",
+  clsx: "vendor-ui-utils",
+  "tailwind-merge": "vendor-ui-utils",
+};
+
+/** scope 前缀 → chunk 映射（匹配 @scope/package 格式） */
+const scopeChunkMap: Record<string, string> = {
+  "@ai-sdk": "vendor-ai",
+  "@radix-ui": "vendor-radix",
+  "@tanstack": "vendor-tanstack",
+  "@remix-run": "vendor-router",
+  "@reduxjs": "vendor-redux",
+};
+
+/** highlight.js 预加载语言列表 */
+const preloadedLanguages = [
+  "javascript",
+  "typescript",
+  "python",
+  "java",
+  "cpp",
+  "xml",
+  "css",
+  "bash",
+  "json",
+  "markdown",
+  "sql",
+  "go",
+  "rust",
+  "yaml",
+  "csharp",
+];
+
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   // GitHub Pages 部署通过 BASE_PATH 环境变量设置子路径，默认使用根路径
@@ -145,124 +218,50 @@ export default defineConfig(async () => ({
           }
 
           // 只处理 node_modules 中的依赖
-          if (id.includes("node_modules")) {
-            // React 及其依赖（包括 scheduler, loose-envify 等，避免循环依赖）
-            if (
-              /\/node_modules\/(react|react-dom|scheduler|loose-envify)(?:\/|$|\.js)/.test(
-                id,
-              )
-            ) {
-              return "vendor-react";
-            }
+          if (!id.includes("node_modules")) return;
 
-            // Redux 相关（包含 Redux Toolkit、React-Redux、Redux 核心、Immer、Reselect）
-            if (
-              id.includes("@reduxjs") ||
-              id.includes("react-redux") ||
-              id.includes("redux") ||
-              id.includes("immer") ||
-              id.includes("reselect")
-            ) {
-              return "vendor-redux";
-            }
+          const pkg = getPackageName(id);
+          if (!pkg) return "vendor";
 
-            // Router 相关（React Router、@remix-run）
-            if (id.includes("react-router") || id.includes("@remix-run")) {
-              return "vendor-router";
-            }
-
-            // i18next 国际化库
-            if (id.includes("i18next") || id.includes("react-i18next")) {
-              return "vendor-i18n";
-            }
-
-            // Zod 数据验证库
-            if (id.includes("zod")) {
-              return "vendor-zod";
-            }
-
-            // Markdown 和代码高亮库
-            if (id.includes("markdown-it") || id.includes("dompurify")) {
-              return "vendor-markdown";
-            }
-
-            // Highlight.js 核心库
-            if (id.includes("highlight.js/lib/core")) {
+          // highlight.js 特殊处理：需要区分子路径
+          if (pkg === "highlight.js") {
+            if (id.includes("/lib/core")) {
               return "vendor-highlight-core";
             }
-
-            // Highlight.js 预加载语言（15 种常见语言）
-            if (id.includes("highlight.js/lib/languages")) {
-              const preloadedLanguages = [
-                "javascript",
-                "typescript",
-                "python",
-                "java",
-                "cpp",
-                "xml",
-                "css",
-                "bash",
-                "json",
-                "markdown",
-                "sql",
-                "go",
-                "rust",
-                "yaml",
-                "csharp",
-              ];
-
+            if (id.includes("/lib/languages/")) {
               const isPreloaded = preloadedLanguages.some((lang) =>
-                id.includes(`/languages/${lang}.js`),
+                id.endsWith(`/languages/${lang}.js`),
               );
-
-              if (isPreloaded) {
-                return "vendor-highlight-core";
-              }
-
-              // 其他语言包动态分割
-              return "vendor-highlight-languages";
+              return isPreloaded
+                ? "vendor-highlight-core"
+                : "vendor-highlight-languages";
             }
-
-            // Vercel AI SDK
-            if (id.includes("ai") || id.includes("@ai-sdk")) {
-              return "vendor-ai";
-            }
-
-            // lucide-react 图标库
-            if (id.includes("lucide-react")) {
-              return "vendor-icons";
-            }
-
-            // Radix UI 组件库
-            if (id.includes("@radix-ui")) {
-              return "vendor-radix";
-            }
-
-            // UI 工具库（class-variance-authority, clsx, tailwind-merge）
-            if (
-              id.includes("class-variance-authority") ||
-              id.includes("clsx") ||
-              id.includes("tailwind-merge")
-            ) {
-              return "vendor-ui-utils";
-            }
-
-            // Tauri 插件
-            if (
-              id.includes("@tauri-apps/plugin-") ||
-              id.includes("tauri-plugin-")
-            ) {
-              return "vendor-tauri";
-            }
-
-            // TanStack 库
-            if (id.includes("@tanstack")) {
-              return "vendor-tanstack";
-            }
-
-            // 其他所有 node_modules 依赖
-            return "vendor";
+            return "vendor-highlight-core";
           }
+
+          // 精确包名匹配
+          if (pkg in packageChunkMap) {
+            return packageChunkMap[pkg];
+          }
+
+          // scope 前缀匹配（如 @ai-sdk/deepseek → @ai-sdk）
+          if (pkg.startsWith("@")) {
+            const scope = pkg.split("/")[0];
+            if (scope in scopeChunkMap) {
+              return scopeChunkMap[scope];
+            }
+          }
+
+          // Tauri 插件特殊处理
+          if (
+            pkg.startsWith("@tauri-apps/plugin-") ||
+            pkg.startsWith("tauri-plugin-")
+          ) {
+            return "vendor-tauri";
+          }
+
+          // 其他所有 node_modules 依赖
+          return "vendor";
         },
       },
     },
