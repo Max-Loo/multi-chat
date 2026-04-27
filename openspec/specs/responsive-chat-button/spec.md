@@ -20,6 +20,8 @@ TBD - created by archiving change responsive-layout-system. Update Purpose after
 - **AND** 图标和文字在同一行
 - **AND** 操作按钮缩小并显示在右侧
 - **AND** 使用 `items-center` 垂直居中
+- **AND** 左侧名称区域必须设置 `flex-1 overflow-hidden`，确保名称过长时正确截断
+- **AND** 右侧操作按钮必须设置 `shrink-0`，确保不被左侧内容压缩
 
 #### Scenario: Mobile 模式下垂直布局
 - **WHEN** `layoutMode` 为 'mobile'
@@ -54,6 +56,12 @@ Desktop 模式下的聊天按钮必须保持现有的样式和交互。
 - **WHEN** 用户悬停在聊天按钮上
 - **THEN** 显示悬停背景（`hover:bg-accent`）
 - **AND** 过渡动画使用 `transition-colors`
+
+#### Scenario: Desktop 模式下名称过长不压缩右侧按钮
+- **WHEN** `layoutMode` 为 'desktop' 且聊天名称超过按钮可用宽度
+- **THEN** 左侧名称区域使用 `flex-1 overflow-hidden` 约束宽度
+- **AND** 名称文本使用 `truncate` 截断显示
+- **AND** 右侧操作按钮保持固定尺寸，不被压缩
 
 ### Requirement: Compressed 模式下的样式和交互
 
@@ -159,6 +167,27 @@ Mobile 模式下的聊天按钮必须使用长按触发操作菜单。
 - **WHEN** 用户使用屏幕阅读器
 - **THEN** 长按操作被明确说明
 - **AND** 提示用户"长按查看更多选项"
+
+### Requirement: 聊天按钮名称区域的布局约束
+
+聊天按钮的左侧名称区域必须在所有布局模式下正确约束宽度，防止挤压右侧操作按钮。
+
+#### Scenario: 名称过长时正确截断
+- **WHEN** 聊天名称长度超过按钮可用宽度
+- **THEN** 左侧名称 `<span>` 通过 `flex-1 overflow-hidden` 占据剩余空间并隐藏溢出
+- **AND** 内部文本通过 `truncate` 显示省略号截断
+- **AND** 右侧操作按钮保持原始尺寸
+
+#### Scenario: 快捷删除按钮激活时不被压缩
+- **WHEN** Shift 键按下且鼠标悬停在聊天按钮上
+- **THEN** 快捷删除按钮（`variant="destructive"`）保持固定尺寸
+- **AND** 左侧名称正确截断，不挤压删除按钮
+
+#### Scenario: 名称较短时布局正常
+- **WHEN** 聊天名称长度小于按钮可用宽度
+- **THEN** 名称完整显示，无截断
+- **AND** 右侧操作按钮保持固定尺寸
+- **AND** 布局与修复前一致，无视觉差异
 
 ### Requirement: 聊天按钮性能优化
 

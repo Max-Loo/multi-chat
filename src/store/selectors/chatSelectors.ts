@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
 import type { RootState } from "@/store";
+import type { ChatMeta } from "@/types/chat";
 
 /**
  * input selector：获取选中的聊天 ID
@@ -7,16 +8,38 @@ import type { RootState } from "@/store";
 const selectSelectedChatId = (state: RootState) => state.chat.selectedChatId;
 
 /**
- * input selector：获取聊天列表
+ * input selector：获取聊天元数据列表
  */
-const selectChatList = (state: RootState) => state.chat.chatList;
+const selectChatMetaListRaw = (state: RootState) => state.chat.chatMetaList;
+
+/**
+ * input selector：获取活跃聊天数据
+ */
+const selectActiveChatData = (state: RootState) => state.chat.activeChatData;
 
 /**
  * memoized selector：获取当前选中的聊天对象
- * 只在 find 结果的引用真正变化时才返回新值，避免不必要的重渲染
+ * 从 activeChatData 中获取完整数据
  */
 export const selectSelectedChat = createSelector(
-  [selectSelectedChatId, selectChatList],
-  (selectedChatId, chatList) =>
-    selectedChatId ? chatList.find((c) => c.id === selectedChatId) : undefined,
+  [selectSelectedChatId, selectActiveChatData],
+  (selectedChatId, activeChatData) =>
+    selectedChatId ? activeChatData[selectedChatId] : undefined,
+);
+
+/**
+ * memoized selector：获取活跃聊天元数据列表
+ */
+export const selectChatMetaList = createSelector(
+  [selectChatMetaListRaw],
+  (metaList): ChatMeta[] => metaList,
+);
+
+/**
+ * memoized selector：获取当前选中聊天的元数据
+ */
+export const selectSelectedChatMeta = createSelector(
+  [selectSelectedChatId, selectChatMetaListRaw],
+  (selectedChatId, metaList) =>
+    selectedChatId ? metaList.find(m => m.id === selectedChatId) : undefined,
 );

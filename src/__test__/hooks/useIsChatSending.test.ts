@@ -11,6 +11,7 @@ import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
 import { setSelectedChatId } from '@/store/slices/chatSlices';
+import { chatToMeta } from '@/types/chat';
 
 describe('useIsSending', () => {
   describe('基础场景', () => {
@@ -20,7 +21,9 @@ describe('useIsSending', () => {
       const { result } = renderHookWithProviders(() => useIsSending(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [mockChat],
+            chatMetaList: [chatToMeta(mockChat)],
+            activeChatData: { 'chat-1': mockChat },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
             runningChat: {
               'chat-1': {
@@ -42,7 +45,9 @@ describe('useIsSending', () => {
       const { result } = renderHookWithProviders(() => useIsSending(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1, chat2, chat3],
+            chatMetaList: [chatToMeta(chat1), chatToMeta(chat2), chatToMeta(chat3)],
+            activeChatData: { 'chat-1': chat1, 'chat-2': chat2, 'chat-3': chat3 },
+            sendingChatIds: {},
             selectedChatId: 'chat-2',
             runningChat: {
               'chat-1': {
@@ -69,7 +74,9 @@ describe('useIsSending', () => {
       const { result } = renderHookWithProviders(() => useIsSending(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1, chat2],
+            chatMetaList: [chatToMeta(chat1), chatToMeta(chat2)],
+            activeChatData: { 'chat-1': chat1, 'chat-2': chat2 },
+            sendingChatIds: {},
             selectedChatId: 'chat-2',
             runningChat: {
               'chat-1': {
@@ -94,7 +101,9 @@ describe('useIsSending', () => {
       const { result } = renderHookWithProviders(() => useIsSending(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [mockChat],
+            chatMetaList: [chatToMeta(mockChat)],
+            activeChatData: { 'chat-1': mockChat },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
             runningChat: {
               'chat-1': {
@@ -115,7 +124,9 @@ describe('useIsSending', () => {
       const { result } = renderHookWithProviders(() => useIsSending(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [mockChat],
+            chatMetaList: [chatToMeta(mockChat)],
+            activeChatData: { 'chat-1': mockChat },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
             runningChat: {},
           }),
@@ -131,7 +142,9 @@ describe('useIsSending', () => {
       const { result } = renderHookWithProviders(() => useIsSending(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [mockChat],
+            chatMetaList: [chatToMeta(mockChat)],
+            activeChatData: { 'chat-1': mockChat },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
             runningChat: {
               'chat-2': {
@@ -154,7 +167,9 @@ describe('useIsSending', () => {
       const { result, store } = renderHookWithProviders(() => useIsSending(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [chat1, chat2],
+            chatMetaList: [chatToMeta(chat1), chatToMeta(chat2)],
+            activeChatData: { 'chat-1': chat1, 'chat-2': chat2 },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
             runningChat: {
               'chat-1': {
@@ -184,7 +199,9 @@ describe('useIsSending', () => {
       const { result, store } = renderHookWithProviders(() => useIsSending(), {
         preloadedState: {
           chat: createChatSliceState({
-            chatList: [mockChat],
+            chatMetaList: [chatToMeta(mockChat)],
+            activeChatData: { 'chat-1': mockChat },
+            sendingChatIds: {},
             selectedChatId: 'chat-1',
             runningChat: {
               'chat-1': {

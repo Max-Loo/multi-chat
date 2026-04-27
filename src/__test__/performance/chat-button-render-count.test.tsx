@@ -2,12 +2,13 @@ import { describe, it, expect, vi } from 'vitest'
 import { act, cleanup, render } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { BrowserRouter } from 'react-router-dom'
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import type { EnhancedStore } from '@reduxjs/toolkit'
 import { useAppSelector } from '@/hooks/redux'
 import ChatButton from '@/pages/Chat/components/Sidebar/components/ChatButton'
 import type { ChatButtonProps } from '@/pages/Chat/components/Sidebar/components/ChatButton'
 import type { Chat } from '@/types/chat'
+import { chatToMeta } from '@/types/chat'
 import { createTestStore } from '@/__test__/helpers/render/redux'
 import { createMockChatList } from '@/__test__/helpers/mocks/chatSidebar'
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState'
@@ -20,7 +21,9 @@ function createPerfStore(chatList: Chat[], selectedChatId: string) {
   return createTestStore({
     chat: createChatSliceState({
       selectedChatId,
-      chatList,
+      chatMetaList: chatList.map(chatToMeta),
+      activeChatData: Object.fromEntries(chatList.map(c => [c.id, c])),
+      sendingChatIds: {},
     }),
   })
 }
@@ -101,7 +104,7 @@ function createLegacyPattern(tracker: ReturnType<typeof createRenderTracker>) {
   const LegacyWrapper = memo(function LegacyWrapper({ chat }: { chat: Chat }) {
     const selectedChatId = useAppSelector((state) => state.chat.selectedChatId)
     tracker.record(chat.id)
-    return <ChatButton chat={chat} isSelected={chat.id === selectedChatId} />
+    return <ChatButton chatMeta={chatToMeta(chat)} isSelected={chat.id === selectedChatId} />
   })
 
   return function LegacyParent({ chatList }: { chatList: Chat[] }) {
@@ -121,19 +124,21 @@ function createLegacyPattern(tracker: ReturnType<typeof createRenderTracker>) {
  * 当 selectedChatId 变化时，只有 isSelected 发生变化的 ChatButton 重渲染
  */
 function createOptimizedPattern(tracker: ReturnType<typeof createRenderTracker>) {
-  const TrackedButton = memo(({ chat, isSelected }: ChatButtonProps) => {
-    tracker.record(chat.id)
-    return <ChatButton chat={chat} isSelected={isSelected} />
+  const TrackedButton = memo(({ chatMeta, isSelected }: ChatButtonProps) => {
+    tracker.record(chatMeta.id)
+    return <ChatButton chatMeta={chatMeta} isSelected={isSelected} />
   })
 
   const OptimizedParent = ({ chatList }: { chatList: Chat[] }) => {
     const selectedChatId = useAppSelector((state) => state.chat.selectedChatId)
+    // 缓存 chatMeta 列表，避免每次渲染创建新对象导致 memo 失效
+    const chatMetas = useMemo(() => chatList.map(chatToMeta), [chatList])
     return (
       <>
-        {chatList.map(chat => (
+        {chatList.map((chat, i) => (
           <TrackedButton
             key={chat.id}
-            chat={chat}
+            chatMeta={chatMetas[i]}
             isSelected={chat.id === selectedChatId}
           />
         ))}

@@ -71,21 +71,21 @@ describe('titleGenerator - 后处理逻辑', () => {
       const input = 'AI 技术';
       const result = truncateTitle(input);
       expect(result).toBe('AI 技术');
-      expect(result.length).toBeLessThanOrEqual(10);
+      expect(result.length).toBeLessThanOrEqual(20);
     });
 
     it('应该截取超长标题', () => {
-      const input = '这是一个超过十个汉字的非常长的标题需要被截断'; // 23 个字符
+      const input = '这是一个超过二十个汉字的非常长的标题需要被截断处理才行'; // 25 个字符
       const result = truncateTitle(input);
-      expect(result).toBe('这是一个超过十个汉字'); // 前 10 个字符
-      expect(result.length).toBe(10);
+      expect(result).toBe('这是一个超过二十个汉字的非常长的标题需要'); // 前 20 个字符
+      expect(result.length).toBe(20);
     });
 
-    it('应该处理正好 10 个字的标题', () => {
-      const input = '1234567890'; // 10 个字符
+    it('应该处理正好 20 个字的标题', () => {
+      const input = '12345678901234567890'; // 20 个字符
       const result = truncateTitle(input);
-      expect(result).toBe('1234567890');
-      expect(result.length).toBe(10);
+      expect(result).toBe('12345678901234567890');
+      expect(result.length).toBe(20);
     });
 
     it('应该处理空字符串', () => {
@@ -96,7 +96,7 @@ describe('titleGenerator - 后处理逻辑', () => {
     it('应该处理包含空格的标题', () => {
       const input = 'TypeScript 学习方法与实践 ';
       const result = truncateTitle(input);
-      expect(result.length).toBeLessThanOrEqual(10);
+      expect(result.length).toBeLessThanOrEqual(20);
     });
   });
 });
@@ -215,7 +215,7 @@ describe('generateChatTitleService', () => {
     ).rejects.toThrow('Generated title is empty');
   });
 
-  it('应该截取超长文本到 10 个字符', async () => {
+  it('应该截取超长文本到 20 个字符', async () => {
     const longTitle = '这是一个非常非常长的标题需要被截断处理才行';
     const messages: StandardMessage[] = [
       createUserMessage('你好'),
@@ -228,7 +228,7 @@ describe('generateChatTitleService', () => {
 
     const result = await generateChatTitleService(messages, model);
 
-    expect(result).toBe('这是一个非常非常长的');
-    expect(result.length).toBe(10);
+    expect(result).toBe('这是一个非常非常长的标题需要被截断处理才');
+    expect(result.length).toBe(20);
   });
 });

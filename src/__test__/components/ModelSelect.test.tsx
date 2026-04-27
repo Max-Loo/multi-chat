@@ -13,6 +13,7 @@ import { ModelProviderKeyEnum } from '@/utils/enums';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks';
 import { asTestType } from '@/__test__/helpers/testing-utils';
+import { chatToMeta } from '@/types/chat';
 
 vi.mock('react-i18next', () => {
   const R = { chat: { selectModelHint: '请选择至少一个模型', configureChatSuccess: '配置聊天成功', configureChatFailed: '配置聊天失败', searchPlaceholder: '搜索模型...' }, model: { openProviderList: '打开供应商列表' }, common: { confirm: '确认', remark: '备注' }, table: { nickname: '模型名称', modelProvider: '模型供应商', modelName: '模型', lastUpdateTime: '更新时间', createTime: '创建时间' } };
@@ -65,7 +66,9 @@ const createModelSelectStore = () => {
       ],
     }),
     chat: createChatSliceState({
-      chatList: [createMockChat({ id: 'chat-1', name: 'Test Chat' })],
+      chatMetaList: [chatToMeta(createMockChat({ id: 'chat-1', name: 'Test Chat' }))],
+      activeChatData: { 'chat-1': createMockChat({ id: 'chat-1', name: 'Test Chat' }) },
+      sendingChatIds: {},
       selectedChatId: 'chat-1',
     }),
   });

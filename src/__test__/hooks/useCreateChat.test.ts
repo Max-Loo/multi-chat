@@ -51,7 +51,9 @@ describe('useCreateChat', () => {
     const { result, store } = renderHookWithProviders(() => useCreateChat(), {
       preloadedState: {
         chat: createChatSliceState({
-          chatList: [],
+          chatMetaList: [],
+          activeChatData: {},
+          sendingChatIds: {},
           selectedChatId: null,
         }),
       },
@@ -59,7 +61,7 @@ describe('useCreateChat', () => {
 
     return result.current.createNewChat().then(() => {
       const state = store.getState();
-      const newChat = state.chat.chatList.find(c => c.id === 'test-chat-id');
+      const newChat = state.chat.activeChatData['test-chat-id'];
 
       expect(newChat).toBeDefined();
       expect(newChat?.id).toBe('test-chat-id');
@@ -94,7 +96,9 @@ describe('useCreateChat', () => {
     const { result, store } = renderHookWithProviders(() => useCreateChat(), {
       preloadedState: {
         chat: createChatSliceState({
-          chatList: [],
+          chatMetaList: [],
+          activeChatData: {},
+          sendingChatIds: {},
           selectedChatId: null,
         }),
       },
@@ -110,7 +114,9 @@ describe('useCreateChat', () => {
     const { result, store } = renderHookWithProviders(() => useCreateChat(), {
       preloadedState: {
         chat: createChatSliceState({
-          chatList: [],
+          chatMetaList: [],
+          activeChatData: {},
+          sendingChatIds: {},
           selectedChatId: null,
         }),
       },
@@ -119,7 +125,8 @@ describe('useCreateChat', () => {
     return result.current.createNewChat().then(() => {
       // 验证最终状态：chat 已创建且已选中
       const state = store.getState();
-      expect(state.chat.chatList).toHaveLength(1);
+      expect(state.chat.chatMetaList).toHaveLength(1);
+      expect(state.chat.activeChatData['test-chat-id']).toBeDefined();
       expect(state.chat.selectedChatId).toBe('test-chat-id');
       // navigateToChat 最后调用
       expect(mockNavigateToChat).toHaveBeenCalledWith({
@@ -137,7 +144,9 @@ describe('useCreateChat', () => {
     const { result, store } = renderHookWithProviders(() => useCreateChat(), {
       preloadedState: {
         chat: createChatSliceState({
-          chatList: [],
+          chatMetaList: [],
+          activeChatData: {},
+          sendingChatIds: {},
           selectedChatId: null,
         }),
       },
@@ -149,7 +158,8 @@ describe('useCreateChat', () => {
       .then(() => {
         const state = store.getState();
         // 所有 3 个聊天都已创建
-        expect(state.chat.chatList).toHaveLength(3);
+        expect(state.chat.chatMetaList).toHaveLength(3);
+        expect(Object.keys(state.chat.activeChatData)).toHaveLength(3);
         // 最后一个为选中状态
         expect(state.chat.selectedChatId).toBe('chat-3');
       });

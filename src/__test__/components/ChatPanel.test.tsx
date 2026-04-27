@@ -16,6 +16,7 @@ import {
   createAppConfigSliceState,
 } from '@/__test__/helpers/mocks/testState';
 import { setSelectedChatId, editChat } from '@/store/slices/chatSlices';
+import { chatToMeta } from '@/types/chat';
 
 // 每个测试后清理 DOM
 afterEach(() => {
@@ -28,8 +29,18 @@ vi.mock('react-i18next', () => {
 });
 
 /**
+ * 将 Chat 对象列表拆分为 chatMetaList + activeChatData + sendingChatIds
+ * @param chats 聊天对象数组
+ */
+const splitChatsToState = (chats: ReturnType<typeof createMockChatWithModels>[]) => ({
+  chatMetaList: chats.map(chatToMeta),
+  activeChatData: Object.fromEntries(chats.map(c => [c.id, c])),
+  sendingChatIds: {},
+});
+
+/**
  * 创建测试用 store
- * @param chatOverrides Chat slice 覆盖字段
+ * @param chatOverrides Chat slice 覆盖字段（支持 chatList 旧写法，自动转换）
  */
 const createStore = (chatOverrides?: Parameters<typeof createChatSliceState>[0]) => {
   return createTypeSafeTestStore({
@@ -47,7 +58,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(1, { id: 'chat-1', name: 'Single Model Chat' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -70,7 +81,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(1, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -87,7 +98,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(3, { id: 'chat-1', name: 'Multi Model Chat' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -105,7 +116,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1', name: 'Test Chat Name' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -119,7 +130,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(3, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -140,7 +151,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -166,7 +177,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -188,7 +199,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(3, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -204,7 +215,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(3, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -229,7 +240,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(3, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -254,7 +265,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(1, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -273,7 +284,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -289,7 +300,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -318,7 +329,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -344,7 +355,7 @@ describe('ChatPanel', () => {
       const chat2 = createMockChatWithModels(3, { id: 'chat-2' });
 
       const store = createStore({
-        chatList: [chat1, chat2],
+        ...splitChatsToState([chat1, chat2]),
         selectedChatId: 'chat-1',
       });
 
@@ -373,7 +384,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -403,7 +414,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(2, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -430,7 +441,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(1, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -445,7 +456,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(1, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -460,7 +471,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(1, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -477,7 +488,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(0, { id: 'chat-1' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 
@@ -492,7 +503,7 @@ describe('ChatPanel', () => {
       const chat = createMockChatWithModels(1, { id: 'chat-1', name: '' });
 
       const store = createStore({
-        chatList: [chat],
+        ...splitChatsToState([chat]),
         selectedChatId: 'chat-1',
       });
 

@@ -10,6 +10,7 @@ import { initializeMasterKey } from '@/store/keyring/masterKey';
 import { store } from '@/store';
 import { initializeModels } from '@/store/slices/modelSlice';
 import { initializeChatList } from '@/store/slices/chatSlices';
+import { migrateOldChatStorage } from '@/store/storage/chatStorage';
 import { initializeAppLanguage, initializeTransmitHistoryReasoning, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
 import { migrateKeyringV1ToV2 } from '@/utils/tauriCompat';
@@ -103,6 +104,9 @@ export const initSteps: InitStep[] = [
     name: STEP_NAMES.chatList,
     critical: false,
     execute: async (context) => {
+      // 先迁移旧格式存储
+      await migrateOldChatStorage();
+      // 再初始化聊天列表（只加载索引元数据）
       const chatList = await store.dispatch(initializeChatList()).unwrap();
       context.setResult('chatList', chatList);
       return chatList;

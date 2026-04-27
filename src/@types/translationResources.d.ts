@@ -175,6 +175,15 @@ interface Resources {
         resetAllData: string;
         resetAllDataDescription: string;
       };
+      chatExport: {
+        title: string;
+        description: string;
+        exportAll: string;
+        exportDeleted: string;
+        exportSuccess: string;
+        exportFailed: string;
+        noDeletedChats: string;
+      };
       modelProvider: {
         title: string;
         description: string;
