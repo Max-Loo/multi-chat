@@ -5,6 +5,10 @@
  */
 
 import { vi } from 'vitest';
+import { createBrowserRouter } from 'react-router-dom';
+
+// 获取 createBrowserRouter 返回值的类型
+type Router = ReturnType<typeof createBrowserRouter>;
 
 /**
  * React Router Mock 接口
@@ -243,15 +247,15 @@ export const hasRouteProperty = (
  * 获取路由器的根路由配置
  * @param routerInstance createBrowserRouter 创建的路由器实例
  */
-export function getRootRoute(routerInstance: { routes: Array<TestRouteObject> }): TestRouteObject {
-  return routerInstance.routes[0] as TestRouteObject;
+export function getRootRoute(routerInstance: Router): TestRouteObject {
+  return routerInstance.routes[0] as unknown as TestRouteObject;
 }
 
 /**
  * 获取路由器根路由的子路由列表
  * @param routerInstance createBrowserRouter 创建的路由器实例
  */
-export function getRootChildren(routerInstance: { routes: Array<TestRouteObject> }): TestRouteObject[] {
+export function getRootChildren(routerInstance: Router): TestRouteObject[] {
   return getRootRoute(routerInstance).children ?? [];
 }
 
