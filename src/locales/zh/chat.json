@@ -32,5 +32,6 @@
   "transmitHistoryReasoningHint": "开启后会在历史消息中包含模型的推理过程，提升响应质量但会增加 token 消耗",
   "supplier": "供应商",
   "model": "模型",
-  "nickname": "昵称"
+  "nickname": "昵称",
+  "shiftDeleteChat": "Shift+点击快捷删除"
 }
