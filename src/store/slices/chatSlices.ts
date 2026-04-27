@@ -405,12 +405,15 @@ const chatSlice = createSlice({
         return; // 静默拒绝，不更新状态
       }
 
+      // 超长标题静默截断到 20 个字符
+      const trimmedName = name.length > 20 ? name.slice(0, 20) : name;
+
       const now = getCurrentTimestamp();
 
       // 更新 chatMetaList
       const metaIdx = state.chatMetaList.findIndex(m => m.id === id);
       if (metaIdx !== -1) {
-        state.chatMetaList[metaIdx].name = name;
+        state.chatMetaList[metaIdx].name = trimmedName;
         state.chatMetaList[metaIdx].isManuallyNamed = true;
         state.chatMetaList[metaIdx].updatedAt = now;
       }
@@ -418,7 +421,7 @@ const chatSlice = createSlice({
       // 更新 activeChatData（若已加载）
       const activeChat = state.activeChatData[id];
       if (activeChat) {
-        activeChat.name = name;
+        activeChat.name = trimmedName;
         activeChat.isManuallyNamed = true;
         activeChat.updatedAt = now;
       }

@@ -136,6 +136,7 @@ const ChatButton = memo<ChatButtonProps>(({
           className="flex-1 h-8.5 text-sm"
           value={newName}
           autoFocus
+          maxLength={20}
           onChange={(e) => setNewName(e.target.value)}
         />
         <Button
@@ -163,7 +164,7 @@ const ChatButton = memo<ChatButtonProps>(({
   return (
     <div
       data-testid={`chat-button-${chatMeta.id}`}
-      className={`w-full flex justify-between rounded-none cursor-pointer
+      className={`w-full flex justify-between min-w-0 rounded-none cursor-pointer
         ${
           isNormalSize
             ? 'py-2 px-1'
@@ -174,15 +175,17 @@ const ChatButton = memo<ChatButtonProps>(({
       `}
       onClick={() => onClickChat(chatMeta)}
     >
-      <span
-        data-testid="chat-name"
-        className={`pl-2 flex items-center ${
-          isNormalSize
-            ? 'text-sm'
-            : 'text-xs'
-        }`}
-      >
-        {chatMeta.name || t($ => $.chat.unnamed)}
+      <span className="flex items-center min-w-0 pl-2">
+        <span
+          data-testid="chat-name"
+          className={`truncate ${
+            isNormalSize
+              ? 'text-sm'
+              : 'text-xs'
+          }`}
+        >
+          {chatMeta.name || t($ => $.chat.unnamed)}
+        </span>
       </span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
