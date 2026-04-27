@@ -20,6 +20,15 @@
     "resetAllData": "Réinitialiser toutes les données",
     "resetAllDataDescription": "Effacer toutes les configurations de modèles et les enregistrements de chat, générer une nouvelle clé de chiffrement"
   },
+  "chatExport": {
+    "title": "Export de chats",
+    "description": "Exporter les données de chat au format JSON, prend en charge les chats actifs et supprimés",
+    "exportAll": "Exporter les chats actifs",
+    "exportDeleted": "Exporter les chats supprimés",
+    "exportSuccess": "Données de chat exportées avec succès",
+    "exportFailed": "Échec de l'exportation des données de chat",
+    "noDeletedChats": "Aucun chat supprimé à exporter"
+  },
   "modelProvider": {
     "title": "Fournisseur de modèles",
     "description": "Récupérer les dernières informations du fournisseur de modèles à partir du serveur distant",

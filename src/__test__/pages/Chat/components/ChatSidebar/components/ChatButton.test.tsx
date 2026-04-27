@@ -7,7 +7,7 @@ import { resetTestState } from '@/__test__/helpers/isolation';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
-import type { Chat } from '@/types/chat';
+import type { ChatMeta } from '@/types/chat';
 import type { EnhancedStore } from '@reduxjs/toolkit';
 
 // Mock useResponsive from useResponsive hook
@@ -64,12 +64,27 @@ vi.mock('@/services/toast', () => ({
 }));
 
 /**
+ * 从 Chat 对象提取 ChatMeta
+ */
+function chatToMeta(chat: ReturnType<typeof createMockChat>): ChatMeta {
+  return {
+    id: chat.id,
+    name: chat.name,
+    isManuallyNamed: chat.isManuallyNamed,
+    modelIds: chat.chatModelList?.map(cm => cm.modelId) ?? [],
+    isDeleted: chat.isDeleted,
+    updatedAt: chat.updatedAt,
+  };
+}
+
+/**
  * 渲染 ChatButton 组件的辅助函数
  */
-function renderChatButton(chat: Chat, store?: EnhancedStore, isSelected = true) {
+function renderChatButton(chat: ReturnType<typeof createMockChat>, store?: EnhancedStore, isSelected = true) {
+  const meta = chatToMeta(chat);
   const testStore = store || createTypeSafeTestStore({
     chat: createChatSliceState({
-      chatList: [chat],
+      chatMetaList: [meta],
       selectedChatId: chat.id,
     }),
     chatPage: createChatPageSliceState({
@@ -81,7 +96,7 @@ function renderChatButton(chat: Chat, store?: EnhancedStore, isSelected = true) 
   return render(
     <Provider store={testStore}>
       <BrowserRouter>
-        <ChatButton chat={chat} isSelected={isSelected} />
+        <ChatButton chatMeta={meta} isSelected={isSelected} />
       </BrowserRouter>
     </Provider>
   );
@@ -131,9 +146,10 @@ describe('ChatButton Component', () => {
 
     it('应该在未选中状态时不显示背景色', () => {
       const chat = createMockChat({ name: '测试聊天' });
+      const meta = chatToMeta(chat);
       const store = createTypeSafeTestStore({
         chat: createChatSliceState({
-          chatList: [chat],
+          chatMetaList: [meta],
           selectedChatId: 'other-chat-id',
         }),
         chatPage: createChatPageSliceState({
@@ -245,13 +261,14 @@ describe('ChatButton Component', () => {
   describe('组件 memo 优化', () => {
     it('当聊天 ID 和名称未改变时，不应该重新渲染', () => {
       const chat = createMockChat({ name: '测试聊天' });
+      const meta = chatToMeta(chat);
       const { rerender } = renderChatButton(chat);
 
-      // 使用相同的 chat 对象重新渲染
+      // 使用相同的 chatMeta 对象重新渲染
       rerender(
         <Provider store={createTypeSafeTestStore({
           chat: createChatSliceState({
-            chatList: [chat],
+            chatMetaList: [meta],
             selectedChatId: chat.id,
           }),
           chatPage: createChatPageSliceState({
@@ -260,7 +277,7 @@ describe('ChatButton Component', () => {
           }),
         })}>
           <BrowserRouter>
-            <ChatButton chat={chat} isSelected={true} />
+            <ChatButton chatMeta={meta} isSelected={true} />
           </BrowserRouter>
         </Provider>
       );
@@ -273,11 +290,11 @@ describe('ChatButton Component', () => {
       const chat = createMockChat({ name: '测试聊天' });
       const { rerender } = renderChatButton(chat);
 
-      const updatedChat = { ...chat, name: '新名称' };
+      const updatedMeta = { ...chatToMeta(chat), name: '新名称' };
       rerender(
         <Provider store={createTypeSafeTestStore({
           chat: createChatSliceState({
-            chatList: [updatedChat],
+            chatMetaList: [updatedMeta],
             selectedChatId: chat.id,
           }),
           chatPage: createChatPageSliceState({
@@ -286,7 +303,7 @@ describe('ChatButton Component', () => {
           }),
         })}>
           <BrowserRouter>
-            <ChatButton chat={updatedChat} isSelected={true} />
+            <ChatButton chatMeta={updatedMeta} isSelected={true} />
           </BrowserRouter>
         </Provider>
       );

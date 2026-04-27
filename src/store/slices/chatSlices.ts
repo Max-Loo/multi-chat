@@ -1,7 +1,7 @@
-import { Chat, ChatRoleEnum, StandardMessage } from "@/types/chat";
+import { Chat, ChatMeta, ChatRoleEnum, StandardMessage, chatToMeta } from "@/types/chat";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { WritableDraft } from "@reduxjs/toolkit";
-import { loadChatsFromJson } from "../storage";
+import { loadChatIndex, loadChatById } from "../storage";
 import { RootState } from "..";
 import { Model } from "@/types/model";
 import { streamChatCompletion, generateChatTitleService } from "@/services/chat";
@@ -17,8 +17,12 @@ import { ModelProviderKeyEnum } from "@/utils/enums";
 const generateUserMessageId = createIdGenerator({ prefix: USER_MESSAGE_ID_PREFIX });
 
 export interface ChatSliceState {
-  // 所有聊天的列表
-  chatList: Chat[];
+  // 聊天元数据列表（从 chat_index 加载，过滤掉 isDeleted）
+  chatMetaList: ChatMeta[];
+  // 按需加载的完整聊天数据，key 是 chatId
+  activeChatData: Record<string, Chat>;
+  // 正在发送消息的聊天 ID 集合，防止发送中被释放
+  sendingChatIds: Record<string, boolean>;
   // 加载状态
   loading: boolean;
   // 当前选中的要展示的聊天的Id
@@ -37,7 +41,9 @@ export interface ChatSliceState {
 
 // 聊天管理的初始状态
 const initialState: ChatSliceState = {
-  chatList: [],
+  chatMetaList: [],
+  activeChatData: {},
+  sendingChatIds: {},
   loading: false,
   error: null,
   selectedChatId: null,
@@ -47,14 +53,15 @@ const initialState: ChatSliceState = {
 
 
 /**
- * @description 异步action：初始化聊天列表，会默认选中第一条
+ * @description 异步action：初始化聊天列表，加载索引元数据
  */
 export const initializeChatList = createAsyncThunk(
   'chat/initialize',
   async () => {
     try {
-      const list: Chat[] = await loadChatsFromJson()
-      return list
+      const index: ChatMeta[] = await loadChatIndex();
+      // 过滤掉已删除的聊天
+      return index.filter(meta => !meta.isDeleted);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to initialize chat data', { cause: error });
     }
@@ -129,11 +136,10 @@ export const sendMessage = createAsyncThunk<
 
 
 /**
- * @description 异步 thunk：切换聊天并预加载供应商 SDK
- * 根据聊天使用的模型预加载对应的供应商 SDK
+ * @description 异步 thunk：切换聊天并预加载供应商 SDK + 加载完整数据
  */
 export const setSelectedChatIdWithPreload = createAsyncThunk<
-  { chatId: string | null },
+  { chatId: string | null; chatData?: Chat },
   string | null,
   { state: RootState }
 >(
@@ -144,25 +150,32 @@ export const setSelectedChatIdWithPreload = createAsyncThunk<
     }
 
     const state = getState();
-    const chat = state.chat.chatList.find(c => c.id === chatId);
-    
-    if (!chat) {
-      console.warn(`Chat ${chatId} not found for preload`);
-      return { chatId };
+
+    // 从 activeChatData 中查找
+    let chatData = state.chat.activeChatData[chatId];
+
+    // 如果未加载，从存储读取
+    if (!chatData) {
+      const loaded = await loadChatById(chatId);
+      if (!loaded) {
+        console.warn(`Chat ${chatId} not found in storage`);
+        return { chatId };
+      }
+      chatData = loaded;
     }
 
     // 预加载聊天使用的供应商 SDK（优化手段，不阻塞聊天切换）
-    const { chatModelList = [] } = chat;
-    
+    const { chatModelList = [] } = chatData;
+
     // 新聊天（无模型）不预加载
     if (chatModelList.length === 0) {
-      return { chatId };
+      return { chatId, chatData };
     }
 
     try {
       const providerSDKLoader = getProviderSDKLoader();
       const { models } = state.models;
-      
+
       // 提取聊天使用的所有 providerKey
       const providerKeys = new Set<ModelProviderKeyEnum>();
       for (const chatModel of chatModelList) {
@@ -180,8 +193,8 @@ export const setSelectedChatIdWithPreload = createAsyncThunk<
       // 预加载失败不影响聊天切换，仅记录警告
       console.warn('Failed to preload provider SDKs:', error);
     }
-    
-    return { chatId };
+
+    return { chatId, chatData };
   }
 )
 
@@ -276,9 +289,8 @@ export const startSendChatMessage = createAsyncThunk<
 
 
 
-
 /**
- * 在 chatList 中定位指定聊天和模型，将消息追加到其历史记录中
+ * 在 activeChatData 中定位指定聊天的模型，将消息追加到其历史记录中
  * @param state Immer 可写的聊天状态
  * @param chatId 目标聊天 ID
  * @param modelId 目标模型 ID
@@ -293,10 +305,13 @@ function appendHistoryToModel(
 ): boolean {
   if (isNil(message)) return false
 
-  const chatIdx = state.chatList.findIndex(item => item.id === chatId)
-  if (chatIdx === -1) return false
+  const chat = state.activeChatData[chatId]
+  if (!chat) {
+    console.error(`appendHistoryToModel: activeChatData[${chatId}] 不存在`)
+    return false
+  }
 
-  const chatModelList = state.chatList[chatIdx].chatModelList
+  const chatModelList = chat.chatModelList
   if (!chatModelList) return false
 
   const modelIdx = chatModelList.findIndex(item => item.modelId === modelId)
@@ -310,15 +325,29 @@ function appendHistoryToModel(
 }
 
 /**
+ * @description 更新 chatMetaList 中指定聊天的元数据
+ */
+function updateMetaInList(
+  state: WritableDraft<ChatSliceState>,
+  chatId: string,
+  update: Partial<ChatMeta>,
+): void {
+  const metaIdx = state.chatMetaList.findIndex(m => m.id === chatId);
+  if (metaIdx !== -1) {
+    state.chatMetaList[metaIdx] = { ...state.chatMetaList[metaIdx], ...update };
+  }
+}
+
+/**
  * @description chat 模块管理的 slice
  */
 const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
-    // 设置当前的聊天列表
-    setChatList: (state, action: PayloadAction<Chat[]>) => {
-      state.chatList = [...action.payload]
+    // 设置当前的聊天元数据列表
+    setChatMetaList: (state, action: PayloadAction<ChatMeta[]>) => {
+      state.chatMetaList = [...action.payload]
     },
     // 设置当前选中的聊天ID
     setSelectedChatId: (state, action: PayloadAction<string | null>) => {
@@ -334,21 +363,29 @@ const chatSlice = createSlice({
     },
     // 新增聊天
     createChat: (state, action: PayloadAction<{chat: Chat}>) => {
-      state.chatList.unshift(action.payload.chat)
+      const chat = action.payload.chat;
+      // 初始化 updatedAt
+      if (chat.updatedAt === undefined) {
+        chat.updatedAt = getCurrentTimestamp();
+      }
+      // 同时更新 chatMetaList 和 activeChatData
+      state.chatMetaList.unshift(chatToMeta(chat));
+      state.activeChatData[chat.id] = chat;
     },
     // 编辑聊天
     editChat: (state, action: PayloadAction<{chat: Chat}>) => {
       const {
         chat,
       } = action.payload
-      const {
-        chatList,
-      } = state
 
-      const idx = chatList.findIndex(item => item.id === chat.id)
-      if (idx !== -1) {
-        chatList[idx] = { ...chat }
-      }
+      // 更新 updatedAt
+      chat.updatedAt = getCurrentTimestamp();
+
+      // 更新 activeChatData
+      state.activeChatData[chat.id] = { ...chat };
+
+      // 更新 chatMetaList
+      updateMetaInList(state, chat.id, chatToMeta(chat));
     },
     // 编辑聊天的名称
     editChatName: (
@@ -362,20 +399,31 @@ const chatSlice = createSlice({
         id,
         name,
       } = action.payload
-      const {
-        chatList,
-      } = state
 
       // 验证：不允许空标题（包括空字符串和仅空白字符）
       if (!name || name.trim() === '') {
         return; // 静默拒绝，不更新状态
       }
 
-      const idx = chatList.findIndex(item => item.id === id)
-      if (idx !== -1) {
-        chatList[idx].name = name
-        // 标记为用户手动命名，后续不再触发自动命名
-        chatList[idx].isManuallyNamed = true
+      // 超长标题静默截断到 20 个字符
+      const trimmedName = name.length > 20 ? name.slice(0, 20) : name;
+
+      const now = getCurrentTimestamp();
+
+      // 更新 chatMetaList
+      const metaIdx = state.chatMetaList.findIndex(m => m.id === id);
+      if (metaIdx !== -1) {
+        state.chatMetaList[metaIdx].name = trimmedName;
+        state.chatMetaList[metaIdx].isManuallyNamed = true;
+        state.chatMetaList[metaIdx].updatedAt = now;
+      }
+
+      // 更新 activeChatData（若已加载）
+      const activeChat = state.activeChatData[id];
+      if (activeChat) {
+        activeChat.name = trimmedName;
+        activeChat.isManuallyNamed = true;
+        activeChat.updatedAt = now;
       }
     },
     // 删除聊天
@@ -384,23 +432,41 @@ const chatSlice = createSlice({
         chat,
       } = action.payload
 
-      const {
-        chatList,
-      } = state
-
-      // 不使用filter，而是定位删除，是尽可能避免遍历整个数组
-      const idx = chatList.findIndex(item => {
-        return item.id === chat.id
-      })
-
-      if (idx !== -1) {
-        // 添加「已删除」标识，不执行真删除
-        chatList[idx].isDeleted = true
+      // 检查是否正在发送，若正在发送则跳过
+      if (state.sendingChatIds[chat.id]) {
+        return;
       }
+
+      // 从 chatMetaList 彻底移除（非软标记）
+      state.chatMetaList = state.chatMetaList.filter(m => m.id !== chat.id);
+
+      // 从 activeChatData 中移除
+      delete state.activeChatData[chat.id];
 
       // 判断「是否当前选中的聊天正好是需要被删除的」
       if (state.selectedChatId === chat.id) {
-        state.selectedChatId = null
+        state.selectedChatId = null;
+      }
+    },
+    // 设置当前活跃聊天数据
+    setActiveChatData: (state, action: PayloadAction<{ chatId: string; chat: Chat }>) => {
+      const { chatId, chat } = action.payload;
+      state.activeChatData[chatId] = chat;
+    },
+    // 清理指定聊天的活跃数据（跳过正在发送的聊天）
+    clearActiveChatData: (state, action: PayloadAction<string>) => {
+      const chatId = action.payload;
+      // 跳过正在发送的聊天
+      if (state.sendingChatIds[chatId]) {
+        return;
+      }
+      delete state.activeChatData[chatId];
+    },
+    // 发送结束后回收非当前选中聊天的 activeChatData
+    releaseCompletedBackgroundChat: (state, action: PayloadAction<string>) => {
+      const chatId = action.payload;
+      if (state.selectedChatId !== chatId) {
+        delete state.activeChatData[chatId];
       }
     },
     // 向当前聊天的聊天记录添加内容
@@ -443,7 +509,7 @@ const chatSlice = createSlice({
       // 初始化模型数据成功
       .addCase(initializeChatList.fulfilled, (state, action) => {
         state.loading = false;
-        state.chatList = action.payload;
+        state.chatMetaList = action.payload;
       })
       // 初始化模型数据失败
       .addCase(initializeChatList.rejected, (state, action) => {
@@ -478,8 +544,15 @@ const chatSlice = createSlice({
           const currentChatModel = state.runningChat[chat.id][model.id]
           currentChatModel.isSending = false
 
-          // 将临时的数据回写到总的数组中，追加失败时跳过清理
+          // 将临时的数据回写到 activeChatData 中，追加失败时跳过清理
           if (!appendHistoryToModel(state, chat.id, model.id, currentChatModel.history)) return
+
+          // 更新 updatedAt
+          const activeChat = state.activeChatData[chat.id];
+          if (activeChat) {
+            activeChat.updatedAt = getCurrentTimestamp();
+            updateMetaInList(state, chat.id, { updatedAt: activeChat.updatedAt });
+          }
 
           // 清理临时数据
           delete state.runningChat[chat.id][model.id]
@@ -492,16 +565,40 @@ const chatSlice = createSlice({
         }
 
         const { chatId, name } = action.payload;
-        const chatIdx = state.chatList.findIndex(item => item.id === chatId);
-        if (chatIdx === -1) return;
+        const now = getCurrentTimestamp();
 
-        // 更新聊天标题
-        state.chatList[chatIdx].name = name;
-        // 不设置 isManuallyNamed，保持为 false（允许手动覆盖）
+        // 更新 chatMetaList
+        const metaIdx = state.chatMetaList.findIndex(m => m.id === chatId);
+        if (metaIdx !== -1) {
+          state.chatMetaList[metaIdx].name = name;
+          state.chatMetaList[metaIdx].updatedAt = now;
+        }
+
+        // 更新 activeChatData（若已加载）
+        const activeChat = state.activeChatData[chatId];
+        if (activeChat) {
+          activeChat.name = name;
+          activeChat.updatedAt = now;
+        }
       })
       // 切换聊天并预加载供应商 SDK 成功
       .addCase(setSelectedChatIdWithPreload.fulfilled, (state, action) => {
-        state.selectedChatId = action.payload.chatId;
+        const { chatId, chatData } = action.payload;
+        const previousChatId = state.selectedChatId;
+
+        state.selectedChatId = chatId;
+
+        // 加载新聊天数据到 activeChatData
+        if (chatId && chatData) {
+          state.activeChatData[chatId] = chatData;
+        }
+
+        // 清理上一个聊天的数据（跳过正在发送的聊天）
+        if (previousChatId && previousChatId !== chatId) {
+          if (!state.sendingChatIds[previousChatId]) {
+            delete state.activeChatData[previousChatId];
+          }
+        }
       })
       // 具体每个模型发送消息完成后，取消发送状态，回写数据留给 startSendChatMessage 去做
       .addCase(sendMessage.rejected, (state, action) => {
@@ -528,9 +625,21 @@ const chatSlice = createSlice({
         });
 
       })
+      // 总的启动发送消息 - pending：将 chatId 加入 sendingChatIds
+      .addCase(startSendChatMessage.pending, (state, action) => {
+        const { chat } = action.meta.arg;
+        state.sendingChatIds[chat.id] = true;
+      })
+      // 总的启动发送消息 - fulfilled：将 chatId 从 sendingChatIds 移除
+      .addCase(startSendChatMessage.fulfilled, (state, action) => {
+        const { chat } = action.meta.arg;
+        delete state.sendingChatIds[chat.id];
+      })
       // 总的启动发送消息（它会比 sendMessage 先 rejected），将对应 chat 剩余的所有数据回写到数组中
       .addCase(startSendChatMessage.rejected, (state, action) => {
-        const { chat } = action.meta.arg
+        const { chat } = action.meta.arg;
+
+        // 将 runningChat 中剩余数据回写到 activeChatData
         const currentChat = state.runningChat[chat.id]
         if (isNotNil(currentChat)) {
           Object.entries(currentChat).forEach(([modelId, historyItem]) => {
@@ -538,6 +647,8 @@ const chatSlice = createSlice({
           })
         }
 
+        // 将 chatId 从 sendingChatIds 移除
+        delete state.sendingChatIds[chat.id];
       })
   },
 })
@@ -552,6 +663,9 @@ export const {
   editChat,
   editChatName,
   deleteChat,
+  setActiveChatData,
+  clearActiveChatData,
+  releaseCompletedBackgroundChat,
 } = chatSlice.actions;
 
 export const {

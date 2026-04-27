@@ -32,5 +32,6 @@
   "transmitHistoryReasoningHint": "When enabled, includes model reasoning process in chat history to improve response quality at the cost of increased token usage",
   "supplier": "Supplier",
   "model": "Model",
-  "nickname": "Nickname"
+  "nickname": "Nickname",
+  "shiftDeleteChat": "Shift+Click to quick delete"
 }

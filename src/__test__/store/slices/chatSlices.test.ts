@@ -16,21 +16,26 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Chat } from '@/types/chat';
+import { ChatMeta } from '@/types/chat';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { createMockChat } from '@/__test__/helpers/testing-utils';
 import { createMockMessage } from '@/__test__/fixtures/chat';
 
 // Mock 依赖 - 必须在导入 slice 之前执行
 // 使用 vi.hoisted 确保变量在 vi.mock 之前被定义
-const { mockLoadChatsFromJson } = vi.hoisted(() => ({
-  mockLoadChatsFromJson: vi.fn<() => Promise<Chat[]>>(() => Promise.resolve([])),
+const { mockLoadChatIndex } = vi.hoisted(() => ({
+  mockLoadChatIndex: vi.fn<() => Promise<ChatMeta[]>>(() => Promise.resolve([])),
 }));
 
 // Mock 所有存储相关的模块
 vi.mock('@/store/storage', () => ({
-  loadChatsFromJson: mockLoadChatsFromJson,
-  saveChatsToJson: vi.fn(() => Promise.resolve(undefined)),
+  loadChatIndex: mockLoadChatIndex,
+  loadChatById: vi.fn(() => Promise.resolve(undefined)),
+  saveChatIndex: vi.fn(() => Promise.resolve(undefined)),
+  saveChatById: vi.fn(() => Promise.resolve(undefined)),
+  saveChatAndIndex: vi.fn(() => Promise.resolve(undefined)),
+  deleteChatFromStorage: vi.fn(() => Promise.resolve(undefined)),
+  migrateOldChatStorage: vi.fn(() => Promise.resolve(undefined)),
   loadModelsFromJson: vi.fn(() => Promise.resolve([])),
   saveModelsToJson: vi.fn(() => Promise.resolve(undefined)),
   createLazyStore: vi.fn(() => ({})),
@@ -43,8 +48,9 @@ vi.mock('@/store/storage/modelStorage', () => ({
   saveModelsToJson: vi.fn(() => Promise.resolve(undefined)),
 }));
 
-vi.mock('@/services/chatService', () => ({
+vi.mock('@/services/chat', () => ({
   streamChatCompletion: vi.fn(),
+  generateChatTitleService: vi.fn(),
 }));
 
 // Mock providerLoader 模块
@@ -75,6 +81,7 @@ import chatReducer, {
   initializeChatList,
   generateChatName,
   startSendChatMessage,
+  releaseCompletedBackgroundChat,
 } from '@/store/slices/chatSlices';
 import modelReducer from '@/store/slices/modelSlice';
 
@@ -97,7 +104,7 @@ describe('chatSlices', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // 重置 mock 返回默认值
-    mockLoadChatsFromJson.mockResolvedValue([]);
+    mockLoadChatIndex.mockResolvedValue([]);
     mockPreloadProviders.mockClear();
     store = createTestStore();
   });
@@ -106,7 +113,9 @@ describe('chatSlices', () => {
     it('应该返回正确的初始状态', () => {
       const state = store.getState().chat;
       expect(state).toEqual({
-        chatList: [],
+        chatMetaList: [],
+        activeChatData: {},
+        sendingChatIds: {},
         loading: false,
         selectedChatId: null,
         error: null,
@@ -147,7 +156,7 @@ describe('chatSlices', () => {
       expect(state.runningChat[chat.id]?.[model.id]?.errorMessage).toBe('');
     });
 
-    it('应该在 fulfilled 时清理 runningChat', () => {
+    it('应该在 fulfilled 时清理 runningChat 并回写 activeChatData', () => {
       const chat = createMockChat({
         chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
       });
@@ -156,7 +165,7 @@ describe('chatSlices', () => {
       const arg = { chat, model, message, historyList: [] };
       const responseMessage = createMockMessage();
 
-      // 先创建聊天到 store
+      // 先创建聊天到 store（会同时写入 chatMetaList 和 activeChatData）
       store.dispatch(createChat({ chat }));
 
       // 初始化 runningChat
@@ -172,9 +181,9 @@ describe('chatSlices', () => {
       const state = store.getState().chat;
       expect(state.runningChat[chat.id]?.[model.id]).toBeUndefined();
 
-      // 验证历史记录被添加到聊天中
-      expect(state.chatList[0].chatModelList?.[0].chatHistoryList).toHaveLength(1);
-      expect(state.chatList[0].chatModelList?.[0].chatHistoryList?.[0]).toEqual(responseMessage);
+      // 验证历史记录被添加到 activeChatData 中
+      expect(state.activeChatData[chat.id].chatModelList?.[0].chatHistoryList).toHaveLength(1);
+      expect(state.activeChatData[chat.id].chatModelList?.[0].chatHistoryList?.[0]).toEqual(responseMessage);
     });
 
     it('应该在 rejected 时设置错误信息', () => {
@@ -199,7 +208,7 @@ describe('chatSlices', () => {
   });
 
   describe('startSendChatMessage rejected reducer', () => {
-    it('应该在 rejected 时将所有运行中的历史记录回写到聊天历史', () => {
+    it('应该在 rejected 时将所有运行中的历史记录回写到 activeChatData', () => {
       const chat = createMockChat({
         chatModelList: [
           { modelId: 'model-1', chatHistoryList: [] },
@@ -211,7 +220,7 @@ describe('chatSlices', () => {
       const history1 = createMockMessage({ content: 'Response 1' });
       const history2 = createMockMessage({ content: 'Response 2' });
 
-      // 先创建聊天到 store
+      // 先创建聊天到 store（会同时写入 chatMetaList 和 activeChatData）
       store.dispatch(createChat({ chat }));
 
       // 初始化两个模型的 runningChat
@@ -226,12 +235,12 @@ describe('chatSlices', () => {
       const startArg = { chat, message: 'test' };
       store.dispatch(startSendChatMessage.rejected(new Error('cancelled'), 'test-req-6', startArg));
 
-      // 验证历史记录被回写到聊天历史中
+      // 验证历史记录被回写到 activeChatData 中
       const state = store.getState().chat;
-      expect(state.chatList[0].chatModelList?.[0].chatHistoryList).toHaveLength(1);
-      expect(state.chatList[0].chatModelList?.[0].chatHistoryList?.[0]).toEqual(history1);
-      expect(state.chatList[0].chatModelList?.[1].chatHistoryList).toHaveLength(1);
-      expect(state.chatList[0].chatModelList?.[1].chatHistoryList?.[0]).toEqual(history2);
+      expect(state.activeChatData[chat.id].chatModelList?.[0].chatHistoryList).toHaveLength(1);
+      expect(state.activeChatData[chat.id].chatModelList?.[0].chatHistoryList?.[0]).toEqual(history1);
+      expect(state.activeChatData[chat.id].chatModelList?.[1].chatHistoryList).toHaveLength(1);
+      expect(state.activeChatData[chat.id].chatModelList?.[1].chatHistoryList?.[0]).toEqual(history2);
     });
   });
 
@@ -273,28 +282,32 @@ describe('chatSlices', () => {
       });
       const message = createMockMessage();
 
+      // createChat 会同时写入 chatMetaList 和 activeChatData
       store.dispatch(createChat({ chat }));
 
       // 直接调用 action creator
       store.dispatch(pushChatHistory({ chat, model, message }));
 
       const state = store.getState().chat;
-      expect(state.chatList[0].chatModelList?.[0].chatHistoryList).toHaveLength(1);
-      expect(state.chatList[0].chatModelList?.[0].chatHistoryList?.[0]).toEqual(message);
+      // 验证 activeChatData 中的历史记录
+      expect(state.activeChatData[chat.id].chatModelList?.[0].chatHistoryList).toHaveLength(1);
+      expect(state.activeChatData[chat.id].chatModelList?.[0].chatHistoryList?.[0]).toEqual(message);
     });
 
-    it('应该在聊天不存在时不添加消息', () => {
+    it('应该在聊天不存在于 activeChatData 时不添加消息', () => {
       const model = createMockModel({ id: 'model-1' });
       const chat = createMockChat({
         chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
       });
       const message = createMockMessage();
 
-      // 不创建聊天，直接尝试添加消息
+      // 不创建聊天，直接尝试添加消息（activeChatData 中不存在该聊天）
       store.dispatch(pushChatHistory({ chat, model, message }));
 
       const state = store.getState().chat;
-      expect(state.chatList).toHaveLength(0); // 聊天列表为空
+      // chatMetaList 和 activeChatData 都应该为空
+      expect(state.chatMetaList).toHaveLength(0);
+      expect(Object.keys(state.activeChatData)).toHaveLength(0);
     });
   });
 
@@ -327,8 +340,13 @@ describe('chatSlices', () => {
       store.dispatch(editChatName({ id: chat.id, name: 'New Name' }));
 
       const state = store.getState().chat;
-      expect(state.chatList[0].name).toBe('New Name');
-      expect(state.chatList[0].isManuallyNamed).toBe(true);
+      // 验证 chatMetaList 中的更新
+      const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
+      expect(meta.name).toBe('New Name');
+      expect(meta.isManuallyNamed).toBe(true);
+      // 验证 activeChatData 中的更新
+      expect(state.activeChatData[chat.id].name).toBe('New Name');
+      expect(state.activeChatData[chat.id].isManuallyNamed).toBe(true);
     });
 
     it('应该拒绝编辑为空名称（保持原有名称）', () => {
@@ -340,9 +358,9 @@ describe('chatSlices', () => {
 
       const state = store.getState().chat;
       // 名称应该保持不变
-      expect(state.chatList[0].name).toBe('Old Name');
+      expect(state.activeChatData[chat.id].name).toBe('Old Name');
       // isManuallyNamed 应该保持 undefined（因为没有更新）
-      expect(state.chatList[0].isManuallyNamed).toBeUndefined();
+      expect(state.activeChatData[chat.id].isManuallyNamed).toBeUndefined();
     });
 
     it('应该拒绝编辑为仅空白字符的名称', () => {
@@ -354,9 +372,9 @@ describe('chatSlices', () => {
 
       const state = store.getState().chat;
       // 名称应该保持不变
-      expect(state.chatList[0].name).toBe('Old Name');
+      expect(state.activeChatData[chat.id].name).toBe('Old Name');
       // isManuallyNamed 应该保持 undefined
-      expect(state.chatList[0].isManuallyNamed).toBeUndefined();
+      expect(state.activeChatData[chat.id].isManuallyNamed).toBeUndefined();
     });
   });
 
@@ -373,8 +391,13 @@ describe('chatSlices', () => {
       ));
 
       const state = store.getState().chat;
-      expect(state.chatList[0].name).toBe('Generated Title');
-      expect(state.chatList[0].isManuallyNamed).toBeUndefined(); // 保持 undefined，允许手动覆盖
+      // 验证 activeChatData 中的更新
+      expect(state.activeChatData[chat.id].name).toBe('Generated Title');
+      // isManuallyNamed 保持 undefined，允许手动覆盖
+      expect(state.activeChatData[chat.id].isManuallyNamed).toBeUndefined();
+      // 验证 chatMetaList 中的更新
+      const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
+      expect(meta.name).toBe('Generated Title');
     });
 
     it('应该在失败时不更新聊天名称', () => {
@@ -385,7 +408,7 @@ describe('chatSlices', () => {
       store.dispatch(generateChatName.fulfilled(null, 'generate-req-2', { chat, model: createMockModel(), historyList: [] }));
 
       const state = store.getState().chat;
-      expect(state.chatList[0].name).toBeUndefined();
+      expect(state.activeChatData[chat.id].name).toBeUndefined();
     });
 
     it('应该在聊天不存在时不抛出错误', () => {
@@ -431,4 +454,33 @@ describe('chatSlices', () => {
   });
 
   // 聊天列表过滤测试已被删除：集成测试已覆盖软删除和过滤逻辑
+
+  describe('releaseCompletedBackgroundChat', () => {
+    it('应该在非当前选中时删除 activeChatData', () => {
+      const chatA = createMockChat({ id: 'chat-a' });
+      const chatB = createMockChat({ id: 'chat-b' });
+
+      store.dispatch(createChat({ chat: chatA }));
+      store.dispatch(createChat({ chat: chatB }));
+      store.dispatch({ type: 'chat/setSelectedChatId', payload: 'chat-b' });
+
+      store.dispatch(releaseCompletedBackgroundChat('chat-a'));
+
+      const state = store.getState().chat;
+      expect(state.activeChatData['chat-a']).toBeUndefined();
+      expect(state.activeChatData['chat-b']).toBeDefined();
+    });
+
+    it('应该在当前选中时保留 activeChatData', () => {
+      const chatA = createMockChat({ id: 'chat-a' });
+
+      store.dispatch(createChat({ chat: chatA }));
+      store.dispatch({ type: 'chat/setSelectedChatId', payload: 'chat-a' });
+
+      store.dispatch(releaseCompletedBackgroundChat('chat-a'));
+
+      const state = store.getState().chat;
+      expect(state.activeChatData['chat-a']).toBeDefined();
+    });
+  });
 });

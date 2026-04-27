@@ -19,10 +19,10 @@ export function removePunctuation(title: string): string {
 /**
  * 截取标题到指定长度
  * @param title 原始标题
- * @param maxLength 最大长度（默认 10）
+ * @param maxLength 最大长度（默认 20）
  * @returns 截取后的标题
  */
-export function truncateTitle(title: string, maxLength: number = 10): string {
+export function truncateTitle(title: string, maxLength: number = 20): string {
   return title.slice(0, maxLength);
 }
 
@@ -39,7 +39,7 @@ export function buildTitlePrompt(messages: StandardMessage[]): string {
   return `你是一个聊天标题生成助手。请根据以下对话内容生成一个简洁的标题。
 
 要求：
-- 长度：5-10 个汉字
+- 长度：5-20 个字符
 - 风格：专业、概括性
 - 不包含标点符号
 

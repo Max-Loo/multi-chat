@@ -53,7 +53,7 @@ describe('Redux Hooks', () => {
       );
 
       expect(result.current).toBeDefined();
-      expect(result.current.chatList).toEqual([]);
+      expect(result.current.chatMetaList).toEqual([]);
       expect(result.current.selectedChatId).toBeNull();
     });
 

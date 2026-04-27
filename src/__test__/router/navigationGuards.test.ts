@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import router from '@/router/index';
-import { TestRouteObject, hasRouteProperty, getRootChildren } from '@/__test__/helpers/mocks/router';
+import { hasRouteProperty, getRootChildren } from '@/__test__/helpers/mocks/router';
 
 describe('Router 导航守卫测试', () => {
   describe('当前实现状态', () => {
@@ -28,8 +28,9 @@ describe('Router 导航守卫测试', () => {
   describe('未来导航守卫扩展点', () => {
     it('应该为未来的权限验证守卫预留扩展点', () => {
       // 当前不实现 loader/action，未来可以添加
-      expect(hasRouteProperty(router.routes as TestRouteObject[], 'loader')).toBe(false);
-      expect(hasRouteProperty(router.routes as TestRouteObject[], 'action')).toBe(false);
+      const routes = getRootChildren(router);
+      expect(hasRouteProperty(routes, 'loader')).toBe(false);
+      expect(hasRouteProperty(routes, 'action')).toBe(false);
     });
   });
 });

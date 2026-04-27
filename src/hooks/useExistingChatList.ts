@@ -1,15 +1,11 @@
-import { useMemo } from "react"
 import { useAppSelector } from "./redux"
+import { selectChatMetaList } from "@/store/selectors/chatSelectors"
+import type { ChatMeta } from "@/types/chat"
 
 /**
- * @description 获取不包含删除了的聊天的 chatList
+ * @description 获取活跃聊天的元数据列表（已过滤 isDeleted）
  */
-export const useExistingChatList = () => {
-  const chatList = useAppSelector(state => state.chat.chatList)
-
-  return useMemo(() => {
-    return chatList.filter(chat => {
-      return !chat.isDeleted
-    })
-  }, [chatList])
+export const useExistingChatList = (): ChatMeta[] => {
+  const chatMetaList = useAppSelector(selectChatMetaList)
+  return chatMetaList
 }

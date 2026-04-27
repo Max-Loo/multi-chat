@@ -1,6 +1,6 @@
 // 此文件由 generate-i18n-types-resources.js 脚本自动生成
 // 请勿手动编辑此文件
-// 生成时间: 2026/3/14 00:43:29
+// 生成时间: 2026/4/27 19:42:12
 
 interface Resources {
   translation: {
@@ -39,6 +39,7 @@ interface Resources {
       supplier: string;
       model: string;
       nickname: string;
+      shiftDeleteChat: string;
     };
     common: {
       submit: string;
@@ -174,6 +175,15 @@ interface Resources {
         copyToClipboard: string;
         resetAllData: string;
         resetAllDataDescription: string;
+      };
+      chatExport: {
+        title: string;
+        description: string;
+        exportAll: string;
+        exportDeleted: string;
+        exportSuccess: string;
+        exportFailed: string;
+        noDeletedChats: string;
       };
       modelProvider: {
         title: string;

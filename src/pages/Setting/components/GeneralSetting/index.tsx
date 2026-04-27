@@ -2,6 +2,7 @@ import { useScrollContainer } from "@/hooks/useScrollContainer";
 import LanguageSetting from "./components/LanguageSetting";
 import ModelProviderSetting from "./components/ModelProviderSetting";
 import AutoNamingSetting from "./components/AutoNamingSetting";
+import ChatExportSetting from "./components/ChatExportSetting";
 
 const GeneralSetting: React.FC = () => {
   const { scrollContainerRef, scrollbarClassname } = useScrollContainer();
@@ -40,6 +41,15 @@ const GeneralSetting: React.FC = () => {
     `}
       >
         <ModelProviderSetting />
+      </div>
+
+      <div
+        className={`
+      w-full p-3 my-4 bg-white rounded-xl
+      flex flex-col justify-start items-center
+    `}
+      >
+        <ChatExportSetting />
       </div>
     </div>
   );

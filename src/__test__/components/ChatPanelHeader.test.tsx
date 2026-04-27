@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import ChatPanelHeader from '@/pages/Chat/components/Panel/Header';
 import type { Chat } from '@/types/chat';
+import { chatToMeta } from '@/types/chat';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import {
   createChatSliceState,
@@ -37,10 +38,14 @@ const createStore = (chat?: Chat, isSidebarCollapsed = false) => {
     isDeleted: false,
   };
 
+  const resolvedChat = chat || defaultChat;
+
   return createTypeSafeTestStore({
     chat: createChatSliceState({
-      chatList: [chat || defaultChat],
-      selectedChatId: (chat || defaultChat).id,
+      chatMetaList: [chatToMeta(resolvedChat)],
+      activeChatData: { [resolvedChat.id]: resolvedChat },
+      sendingChatIds: {},
+      selectedChatId: resolvedChat.id,
     }),
     chatPage: createChatPageSliceState({
       isSidebarCollapsed,

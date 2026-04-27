@@ -4,6 +4,16 @@ export interface ChatModel {
   chatHistoryList: StandardMessage[];
 }
 
+// 聊天索引元数据
+export interface ChatMeta {
+  id: string;
+  name?: string;
+  isManuallyNamed?: boolean;
+  modelIds: string[];
+  isDeleted?: boolean;
+  updatedAt?: number;
+}
+
 // 每个聊天实体的类型
 export interface Chat {
   id: string;
@@ -15,6 +25,24 @@ export interface Chat {
   isDeleted?: boolean;
   // 标识用户是否手动命名过（手动命名后不再触发自动命名）
   isManuallyNamed?: boolean;
+  // 最后一次更新时间（秒级时间戳）
+  updatedAt?: number;
+}
+
+/**
+ * 从完整 Chat 对象提取索引元数据
+ * @param chat 完整的聊天对象
+ * @returns 轻量级的聊天元数据
+ */
+export function chatToMeta(chat: Chat): ChatMeta {
+  return {
+    id: chat.id,
+    name: chat.name,
+    isManuallyNamed: chat.isManuallyNamed,
+    modelIds: chat.chatModelList?.map(cm => cm.modelId) ?? [],
+    isDeleted: chat.isDeleted,
+    updatedAt: chat.updatedAt,
+  };
 }
 
 // 聊天角色枚举值

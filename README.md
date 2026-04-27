@@ -1,397 +1,399 @@
+**English** | [中文](./README.zh-CN.md)
+
 # Multi-Chat
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://max-loo.github.io/multi-chat/)
 [![Deploy to GitHub Pages](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml/badge.svg)](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml)
 
-一个基于 Tauri + React + TypeScript 的多模型聊天应用，支持同时与多个 AI 模型进行对话，方便对比不同模型的回答。
+A multi-model chat application built with Tauri + React + TypeScript, supporting simultaneous conversations with multiple AI models for easy comparison of responses.
 
-## 功能特点
+## Features
 
-### 🤖 多模型支持
+### 🤖 Multi-Model Support
 
-- 支持添加多个不同服务商的 AI 模型（如 DeepSeek、月之暗面等）
-- 可为每个模型配置独立的 API 密钥和地址
-- 支持模型的启用/禁用管理
-- 模型配置信息本地安全存储
-- 🔌 **远程模型数据获取**：从 `models.dev API` 动态获取模型供应商定义，保持数据最新
-- ⚡ **性能优化**：供应商 SDK 按需加载，减少初始 bundle 大小约 125KB（gzipped）
+- Add AI models from multiple providers (e.g., DeepSeek, Moonshot)
+- Configure independent API keys and endpoints for each model
+- Enable/disable model management
+- Secure local storage of model configurations
+- 🔌 **Remote Model Data**: Fetch model provider definitions dynamically from `models.dev API` to keep data up-to-date
+- ⚡ **Performance Optimization**: Lazy-load provider SDKs, reducing initial bundle size by ~125KB (gzipped)
 
-### 💬 多模型同时对话
+### 💬 Simultaneous Multi-Model Chat
 
-- 创建聊天会话，可同时与多个模型进行对话
-- 同一问题可同时发送给多个模型，直观对比不同模型的回答
-- 支持实时流式响应展示
-- 支持中断正在进行的对话
+- Create chat sessions to converse with multiple models simultaneously
+- Send the same question to multiple models and compare responses side-by-side
+- Real-time streaming response display
+- Interrupt ongoing conversations
 
-### 📝 聊天管理
+### 📝 Chat Management
 
-- 创建、编辑、删除聊天会话
-- 聊天历史记录持久化存储
-- 支持聊天会话的搜索和过滤
-- 可折叠的侧边栏设计，节省空间
+- Create, edit, and delete chat sessions
+- Persistent chat history storage
+- Search and filter chat sessions
+- Collapsible sidebar design to save space
 
-### 🎨 现代化界面
+### 🎨 Modern UI
 
-- 基于 shadcn/ui 和 Radix UI 组件库的现代化 UI 设计
-- **四级响应式布局系统**，自动适配不同屏幕尺寸
-- 支持自定义聊天窗口布局（单列/多列显示）
-- 优雅的动画和过渡效果
+- Modern UI design based on shadcn/ui and Radix UI component library
+- **Four-level responsive layout system** that automatically adapts to different screen sizes
+- Customizable chat window layout (single-column/multi-column display)
+- Smooth animations and transitions
 
-### 📱 响应式布局特性
+### 📱 Responsive Layout
 
-应用支持四级响应式布局，根据窗口宽度自动调整：
+The app supports four levels of responsive layout that automatically adjust based on window width:
 
-- **Desktop** (≥1280px): 完整桌面布局，侧边栏 224px
-- **Compressed** (1024-1279px): 压缩布局，侧边栏 192px（缩小字体和图标）
-- **Compact** (768-1023px): 紧凑布局，侧边栏 192px（缩小字体和图标）
-- **Mobile** (<768px): 移动端布局
-  - 侧边栏集成到抽屉中（从左侧滑出）
-  - 底部导航栏（Chat/Model/Setting）
-  - 触摸优化交互
+- **Desktop** (≥1280px): Full desktop layout, 224px sidebar
+- **Compressed** (1024-1279px): Compressed layout, 192px sidebar (smaller fonts and icons)
+- **Compact** (768-1023px): Compact layout, 192px sidebar (smaller fonts and icons)
+- **Mobile** (<768px): Mobile layout
+  - Sidebar integrated into a drawer (slides from left)
+  - Bottom navigation bar (Chat/Model/Setting)
+  - Touch-optimized interactions
 
-**技术特性**：
-- 窗口 resize 时自动平滑切换（150ms 防抖）
-- CSS 过渡动画流畅无卡顿
-- 完整的键盘导航和 ARIA 标签支持
+**Technical Features**:
+- Automatic smooth switching on window resize (150ms debounce)
+- Smooth CSS transition animations
+- Full keyboard navigation and ARIA label support
 
-### 🔒 数据安全
+### 🔒 Data Security
 
-- 本地数据存储，保护隐私
-- API 密钥使用 AES-256-GCM 加密存储
-- 主密钥通过 `tauri-plugin-keyring` 安全存储到系统钥匙串
-- 敏感数据字段级加密，非敏感数据明文存储
-- 数据存储为 JSON 格式，便于备份和查看
+- Local data storage to protect privacy
+- API keys encrypted with AES-256-GCM
+- Master key securely stored in system keychain via `tauri-plugin-keyring`
+- Field-level encryption for sensitive data, plaintext storage for non-sensitive data
+- Data stored in JSON format for easy backup and inspection
 
-## 技术栈
+## Tech Stack
 
-- **前端框架**: React 19 + TypeScript
-- **UI 组件库**: shadcn/ui + Radix UI
-- **状态管理**: Redux Toolkit
-- **路由**: React Router v7
-- **样式**: Tailwind CSS
-- **国际化**: i18next + react-i18next
-- **桌面框架**: Tauri 2
-- **构建工具**: Vite
+- **Frontend Framework**: React 19 + TypeScript
+- **UI Components**: shadcn/ui + Radix UI
+- **State Management**: Redux Toolkit
+- **Routing**: React Router v7
+- **Styling**: Tailwind CSS
+- **Internationalization**: i18next + react-i18next
+- **Desktop Framework**: Tauri 2
+- **Build Tool**: Vite
 
-## 快速开始
+## Getting Started
 
-### 环境要求
+### Prerequisites
 
 - Node.js 18+
 - pnpm
-- Rust 1.70+ (用于构建 Tauri 应用)
+- Rust 1.70+ (for building the Tauri app)
 
-### 安装依赖
+### Install Dependencies
 
 ```bash
-# 克隆项目
+# Clone the project
 git clone [repository-url]
 cd multi-chat
 
-# 安装依赖
+# Install dependencies
 pnpm install
 ```
 
-### 开发模式
+### Development Mode
 
 ```bash
-# 启动 Tauri 桌面应用开发模式（同时启动前端和后端）
+# Start Tauri desktop app development mode (starts both frontend and backend)
 pnpm tauri dev
 
-# 启动 Web 浏览器开发模式（仅前端）
+# Start web browser development mode (frontend only)
 pnpm web:dev
 ```
 
-### 构建应用
+### Build the Application
 
 ```bash
-# 构建 Tauri 桌面应用生产版本
+# Build Tauri desktop app for production
 pnpm tauri build
 
-# 构建 Web 应用生产版本
+# Build web app for production
 pnpm web:build
 ```
 
-### 部署到 GitHub Pages
+### Deploy to GitHub Pages
 
-本项目支持部署到 GitHub Pages，提供在线访问能力。
+This project supports deployment to GitHub Pages for online access.
 
-**在线访问地址**: [https://max-loo.github.io/multi-chat/](https://max-loo.github.io/multi-chat/)
+**Live URL**: [https://max-loo.github.io/multi-chat/](https://max-loo.github.io/multi-chat/)
 
-**本地部署命令**:
+**Local Deployment Command**:
 ```bash
-# 构建并部署到 GitHub Pages
+# Build and deploy to GitHub Pages
 pnpm deploy:gh-pages
 ```
 
-**GitHub Actions 自动部署**: 当创建版本 tag（`v*.*.*`）时，GitHub Actions 使用官方 Pages Actions（`actions/upload-pages-artifact` + `actions/deploy-pages`）自动构建并部署。版本发布流程如下：
+**GitHub Actions Auto-Deployment**: When a version tag (`v*.*.*`) is created, GitHub Actions uses the official Pages Actions (`actions/upload-pages-artifact` + `actions/deploy-pages`) to automatically build and deploy. The version release workflow:
 
-1. 更新 `package.json` 中的版本号
-2. 创建 PR 并合并到 `main` 分支
-3. `create-tag.yml` workflow 自动创建版本 tag
-4. `deploy-to-gh-pages.yml` workflow 触发自动部署
-   - **build job**: 构建 Web 应用并上传 artifact
-   - **deploy job**: 将 artifact 部署到 GitHub Pages
+1. Update the version number in `package.json`
+2. Create a PR and merge into the `main` branch
+3. `create-tag.yml` workflow automatically creates a version tag
+4. `deploy-to-gh-pages.yml` workflow triggers auto-deployment
+   - **build job**: Build the web app and upload artifact
+   - **deploy job**: Deploy artifact to GitHub Pages
 
-同时，桌面应用构建（`build-and-release.yml`）也会并行触发，确保桌面和 Web 版本同步发布。
+Meanwhile, the desktop build (`build-and-release.yml`) is also triggered in parallel to ensure desktop and web versions are released simultaneously.
 
-**技术细节**:
-- 使用 GitHub Pages 官方 Actions（推荐方式）
-- 分离构建和部署为两个独立的 job
-- 更安全的权限模型（`pages: write` + `id-token: write`）
-- 不需要维护 gh-pages 分支
+**Technical Details**:
+- Uses official GitHub Pages Actions (recommended approach)
+- Separated build and deploy into two independent jobs
+- More secure permission model (`pages: write` + `id-token: write`)
+- No need to maintain a gh-pages branch
 
-### 其他常用命令
+### Other Common Commands
 
 ```bash
-# 运行代码检查（使用 oxlint）
+# Run linting (using oxlint)
 pnpm lint
 
-# 更新应用版本号
+# Update application version
 pnpm update-version
 
-# 生成国际化类型定义
+# Generate i18n type definitions
 pnpm generate-i18n-types
 
-# 运行测试
+# Run tests
 pnpm test
 
-# 运行测试并生成覆盖率报告
+# Run tests with coverage report
 pnpm test:coverage
 
-# 运行所有测试（包括集成测试）
+# Run all tests (including integration tests)
 pnpm test:all
 ```
 
-**详细测试文档**：项目有完整的测试规范和指南，请查看 [测试文档](./src/__test__/README.md) 了解：
-- 行为驱动测试原则
-- 测试隔离和 Mock 策略
-- 测试目录结构和组织方式
-- Before/After 对比示例
-- 常见反模式和解决方案
+**Detailed Test Documentation**: The project has comprehensive test specifications and guidelines. See [Test Documentation](./src/__test__/README.md) for:
+- Behavior-driven testing principles
+- Test isolation and mock strategies
+- Test directory structure and organization
+- Before/After comparison examples
+- Common anti-patterns and solutions
 
-## 使用指南
+## Usage Guide
 
-### 添加模型
+### Adding a Model
 
-1. 启动应用后，点击左侧导航栏的"模型"按钮
-2. 点击"添加模型"按钮
-3. 选择模型服务商（如 DeepSeek）
-4. 填写模型信息：
-   - 模型昵称（自定义名称）
-   - API 密钥
-   - API 地址
-   - 备注（可选）
-5. 点击"保存"完成添加
+1. After launching the app, click the "Model" button in the left navigation bar
+2. Click the "Add Model" button
+3. Select a model provider (e.g., DeepSeek)
+4. Fill in the model information:
+   - Model nickname (custom name)
+   - API key
+   - API endpoint
+   - Notes (optional)
+5. Click "Save" to complete
 
-### 创建聊天
+### Creating a Chat
 
-1. 点击左侧导航栏的"聊天"按钮
-2. 点击聊天侧边栏的"新建聊天"按钮
-3. 为聊天命名（可选）
-4. 点击"添加模型"，选择要对话的模型
-5. 开始输入消息，与多个模型同时对话
+1. Click the "Chat" button in the left navigation bar
+2. Click the "New Chat" button in the chat sidebar
+3. Name the chat (optional)
+4. Click "Add Model" and select models to chat with
+5. Start typing messages to chat with multiple models simultaneously
 
-### 聊天界面操作
+### Chat Interface Operations
 
-- **发送消息**: 在输入框中输入内容，按 Enter 发送（Shift+Enter 换行）
-- **停止对话**: 点击发送按钮可中断正在进行的对话
-- **切换布局**: 使用顶部工具栏切换单列/多列显示模式
-- **查看历史**: 滚动查看历史对话记录
+- **Send Message**: Type in the input box and press Enter to send (Shift+Enter for new line)
+- **Stop Conversation**: Click the send button to interrupt an ongoing conversation
+- **Switch Layout**: Use the top toolbar to switch between single-column/multi-column display
+- **View History**: Scroll to view conversation history
 
-## 项目结构
+## Project Structure
 
 ```
 multi-chat/
-├── src/                        # React 前端代码
-│   ├── components/             # 公共组件
-│   │   ├── ui/                # shadcn/ui 组件
-│   │   ├── FilterInput/       # 过滤输入组件
-│   │   ├── Layout/            # 布局组件
-│   │   └── Sidebar/           # 侧边栏组件
-│   ├── pages/                 # 页面组件
-│   │   ├── Chat/              # 聊天页面
-│   │   ├── Model/             # 模型管理页面
-│   │   └── Setting/           # 设置页面
-│   ├── hooks/                 # 自定义 Hooks
-│   ├── config/                # 配置文件
-│   │   └── initSteps.ts       # 初始化步骤配置
-│   ├── locales/               # 国际化语言文件
-│   │   ├── en/                # 英文语言包
-│   │   ├── zh/                # 中文语言包
-│   │   └── fr/                # 法文语言包
-│   ├── services/              # 服务层
-│   │   ├── chat/              # 聊天服务（模块化）
-│   │   ├── modelRemote/       # 远程模型服务
-│   │   ├── i18n.ts            # 国际化配置
-│   │   └── global.ts          # 全局配置
-│   ├── store/                 # Redux 状态管理
-│   │   ├── slices/            # Redux 切片
-│   │   ├── middleware/        # 中间件
-│   │   ├── storage/           # 数据持久化
-│   │   └── keyring/           # 主密钥管理
-│   ├── types/                 # TypeScript 类型定义
-│   └── utils/                 # 工具函数
-│       ├── tauriCompat/       # Tauri 兼容层
-│       ├── crypto.ts          # 加密工具
+├── src/                        # React frontend code
+│   ├── components/             # Shared components
+│   │   ├── ui/                # shadcn/ui components
+│   │   ├── FilterInput/       # Filter input component
+│   │   ├── Layout/            # Layout components
+│   │   └── Sidebar/           # Sidebar components
+│   ├── pages/                 # Page components
+│   │   ├── Chat/              # Chat page
+│   │   ├── Model/             # Model management page
+│   │   └── Setting/           # Settings page
+│   ├── hooks/                 # Custom hooks
+│   ├── config/                # Configuration files
+│   │   └── initSteps.ts       # Initialization step config
+│   ├── locales/               # i18n language files
+│   │   ├── en/                # English language pack
+│   │   ├── zh/                # Chinese language pack
+│   │   └── fr/                # French language pack
+│   ├── services/              # Service layer
+│   │   ├── chat/              # Chat service (modular)
+│   │   ├── modelRemote/       # Remote model service
+│   │   ├── i18n.ts            # i18n configuration
+│   │   └── global.ts          # Global configuration
+│   ├── store/                 # Redux state management
+│   │   ├── slices/            # Redux slices
+│   │   ├── middleware/        # Middleware
+│   │   ├── storage/           # Data persistence
+│   │   └── keyring/           # Master key management
+│   ├── types/                 # TypeScript type definitions
+│   └── utils/                 # Utility functions
+│       ├── tauriCompat/       # Tauri compatibility layer
+│       ├── crypto.ts          # Crypto utilities
 │       └── ...
-├── src-tauri/                 # Rust 后端代码
+├── src-tauri/                 # Rust backend code
 │   ├── src/
-│   │   ├── lib.rs             # Tauri 命令定义
-│   │   └── main.rs            # 入口文件
-│   └── tauri.conf.json        # Tauri 配置
-├── public/                    # 静态资源
-└── package.json               # 项目依赖和脚本
+│   │   ├── lib.rs             # Tauri command definitions
+│   │   └── main.rs            # Entry file
+│   └── tauri.conf.json        # Tauri configuration
+├── public/                    # Static assets
+└── package.json               # Project dependencies and scripts
 ```
 
-## 国际化配置
+## Internationalization
 
-### 支持的语言
+### Supported Languages
 
-- 中文 (zh)
-- 英文 (en)
-- 法文 (fr)
+- Chinese (zh)
+- English (en)
+- French (fr)
 
-### 语言文件结构
+### Language File Structure
 
-语言文件位于 `src/locales/` 目录下，按语言代码分类：
+Language files are located in the `src/locales/` directory, organized by language code:
 
-- 每种语言包含多个 JSON 文件，按功能模块划分：
-  - `common.json`: 通用文本（按钮、操作等）
-  - `navigation.json`: 导航菜单文本
-  - `model.json`: 模型管理相关文本
-  - `chat.json`: 聊天相关文本
-  - `provider.json`: 模型提供商文本
-  - `setting.json`: 设置相关文本
-  - `table.json`: 表格相关文本
-  - `error.json`: 错误提示文本
+- Each language contains multiple JSON files, organized by feature module:
+  - `common.json`: Common text (buttons, actions, etc.)
+  - `navigation.json`: Navigation menu text
+  - `model.json`: Model management text
+  - `chat.json`: Chat-related text
+  - `provider.json`: Model provider text
+  - `setting.json`: Settings text
+  - `table.json`: Table-related text
+  - `error.json`: Error message text
 
-### 语言切换机制
+### Language Switching Mechanism
 
-1. 优先级顺序：
-    - 本地存储的语言设置
-    - 系统语言（如果支持）
-    - 默认语言（英文）
-2. 语言设置存储在 `localStorage` 中，键名为 `multi-chat-language`
-3. 使用 `i18next` 和 `react-i18next` 实现国际化功能
+1. Priority order:
+    - Locally stored language preference
+    - System language (if supported)
+    - Default language (English)
+2. Language preference is stored in `localStorage` with the key `multi-chat-language`
+3. Uses `i18next` and `react-i18next` for internationalization
 
-**语言代码自动迁移**：
-- 应用升级时，如果语言代码发生变更（如 `zh-CN` → `zh`），系统会自动迁移到新的语言代码
-- 迁移后显示提示信息，告知用户新的语言代码
-- 如果旧的语言代码不再支持，系统会自动清理缓存并降级到系统语言或英文
-- 语言设置在手动切换后会持久化到 localStorage，刷新后保持不变
+**Language Code Auto-Migration**:
+- On app upgrade, if language codes have changed (e.g., `zh-CN` → `zh`), the system automatically migrates to the new code
+- A notification is displayed after migration informing the user of the new language code
+- If the old language code is no longer supported, the system automatically clears the cache and falls back to the system language or English
+- Language preference persists to localStorage after manual switching and remains after refresh
 
-**按需加载与性能优化**：
-- ✅ **英文"第一公民"**：英文资源静态打包到主 bundle（~5 KB），确保离线可用
-- ✅ **按需加载**：启动时仅加载英文 + 系统语言，节省 33%-67% 初始加载量
-- ✅ **智能缓存**：缓存进行中的加载请求，避免快速切换时的竞态条件
+**On-Demand Loading & Performance Optimization**:
+- ✅ **English as "First-Class Citizen"**: English resources are statically bundled into the main bundle (~5 KB), ensuring offline availability
+- ✅ **On-Demand Loading**: Only English + system language are loaded at startup, saving 33%-67% of initial load
+- ✅ **Smart Caching**: In-flight load requests are cached to prevent race conditions during rapid switching
 
-**自动持久化**：
-- ✅ 语言变更通过 Redux Middleware 自动同步到 localStorage
-- ✅ 静默降级：localStorage 写入失败时记录警告，不影响应用运行
+**Auto-Persistence**:
+- ✅ Language changes are automatically synced to localStorage via Redux Middleware
+- ✅ Silent degradation: localStorage write failures log a warning without affecting app operation
 
-**消息队列机制**：
-- ✅ 初始化期间的语言切换提示暂存在队列中
-- ✅ Toaster 组件就绪后按顺序显示，每个消息间隔 500ms
-- ✅ 避免时序问题导致的提示丢失
+**Message Queue Mechanism**:
+- ✅ Language switch notifications during initialization are queued
+- ✅ Messages are displayed in order after the Toaster component is ready, with 500ms intervals
+- ✅ Prevents notification loss from timing issues
 
-### 添加新语言支持
+### Adding New Language Support
 
-1. 在 `src/locales/` 下创建新的语言目录（如 `fr/`）
-2. 复制现有语言文件结构并翻译内容
-3. 在 `src/utils/constants.ts` 中的 `SUPPORTED_LANGUAGE_LIST` 添加新语言代码
-4. 重启应用使新语言生效
+1. Create a new language directory under `src/locales/` (e.g., `fr/`)
+2. Copy the existing language file structure and translate the content
+3. Add the new language code to `SUPPORTED_LANGUAGE_LIST` in `src/utils/constants.ts`
+4. Restart the app for the new language to take effect
 
-## 开发说明
+## Development Notes
 
-### 代码质量
+### Code Quality
 
-项目使用以下工具保证代码质量：
+The project uses the following tools to ensure code quality:
 
-- **oxlint**: 代码静态分析工具
+- **oxlint**: Static code analysis tool
   ```bash
   pnpm lint
   ```
 
-- **knip**: 检测未使用的代码、依赖和导出
+- **knip**: Detect unused code, dependencies, and exports
   ```bash
   pnpm analyze:unused
   ```
-  此命令会扫描项目并报告：
-  - 未使用的文件
-  - 未使用的依赖（dependencies 和 devDependencies）
-  - 未使用的导出（函数、变量、类型等）
-  
-  配置位于 `knip.json`，可以根据需要调整入口点、忽略规则等。
+  This command scans the project and reports:
+  - Unused files
+  - Unused dependencies (dependencies and devDependencies)
+  - Unused exports (functions, variables, types, etc.)
 
-### 添加新的模型服务商
+  Configuration is located in `knip.json`, where you can adjust entry points, ignore rules, etc.
 
-1. 在 `src/utils/enums.ts` 中添加新的服务商枚举
-2. 在 `src/services/chat/providerLoader.ts` 中注册对应的 Provider 工厂函数
-3. 在 `src/pages/Model/CreateModel/components/ModelSidebar.tsx` 中添加服务商选项
+### Adding a New Model Provider
 
-### 代码规范
+1. Add the new provider enum in `src/utils/enums.ts`
+2. Register the corresponding Provider factory function in `src/services/chat/providerLoader.ts`
+3. Add the provider option in `src/pages/Model/CreateModel/components/ModelSidebar.tsx`
 
-- **导入路径**：始终使用 `@/` 别名导入，不使用相对路径
+### Code Conventions
+
+- **Import paths**: Always use the `@/` alias for imports, never use relative paths
   ```typescript
-  // 正确
+  // Correct
   import { Model } from "@/types/model";
-  
-  // 错误
+
+  // Wrong
   import { Model } from "../../types/model";
   ```
-- **代码注释**：函数、类型、变量上方添加中文注释
-- **设计原则**：遵循 SOLID、KISS、YAGNI、DRY 原则
-- **架构参考**：详细设计说明请查看 [AGENTS.md](./AGENTS.md)
+- **Code comments**: Add comments above functions, types, and variables in Chinese
+- **Design principles**: Follow SOLID, KISS, YAGNI, DRY principles
+- **Architecture reference**: See [AGENTS.md](./AGENTS.md) for detailed design documentation
 
-### 数据持久化
+### Data Persistence
 
-应用使用 @tauri-apps/plugin-store 插件进行数据持久化，数据存储位置：
+The app uses the @tauri-apps/plugin-store plugin for data persistence. Data storage locations:
 
 - **Windows**: `%APPDATA%\multi-chat`
 - **macOS**: `~/Library/Application Support/multi-chat`
 - **Linux**: `~/.config/multi-chat`
 
-#### 数据文件
+#### Data Files
 
-- `models.json`: 模型配置（API 密钥字段已加密）
-- `chats.json`: 聊天记录
+- `models.json`: Model configurations (API key fields are encrypted)
+- `chats.json`: Chat records
 
-#### 加密机制
+#### Encryption Mechanism
 
-- **算法**: AES-256-GCM（认证加密）
-- **密钥管理**:
-  - 主密钥由 Web Crypto API 生成（256-bit 随机密钥）
-  - 桌面端：存储在系统安全存储（macOS 钥匙串 / Windows DPAPI / Linux Secret Service）
-  - Web 环境：使用 IndexedDB 加密存储（与桌面端系统钥匙串对应）
-  - 使用 `tauri-plugin-keyring` 统一管理跨平台密钥存储
-- **加密格式**: `enc:base64(ciphertext + auth_tag + nonce)`
-- **仅支持桌面端**: 不支持移动端（iOS/Android）
+- **Algorithm**: AES-256-GCM (authenticated encryption)
+- **Key Management**:
+  - Master key generated by Web Crypto API (256-bit random key)
+  - Desktop: Stored in system secure storage (macOS Keychain / Windows DPAPI / Linux Secret Service)
+  - Web: Encrypted storage using IndexedDB (corresponding to desktop system keychain)
+  - Uses `tauri-plugin-keyring` for unified cross-platform key management
+- **Encryption Format**: `enc:base64(ciphertext + auth_tag + nonce)`
+- **Desktop Only**: Mobile platforms (iOS/Android) are not supported
 
-## 推荐开发环境
+## Recommended Development Environment
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 
-## 常见问题
+## FAQ
 
-### Tauri 构建失败
+### Tauri Build Failure
 
-**问题**: 运行 `pnpm tauri build` 时报错
+**Issue**: Error when running `pnpm tauri build`
 
-**解决方案**:
-1. 确保 Rust 工具链已正确安装：`rustc --version`
-2. 确保 Tauri CLI 已正确安装：`pnpm tauri --version`
-3. 尝试清理缓存：`pnpm tauri build --clean`
+**Solution**:
+1. Ensure Rust toolchain is properly installed: `rustc --version`
+2. Ensure Tauri CLI is properly installed: `pnpm tauri --version`
+3. Try clearing the cache: `pnpm tauri build --clean`
 
-### Web 环境密钥丢失
+### Web Environment Key Loss
 
-**问题**: Web 环境下清除浏览器数据后，无法解密之前的数据
+**Issue**: Unable to decrypt previous data after clearing browser data in the web environment
 
-**解决方案**:
-- Web 环境的密钥种子存储在 `localStorage` 中，清除浏览器数据会导致密钥丢失
-- 建议提前在设置页面导出主密钥作为备份，密钥丢失后可通过导入恢复
-- 重要的敏感数据建议使用桌面版处理
+**Solution**:
+- The web environment stores the key seed in `localStorage`. Clearing browser data will result in key loss
+- It is recommended to export the master key in advance from the settings page as a backup. After key loss, it can be restored by importing
+- For important sensitive data, it is recommended to use the desktop version
 
-## 许可证
+## License
 
 MIT License

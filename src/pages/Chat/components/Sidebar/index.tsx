@@ -1,7 +1,7 @@
 import ToolsBar from "./components/ToolsBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";
-import { Chat } from "@/types/chat"
+import { ChatMeta } from "@/types/chat"
 import { useDebouncedFilter } from "@/components/FilterInput/hooks/useDebouncedFilter";
 import { useAppSelector } from "@/hooks/redux";
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar";
@@ -13,7 +13,7 @@ import { VList } from "virtua";
  * 聊天侧边栏组件
  */
 const Sidebar: React.FC = () => {
-  const chatList = useExistingChatList();
+  const chatMetaList = useExistingChatList();
   const chatListLoading = useAppSelector((state) => state.chat.loading);
   const selectedChatId = useAppSelector((state) => state.chat.selectedChatId);
 
@@ -22,13 +22,13 @@ const Sidebar: React.FC = () => {
   const [filterText, setFilterText] = useState<string>("");
 
   const filterPredicate = useCallback(
-    (chat: Chat) => chat.name?.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
+    (meta: ChatMeta) => meta.name?.toLocaleLowerCase().includes(filterText.toLocaleLowerCase()),
     [filterText]
   )
 
   const { filteredList: filteredChatList } = useDebouncedFilter(
     filterText,
-    chatList,
+    chatMetaList,
     filterPredicate,
   );
 
@@ -43,12 +43,12 @@ const Sidebar: React.FC = () => {
             className={`pb-2 w-full ${scrollbarClassname}`}
             onScroll={onScrollEvent}
           >
-            {filteredChatList.map((chat) => {
+            {filteredChatList.map((meta) => {
               return (
                 <ChatButton
-                  chat={chat}
-                  key={chat.id}
-                  isSelected={chat.id === selectedChatId}
+                  chatMeta={meta}
+                  key={meta.id}
+                  isSelected={meta.id === selectedChatId}
                 />
               );
             })}
