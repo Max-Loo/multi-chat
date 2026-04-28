@@ -55,52 +55,14 @@ pnpm test:all
 
 ### 测试文件结构
 
-```typescript
-// src/__test__/integration/xxx.integration.test.ts
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { setupServer } from 'msw/node';
-import { act, waitFor } from '@testing-library/react';
-import { getTestStore, resetStore } from '@/__test__/helpers/integration/resetStore';
-import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
-import { setupTestServer } from '@/__test__/helpers/integration/testServer';
+集成测试文件位于 `src/__test__/integration/`，命名格式为 `*.integration.test.ts`。典型结构：
 
-describe('功能名称集成测试', () => {
-  let testStore: Store<RootState>;
-  let server: ReturnType<typeof setupServer>;
+1. 模块级 `vi.mock()` 声明（Vitest 会自动提升到文件顶部）
+2. `describe` 套件包裹所有测试用例
+3. `beforeEach` 中清理状态（`vi.clearAllMocks()` + `clearIndexedDB()` + `getTestStore()`）
+4. `afterEach` 中调用 `resetStore()` 释放 store
 
-  beforeEach(async () => {
-    // 创建 MSW server
-    server = setupServer();
-    server.listen();
-
-    // 设置测试 handlers
-    setupTestServer(server);
-
-    // 创建新的 Redux store
-    testStore = getTestStore();
-
-    // 清理 IndexedDB
-    await clearIndexedDB();
-
-    // 清理所有 mocks
-    vi.clearAllMocks();
-  });
-
-  afterEach(async () => {
-    // 清理
-    server.close();
-    resetStore();
-    await clearIndexedDB();
-    vi.restoreAllMocks();
-  });
-
-  test('应该 [预期行为] 当 [条件]', async () => {
-    // Given: 准备测试数据
-    // When: 执行操作
-    // Then: 验证结果
-  });
-});
-```
+完整的测试模板见下方"测试模板"小节。
 
 ### 测试命名规范
 
@@ -119,34 +81,39 @@ describe('功能名称集成测试', () => {
 #### 基础模板
 
 ```typescript
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { setupServer } from 'msw/node';
-import { act } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { act, waitFor } from '@testing-library/react';
 import { getTestStore, resetStore } from '@/__test__/helpers/integration/resetStore';
 import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
-import { setupTestServer } from '@/__test__/helpers/integration/testServer';
+
+// Mock 外部依赖（模块级，会被 Vitest 提升到文件顶部）
+vi.mock('@/services/chat', async () => {
+  const actual = await vi.importActual<typeof import('@/services/chat')>('@/services/chat');
+  return {
+    ...actual,
+    streamChatCompletion: vi.fn(() => ({
+      [Symbol.asyncIterator]: async function* () {
+        yield { type: 'text-delta', textDelta: '模拟的 AI 回复' };
+        yield { type: 'finish', finishReason: 'stop', usage: { promptTokens: 10, completionTokens: 5 } };
+      },
+    })),
+  };
+});
 
 describe('功能名称集成测试', () => {
-  let testStore: Store<RootState>;
-  let server: ReturnType<typeof setupServer>;
+  let store: ReturnType<typeof getTestStore>;
 
   beforeEach(async () => {
-    server = setupServer();
-    server.listen();
-    setupTestServer(server);
-    testStore = getTestStore();
-    await clearIndexedDB();
     vi.clearAllMocks();
-  });
-
-  afterEach(async () => {
-    server.close();
-    resetStore();
     await clearIndexedDB();
-    vi.restoreAllMocks();
+    store = getTestStore();
   });
 
-  test('应该完成预期行为', async () => {
+  afterEach(() => {
+    resetStore();
+  });
+
+  it('应该完成预期行为', async () => {
     // Given
     const testData = { /* ... */ };
 
@@ -156,7 +123,7 @@ describe('功能名称集成测试', () => {
     });
 
     // Then
-    const state = testStore.getState();
+    const state = store.getState();
     expect(state.xxx).toBe(expectedValue);
   });
 });
@@ -165,80 +132,82 @@ describe('功能名称集成测试', () => {
 #### 聊天流程测试模板
 
 ```typescript
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { setupServer } from 'msw/node';
-import { act } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { act, waitFor } from '@testing-library/react';
 import { getTestStore, resetStore } from '@/__test__/helpers/integration/resetStore';
 import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
-import { setupTestServer } from '@/__test__/helpers/integration/testServer';
-import { createChat, startSendChatMessage } from '@/store/slices/chatSlices';
-import { ChatRoleEnum } from '@/types/chat';
+import { createChat, startSendChatMessage, setSelectedChatId } from '@/store/slices/chatSlices';
+import { createModel as createModelAction } from '@/store/slices/modelSlice';
+import { createDeepSeekModel } from '@/__test__/helpers/fixtures/model';
+import * as chatStorage from '@/store/storage/chatStorage';
+
+// Mock streamChatCompletion 模拟流式 AI 回复
+vi.mock('@/services/chat', async () => {
+  const actual = await vi.importActual<typeof import('@/services/chat')>('@/services/chat');
+  return {
+    ...actual,
+    streamChatCompletion: vi.fn(() => ({
+      [Symbol.asyncIterator]: async function* () {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        yield { type: 'text-delta', textDelta: '模拟的 AI 回复' };
+        await new Promise(resolve => setTimeout(resolve, 50));
+        yield { type: 'finish', finishReason: 'stop', usage: { promptTokens: 10, completionTokens: 5 } };
+      },
+    })),
+  };
+});
+
+// Mock chatStorage 隔离持久化层
+vi.mock('@/store/storage/chatStorage', () => ({
+  loadChatIndex: vi.fn(() => Promise.resolve([])),
+  saveChatIndex: vi.fn(() => Promise.resolve()),
+  loadChatById: vi.fn(() => Promise.resolve(undefined)),
+  saveChatById: vi.fn(() => Promise.resolve()),
+  saveChatAndIndex: vi.fn(() => Promise.resolve()),
+  deleteChatFromStorage: vi.fn(() => Promise.resolve()),
+  migrateOldChatStorage: vi.fn(() => Promise.resolve()),
+}));
 
 describe('聊天流程集成测试', () => {
-  let testStore: Store<RootState>;
-  let server: ReturnType<typeof setupServer>;
+  let store: ReturnType<typeof getTestStore>;
 
   beforeEach(async () => {
-    server = setupServer();
-    server.listen();
-    setupTestServer(server);
-    testStore = getTestStore();
-    await clearIndexedDB();
     vi.clearAllMocks();
-  });
-
-  afterEach(async () => {
-    server.close();
-    resetStore();
     await clearIndexedDB();
-    vi.restoreAllMocks();
+    store = getTestStore();
   });
 
-  test('应该完成完整聊天流程当用户发送消息', async () => {
-    // Given: 创建测试聊天
-    const testChat = {
+  afterEach(() => {
+    resetStore();
+  });
+
+  it('应该完成完整聊天流程当用户发送消息', async () => {
+    // Given: 创建模型和聊天
+    const model = createDeepSeekModel();
+    const chat = {
       id: 'test-chat-1',
-      name: '测试对话',
-      chatModelList: [{ modelId: 'test-model-1', chatHistoryList: [] }],
-      createdAt: Date.now() / 1000,
-      updatedAt: Date.now() / 1000,
+      chatModelList: [{ modelId: model.id, chatHistoryList: [] }],
       isDeleted: false,
     };
 
-    // Mock ChatService
-    const mockStreamChatCompletion = vi.fn();
-    mockStreamChatCompletion.mockImplementation(async function* () {
-      yield {
-        id: 'msg-1',
-        role: ChatRoleEnum.ASSISTANT,
-        content: '你好！',
-        timestamp: Date.now() / 1000,
-        modelKey: 'deepseek-chat',
-        finishReason: 'stop',
-      };
-    });
+    store.dispatch(createModelAction({ model }));
+    store.dispatch(createChat({ chat }));
+    store.dispatch(setSelectedChatId(chat.id));
 
-    vi.doMock('@/services/chatService', () => ({
-      streamChatCompletion: mockStreamChatCompletion,
-    }));
-
-    await act(() => {
-      testStore.dispatch(createChat({ chat: testChat }));
-    });
-
-    // When: 用户发送消息
+    // When: 发送消息
     await act(async () => {
-      await testStore.dispatch<any>(
-        startSendChatMessage({
-          chat: testChat,
-          message: '你好',
-        })
-      );
+      await store.dispatch(startSendChatMessage({ chat, message: '你好' }));
     });
 
     // Then: 验证 Redux store 更新
-    const state = testStore.getState();
-    expect(state.chat.chatList[0].chatModelList[0].chatHistoryList).toHaveLength(2);
+    await waitFor(() => {
+      const state = store.getState();
+      const chatData = state.chat.activeChatData[chat.id];
+      expect(chatData?.chatModelList?.[0]?.chatHistoryList?.length).toBeGreaterThan(0);
+    });
+
+    // 验证持久化被调用
+    expect(chatStorage.saveChatAndIndex).toHaveBeenCalled();
   });
 });
 ```
@@ -259,9 +228,6 @@ beforeEach(async () => {
 
   // 清理所有 mocks
   vi.clearAllMocks();
-
-  // 重置 MSW handlers
-  server.resetHandlers();
 });
 ```
 
@@ -334,79 +300,41 @@ test('应该等待异步操作完成', async () => {
 
 集成测试采用分层 Mock 策略，平衡真实性和可控性：
 
-| 层级           | Mock 策略       | 工具               | 理由                     |
-| -------------- | --------------- | ------------------ | ------------------------ |
-| **外部 API**   | Mock HTTP 请求  | MSW                | 真实网络层，易于调试     |
-| **存储层**     | 使用真实实现    | fake-indexeddb     | 验证持久化逻辑           |
-| **加密层**     | 使用真实实现    | crypto.ts          | 验证加密链路             |
-| **Redux**      | 使用真实 Store  | configureStore     | 验证状态管理             |
-| **React 组件** | 真实渲染        | React Testing Lib  | 验证用户交互             |
-
-### MSW (Mock Service Worker)
-
-MSW 用于 Mock 外部 API 请求，提供真实的网络层体验。
-
-#### 安装依赖
-
-```bash
-pnpm add -D msw
-```
-
-#### 配置 MSW Server
-
-```typescript
-import { setupServer } from 'msw/node';
-import { http, HttpResponse } from 'msw';
-
-// 创建 handlers
-const handlers = [
-  http.post('https://api.deepseek.com/v1/chat/completions', () => {
-    return HttpResponse.json({
-      id: 'chatcmpl-test',
-      choices: [{ message: { content: 'Mock 响应' } }],
-    });
-  }),
-];
-
-// 在测试中设置 server
-const server = setupServer(...handlers);
-
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-```
-
-#### 使用辅助工具
-
-项目中已提供 MSW 辅助工具（`src/__test__/helpers/integration/testServer.ts`）：
-
-```typescript
-import { setupTestServer, setupErrorHandlers, setupTimeoutHandlers } from '@/__test__/helpers/integration/testServer';
-
-// 正常场景
-setupTestServer(server);
-
-// 错误场景
-setupErrorHandlers(server);
-
-// 超时场景
-setupTimeoutHandlers(server);
-```
+| 层级           | Mock 策略                   | 工具                           | 理由                     |
+| -------------- | --------------------------- | ------------------------------ | ------------------------ |
+| **外部 API**   | Mock Service 层模块替换     | `vi.mock` + `vi.importActual`  | 模块级替换，稳定可控     |
+| **存储层**     | 使用真实实现                | fake-indexeddb                 | 验证持久化逻辑           |
+| **加密层**     | 使用真实实现                | crypto.ts                      | 验证加密链路             |
+| **Redux**      | 使用真实 Store              | configureStore                 | 验证状态管理             |
+| **React 组件** | 真实渲染                    | React Testing Lib              | 验证用户交互             |
 
 ### Mock Service 层
 
 对于需要特定行为的场景，可以直接 Mock Service 层：
 
 ```typescript
-// Mock ChatService
-const mockStreamChatCompletion = vi.fn();
-mockStreamChatCompletion.mockImplementation(async function* () {
-  yield { id: 'msg-1', content: 'Mock 响应' };
+// 方式一：部分 Mock（保留模块其他导出，仅替换目标函数）
+vi.mock('@/services/chat', async () => {
+  const actual = await vi.importActual<typeof import('@/services/chat')>('@/services/chat');
+  return {
+    ...actual,
+    streamChatCompletion: vi.fn(() => ({
+      [Symbol.asyncIterator]: async function* () {
+        yield { id: 'msg-1', content: 'Mock 响应' };
+      },
+    })),
+  };
 });
 
-vi.doMock('@/services/chatService', () => ({
-  streamChatCompletion: mockStreamChatCompletion,
+// 方式二：完整替换模块
+vi.mock('@/store/storage/chatStorage', () => ({
+  loadChatsFromJson: vi.fn(() => Promise.resolve([])),
+  saveChatsToJson: vi.fn(() => Promise.resolve()),
 }));
+
+// 方式三：vi.hoisted + vi.mock（需要共享可变引用时）
+const memoryStore = vi.hoisted(() => new Map<string, unknown>());
+vi.mock('@/utils/tauriCompat', () => globalThis.__createTauriCompatModuleMock(memoryStore));
 ```
 
 ### Mock 存储层
@@ -432,13 +360,16 @@ expect(chatStorage.saveChatsToJson).toHaveBeenCalled();
 Redux store 重置工具：
 
 ```typescript
-import { getTestStore, resetStore } from '@/__test__/helpers/integration/resetStore';
+import { getTestStore, resetStore, cleanupStore } from '@/__test__/helpers/integration/resetStore';
 
 // 获取测试 store
 const store = getTestStore();
 
-// 重置 store
+// 重置 store（清空状态，保留 store 实例）
 resetStore();
+
+// 清理 store（销毁 store 实例）
+cleanupStore();
 ```
 
 ### clearIndexedDB.ts
@@ -452,33 +383,18 @@ import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
 await clearIndexedDB();
 ```
 
-### fixtures.ts
+### waitForStorage.ts
 
-测试数据 fixtures：
-
-```typescript
-import { integrationFixtures } from '@/__test__/helpers/integration/fixtures';
-
-// 使用预定义的测试数据
-const chat = integrationFixtures.chatSession;
-const model = integrationFixtures.modelConfig;
-```
-
-### testServer.ts
-
-MSW server 配置：
+localStorage 轮询等待工具，用于验证异步持久化结果：
 
 ```typescript
-import { setupTestServer, setupErrorHandlers, setupTimeoutHandlers } from '@/__test__/helpers/integration/testServer';
+import { waitForLocalStorage } from '@/__test__/helpers/integration/waitForStorage';
 
-// 设置正常场景 handlers
-setupTestServer(server);
+// 等待 localStorage 中某个 key 变为期望值
+await waitForLocalStorage('app-language', 'zh-CN');
 
-// 设置错误场景 handlers
-setupErrorHandlers(server);
-
-// 设置超时场景 handlers
-setupTimeoutHandlers(server);
+// 等待 key 被删除
+await waitForLocalStorage('temp-key', null);
 ```
 
 ## 常见问题
@@ -488,7 +404,7 @@ setupTimeoutHandlers(server);
 **原因**：集成测试涉及真实的数据流和多个模块协作。
 
 **解决方案**：
-- 确保 Mock 策略正确（使用 MSW Mock 外部 API）
+- 确保 Mock 策略正确（使用 `vi.mock` 替换外部依赖）
 - 避免不必要的等待时间（使用 `waitFor` 而非固定延迟）
 - 考虑将慢速测试分离到单独的测试套件
 
@@ -501,15 +417,15 @@ setupTimeoutHandlers(server);
 - 使用 `resetStore()` 和 `clearIndexedDB()` 工具
 - 确保每个测试使用独立的测试数据
 
-### Q3: MSW 与 Vitest 集成问题怎么办？
+### Q3: vi.mock 模块替换不生效怎么办？
 
-**原因**：MSW 配置不正确或环境冲突。
+**原因**：Vitest 的 `vi.mock` 调用会被提升到文件顶部，在 `vi.mock` 工厂函数中引用的变量可能尚未初始化。
 
 **解决方案**：
-- 使用 `msw/node` 而非 `msw/browser`
-- 在 `beforeAll` 中启动 server，在 `afterAll` 中关闭
-- 在 `afterEach` 中重置 handlers（`server.resetHandlers()`）
-- 参考 MSW 官方文档的 Vitest 集成指南
+- 使用 `vi.hoisted()` 创建需要在 `vi.mock` 工厂中引用的可变变量
+- 使用 `vi.importActual()` 部分替换模块时，确保类型参数正确
+- 模块级 `vi.mock` 优先于 `vi.doMock`（后者不会被提升）
+- 参考 [Vitest Mocking 文档](https://vitest.dev/guide/mocking.html)
 
 ### Q4: 如何处理异步操作超时？
 
@@ -527,7 +443,7 @@ setupTimeoutHandlers(server);
 2. 使用 `--ui` 参数运行 Vitest UI（`pnpm test:integration --ui`）
 3. 使用 `--inspect` 参数进行调试
 4. 检查 Redux store 的状态变化
-5. 检查 MSW 的请求日志
+5. 检查 `vi.mock()` 的调用和返回值
 
 ### Q6: 集成测试应该覆盖哪些场景？
 
@@ -559,7 +475,7 @@ setupTimeoutHandlers(server);
 **解决方案**：
 - 使用 `waitFor()` 而非固定延迟
 - 使用 `vi.useFakeTimers()` 控制定时器
-- 使用 `server.resetHandlers()` 清理 Mock
+- 使用 `vi.clearAllMocks()` 清理 Mock
 - 避免测试间的依赖关系
 - 确保测试数据一致性和可预测性
 
@@ -570,12 +486,10 @@ setupTimeoutHandlers(server);
 - 集成测试示例：`src/__test__/integration/chat-flow.integration.test.ts`
 - 集成测试配置：`vitest.integration.config.ts`
 - 测试辅助工具：`src/__test__/helpers/integration/`
-- 设计文档：`openspec/changes/add-integration-tests-critical-flows/design.md`
 
 ### 外部资源
 
 - [Vitest 官方文档](https://vitest.dev/)
-- [MSW 官方文档](https://mswjs.io/)
 - [React Testing Library 官方文档](https://testing-library.com/react)
 - [Redux Testing Best Practices](https://redux.js.org/usage/writing-tests)
 
@@ -599,4 +513,4 @@ setupTimeoutHandlers(server);
 
 ---
 
-更新日期：2026-03-02
+更新日期：2026-04-29
