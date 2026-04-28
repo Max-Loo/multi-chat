@@ -4,7 +4,8 @@
  */
 import type { Chat, ChatMeta } from "@/types/chat";
 import { chatToMeta } from "@/types/chat";
-import { createLazyStore, saveToStore, loadFromStore } from "./storeUtils";
+import { createLazyStore } from "@/utils/tauriCompat";
+import { saveToStore, loadFromStore } from "./storeUtils";
 import { getCurrentTimestamp } from "@/utils/utils";
 
 /** 索引 key */
@@ -29,7 +30,8 @@ function chatKey(chatId: string): string {
  * @returns 聊天元数据列表
  */
 export const loadChatIndex = async (): Promise<ChatMeta[]> => {
-  return await loadFromStore<ChatMeta[]>(chatsStore, CHAT_INDEX_KEY, []);};
+  return await loadFromStore<ChatMeta[]>(chatsStore, CHAT_INDEX_KEY, []);
+};
 
 /**
  * 写入聊天索引
@@ -145,4 +147,5 @@ export const migrateOldChatStorage = async (): Promise<void> => {
 
   // 第三步：删除旧 chats key（索引写入成功后才删除）
   await chatsStore.delete(OLD_CHATS_KEY);
-  await chatsStore.save();};
+  await chatsStore.save();
+};

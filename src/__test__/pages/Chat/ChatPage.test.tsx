@@ -64,10 +64,13 @@ vi.mock('react-i18next', () =>
 function createChatPageStore(chatOverrides?: Partial<ChatSliceState>) {
   return createTypeSafeTestStore({
     chat: createChatSliceState({
-      chatList: [
-        { id: 'chat-1', name: '测试聊天1', chatModelList: [], isDeleted: false },
-        { id: 'chat-2', name: '测试聊天2', chatModelList: [], isDeleted: true },
+      chatMetaList: [
+        { id: 'chat-1', name: '测试聊天1', isDeleted: false } as any,
       ],
+      activeChatData: {
+        'chat-1': { id: 'chat-1', name: '测试聊天1', chatModelList: [], isDeleted: false },
+        'chat-2': { id: 'chat-2', name: '测试聊天2', chatModelList: [], isDeleted: true },
+      },
       ...chatOverrides,
     }),
     chatPage: createChatPageSliceState(),

@@ -137,24 +137,24 @@ describe('chatSlices', () => {
       expect(state.loading).toBe(false);
       expect(state.initializationError).toBe('Storage read failed');
       // 聊天列表不应被修改
-      expect(state.chatList).toEqual([]);
+      expect(state.chatMetaList).toEqual([]);
     });
 
-    it('应该在 loadChatsFromJson 抛出异常时正确处理错误', async () => {
+    it('应该在 loadChatIndex 抛出异常时正确处理错误', async () => {
       // 设置 mock 使加载抛出异常
-      mockLoadChatsFromJson.mockRejectedValue(new Error('Disk I/O error'));
+      mockLoadChatIndex.mockRejectedValue(new Error('Disk I/O error'));
 
       const result = await store.dispatch(initializeChatList());
 
       const state = store.getState().chat;
       expect(state.loading).toBe(false);
       expect(state.initializationError).toContain('Disk I/O error');
-      expect(state.chatList).toEqual([]);
+      expect(state.chatMetaList).toEqual([]);
       expect(result.type).toBe('chat/initialize/rejected');
     });
 
-    it('应该在 loadChatsFromJson 抛出非 Error 类型时使用默认错误消息', async () => {
-      mockLoadChatsFromJson.mockRejectedValue('unexpected string');
+    it('应该在 loadChatIndex 抛出非 Error 类型时使用默认错误消息', async () => {
+      mockLoadChatIndex.mockRejectedValue('unexpected string');
 
       const result = await store.dispatch(initializeChatList());
 

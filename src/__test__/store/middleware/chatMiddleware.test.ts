@@ -19,7 +19,7 @@ import modelReducer from '@/store/slices/modelSlice';
 import chatPageReducer from '@/store/slices/chatPageSlices';
 import appConfigReducer from '@/store/slices/appConfigSlices';
 import type { Chat } from '@/types/chat';
-import { ChatRoleEnum } from '@/types/chat';
+import { ChatRoleEnum, chatToMeta } from '@/types/chat';
 import modelProviderReducer from '@/store/slices/modelProviderSlice';
 import settingPageReducer from '@/store/slices/settingPageSlices';
 import modelPageReducer from '@/store/slices/modelPageSlices';
@@ -203,7 +203,8 @@ describe('chatMiddleware', () => {
       // 构造完整的 runningChat state，模拟消息发送进行中的状态
       const preloadedState = createTestRootState({
         chat: createChatSliceState({
-          chatList: [initialChat],
+          chatMetaList: [chatToMeta(initialChat)],
+          activeChatData: { [chatId]: initialChat },
           selectedChatId: chatId,
           runningChat: {
             [chatId]: {
@@ -490,7 +491,6 @@ describe('chatMiddleware', () => {
     });
   });
 
-<<<<<<< HEAD
   describe('后台聊天发送结束后回收 activeChatData', () => {
     it('应该在 fulfilled 且非当前选中时回收 activeChatData', async () => {
       const chatA = { id: 'bg-chat-a', name: 'Chat A', chatModelList: [] };

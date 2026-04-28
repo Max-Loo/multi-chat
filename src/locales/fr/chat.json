@@ -34,5 +34,7 @@
   "model": "Modèle",
   "nickname": "Surnom",
   "shiftDeleteChat": "Shift+Clic pour suppression rapide",
-  "moreActions": "Plus d'actions"
+  "moreActions": "Plus d'actions",
+  "increaseColumns": "Augmenter les colonnes",
+  "decreaseColumns": "Réduire les colonnes"
 }

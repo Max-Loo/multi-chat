@@ -34,5 +34,7 @@
   "model": "Model",
   "nickname": "Nickname",
   "shiftDeleteChat": "Shift+Click to quick delete",
-  "moreActions": "More actions"
+  "moreActions": "More actions",
+  "increaseColumns": "Increase columns",
+  "decreaseColumns": "Decrease columns"
 }

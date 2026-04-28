@@ -238,7 +238,8 @@ describe('RunningBubble 渲染隔离', () => {
 
     const store = createTypeSafeTestStore({
       chat: createChatSliceState({
-        chatList: [{ id: TEST_CHAT_ID, chatModelList: [chatModel] }],
+        chatMetaList: [{ id: TEST_CHAT_ID, modelIds: [chatModel.modelId] } as any],
+        activeChatData: { [TEST_CHAT_ID]: { id: TEST_CHAT_ID, chatModelList: [chatModel] } as any },
         selectedChatId: TEST_CHAT_ID,
         runningChat: {
           [TEST_CHAT_ID]: {
@@ -301,10 +302,14 @@ describe('RunningBubble 渲染隔离', () => {
 
     const store = createTypeSafeTestStore({
       chat: createChatSliceState({
-        chatList: [
-          { id: TEST_CHAT_ID, chatModelList: [chatModel] },
-          { id: otherChatId, chatModelList: [chatModel] },
+        chatMetaList: [
+          { id: TEST_CHAT_ID, modelIds: [chatModel.modelId] } as any,
+          { id: otherChatId, modelIds: [chatModel.modelId] } as any,
         ],
+        activeChatData: {
+          [TEST_CHAT_ID]: { id: TEST_CHAT_ID, chatModelList: [chatModel] } as any,
+          [otherChatId]: { id: otherChatId, chatModelList: [chatModel] } as any,
+        },
         selectedChatId: TEST_CHAT_ID,
         runningChat: {
           [TEST_CHAT_ID]: {
@@ -360,10 +365,8 @@ describe('RunningBubble 渲染隔离', () => {
 
     const store = createTypeSafeTestStore({
       chat: createChatSliceState({
-        chatList: [{
-          id: TEST_CHAT_ID,
-          chatModelList: [chatModel1, chatModel2],
-        }],
+        chatMetaList: [{ id: TEST_CHAT_ID, modelIds: [chatModel1.modelId, chatModel2.modelId] } as any],
+        activeChatData: { [TEST_CHAT_ID]: { id: TEST_CHAT_ID, chatModelList: [chatModel1, chatModel2] } as any },
         selectedChatId: TEST_CHAT_ID,
         runningChat: {
           [TEST_CHAT_ID]: {

@@ -7,8 +7,8 @@
  * 注意：渲染完整组件树，不 mock 子组件
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { screen, cleanup, fireEvent } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { screen, fireEvent } from "@testing-library/react"
 import GeneralSetting from "@/pages/Setting/components/GeneralSetting"
 import { renderWithProviders } from "../../helpers/render/redux"
 import { resetTestState } from "../../helpers/isolation"

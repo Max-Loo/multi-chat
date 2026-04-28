@@ -36,18 +36,8 @@ vi.mock('react-i18next', () =>
   }));
 
 /**
- * 将 Chat 对象列表拆分为 chatMetaList + activeChatData + sendingChatIds
- * @param chats 聊天对象数组
- */
-const splitChatsToState = (chats: ReturnType<typeof createMockChatWithModels>[]) => ({
-  chatMetaList: chats.map(chatToMeta),
-  activeChatData: Object.fromEntries(chats.map(c => [c.id, c])),
-  sendingChatIds: {},
-});
-
-/**
  * 创建测试用 store
- * @param chatOverrides Chat slice 覆盖字段（支持 chatList 旧写法，自动转换）
+ * @param chatOverrides Chat slice 覆盖字段
  */
 const createStore = (chatOverrides?: Parameters<typeof createChatSliceState>[0]) => {
   return createTypeSafeTestStore({
@@ -59,6 +49,15 @@ const createStore = (chatOverrides?: Parameters<typeof createChatSliceState>[0])
 };
 
 /**
+ * 将 Chat 对象列表转换为 store 所需的 chatMetaList + activeChatData
+ * @param chats Chat 对象数组
+ */
+const chatsToState = (chats: ReturnType<typeof createMockChatWithModels>[]) => ({
+  chatMetaList: chats.map(chatToMeta),
+  activeChatData: Object.fromEntries(chats.map(c => [c.id, c])),
+});
+
+/**
  * 渲染 ChatPanel 的辅助函数，消除重复的 store 创建 + render 模式
  * @param modelCount 模型数量
  * @param overrides 可选的覆盖参数
@@ -67,13 +66,14 @@ function renderChatPanel(
   modelCount: number,
   overrides?: {
     chatProps?: Record<string, unknown>;
-    chatList?: ReturnType<typeof createMockChatWithModels>[];
+    chats?: ReturnType<typeof createMockChatWithModels>[];
     selectedChatId?: string;
   }
 ) {
   const chat = createMockChatWithModels(modelCount, { id: 'chat-1', ...overrides?.chatProps });
+  const chats = overrides?.chats ?? [chat];
   const store = createStore({
-    chatList: overrides?.chatList ?? [chat],
+    ...chatsToState(chats),
     selectedChatId: overrides?.selectedChatId ?? 'chat-1',
   });
   return { ...renderWithProviders(<ChatPanel />, { store }), store };
@@ -219,7 +219,7 @@ describe('ChatPanel', () => {
     it('应该在切换到不同的聊天时重置分割模式', async () => {
       const chat1 = createMockChatWithModels(2, { id: 'chat-1' });
       const chat2 = createMockChatWithModels(3, { id: 'chat-2' });
-      const { store } = renderChatPanel(0, { chatList: [chat1, chat2], selectedChatId: 'chat-1' });
+      const { store } = renderChatPanel(0, { chats: [chat1, chat2], selectedChatId: 'chat-1' });
 
       const splitterSwitch = screen.getByRole('switch');
       fireEvent.click(splitterSwitch);

@@ -76,6 +76,16 @@ vi.mock('@/store/slices/modelProviderSlice', () => ({
 
 vi.mock('@/utils/tauriCompat', () => ({
   migrateKeyringV1ToV2: vi.fn().mockResolvedValue(false),
+  createLazyStore: vi.fn().mockReturnValue({
+    init: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+    keys: vi.fn().mockResolvedValue([]),
+    save: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn(),
+    isSupported: vi.fn().mockReturnValue(true),
+  }),
 }));
 
 // 必须在 mock 之后导入

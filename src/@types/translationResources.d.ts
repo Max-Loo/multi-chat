@@ -41,7 +41,9 @@ interface Resources {
       nickname: string;
       shiftDeleteChat: string;
       moreActions: string;
-      renameChat: string;    };
+      increaseColumns: string;
+      decreaseColumns: string;
+    };
     common: {
       submit: string;
       language: string;

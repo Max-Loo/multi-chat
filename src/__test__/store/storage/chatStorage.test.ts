@@ -9,6 +9,18 @@
 const storeMap = new Map<string, unknown>();
 
 vi.mock('@/store/storage/storeUtils', () => ({
+  saveToStore: vi.fn(async (store: { init: () => Promise<void>; set: (k: string, v: unknown) => Promise<void>; save: () => Promise<void> }, key: string, data: unknown) => {
+    await store.init();
+    await store.set(key, data);
+    await store.save();
+  }),
+  loadFromStore: vi.fn(async (store: { init: () => Promise<void>; get: (k: string) => Promise<unknown> }, key: string, defaultValue: unknown) => {
+    await store.init();
+    return (await store.get(key)) ?? defaultValue;
+  }),
+}));
+
+vi.mock('@/utils/tauriCompat', () => ({
   createLazyStore: vi.fn(() => ({
     init: vi.fn().mockResolvedValue(undefined),
     get: vi.fn((key: string) => Promise.resolve(storeMap.get(key) ?? null)),
@@ -19,15 +31,6 @@ vi.mock('@/store/storage/storeUtils', () => ({
     close: vi.fn(),
     isSupported: vi.fn().mockReturnValue(true),
   })),
-  saveToStore: vi.fn(async (store: { init: () => Promise<void>; set: (k: string, v: unknown) => Promise<void>; save: () => Promise<void> }, key: string, data: unknown) => {
-    await store.init();
-    await store.set(key, data);
-    await store.save();
-  }),
-  loadFromStore: vi.fn(async (store: { init: () => Promise<void>; get: (k: string) => Promise<unknown> }, key: string, defaultValue: unknown) => {
-    await store.init();
-    return (await store.get(key)) ?? defaultValue;
-  }),
 }));
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';

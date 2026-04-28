@@ -34,5 +34,7 @@
   "model": "模型",
   "nickname": "昵称",
   "shiftDeleteChat": "Shift+点击快捷删除",
-  "moreActions": "更多操作"
+  "moreActions": "更多操作",
+  "increaseColumns": "增加列数",
+  "decreaseColumns": "减少列数"
 }

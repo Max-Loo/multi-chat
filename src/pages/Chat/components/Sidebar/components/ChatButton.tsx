@@ -308,63 +308,6 @@ const ChatButton = memo<ChatButtonProps>(({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-    </div>            e.stopPropagation()
-            directDelete()
-          }}
-        >
-          <Trash2 className={`text-white ${
-            isNormalSize
-              ? 'h-4 w-4'
-              : 'h-3.5 w-3.5'
-          }`} />
-        </Button>
-      ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="chat-menu-trigger"
-              aria-label="更多操作"
-              className={`p-0 ${
-                isNormalSize
-                  ? 'h-8 w-8'
-                  : 'h-7 w-7'
-              }`}
-              onClick={(e) => {
-                e.stopPropagation()
-              }}
-            >
-              <MoreHorizontal className={`${
-                isNormalSize
-                  ? 'h-4 w-4'
-                  : 'h-3.5 w-3.5'
-              }`} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => {
-              e.stopPropagation()
-              handleRename()
-            }}>
-              <Edit className="mr-2 h-4 w-4" />
-              {t($ => $.chat.rename)}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              disabled={isSending}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleDelete()
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              {t($ => $.chat.delete)}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
     </div>
   )
 }, (prevProps, nextProps) => {
