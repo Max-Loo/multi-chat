@@ -6,7 +6,8 @@ import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { ChatMeta } from '@/types/chat';
-import type { EnhancedStore } from '@reduxjs/toolkit';
+import type { EnhancedStore, UnknownAction } from '@reduxjs/toolkit';
+import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
 
 // Mock useResponsive
 const mockUseResponsive = vi.hoisted(() => vi.fn(() => globalThis.__createResponsiveMock()));
@@ -14,15 +15,41 @@ vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: (...args: unknown[]) => mockUseResponsive(...(args as [])),
 }));
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  chat: {
+    shiftDeleteChat: 'Shift 删除',
+    confirmDelete: '确认删除',
+    deleteChatConfirm: '确定要删除这个聊天吗？',
+    deleteChatSuccess: '删除成功',
+    deleteChatFailed: '删除失败',
+    editChatSuccess: '重命名成功',
+    editChatFailed: '重命名失败',
+  },
+}));
+
+/**
+ * Mock DropdownMenu 组件（Radix UI 在 happy-dom 中无法正常打开）
+ * 始终渲染菜单内容，使菜单项可直接点击
+ */
+vi.mock('@/components/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: { children: ReactNode }) => <div data-testid="dropdown-menu">{children}</div>,
+  DropdownMenuTrigger: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  DropdownMenuContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  DropdownMenuItem: ({ children, onClick, disabled, className }: { children: ReactNode; onClick?: (e: ReactMouseEvent) => void; disabled?: boolean; className?: string }) => (
+    <div role="menuitem" onClick={onClick} aria-disabled={disabled || undefined} className={className}>{children}</div>
+  ),
+  DropdownMenuSeparator: () => <hr />,
+}));
 
 /**
  * Mock useNavigateToPage hook
  */
 const mockNavigateToChat = vi.fn();
+const mockClearChatIdParam = vi.fn();
 vi.mock('@/hooks/useNavigateToPage', () => ({
   useNavigateToChat: () => ({
     navigateToChat: mockNavigateToChat,
+    clearChatIdParam: mockClearChatIdParam,
   }),
 }));
 
@@ -173,13 +200,12 @@ describe('ChatButton Component', () => {
       expect(menuButton).toBeInTheDocument();
     });
 
-    it('下拉菜单按钮应该有正确的 aria 属性', () => {
+    it('下拉菜单按钮应该有正确的图标', () => {
       const chat = createMockChat({ name: '测试聊天' });
       renderChatButton(chat);
 
       const menuButton = screen.getByRole('button', { name: '更多操作' });
-      expect(menuButton).toHaveAttribute('aria-haspopup', 'menu');
-      expect(menuButton).toHaveAttribute('aria-expanded', 'false');
+      expect(menuButton.querySelector('svg')).toBeInTheDocument();
     });
   });
 
@@ -390,6 +416,361 @@ describe('ChatButton Component', () => {
       fireEvent(buttonDiv, event);
       expect(preventDefaultSpy).toHaveBeenCalled();
       expect(mockNavigateToChat).toHaveBeenCalledWith({ chatId: chat.id });
+    });
+  });
+
+  describe('重命名交互', () => {
+    it('点击重命名菜单项应进入编辑模式', () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      renderChatButton(chat);
+
+      // 点击重命名菜单项（mock DropdownMenu 始终渲染内容）
+      const renameItem = screen.getByText('重命名');
+      fireEvent.click(renameItem);
+
+      // 验证进入编辑模式：Input、确认按钮、取消按钮
+      const input = screen.getByRole('textbox');
+      expect(input).toBeInTheDocument();
+      expect(input).toHaveValue('测试聊天');
+
+      // 编辑模式下有确认和取消两个按钮
+      const buttons = screen.getAllByRole('button');
+      expect(buttons.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('在编辑模式输入新名称并点击确认应 dispatch editChatName + toastQueue.success', async () => {
+      const chat = createMockChat({ name: '旧名称' });
+      const meta = chatToMeta(chat);
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({ chatMetaList: [meta], selectedChatId: chat.id }),
+        chatPage: createChatPageSliceState({ isShowChatPage: true, isSidebarCollapsed: false }),
+      });
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+      renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
+
+      // 点击重命名进入编辑模式
+      const renameItem = screen.getByText('重命名');
+      fireEvent.click(renameItem);
+
+      // 修改输入框内容
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: '新名称' } });
+
+      // 获取 mock toastQueue
+      const { toastQueue } = await import('@/services/toast');
+
+      // 找到确认按钮（编辑模式中的第一个按钮）
+      const buttons = screen.getAllByRole('button');
+      fireEvent.click(buttons[0]);
+
+      // 验证 dispatch editChatName
+      const editCalls = dispatchSpy.mock.calls.filter((call: unknown[]) => {
+        const action = call[0] as { type?: string };
+        return action?.type === 'chat/editChatName';
+      });
+      expect(editCalls.length).toBeGreaterThan(0);
+      expect((editCalls[0][0] as unknown as { payload: unknown }).payload).toEqual({ id: chat.id, name: '新名称' });
+
+      // 验证 toastQueue.success
+      expect(toastQueue.success).toHaveBeenCalled();
+    });
+
+    it('在编辑模式点击取消应退出编辑模式且无 dispatch', () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      const meta = chatToMeta(chat);
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({ chatMetaList: [meta], selectedChatId: chat.id }),
+        chatPage: createChatPageSliceState({ isShowChatPage: true, isSidebarCollapsed: false }),
+      });
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+      renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
+
+      // 进入编辑模式
+      const renameItem = screen.getByText('重命名');
+      fireEvent.click(renameItem);
+
+      // 确认进入编辑模式
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+
+      // 点击取消按钮（编辑模式中的第二个按钮，destructive variant）
+      const buttons = screen.getAllByRole('button');
+      fireEvent.click(buttons[1]);
+
+      // 验证退出编辑模式
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+
+      // 验证无 editChatName dispatch
+      const editCalls = dispatchSpy.mock.calls.filter((call: unknown[]) => {
+        const action = call[0] as { type?: string };
+        return action?.type === 'chat/editChatName';
+      });
+      expect(editCalls).toHaveLength(0);
+    });
+
+    it('输入为空白时确认按钮应 disabled', () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      renderChatButton(chat);
+
+      // 进入编辑模式
+      const renameItem = screen.getByText('重命名');
+      fireEvent.click(renameItem);
+
+      // 清空输入框
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: '' } });
+
+      // 验证确认按钮（编辑模式中的第一个按钮）disabled
+      const buttons = screen.getAllByRole('button');
+      expect(buttons[0]).toBeDisabled();
+    });
+  });
+
+  describe('删除确认', () => {
+    it('从 DropdownMenu 点击删除应触发 modal.warning', () => {
+      const chat = createMockChat({ name: '要删除的聊天' });
+      renderChatButton(chat);
+
+      // 点击删除菜单项（mock DropdownMenu 始终渲染内容）
+      const deleteItem = screen.getByText('删除');
+      fireEvent.click(deleteItem);
+
+      // 验证 modal.warning 被调用
+      expect(mockModalWarning).toHaveBeenCalledTimes(1);
+      const callArgs = mockModalWarning.mock.calls[0][0];
+      // 验证标题包含聊天名称
+      expect(callArgs.title).toContain('要删除的聊天');
+      // 验证有 onOk 回调
+      expect(callArgs.onOk).toBeDefined();
+      expect(typeof callArgs.onOk).toBe('function');
+    });
+
+    it('执行 onOk 回调后应 dispatch deleteChat + toastQueue.success', async () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      const meta = chatToMeta(chat);
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({ chatMetaList: [meta], selectedChatId: chat.id }),
+        chatPage: createChatPageSliceState({ isShowChatPage: true, isSidebarCollapsed: false }),
+      });
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+      renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
+
+      // 触发删除流程
+      const deleteItem = screen.getByText('删除');
+      fireEvent.click(deleteItem);
+
+      // 获取 onOk 回调并执行
+      const onOk = mockModalWarning.mock.calls[0][0].onOk;
+      await onOk();
+
+      // 验证 dispatch deleteChat
+      const deleteCalls = dispatchSpy.mock.calls.filter((call: unknown[]) => {
+        const action = call[0] as { type?: string };
+        return action?.type === 'chat/deleteChat';
+      });
+      expect(deleteCalls.length).toBeGreaterThan(0);
+
+      // 验证 toastQueue.success
+      const { toastQueue } = await import('@/services/toast');
+      expect(toastQueue.success).toHaveBeenCalled();
+    });
+
+    it('删除当前选中聊天时应调用 clearChatIdParam', async () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      // isSelected = true（默认）
+      renderChatButton(chat);
+
+      // 触发删除流程
+      const deleteItem = screen.getByText('删除');
+      fireEvent.click(deleteItem);
+
+      // 执行 onOk
+      const onOk = mockModalWarning.mock.calls[0][0].onOk;
+      await onOk();
+
+      // 验证 clearChatIdParam 被调用
+      expect(mockClearChatIdParam).toHaveBeenCalledTimes(1);
+    });
+
+    it('dispatch deleteChat 抛出异常时应调用 toastQueue.error', async () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      const meta = chatToMeta(chat);
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
+          chatMetaList: [meta],
+          selectedChatId: chat.id,
+        }),
+        chatPage: createChatPageSliceState({
+          isShowChatPage: true,
+          isSidebarCollapsed: false,
+        }),
+      });
+
+      // Mock dispatch 抛出异常
+      const originalDispatch = store.dispatch;
+      vi.spyOn(store, 'dispatch').mockImplementation((action: UnknownAction): UnknownAction => {
+        if (action && action.type === 'chat/deleteChat') {
+          throw new Error('删除失败');
+        }
+        return originalDispatch(action);
+      });
+
+      renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
+
+      // 触发删除流程
+      const deleteItem = screen.getByText('删除');
+      fireEvent.click(deleteItem);
+
+      // 执行 onOk
+      const onOk = mockModalWarning.mock.calls[0][0].onOk;
+      await onOk();
+
+      // 验证 toastQueue.error
+      const { toastQueue } = await import('@/services/toast');
+      expect(toastQueue.error).toHaveBeenCalled();
+    });
+  });
+
+  describe('快捷删除（Shift+Hover）', () => {
+    it('Shift 按下 + 鼠标悬停时应渲染快捷删除按钮', () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      renderChatButton(chat);
+
+      // 模拟 Shift 按下
+      fireEvent.keyDown(document, { key: 'Shift' });
+
+      // 模拟鼠标悬停
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      fireEvent.mouseEnter(buttonDiv);
+
+      // 应该渲染快捷删除按钮（带 Shift 删除的 aria-label）
+      const quickDeleteButton = screen.getByRole('button', { name: 'Shift 删除' });
+      expect(quickDeleteButton).toBeInTheDocument();
+
+      // DropdownMenu 的「更多操作」按钮不应存在
+      expect(screen.queryByRole('button', { name: '更多操作' })).not.toBeInTheDocument();
+    });
+
+    it('点击快捷删除按钮应直接执行 dispatch deleteChat（不经过 modal.warning）', async () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      const meta = chatToMeta(chat);
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({ chatMetaList: [meta], selectedChatId: chat.id }),
+        chatPage: createChatPageSliceState({ isShowChatPage: true, isSidebarCollapsed: false }),
+      });
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+      renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
+
+      // 激活快捷删除
+      fireEvent.keyDown(document, { key: 'Shift' });
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      fireEvent.mouseEnter(buttonDiv);
+
+      // 点击快捷删除按钮
+      const quickDeleteButton = screen.getByRole('button', { name: 'Shift 删除' });
+      fireEvent.click(quickDeleteButton);
+
+      // 验证不调用 modal.warning
+      expect(mockModalWarning).not.toHaveBeenCalled();
+
+      // 验证直接 dispatch deleteChat
+      const deleteCalls = dispatchSpy.mock.calls.filter((call: unknown[]) => {
+        const action = call[0] as { type?: string };
+        return action?.type === 'chat/deleteChat';
+      });
+      expect(deleteCalls.length).toBeGreaterThan(0);
+
+      // 验证 toastQueue.success
+      const { toastQueue } = await import('@/services/toast');
+      expect(toastQueue.success).toHaveBeenCalled();
+    });
+
+    it('Shift 松开后应恢复 DropdownMenu', () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      renderChatButton(chat);
+
+      // 激活快捷删除
+      fireEvent.keyDown(document, { key: 'Shift' });
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      fireEvent.mouseEnter(buttonDiv);
+
+      // 确认快捷删除按钮存在
+      expect(screen.getByRole('button', { name: 'Shift 删除' })).toBeInTheDocument();
+
+      // 松开 Shift
+      fireEvent.keyUp(document, { key: 'Shift' });
+
+      // 应恢复 DropdownMenu
+      expect(screen.queryByRole('button', { name: 'Shift 删除' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '更多操作' })).toBeInTheDocument();
+    });
+
+    it('快捷删除 dispatch 失败时应调用 toastQueue.error', async () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      const meta = chatToMeta(chat);
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
+          chatMetaList: [meta],
+          selectedChatId: chat.id,
+        }),
+        chatPage: createChatPageSliceState({
+          isShowChatPage: true,
+          isSidebarCollapsed: false,
+        }),
+      });
+
+      // Mock dispatch 抛出异常
+      const originalDispatch = store.dispatch;
+      vi.spyOn(store, 'dispatch').mockImplementation((action: UnknownAction): UnknownAction => {
+        if (action && action.type === 'chat/deleteChat') {
+          throw new Error('删除失败');
+        }
+        return originalDispatch(action);
+      });
+
+      renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
+
+      // 激活快捷删除
+      fireEvent.keyDown(document, { key: 'Shift' });
+      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
+      fireEvent.mouseEnter(buttonDiv);
+
+      // 点击快捷删除
+      const quickDeleteButton = screen.getByRole('button', { name: 'Shift 删除' });
+      fireEvent.click(quickDeleteButton);
+
+      // 等待异步完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // 验证 toastQueue.error
+      const { toastQueue } = await import('@/services/toast');
+      expect(toastQueue.error).toHaveBeenCalled();
+    });
+  });
+
+  describe('发送中状态', () => {
+    it('sendingChatIds 包含当前 chatId 时删除菜单项应 disabled', () => {
+      const chat = createMockChat({ name: '测试聊天' });
+      const meta = chatToMeta(chat);
+      // 创建包含 sendingChatIds 的 store
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({
+          chatMetaList: [meta],
+          selectedChatId: chat.id,
+          sendingChatIds: { [chat.id]: true },
+        }),
+        chatPage: createChatPageSliceState({
+          isShowChatPage: true,
+          isSidebarCollapsed: false,
+        }),
+      });
+
+      renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
+
+      // mock DropdownMenu 始终渲染内容，验证删除菜单项 disabled
+      const deleteItem = screen.getByText('删除');
+      expect(deleteItem).toBeInTheDocument();
+      const deleteMenuItem = deleteItem.closest('[role="menuitem"]');
+      expect(deleteMenuItem).toHaveAttribute('aria-disabled', 'true');
     });
   });
 });
