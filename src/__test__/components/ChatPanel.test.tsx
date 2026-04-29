@@ -152,26 +152,26 @@ describe('ChatPanel', () => {
       renderChatPanel(3);
 
       const columnInput = screen.getByTestId('column-count-input') as HTMLInputElement;
-      const initialValue = parseInt(columnInput.value);
+      const minusButton = screen.getByTestId('column-minus-btn');
+      // 先减到 2，确保有增加空间
+      fireEvent.click(minusButton);
+      expect(parseInt(columnInput.value)).toBe(2);
 
+      // 再增加回 3
       const plusButton = screen.getByTestId('column-plus-btn');
-      if (initialValue < 3) {
-        fireEvent.click(plusButton);
-        expect(parseInt(columnInput.value)).toBe(initialValue + 1);
-      }
+      fireEvent.click(plusButton);
+      expect(parseInt(columnInput.value)).toBe(3);
     });
 
     it('应该能够减少列数', () => {
       renderChatPanel(3);
 
       const columnInput = screen.getByTestId('column-count-input') as HTMLInputElement;
-      const initialValue = parseInt(columnInput.value);
+      expect(parseInt(columnInput.value)).toBe(3);
 
       const minusButton = screen.getByTestId('column-minus-btn');
-      if (initialValue > 1) {
-        fireEvent.click(minusButton);
-        expect(parseInt(columnInput.value)).toBe(initialValue - 1);
-      }
+      fireEvent.click(minusButton);
+      expect(parseInt(columnInput.value)).toBe(2);
     });
 
     it('应该限制列数最小值为 1', () => {
@@ -260,37 +260,26 @@ describe('ChatPanel', () => {
     });
   });
 
-  describe('组件结构和布局', () => {
-    it('应该渲染正确的主容器结构', () => {
-      renderChatPanel(1);
-
-      expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
-    });
-
-    it('应该渲染 ChatPanelContent 组件', () => {
-      renderChatPanel(1);
-
-      expect(screen.getByTestId('grid-container')).toBeInTheDocument();
-    });
-
-    it('应该渲染 ChatPanelSender 组件', () => {
-      renderChatPanel(1);
-
-      expect(screen.getByTestId('chat-panel-sender')).toBeInTheDocument();
-    });
-  });
-
   describe('边界情况和错误处理', () => {
     it('应该处理空的 chatModelList', () => {
       renderChatPanel(0);
 
+      // 无模型时仍渲染面板容器和标题栏
       expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel-header')).toBeInTheDocument();
+      // grid-container 存在但内部无模型面板
+      const gridContainer = screen.getByTestId('grid-container');
+      expect(gridContainer).toBeInTheDocument();
+      expect(gridContainer.querySelector('[data-testid="chat-model-panel"]')).toBeNull();
     });
 
     it('应该处理未命名的聊天', () => {
       renderChatPanel(1, { chatProps: { name: '' } });
 
+      // 空名称时标题区域显示空字符串（不崩溃）
       expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel-header')).toBeInTheDocument();
+      expect(screen.getByTestId('chat-panel-sender')).toBeInTheDocument();
     });
   });
 });

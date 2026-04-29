@@ -22,7 +22,7 @@ describe('tauriCompat/env', () => {
   let originalProcessVITEST: string | undefined;
 
   beforeEach(() => {
-    originalTAURI = (window as Record<string, unknown>).__TAURI__;
+    originalTAURI = (window as unknown as Record<string, unknown>).__TAURI__;
     originalVitest = (globalThis as Record<string, unknown>).vitest;
     originalVITEST = (globalThis as Record<string, unknown>).__VITEST__;
     originalProcessVITEST = process.env.VITEST;
@@ -31,9 +31,9 @@ describe('tauriCompat/env', () => {
   afterEach(() => {
     // 恢复 window.__TAURI__
     if (originalTAURI === undefined) {
-      delete (window as Record<string, unknown>).__TAURI__;
+      delete (window as unknown as Record<string, unknown>).__TAURI__;
     } else {
-      (window as Record<string, unknown>).__TAURI__ = originalTAURI;
+      (window as unknown as Record<string, unknown>).__TAURI__ = originalTAURI;
     }
     // 恢复 vitest 全局变量
     (globalThis as Record<string, unknown>).vitest = originalVitest;
@@ -47,12 +47,12 @@ describe('tauriCompat/env', () => {
 
   describe('isTauri', () => {
     it('应该返回 true 当 window 上存在 __TAURI__ 属性', () => {
-      (window as Record<string, unknown>).__TAURI__ = {};
+      (window as unknown as Record<string, unknown>).__TAURI__ = {};
       expect(envModule.isTauri()).toBe(true);
     });
 
     it('应该返回 false 当 window 上不存在 __TAURI__ 属性', () => {
-      delete (window as Record<string, unknown>).__TAURI__;
+      delete (window as unknown as Record<string, unknown>).__TAURI__;
       expect(envModule.isTauri()).toBe(false);
     });
 

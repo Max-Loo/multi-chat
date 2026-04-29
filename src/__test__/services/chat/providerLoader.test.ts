@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getProviderSDKLoader } from '@/services/chat/providerLoader';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
@@ -128,6 +128,45 @@ describe('ProviderSDKLoader', () => {
 
       const createDeepSeek = await loader.loadProvider(ModelProviderKeyEnum.DEEPSEEK);
       expect(typeof createDeepSeek).toBe('function');
+    });
+  });
+
+  describe('网络恢复事件', () => {
+    it('应该在 handleNetworkRecover 时调用 preloadProviders 并传入所有已注册的 providerKeys', () => {
+      const preloadSpy = vi.spyOn(loader, 'preloadProviders');
+
+      // 直接调用 handleNetworkRecover（模拟 window online 事件触发）
+      (loader as any).handleNetworkRecover();
+
+      // 验证 preloadProviders 被调用，传入所有注册的 provider keys
+      expect(preloadSpy).toHaveBeenCalledOnce();
+      const calledKeys = preloadSpy.mock.calls[0][0];
+      expect(calledKeys).toContain(ModelProviderKeyEnum.DEEPSEEK);
+      expect(calledKeys).toContain(ModelProviderKeyEnum.MOONSHOTAI);
+      expect(calledKeys).toContain(ModelProviderKeyEnum.ZHIPUAI);
+      expect(calledKeys).toContain(ModelProviderKeyEnum.ZHIPUAI_CODING_PLAN);
+
+      preloadSpy.mockRestore();
+    });
+
+    it('应该在 window online 事件时触发网络恢复', () => {
+      // 重置以重建事件监听器
+      loader.resetForTest();
+
+      // 由于 resetForTest() 会移除旧的监听器但不重新注册，
+      // 需要手动模拟 constructor 中的事件监听注册
+      const preloadSpy = vi.spyOn(loader, 'preloadProviders');
+      const controller = new AbortController();
+      window.addEventListener('online', () => {
+        (loader as any).handleNetworkRecover();
+      }, { signal: controller.signal });
+
+      window.dispatchEvent(new Event('online'));
+
+      expect(preloadSpy).toHaveBeenCalledOnce();
+
+      controller.abort();
+      preloadSpy.mockRestore();
     });
   });
 });

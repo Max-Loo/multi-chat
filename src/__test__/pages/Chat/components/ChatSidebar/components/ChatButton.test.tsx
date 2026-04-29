@@ -762,4 +762,55 @@ describe('ChatButton Component', () => {
       expect(deleteMenuItem).toHaveAttribute('aria-disabled', 'true');
     });
   });
+
+  describe('重命名边界分支', () => {
+    it('重命名时名称未改变应退出编辑模式', async () => {
+      const chat = createMockChat({ name: '原始名称' });
+      const meta = chatToMeta(chat);
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({ chatMetaList: [meta] }),
+        chatPage: createChatPageSliceState(),
+      });
+
+      renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
+
+      const trigger = screen.getByRole('button');
+      fireEvent.click(trigger);
+
+      const renameItem = await screen.findByText('重命名');
+      fireEvent.click(renameItem);
+
+      // 编辑模式下应有 input
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('原始名称');
+
+      // 名称未改变直接点击确认按钮（编辑模式下第一个按钮）
+      const buttons = screen.getAllByRole('button');
+      fireEvent.click(buttons[0]);
+
+      // 不应 dispatch editChatName（名称未变），编辑模式应退出
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    });
+
+    it('重命名空名称的聊天时应将输入框设为空字符串', async () => {
+      const chat = createMockChat({ name: '' });
+      const meta = chatToMeta(chat);
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState({ chatMetaList: [meta] }),
+        chatPage: createChatPageSliceState(),
+      });
+
+      renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
+
+      const trigger = screen.getByRole('button');
+      fireEvent.click(trigger);
+
+      const renameItem = await screen.findByText('重命名');
+      fireEvent.click(renameItem);
+
+      // 输入框应为空
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('');
+    });
+  });
 });

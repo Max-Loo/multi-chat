@@ -53,9 +53,22 @@ describe('Splitter', () => {
   });
 
   describe('样式验证', () => {
-    it('应该应用正确的容器样式', () => {
-      renderSplitter([[createMockPanelChatModel('model-1')]]);
-      expect(screen.getByTestId('splitter-container')).toBeInTheDocument();
+    it('应该应用正确的容器方向和面板结构', () => {
+      const board = [
+        [createMockPanelChatModel('model-1'), createMockPanelChatModel('model-2')],
+        [createMockPanelChatModel('model-3')],
+      ];
+      renderSplitter(board);
+
+      const container = screen.getByTestId('splitter-container');
+      // 最外层 ResizablePanelGroup 为垂直方向（行排列）
+      const outerGroup = container.querySelector('[data-group]');
+      expect(outerGroup).toBeInTheDocument();
+      expect(outerGroup).toHaveStyle({ flexDirection: 'column' });
+
+      // 验证垂直面板数量等于 board 行数
+      const panels = outerGroup!.querySelectorAll(':scope > [data-panel]');
+      expect(panels).toHaveLength(2);
     });
   });
 

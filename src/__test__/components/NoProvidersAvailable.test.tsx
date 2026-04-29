@@ -113,4 +113,21 @@ describe('NoProvidersAvailable', () => {
     })
   })
 
+  describe('引导内容渲染', () => {
+    it('应该在无 providers 状态下显示完整的引导内容', () => {
+      render(<NoProvidersAvailable />)
+
+      // 验证标题（引导用户了解问题）
+      expect(screen.getByText('无可用模型供应商')).toBeInTheDocument()
+      // 验证描述（引导用户排查）
+      expect(screen.getByText('请检查网络连接或稍后重试')).toBeInTheDocument()
+      // 验证提示（引导用户操作）
+      expect(screen.getByText('您可以尝试刷新页面')).toBeInTheDocument()
+      // 验证操作按钮
+      expect(screen.getByRole('button', { name: '重新加载' })).toBeInTheDocument()
+      // 验证容器布局
+      expect(screen.getByRole('alert')).toHaveAttribute('data-testid', 'no-providers-container')
+    })
+  })
+
 })

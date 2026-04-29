@@ -78,8 +78,8 @@ describe('useBasicModelTable', () => {
     });
 
     it('应支持过滤功能', async () => {
-      const model1 = createMockModel({ id: 'model-1', nickname: 'GPT-4', providerKey: ModelProviderKeyEnum.DEEPSEEK });
-      const model2 = createMockModel({ id: 'model-2', nickname: 'Claude', providerKey: ModelProviderKeyEnum.MOONSHOTAI });
+      const model1 = createMockModel({ id: 'model-1', nickname: 'GPT-4', modelName: 'gpt-4', providerKey: ModelProviderKeyEnum.DEEPSEEK });
+      const model2 = createMockModel({ id: 'model-2', nickname: 'Claude', modelName: 'claude-3', providerKey: ModelProviderKeyEnum.MOONSHOTAI });
 
       const { result } = renderHookWithProviders(() => useBasicModelTable(), {
         preloadedState: {
@@ -88,17 +88,17 @@ describe('useBasicModelTable', () => {
         },
       });
 
-      const initialCount = result.current.filteredModels.length;
+      expect(result.current.filteredModels).toHaveLength(2);
 
-      result.current.setFilterText('GPT');
-
-      // 等待防抖完成（useDebouncedFilter 使用了500ms防抖）
-      vi.useFakeTimers();
-      await act(async () => {
-        vi.advanceTimersByTime(600);
+      act(() => {
+        result.current.setFilterText('GPT');
       });
 
-      expect(result.current.filteredModels.length).toBeLessThanOrEqual(initialCount);
+      // 等待防抖完成（useDebouncedFilter 默认 200ms 防抖）
+      await waitFor(() => {
+        expect(result.current.filteredModels).toHaveLength(1);
+      });
+      expect(result.current.filteredModels[0].nickname).toBe('GPT-4');
     });
 
     it('应过滤掉已删除的模型', () => {
@@ -114,27 +114,6 @@ describe('useBasicModelTable', () => {
 
       expect(result.current.filteredModels).toHaveLength(1);
       expect(result.current.filteredModels[0].id).toBe('model-1');
-    });
-
-  });
-
-  describe('使用 createMockModel 创建测试模型数据', () => {
-    it('应使用 createMockModel 创建测试数据', () => {
-      const mockModels = [
-        createMockModel({ id: 'test-1', nickname: 'Test Model 1', providerKey: ModelProviderKeyEnum.DEEPSEEK }),
-        createMockModel({ id: 'test-2', nickname: 'Test Model 2', providerKey: ModelProviderKeyEnum.MOONSHOTAI }),
-        createMockModel({ id: 'test-3', nickname: 'Test Model 3', providerKey: ModelProviderKeyEnum.ZHIPUAI }),
-      ];
-
-      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
-        preloadedState: {
-          models: createModelSliceState({ models: mockModels }),
-          chat: createChatSliceState(),
-        },
-      });
-
-      expect(result.current.filteredModels).toHaveLength(3);
-      expect(result.current.filteredModels[0].nickname).toBe('Test Model 1');
     });
 
   });

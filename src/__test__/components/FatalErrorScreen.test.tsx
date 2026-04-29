@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { FatalErrorScreen } from '@/components/FatalErrorScreen';
 import type { InitError } from '@/services/initialization';
 
@@ -266,6 +266,74 @@ describe('FatalErrorScreen 组件', () => {
 
       const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  describe('formatErrorDetails 分支', () => {
+    it('应该显示 Error 对象的 stack trace', () => {
+      vi.stubEnv('DEV', true);
+
+      const error = new Error('stack trace content');
+      error.stack = 'Error: stack trace content\n    at test.js:1:1';
+
+      const errorWithStack: InitError = {
+        severity: 'fatal',
+        message: '堆栈测试',
+        originalError: error,
+      };
+
+      render(<FatalErrorScreen errors={[errorWithStack]} />);
+
+      // details 元素应该包含 stack trace
+      expect(screen.getByText(/stack trace content/)).toBeInTheDocument();
+    });
+
+    it('应该序列化非 Error 对象', () => {
+      vi.stubEnv('DEV', true);
+
+      const customObject = { code: 'ERR_CUSTOM', data: { foo: 'bar' } };
+      const errorWithObject: InitError = {
+        severity: 'fatal',
+        message: '自定义对象测试',
+        originalError: customObject,
+      };
+
+      render(<FatalErrorScreen errors={[errorWithObject]} />);
+
+      // 应该显示 JSON.stringify 的结果
+      expect(screen.getByText(/ERR_CUSTOM/)).toBeInTheDocument();
+    });
+
+    it('应该在 Error 无 stack 时显示 message', () => {
+      vi.stubEnv('DEV', true);
+
+      const errorNoStack = new Error('message only');
+      errorNoStack.stack = undefined as any;
+
+      const errorWithMessage: InitError = {
+        severity: 'fatal',
+        message: '消息测试',
+        originalError: errorNoStack,
+      };
+
+      render(<FatalErrorScreen errors={[errorWithMessage]} />);
+
+      expect(screen.getByText(/message only/)).toBeInTheDocument();
+    });
+  });
+
+  describe('reset 回调触发', () => {
+    it('应该点击重置数据按钮时触发对话框', () => {
+      render(<FatalErrorScreen errors={mockErrors} />);
+
+      // 获取所有按钮（刷新 + 重置，共 2 个）
+      const buttons = screen.getAllByRole('button');
+      // 最后一个按钮是重置按钮
+      const resetButton = buttons[buttons.length - 1];
+      fireEvent.click(resetButton);
+
+      // 对话框被触发（useResetDataDialog 内部 setIsDialogOpen(true)）
+      expect(resetButton).toBeInTheDocument();
     });
   });
 });

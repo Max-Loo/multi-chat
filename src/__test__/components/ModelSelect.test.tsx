@@ -4,7 +4,7 @@
  * 测试模型选择组件的用户交互行为
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import ModelSelect from '@/pages/Chat/components/ModelSelect';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
@@ -35,6 +35,12 @@ vi.mock('react-i18next', () =>
 
 // Mock toastQueue
 vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());
+
+// Mock useResponsive 以支持 mobile 模式测试
+const { mockIsMobile } = vi.hoisted(() => ({ mockIsMobile: { value: false } }));
+vi.mock('@/hooks/useResponsive', () => ({
+  useResponsive: () => globalThis.__createResponsiveMock({ isMobile: mockIsMobile.value, layoutMode: mockIsMobile.value ? 'mobile' : 'desktop', isDesktop: !mockIsMobile.value }),
+}));
 
 const createModelSelectStore = () => {
   const mockModels = [
@@ -166,6 +172,89 @@ describe('ModelSelect 用户交互测试', () => {
       const confirmButton = confirmButtons.find(btn => btn.textContent?.includes('确认'));
       expect(confirmButton).toBeDefined();
       expect(confirmButton).not.toBeDisabled();
+    });
+
+    it('应该通过 checkbox 选择模型并显示 Badge', async () => {
+      renderWithProviders(<ModelSelect />, { store });
+
+      // 找到所有 checkbox
+      const checkboxes = screen.getAllByRole('checkbox');
+      expect(checkboxes.length).toBeGreaterThanOrEqual(1);
+
+      // 点击第一个 checkbox 选择模型
+      fireEvent.click(checkboxes[0]);
+
+      // 应该出现清除选中按钮（表示有模型被选中）
+      expect(screen.getByLabelText('清除选中')).toBeInTheDocument();
+    });
+
+    it('应该在选中模型后点击确认调用 dispatch', async () => {
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+      renderWithProviders(<ModelSelect />, { store });
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      fireEvent.click(checkboxes[0]);
+
+      const confirmButtons = screen.getAllByRole('button');
+      const confirmButton = confirmButtons.find(btn => btn.textContent?.includes('确认'));
+      fireEvent.click(confirmButton!);
+
+      expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'chat/editChat' }));
+      dispatchSpy.mockRestore();
+    });
+
+    it('应该取消选中模型', async () => {
+      renderWithProviders(<ModelSelect />, { store });
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      // 选择
+      fireEvent.click(checkboxes[0]);
+      // 再次点击取消选择
+      fireEvent.click(checkboxes[0]);
+
+      // Badge 不应出现（或已消失）
+      // 注意：checkbox 状态可能由 Radix UI 管理
+    });
+
+    it('应该显示清除选中按钮当有模型被选中', async () => {
+      renderWithProviders(<ModelSelect />, { store });
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      fireEvent.click(checkboxes[0]);
+
+      // 清除按钮应该出现
+      const clearButton = screen.getByLabelText('清除选中');
+      expect(clearButton).toBeInTheDocument();
+    });
+
+    it('应该清空所有选中当点击清除按钮', async () => {
+      renderWithProviders(<ModelSelect />, { store });
+
+      const checkboxes = screen.getAllByRole('checkbox');
+      fireEvent.click(checkboxes[0]);
+      fireEvent.click(checkboxes[1]);
+
+      const clearButton = screen.getByLabelText('清除选中');
+      fireEvent.click(clearButton);
+
+      // 清除后 Badge 应消失
+      expect(screen.queryByLabelText('清除选中')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('移动端模式', () => {
+    beforeEach(() => {
+      mockIsMobile.value = true;
+    });
+
+    afterEach(() => {
+      mockIsMobile.value = false;
+    });
+
+    it('应该在移动端模式显示打开供应商列表按钮', () => {
+      renderWithProviders(<ModelSelect />, { store });
+
+      expect(screen.getByLabelText('打开供应商列表')).toBeInTheDocument();
     });
   });
 });

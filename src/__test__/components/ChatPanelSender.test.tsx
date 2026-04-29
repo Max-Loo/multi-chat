@@ -623,4 +623,26 @@ describe("ChatPanelSender", () => {
       expect(sendButton).toBeEnabled();
     });
   });
+
+  describe("无选中聊天时", () => {
+    it("应该不发送消息当没有选中聊天", () => {
+      const store = createStore({
+        chatMetaList: [],
+        activeChatData: {},
+        selectedChatId: null,
+      });
+
+      renderWithProviders(React.createElement(ChatPanelSender), { store });
+
+      const textarea = screen.getByPlaceholderText(
+        /输入消息/i,
+      ) as HTMLTextAreaElement;
+
+      fireEvent.change(textarea, { target: { value: "Test message" } });
+      fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", keyCode: 13 });
+
+      // 输入框内容应保留（未发送）
+      expect(textarea.value).toBe("Test message");
+    });
+  });
 });

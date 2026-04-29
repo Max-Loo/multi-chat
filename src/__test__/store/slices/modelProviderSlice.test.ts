@@ -20,6 +20,7 @@ import modelProviderReducer, {
   refreshModelProvider,
   silentRefreshModelProvider,
   clearError,
+  triggerSilentRefreshIfNeeded,
 } from "@/store/slices/modelProviderSlice";
 import {
   fetchRemoteData,
@@ -488,6 +489,68 @@ describe("modelProviderSlice", () => {
       // 验证 error 保持不变
       const state = store.getState().modelProvider;
       expect(state.error).toEqual(errorBefore);
+    });
+  });
+
+  describe("refreshModelProvider 非 RemoteDataError 分支", () => {
+    it("应该在非 RemoteDataError 时使用默认错误消息", async () => {
+      // Mock fetchRemoteData 抛出普通 Error（非 RemoteDataError）
+      mockFetchRemoteData.mockRejectedValue(new TypeError("fetch is not a function"));
+
+      const result = await store.dispatch(refreshModelProvider());
+
+      expect(result.type).toBe("modelProvider/refresh/rejected");
+
+      const state = store.getState().modelProvider;
+      expect(state.error).toBe("刷新失败，请稍后重试");
+    });
+
+    it("应该在 rejected 无 payload 时使用 error.message", () => {
+      // 直接 dispatch rejected（不通过 rejectWithValue）
+      store.dispatch(refreshModelProvider.rejected(new Error("Connection timeout"), "req-no-payload"));
+
+      const state = store.getState().modelProvider;
+      expect(state.error).toBe("Connection timeout");
+    });
+  });
+
+  describe("triggerSilentRefreshIfNeeded", () => {
+    it("应该在 backgroundRefreshing 为 false 时触发刷新", () => {
+      const dispatchSpy = vi.fn();
+      const mockStore = {
+        getState: () => ({
+          modelProvider: {
+            loading: false,
+            backgroundRefreshing: false,
+            providers: [],
+            error: null,
+          },
+        }),
+        dispatch: dispatchSpy,
+      };
+
+      triggerSilentRefreshIfNeeded(mockStore as any);
+
+      expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("应该在 backgroundRefreshing 为 true 时跳过刷新", () => {
+      const dispatchSpy = vi.fn();
+      const mockStore = {
+        getState: () => ({
+          modelProvider: {
+            loading: false,
+            backgroundRefreshing: true,
+            providers: [],
+            error: null,
+          },
+        }),
+        dispatch: dispatchSpy,
+      };
+
+      triggerSilentRefreshIfNeeded(mockStore as any);
+
+      expect(dispatchSpy).not.toHaveBeenCalled();
     });
   });
 });

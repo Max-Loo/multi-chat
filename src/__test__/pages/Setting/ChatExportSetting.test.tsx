@@ -147,7 +147,7 @@ describe('ChatExportSetting', () => {
 
   describe('Loading 状态', () => {
     it('应该禁用两个按钮 当导出请求进行中', async () => {
-      let resolveExport!: (value: unknown) => void;
+      let resolveExport!: (value: Awaited<ReturnType<typeof exportAllChats>>) => void;
       vi.mocked(exportAllChats).mockImplementation(
         () => new Promise((resolve) => { resolveExport = resolve; }),
       );

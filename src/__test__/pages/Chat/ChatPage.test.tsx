@@ -185,5 +185,69 @@ describe('ChatPage', () => {
       expect(screen.queryByTestId('mock-mobile-drawer')).not.toBeInTheDocument();
       expect(screen.getByTestId('chat-sidebar')).toBeInTheDocument();
     });
+
+    it('应该在侧边栏折叠 + 桌面端时应用隐藏样式', () => {
+      mockResponsive.mockReturnValue({
+        layoutMode: 'desktop',
+        width: 1280,
+        height: 800,
+        isMobile: false,
+        isCompact: false,
+        isCompressed: false,
+        isDesktop: true,
+      });
+
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState(),
+        chatPage: createChatPageSliceState({ isSidebarCollapsed: true }),
+      });
+
+      renderWithProviders(<ChatPage />, { store, route: '/chat' });
+
+      const sidebar = screen.getByTestId('chat-sidebar');
+      expect(sidebar.className).toContain('-ml-56');
+      expect(sidebar.className).toContain('-translate-x-full');
+    });
+
+    it('应该在侧边栏折叠 + 平板端时应用平板隐藏样式', () => {
+      mockResponsive.mockReturnValue({
+        layoutMode: 'compact',
+        width: 768,
+        height: 800,
+        isMobile: false,
+        isCompact: true,
+        isCompressed: false,
+        isDesktop: false,
+      });
+
+      const store = createTypeSafeTestStore({
+        chat: createChatSliceState(),
+        chatPage: createChatPageSliceState({ isSidebarCollapsed: true }),
+      });
+
+      renderWithProviders(<ChatPage />, { store, route: '/chat' });
+
+      const sidebar = screen.getByTestId('chat-sidebar');
+      expect(sidebar.className).toContain('-ml-48');
+      expect(sidebar.className).toContain('w-48');
+    });
+
+    it('应该在侧边栏展开 + 平板端时应用平板宽度', () => {
+      mockResponsive.mockReturnValue({
+        layoutMode: 'compact',
+        width: 768,
+        height: 800,
+        isMobile: false,
+        isCompact: true,
+        isCompressed: false,
+        isDesktop: false,
+      });
+
+      renderChatPage();
+
+      const sidebar = screen.getByTestId('chat-sidebar');
+      expect(sidebar.className).toContain('w-48');
+      expect(sidebar.className).toContain('ml-0');
+    });
   });
 });

@@ -563,6 +563,124 @@ describe('chatMiddleware', () => {
     });
   });
 
+  describe('自动命名边界路径', () => {
+    it('应该在 currentChat 不存在时不触发自动命名', async () => {
+      const chatId = 'auto-chat-noexist';
+      // activeChatData 不包含 chatId → currentChat 为 undefined
+      const state = createState({ id: chatId }, true);
+      delete state.chat.activeChatData[chatId];
+      const { store: autoStore, dispatchedActions } = createAutoNamingStore(state);
+
+      autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
+
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
+      });
+    });
+
+    it('应该在 generateChatName fulfilled 无 chat.id 时不清除锁', async () => {
+      const chatId = 'auto-chat-noid';
+      const { store: autoStore, dispatchedActions: actions1 } = createAutoNamingStore(createState({ id: chatId }, true));
+
+      autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(actions1)).toBe(1);
+      });
+
+      // fulfilled 但没有 chat.id → 锁未清除
+      autoStore.dispatch({
+        type: 'chat/generateName/fulfilled',
+        payload: { chatId, name: 'Name' },
+        meta: { arg: {} },
+      });
+      await vi.waitFor(() => {
+        expect(actions1.length).toBeGreaterThanOrEqual(2);
+      });
+
+      // 锁仍存在，再次触发不应生成
+      const { store: autoStore2, dispatchedActions: actions2 } = createAutoNamingStore(createState({ id: chatId }, true));
+      autoStore2.dispatch(createFulfilledAction(chatId, 'model-auto'));
+      await vi.waitFor(() => {
+        expect(countGenerateNamePending(actions2)).toBe(0);
+      });
+    });
+  });
+
+  describe('editChatName 存储路径', () => {
+    it('应该在 activeChatData 无聊天时从存储加载并保存', async () => {
+      const { loadChatById } = await import('@/store/storage');
+      const mockLoadChatById = vi.mocked(loadChatById);
+      const storedChat = { id: 'chat-storage-1', name: 'Stored Chat', chatModelList: [], isManuallyNamed: false, isDeleted: false, updatedAt: 0 };
+      mockLoadChatById.mockResolvedValueOnce(storedChat as any);
+
+      const preloadedState = createTestRootState({
+        chat: createChatSliceState({
+          chatMetaList: [{ id: 'chat-storage-1', name: 'Stored Chat', isManuallyNamed: false, modelIds: [], isDeleted: false, updatedAt: 0 }],
+          activeChatData: {},
+          selectedChatId: null,
+        }),
+      });
+
+      const localStore = configureStore({
+        reducer: {
+          models: modelReducer,
+          chat: chatReducer,
+          chatPage: chatPageReducer,
+          appConfig: appConfigReducer,
+          modelProvider: modelProviderReducer,
+          settingPage: settingPageReducer,
+          modelPage: modelPageReducer,
+        },
+        preloadedState,
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware().prepend(saveChatListMiddleware.middleware),
+      });
+
+      await localStore.dispatch(editChatName({ id: 'chat-storage-1', name: 'New Name' }));
+
+      await vi.waitFor(() => {
+        expect(mockSaveChatAndIndex).toHaveBeenCalled();
+      });
+    });
+
+    it('应该在存储也无聊天时跳过保存', async () => {
+      const { loadChatById } = await import('@/store/storage');
+      const mockLoadChatById = vi.mocked(loadChatById);
+      mockLoadChatById.mockResolvedValueOnce(undefined);
+
+      const preloadedState = createTestRootState({
+        chat: createChatSliceState({
+          chatMetaList: [{ id: 'chat-missing', name: 'Missing', isManuallyNamed: false, modelIds: [], isDeleted: false, updatedAt: 0 }],
+          activeChatData: {},
+          selectedChatId: null,
+        }),
+      });
+
+      const localStore = configureStore({
+        reducer: {
+          models: modelReducer,
+          chat: chatReducer,
+          chatPage: chatPageReducer,
+          appConfig: appConfigReducer,
+          modelProvider: modelProviderReducer,
+          settingPage: settingPageReducer,
+          modelPage: modelPageReducer,
+        },
+        preloadedState,
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware().prepend(saveChatListMiddleware.middleware),
+      });
+
+      await localStore.dispatch(editChatName({ id: 'chat-missing', name: 'New Name' }));
+
+      // 等待 effect 完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 不应调用 saveChatAndIndex（chatData 为 undefined）
+      expect(mockSaveChatAndIndex).not.toHaveBeenCalled();
+    });
+  });
+
   describe('resetChatMiddleware()', () => {
     it('应该在自动命名触发后清理 generatingTitleChatIds', async () => {
       const chatId = 'reset-test-chat';

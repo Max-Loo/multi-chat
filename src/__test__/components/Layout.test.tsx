@@ -40,23 +40,12 @@ describe('Layout 组件', () => {
   });
 
   describe('渲染测试', () => {
-    it('应该正确渲染 Layout 组件', () => {
+    it('应该正确渲染 Layout 组件并包含主内容区域', () => {
       renderLayout(store);
 
-      screen.getByTestId('layout-root');
-    });
-
-    it('应该渲染主内容区域', () => {
-      renderLayout(store);
-
-      screen.getByRole('main');
-    });
-
-    it('应该应用正确的布局结构', () => {
-      renderLayout(store);
-
-      const layoutDiv = screen.getByTestId('layout-root');
-      expect(layoutDiv.children.length).toBeGreaterThan(0);
+      const layout = screen.getByTestId('layout-root');
+      const main = screen.getByRole('main');
+      expect(layout).toContainElement(main);
     });
 
     it('应该支持自定义 className', () => {
@@ -84,27 +73,6 @@ describe('Layout 组件', () => {
       // main 区域存在于 layout-root 内，为 Suspense + Outlet 提供容器
       const layout = screen.getByTestId('layout-root');
       expect(layout).toContainElement(main);
-    });
-  });
-
-  describe('子组件位置测试', () => {
-    it('应该正确渲染 Sidebar 组件', () => {
-      renderLayout(store);
-
-      // 桌面端 Sidebar 在 main 之前渲染
-      const layout = screen.getByTestId('layout-root');
-      const main = screen.getByRole('main');
-      expect(layout.children[0]).not.toBe(main);
-    });
-
-    it('Sidebar 应该位于主内容区域之前', () => {
-      renderLayout(store);
-
-      const layout = screen.getByTestId('layout-root');
-      const main = screen.getByRole('main');
-      const children = Array.from(layout.children);
-      // Sidebar 在 DOM 顺序上位于 main 之前
-      expect(children.indexOf(main)).toBeGreaterThan(0);
     });
   });
 
@@ -142,7 +110,9 @@ describe('Layout 组件', () => {
     it('应该处理空 className', () => {
       renderLayout(store, { className: '' });
 
-      screen.getByTestId('layout-root');
+      const layout = screen.getByTestId('layout-root');
+      // 空 className 不添加额外 class，仅保留组件基础样式
+      expect(layout.className.trim()).toBe('flex h-screen bg-white');
     });
 
     it('应该处理多个自定义 className', () => {

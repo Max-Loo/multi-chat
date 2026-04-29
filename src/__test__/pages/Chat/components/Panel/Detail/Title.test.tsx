@@ -161,4 +161,56 @@ describe('Title', () => {
     expect(tooltip).toHaveTextContent('gpt-4');
     expect(tooltip).toHaveTextContent('助手');
   });
+
+  it('应该在 Tooltip 中昵称为空时显示 "-"', () => {
+    mockModels.push({
+      id: 'model-1',
+      nickname: '',
+      modelName: 'gpt-4',
+      providerKey: 'openai',
+      providerName: 'OpenAI',
+      isEnable: true,
+    });
+
+    render(<Title chatModel={createMockPanelChatModel('model-1')} />);
+
+    const tooltip = screen.getByTestId('tooltip-content');
+    expect(tooltip).toHaveTextContent('昵称');
+    expect(tooltip).toHaveTextContent('-');
+  });
+
+  it('正常启用模型不应显示状态 Badge', () => {
+    mockModels.push({
+      id: 'model-1',
+      nickname: '助手',
+      modelName: 'gpt-4',
+      providerKey: 'openai',
+      providerName: 'OpenAI',
+      isEnable: true,
+    });
+
+    render(<Title chatModel={createMockPanelChatModel('model-1')} />);
+
+    const badges = screen.queryAllByTestId('badge');
+    expect(badges).toHaveLength(0);
+  });
+
+  it('当模型同时标记为已删除和已禁用时，应优先显示已删除 Badge', () => {
+    mockModels.push({
+      id: 'model-1',
+      nickname: '',
+      modelName: 'gpt-4',
+      providerKey: 'openai',
+      providerName: 'OpenAI',
+      isEnable: false,
+      isDeleted: true,
+    });
+
+    render(<Title chatModel={createMockPanelChatModel('model-1')} />);
+
+    const badges = screen.getAllByTestId('badge');
+    const deletedBadge = badges.find((b) => b.textContent === '已删除');
+    expect(deletedBadge).toBeDefined();
+    expect(deletedBadge).toHaveAttribute('data-variant', 'destructive');
+  });
 });

@@ -269,6 +269,50 @@ describe('MobileDrawer 组件', () => {
     });
   });
 
+  describe('open/close 状态切换渲染', () => {
+    it('应该从 closed 切换到 open 时渲染抽屉内容', () => {
+      const { rerender } = render(
+        <MobileDrawer isOpen={false} onOpenChange={mockOnOpenChange}>
+          <div data-testid="drawer-body">抽屉主体内容</div>
+        </MobileDrawer>
+      );
+
+      // closed 状态下 Sheet 组件仍然渲染（只是不可见）
+      const sheet = screen.getByTestId('sheet');
+      expect(sheet).toHaveAttribute('data-open', 'false');
+
+      // 切换到 open
+      rerender(
+        <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
+          <div data-testid="drawer-body">抽屉主体内容</div>
+        </MobileDrawer>
+      );
+
+      // open 状态下内容应该渲染
+      expect(screen.getByTestId('drawer-body')).toBeInTheDocument();
+      expect(screen.getByTestId('sheet')).toHaveAttribute('data-open', 'true');
+    });
+
+    it('应该从 open 切换到 closed 时更新状态', () => {
+      const { rerender } = render(
+        <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
+          <div data-testid="drawer-body">内容</div>
+        </MobileDrawer>
+      );
+
+      expect(screen.getByTestId('sheet')).toHaveAttribute('data-open', 'true');
+
+      // 切换到 closed
+      rerender(
+        <MobileDrawer isOpen={false} onOpenChange={mockOnOpenChange}>
+          <div data-testid="drawer-body">内容</div>
+        </MobileDrawer>
+      );
+
+      expect(screen.getByTestId('sheet')).toHaveAttribute('data-open', 'false');
+    });
+  });
+
   describe('Props 类型检查', () => {
     it('应该接受所有必需的 props', () => {
       const props = {
