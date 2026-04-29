@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "inPlace": true,
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vite.config.ts",
+    "related": true
+  },
+  "mutate": [
+    "src/services/chat/index.ts",
+    "src/services/chat/providerLoader.ts",
+    "src/store/slices/chatSlices.ts",
+    "src/utils/crypto.ts"
+  ],
+  "reporters": ["html", "clear-text", "progress"],
+  "thresholds": {
+    "high": 80,
+    "low": 60
+  },
+  "concurrency": 2,
+  "timeoutMS": 15000,
+  "mutator": {
+    "excludedMutations": ["StringLiteral"]
+  },
+  "ignorePatterns": [
+    ".agents",
+    ".claude",
+    ".github",
+    ".husky",
+    ".kiro",
+    ".opencode",
+    ".trae",
+    ".vscode",
+    "src-tauri",
+    "dist",
+    "coverage",
+    "docs",
+    "openspec",
+    "reports",
+    "public"
+  ]
+}
