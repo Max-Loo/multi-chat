@@ -64,9 +64,6 @@ describe('底部导航栏集成测试', () => {
 
   beforeEach(() => {
     store = createBottomNavTestStore();
-    // 设置移动端窗口尺寸
-    global.innerWidth = 600;
-    global.dispatchEvent(new Event('resize'));
   });
 
   

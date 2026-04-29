@@ -1,4 +1,4 @@
-import { screen, fireEvent, createEvent, cleanup } from '@testing-library/react';
+import { screen, fireEvent, createEvent, cleanup, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatButton from '@/pages/Chat/components/Sidebar/components/ChatButton';
 import { resetTestState } from '@/__test__/helpers/isolation';
@@ -445,7 +445,6 @@ describe('ChatButton Component', () => {
         chat: createChatSliceState({ chatMetaList: [meta], selectedChatId: chat.id }),
         chatPage: createChatPageSliceState({ isShowChatPage: true, isSidebarCollapsed: false }),
       });
-      const dispatchSpy = vi.spyOn(store, 'dispatch');
       renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
 
       // 点击重命名进入编辑模式
@@ -456,22 +455,17 @@ describe('ChatButton Component', () => {
       const input = screen.getByRole('textbox');
       fireEvent.change(input, { target: { value: '新名称' } });
 
-      // 获取 mock toastQueue
-      const { toastQueue } = await import('@/services/toast');
-
       // 找到确认按钮（编辑模式中的第一个按钮）
       const buttons = screen.getAllByRole('button');
       fireEvent.click(buttons[0]);
 
-      // 验证 dispatch editChatName
-      const editCalls = dispatchSpy.mock.calls.filter((call: unknown[]) => {
-        const action = call[0] as { type?: string };
-        return action?.type === 'chat/editChatName';
+      // 验证 Redux 状态已更新
+      await waitFor(() => {
+        expect(store.getState().chat.chatMetaList.find(m => m.id === chat.id)?.name).toBe('新名称');
       });
-      expect(editCalls.length).toBeGreaterThan(0);
-      expect((editCalls[0][0] as unknown as { payload: unknown }).payload).toEqual({ id: chat.id, name: '新名称' });
 
       // 验证 toastQueue.success
+      const { toastQueue } = await import('@/services/toast');
       expect(toastQueue.success).toHaveBeenCalled();
     });
 
@@ -482,7 +476,6 @@ describe('ChatButton Component', () => {
         chat: createChatSliceState({ chatMetaList: [meta], selectedChatId: chat.id }),
         chatPage: createChatPageSliceState({ isShowChatPage: true, isSidebarCollapsed: false }),
       });
-      const dispatchSpy = vi.spyOn(store, 'dispatch');
       renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
 
       // 进入编辑模式
@@ -499,12 +492,8 @@ describe('ChatButton Component', () => {
       // 验证退出编辑模式
       expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
 
-      // 验证无 editChatName dispatch
-      const editCalls = dispatchSpy.mock.calls.filter((call: unknown[]) => {
-        const action = call[0] as { type?: string };
-        return action?.type === 'chat/editChatName';
-      });
-      expect(editCalls).toHaveLength(0);
+      // 验证 Redux 状态中聊天名称保持不变
+      expect(store.getState().chat.chatMetaList.find(m => m.id === chat.id)?.name).toBe('测试聊天');
     });
 
     it('输入为空白时确认按钮应 disabled', () => {

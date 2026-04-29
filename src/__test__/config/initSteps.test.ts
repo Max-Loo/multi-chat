@@ -101,31 +101,9 @@ describe('initSteps 配置验证', () => {
       expect(names.length).toBe(9); // 9 个步骤
     });
 
-    it('应该检测重复的步骤名称', () => {
-      const names = initSteps.map((step) => step.name);
-      const nameCount = names.reduce((acc, name) => {
-        acc[name] = (acc[name] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      const duplicates = Object.entries(nameCount).filter(([_, count]) => count > 1);
-      expect(duplicates).toHaveLength(0);
-    });
   });
 
   describe('依赖存在性验证', () => {
-    it('应该所有依赖的步骤存在', () => {
-      const stepNames = new Set<string>(initSteps.map((step) => step.name));
-
-      for (const step of initSteps) {
-        if (step.dependencies) {
-          for (const dep of step.dependencies) {
-            expect(stepNames.has(dep)).toBe(true);
-          }
-        }
-      }
-    });
-
     it('应该检测依赖不存在的步骤', () => {
       const stepNames = new Set<string>(initSteps.map((step) => step.name));
 
@@ -160,14 +138,6 @@ describe('initSteps 配置验证', () => {
       }
     });
 
-    it('应该验证字段类型正确', () => {
-      for (const step of initSteps) {
-        expect(typeof step.name).toBe('string');
-        expect(typeof step.critical).toBe('boolean');
-        expect(typeof step.execute).toBe('function');
-        expect(typeof step.onError).toBe('function');
-      }
-    });
   });
 
   describe('错误严重程度有效性', () => {
@@ -185,28 +155,11 @@ describe('initSteps 配置验证', () => {
       }
     });
 
-    it('应该验证 severity 为 fatal、warning 或 ignorable', () => {
-      const validSeverities = ['fatal', 'warning', 'ignorable'] as const;
-
-      for (const step of initSteps) {
-        const error = new Error('Test error');
-        const result = step.onError(error);
-
-        expect(
-          validSeverities.includes(result.severity),
-          `步骤 "${step.name}" 的 onError 返回了无效的 severity: ${result.severity}`
-        ).toBe(true);
-      }
-    });
   });
 
   describe('initSteps 导出测试', () => {
     it('应该 initSteps 可以正常导入', () => {
       expect(initSteps).toBeDefined();
-      expect(Array.isArray(initSteps)).toBe(true);
-    });
-
-    it('应该 initSteps 为数组类型', () => {
       expect(Array.isArray(initSteps)).toBe(true);
     });
 

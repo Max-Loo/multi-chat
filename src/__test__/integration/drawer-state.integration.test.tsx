@@ -65,9 +65,6 @@ describe('抽屉打开/关闭集成测试', () => {
 
   beforeEach(() => {
     store = createDrawerTestStore();
-    // 设置移动端窗口尺寸
-    global.innerWidth = 600;
-    global.dispatchEvent(new Event('resize'));
     consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
