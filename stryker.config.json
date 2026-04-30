@@ -18,7 +18,7 @@
     "high": 80,
     "low": 60
   },
-  "concurrency": 2,
+  "concurrency": 6,
   "timeoutMS": 15000,
   "mutator": {
     "excludedMutations": ["StringLiteral"]

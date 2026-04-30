@@ -659,6 +659,7 @@ export const {
   clearError,
   clearInitializationError,
   setSelectedChatId,
+  setChatMetaList,
   createChat,
   editChat,
   editChatName,
