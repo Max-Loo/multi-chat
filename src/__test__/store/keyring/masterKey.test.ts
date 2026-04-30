@@ -23,6 +23,7 @@ import {
   exportMasterKey,
   importMasterKey,
   importMasterKeyWithValidation,
+  InvalidKeyFormatError,
 } from '@/store/keyring/masterKey';
 
 // Mock keyVerification 模块
@@ -133,17 +134,33 @@ describe('masterKey 完整测试套件', () => {
     });
 
     it('应该抛出错误 当 getPassword 在 Web 环境失败', async () => {
+      const originalError = new Error('IndexedDB error');
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
-      vi.spyOn(keyring, 'getPassword').mockRejectedValue(new Error('IndexedDB error'));
+      vi.spyOn(keyring, 'getPassword').mockRejectedValue(originalError);
 
-      await expect(getMasterKey()).rejects.toThrow('浏览器不支持安全存储或存储空间不足');
+      try {
+        await getMasterKey();
+        expect.unreachable('应该抛出错误');
+      } catch (err) {
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toBe('浏览器不支持安全存储或存储空间不足');
+        expect((err as Error).cause).toBe(originalError);
+      }
     });
 
     it('应该抛出错误 当 getPassword 在 Tauri 环境失败', async () => {
+      const originalError = new Error('Keychain error');
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyring, 'getPassword').mockRejectedValue(new Error('Keychain error'));
-      
-      await expect(getMasterKey()).rejects.toThrow();
+      vi.spyOn(keyring, 'getPassword').mockRejectedValue(originalError);
+
+      try {
+        await getMasterKey();
+        expect.unreachable('应该抛出错误');
+      } catch (err) {
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toBe('无法访问系统安全存储，请检查钥匙串权限设置');
+        expect((err as Error).cause).toBe(originalError);
+      }
     });
   });
 
@@ -158,17 +175,33 @@ describe('masterKey 完整测试套件', () => {
     });
 
     it('应该抛出错误 当 setPassword 在 Web 环境失败', async () => {
+      const originalError = new Error('IndexedDB error');
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
-      vi.spyOn(keyring, 'setPassword').mockRejectedValue(new Error('IndexedDB error'));
+      vi.spyOn(keyring, 'setPassword').mockRejectedValue(originalError);
 
-      await expect(storeMasterKey('a'.repeat(64))).rejects.toThrow('浏览器不支持安全存储或存储空间不足');
+      try {
+        await storeMasterKey('a'.repeat(64));
+        expect.unreachable('应该抛出错误');
+      } catch (err) {
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toBe('浏览器不支持安全存储或存储空间不足');
+        expect((err as Error).cause).toBe(originalError);
+      }
     });
 
     it('应该抛出错误 当 setPassword 在 Tauri 环境失败', async () => {
+      const originalError = new Error('Keychain error');
       vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyring, 'setPassword').mockRejectedValue(new Error('Keychain error'));
-      
-      await expect(storeMasterKey('a'.repeat(64))).rejects.toThrow();
+      vi.spyOn(keyring, 'setPassword').mockRejectedValue(originalError);
+
+      try {
+        await storeMasterKey('a'.repeat(64));
+        expect.unreachable('应该抛出错误');
+      } catch (err) {
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toBe('无法访问系统安全存储，请检查钥匙串权限设置');
+        expect((err as Error).cause).toBe(originalError);
+      }
     });
   });
 
@@ -326,7 +359,14 @@ describe('masterKey 完整测试套件', () => {
     });
 
     it('应该拒绝长度不足的密钥', async () => {
-      await expect(importMasterKey('abc123')).rejects.toThrow('密钥格式无效，请输入 64 字符的 hex 编码字符串');
+      try {
+        await importMasterKey('abc123');
+        expect.unreachable('应该抛出 InvalidKeyFormatError');
+      } catch (err) {
+        expect(err).toBeInstanceOf(InvalidKeyFormatError);
+        expect(err).toHaveProperty('name', 'InvalidKeyFormatError');
+        expect((err as Error).message).toBe('密钥格式无效，请输入 64 字符的 hex 编码字符串');
+      }
       expect(keyring.setPassword).not.toHaveBeenCalled();
     });
 

@@ -11,7 +11,8 @@
     "src/services/chat/index.ts",
     "src/services/chat/providerLoader.ts",
     "src/store/slices/chatSlices.ts",
-    "src/utils/crypto.ts"
+    "src/utils/crypto.ts",
+    "src/store/keyring/masterKey.ts"
   ],
   "reporters": ["html", "clear-text", "progress"],
   "thresholds": {
