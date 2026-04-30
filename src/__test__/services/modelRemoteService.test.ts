@@ -17,7 +17,7 @@ import {
 } from '@/services/modelRemote';
 import { fetch } from '@/utils/tauriCompat/http';
 import { createLazyStore } from '@/utils/tauriCompat/store';
-import { ALLOWED_REMOTE_MODEL_PROVIDERS, REMOTE_MODEL_NETWORK_CONFIG } from '@/services/modelRemote/config';
+import { ALLOWED_REMOTE_MODEL_PROVIDERS, REMOTE_MODEL_NETWORK_CONFIG, REMOTE_MODEL_CACHE_CONFIG } from '@/services/modelRemote/config';
 import {
   createDeepSeekApiResponse,
   createKimiApiResponse,
@@ -60,6 +60,7 @@ describe('modelRemoteService', () => {
 
   beforeEach(() => {
     mockCreateLazyStore.mockReturnValue(mockStore as ReturnType<typeof createLazyStore>);
+    mockFetch.mockClear();
   });
 
   afterEach(() => {
@@ -269,6 +270,249 @@ describe('modelRemoteService', () => {
       // 验证只调用一次，没有重试
       expect(mockFetch).toHaveBeenCalledTimes(2);
     });
+
+    it('应该在 4xx 错误时立即失败不重试', async () => {
+      // Mock fetch 返回 403
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 403, API_URL));
+
+      const error = await fetchRemoteData({ maxRetries: 3 }).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(403);
+      expect(error.message).toContain('403');
+
+      // 验证只调用一次（重试次数为 0）
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('应该在 5xx 错误时触发重试', async () => {
+      vi.useFakeTimers();
+
+      // 第一次 500，第二次成功
+      mockFetch
+        .mockResolvedValueOnce(createMockResponse(undefined, 500, API_URL))
+        .mockResolvedValueOnce(createMockResponse(mockApiResponse, 200, API_URL));
+
+      const resultPromise = fetchRemoteData({ maxRetries: 2 });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      // 验证重试后成功
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(result.fullApiResponse).toEqual(mockApiResponse);
+
+      vi.useRealTimers();
+    });
+
+    it('应该在重试耗尽后抛出最后一次错误', async () => {
+      vi.useFakeTimers();
+
+      // 连续 3 次 500 错误
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 500, API_URL));
+
+      const errorPromise = fetchRemoteData({ maxRetries: 2 }).catch(err => err);
+      await vi.runAllTimersAsync();
+      const error = await errorPromise;
+
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(500);
+      expect(error.message).toContain('500');
+
+      // 验证重试了 3 次（初始 + 2 次重试）
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+
+      vi.useRealTimers();
+    });
+
+    it('应该将非 RemoteDataError 包装为 NETWORK_ERROR', async () => {
+      // Mock fetch 抛出非 RemoteDataError 的 TypeError
+      mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+      const error = await fetchRemoteData({ maxRetries: 0 }).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
+      expect(error.message).toBe('网络请求失败');
+    });
+
+    it('重试失败后应该包含精确的错误信息', async () => {
+      vi.useFakeTimers();
+
+      // 连续网络错误
+      mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+      const errorPromise = fetchRemoteData({ maxRetries: 1 }).catch(err => err);
+      await vi.runAllTimersAsync();
+      const error = await errorPromise;
+
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
+      expect(error.message).toBe('网络请求失败');
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('isRetryableError 四路分支', () => {
+    const retryMockApiResponse = createMockApiResponse([
+      createDeepSeekApiResponse(),
+      createKimiApiResponse(),
+    ]);
+
+    it('NETWORK_TIMEOUT 错误应该可重试', async () => {
+      // 模拟超时场景：fetch 延迟超过 timeout，触发 NETWORK_TIMEOUT
+      vi.useFakeTimers();
+      let fetchCallCount = 0;
+
+      // 第一次调用延迟 200ms（超过 100ms 超时），第二次立即成功
+      mockFetch
+        .mockImplementationOnce((_url, options) => {
+          fetchCallCount++;
+          return new Promise((resolve, reject) => {
+            let settled = false;
+            options?.signal?.addEventListener('abort', () => {
+              if (!settled) {
+                settled = true;
+                reject(new DOMException('Aborted', 'AbortError'));
+              }
+            });
+            setTimeout(() => {
+              if (!settled && !options?.signal?.aborted) {
+                settled = true;
+                resolve(createMockResponse(retryMockApiResponse, 200, API_URL));
+              }
+            }, 200);
+          });
+        })
+        .mockImplementationOnce((_url, _options) => {
+          fetchCallCount++;
+          // 第二次立即返回成功
+          return Promise.resolve(createMockResponse(retryMockApiResponse, 200, API_URL));
+        });
+
+      // 第一次超时，第二次成功
+      const resultPromise = fetchRemoteData({ timeout: 100, maxRetries: 1 });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      // 验证超时后重试成功（说明 NETWORK_TIMEOUT 被判定为可重试）
+      expect(fetchCallCount).toBe(2);
+      expect(result.fullApiResponse).toEqual(retryMockApiResponse);
+
+      vi.useRealTimers();
+    });
+
+    it('NETWORK_ERROR 错误应该可重试', async () => {
+      vi.useFakeTimers();
+
+      // 第一次网络错误，第二次成功
+      mockFetch
+        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockResolvedValueOnce(createMockResponse(retryMockApiResponse, 200, API_URL));
+
+      const resultPromise = fetchRemoteData({ maxRetries: 1 });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      // 验证网络错误后重试成功（说明 NETWORK_ERROR 被判定为可重试）
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(result.fullApiResponse).toEqual(retryMockApiResponse);
+
+      vi.useRealTimers();
+    });
+
+    it('SERVER_ERROR 且 statusCode >= 500 应该可重试', async () => {
+      vi.useFakeTimers();
+
+      // 第一次 503，第二次成功
+      mockFetch
+        .mockResolvedValueOnce(createMockResponse(undefined, 503, API_URL))
+        .mockResolvedValueOnce(createMockResponse(retryMockApiResponse, 200, API_URL));
+
+      const resultPromise = fetchRemoteData({ maxRetries: 1 });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      // 验证 5xx 后重试成功
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(result.fullApiResponse).toEqual(retryMockApiResponse);
+
+      vi.useRealTimers();
+    });
+
+    it('SERVER_ERROR 且 statusCode < 500 不应该重试', async () => {
+      // 404 应该立即失败
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 404, API_URL));
+
+      const error = await fetchRemoteData({ maxRetries: 3 }).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(404);
+      expect(error.message).toContain('404');
+
+      // 验证没有重试
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('NO_CACHE 等其他错误类型不应该重试', async () => {
+      // 通过 loadCachedProviderData 测试 NO_CACHE 类型不会被重试
+      mockStore.get.mockResolvedValue(null);
+
+      const error = await loadCachedProviderData(ALLOWED_REMOTE_MODEL_PROVIDERS).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.NO_CACHE);
+      expect(error.message).toBe('无可用缓存');
+    });
+  });
+
+  describe('fetchWithTimeout', () => {
+    const timeoutMockApiResponse = createMockApiResponse([
+      createDeepSeekApiResponse({
+        models: {
+          'deepseek-chat': {
+            id: 'deepseek-chat',
+            name: 'DeepSeek Chat',
+          },
+        },
+      }),
+      createKimiApiResponse(),
+    ]);
+
+    it('应该在超时前完成请求并返回正常响应', async () => {
+      // Mock fetch 立即返回成功响应
+      mockFetch.mockResolvedValue(createMockResponse(timeoutMockApiResponse, 200, API_URL));
+
+      const result = await fetchRemoteData({ timeout: 5000 });
+      expect(result.fullApiResponse).toEqual(timeoutMockApiResponse);
+      expect(result.filteredData).toBeDefined();
+    });
+
+    it('应该在超时时抛出包含超时信息的 NETWORK_TIMEOUT 错误', async () => {
+      vi.useFakeTimers();
+
+      mockFetch.mockImplementation((_url, options) => {
+        return new Promise((resolve, reject) => {
+          options?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+          setTimeout(() => {
+            if (!options?.signal?.aborted) {
+              resolve(createMockResponse(timeoutMockApiResponse, 200, API_URL));
+            }
+          }, 1000);
+        });
+      });
+
+      const errorPromise = fetchRemoteData({ timeout: 100, maxRetries: 0 }).catch(err => err);
+      await vi.runAllTimersAsync();
+      const error = await errorPromise;
+
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.NETWORK_TIMEOUT);
+      expect(error.message).toContain('100ms');
+
+      vi.useRealTimers();
+    });
   });
 
   // fetchWithTimeout 是私有函数，通过 fetchRemoteData 间接测试
@@ -337,13 +581,10 @@ describe('modelRemoteService', () => {
       // Mock Store.get 返回 null
       mockStore.get.mockResolvedValue(null);
 
-      await expect(
-        loadCachedProviderData(ALLOWED_REMOTE_MODEL_PROVIDERS)
-      ).rejects.toThrow('无可用缓存');
-
       const error = await loadCachedProviderData(ALLOWED_REMOTE_MODEL_PROVIDERS).catch(err => err);
       expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NO_CACHE);
+      expect(error.message).toBe('无可用缓存');
     });
   });
 
@@ -380,6 +621,26 @@ describe('modelRemoteService', () => {
       // 验证白名单过滤（openai 不在白名单中）
       expect(result.filteredData).toHaveLength(1);
       expect(result.filteredData[0].providerKey).toBe('deepseek');
+    });
+
+    it('应该精确过滤白名单外的供应商', async () => {
+      const mockApiResponse = createMockApiResponse([
+        createDeepSeekApiResponse(),
+        createKimiApiResponse(),
+        createOpenAIApiResponse(),
+      ]);
+
+      mockFetch.mockResolvedValue(createMockResponse(mockApiResponse, 200, API_URL));
+
+      const result = await fetchRemoteData();
+
+      // 白名单只有 deepseek、kimi、zhipu
+      const providerKeys = result.filteredData.map(p => p.providerKey);
+      expect(providerKeys).toContain('deepseek');
+      expect(providerKeys).toContain('kimi');
+      // openai 不在白名单中
+      expect(providerKeys).not.toContain('openai');
+      expect(providerKeys).toHaveLength(2);
     });
 
     it('应该支持通过 AbortSignal 取消请求', async () => {
@@ -462,6 +723,27 @@ describe('modelRemoteService', () => {
   });
 
   describe('combineSignals', () => {
+    it('应该在已中止信号传入时立即中止组合信号', async () => {
+      // 创建已中止的 AbortController
+      const alreadyAborted = new AbortController();
+      alreadyAborted.abort();
+
+      // Mock fetch 会检测到信号已中止
+      mockFetch.mockImplementation((_url, options) => {
+        return new Promise((_, reject) => {
+          if (options?.signal?.aborted) {
+            reject(new DOMException('Aborted', 'AbortError'));
+            return;
+          }
+        });
+      });
+
+      const error = await fetchRemoteData({ signal: alreadyAborted.signal, maxRetries: 0 }).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
+      expect(error.message).toBe('网络请求失败');
+    });
+
     it('应该在任意信号中止时组合信号中止', async () => {
       vi.useFakeTimers();
 
@@ -508,16 +790,16 @@ describe('modelRemoteService', () => {
       vi.useRealTimers();
     });
 
-    it('应该在超时信号触发时中止请求', async () => {
+    it('应该在超时信号触发时中止请求并调用 AbortController.abort', async () => {
       vi.useFakeTimers();
 
       const abortController = new AbortController();
+      const abortSpy = vi.spyOn(AbortController.prototype, 'abort');
 
       // Mock fetch 延迟超过超时时间，并正确响应abort
       mockFetch.mockImplementation((_url, options) => {
         return new Promise((resolve, reject) => {
           let settled = false;
-          // 监听abort事件
           options?.signal?.addEventListener('abort', () => {
             if (!settled) {
               settled = true;
@@ -525,7 +807,6 @@ describe('modelRemoteService', () => {
             }
           });
 
-          // 200ms后才resolve，超过100ms超时
           setTimeout(() => {
             if (!settled && !options?.signal?.aborted) {
               settled = true;
@@ -562,7 +843,12 @@ describe('modelRemoteService', () => {
       const error = await fetchPromise;
       expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_TIMEOUT);
+      expect(error.message).toContain('100ms');
 
+      // 验证 AbortController.abort 被调用
+      expect(abortSpy).toHaveBeenCalled();
+
+      abortSpy.mockRestore();
       vi.useRealTimers();
     });
   });
@@ -579,22 +865,35 @@ describe('modelRemoteService', () => {
       const staleTimestamp = new Date(now - 25 * 60 * 60 * 1000).toISOString();
       expect(isRemoteDataFresh(staleTimestamp)).toBe(false);
     });
+
+    it('应该在缓存时间恰好等于有效期时返回 false', () => {
+      // EXPIRY_TIME_MS = 24 * 60 * 60 * 1000
+      const now = Date.now();
+      const boundaryTimestamp = new Date(now - REMOTE_MODEL_CACHE_CONFIG.EXPIRY_TIME_MS).toISOString();
+      expect(isRemoteDataFresh(boundaryTimestamp)).toBe(false);
+    });
+
+    it('应该在缓存时间比有效期少 1ms 时返回 true', () => {
+      const now = Date.now();
+      const almostExpired = new Date(now - REMOTE_MODEL_CACHE_CONFIG.EXPIRY_TIME_MS + 1).toISOString();
+      expect(isRemoteDataFresh(almostExpired)).toBe(true);
+    });
   });
 
   describe('错误分类', () => {
-    it('应该将网络连接失败分类为 NETWORK_ERROR', async () => {
+    it('应该将网络连接失败分类为 NETWORK_ERROR 并包含完整错误信息', async () => {
       // Mock fetch 抛出网络错误
       mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
 
-      const fetchPromise = fetchRemoteData({ maxRetries: 0 }).catch(err => err); // 禁用重试以加快测试
+      const error = await fetchRemoteData({ maxRetries: 0 }).catch(err => err);
 
-      const error = await fetchPromise;
       expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
       expect(error.message).toBe('网络请求失败');
+      expect(error.originalError).toBeInstanceOf(TypeError);
     });
 
-    it('应该将 JSON 解析失败分类为 NETWORK_ERROR', async () => {
+    it('应该将 JSON 解析失败分类为 NETWORK_ERROR 并包含完整错误信息', async () => {
       vi.useFakeTimers();
 
       // Mock fetch 返回无效 JSON
@@ -615,16 +914,51 @@ describe('modelRemoteService', () => {
         text: vi.fn(),
       }));
 
-      const fetchPromise = fetchRemoteData().catch(err => err);
-
-      // 快进所有定时器（重试延迟）
+      const fetchPromise = fetchRemoteData({ maxRetries: 0 }).catch(err => err);
       await vi.runAllTimersAsync();
-
       const error = await fetchPromise;
+
       expect(error).toBeInstanceOf(RemoteDataError);
-      // JSON解析错误当前被识别为NETWORK_ERROR（不是PARSE_ERROR）
       expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
       expect(error.message).toBe('网络请求失败');
+
+      vi.useRealTimers();
+    });
+
+    it('应该在 5xx 错误时包含精确的 status 和 message', async () => {
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 503, API_URL));
+
+      const error = await fetchRemoteData({ maxRetries: 0 }).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(503);
+      expect(error.message).toContain('503');
+    });
+
+    it('应该在超时错误中包含超时时间', async () => {
+      vi.useFakeTimers();
+
+      const timeoutMockApiResponse = createMockApiResponse([]);
+      mockFetch.mockImplementation((_url, options) => {
+        return new Promise((resolve, reject) => {
+          options?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+          setTimeout(() => {
+            if (!options?.signal?.aborted) {
+              resolve(createMockResponse(timeoutMockApiResponse, 200, API_URL));
+            }
+          }, 500);
+        });
+      });
+
+      const errorPromise = fetchRemoteData({ timeout: 50, maxRetries: 0 }).catch(err => err);
+      await vi.runAllTimersAsync();
+      const error = await errorPromise;
+
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.NETWORK_TIMEOUT);
+      expect(error.message).toContain('50ms');
 
       vi.useRealTimers();
     });

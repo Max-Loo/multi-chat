@@ -13,7 +13,8 @@
     "src/store/slices/chatSlices.ts",
     "src/utils/crypto.ts",
     "src/store/keyring/masterKey.ts",
-    "src/services/chat/metadataCollector.ts"
+    "src/services/chat/metadataCollector.ts",
+    "src/services/modelRemote/index.ts"
   ],
   "reporters": ["html", "clear-text", "progress"],
   "thresholds": {
