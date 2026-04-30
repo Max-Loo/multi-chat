@@ -101,6 +101,62 @@ describe('metadataCollector', () => {
       });
       await expect(collectWarnings(metadata)).rejects.toThrow(MetadataCollectionError);
     });
+
+    // Task 7.1: warning 有 code 和 message
+    it('应该提取有 code 和 message 的 warning', async () => {
+      const metadata = createMockMetadata({
+        warnings: Promise.resolve([
+          { code: 'rate_limit', message: 'Too many requests' },
+        ]),
+      });
+      const result = await collectWarnings(metadata);
+      expect(result).toEqual([
+        { code: 'rate_limit', message: 'Too many requests' },
+      ]);
+    });
+
+    // Task 7.2: warning 无 code 但有 type
+    it('应该在无 code 时使用 type 作为 code', async () => {
+      const metadata = createMockMetadata({
+        warnings: Promise.resolve([
+          { type: 'safety', feature: 'streaming', details: 'flagged' },
+        ]),
+      });
+      const result = await collectWarnings(metadata);
+      expect(result[0].code).toBe('safety');
+    });
+
+    // Task 7.3: warning 无 message 需拼接
+    it('应该在无 message 时拼接 type: feature (details)', async () => {
+      const metadata = createMockMetadata({
+        warnings: Promise.resolve([
+          { type: 'safety', feature: 'streaming', details: 'flagged' },
+        ]),
+      });
+      const result = await collectWarnings(metadata);
+      expect(result[0].message).toBe('safety: streaming (flagged)');
+    });
+
+    // Task 7.3 补充: warning 无 message 且无 details
+    it('应该在无 message 且无 details 时拼接 type: feature', async () => {
+      const metadata = createMockMetadata({
+        warnings: Promise.resolve([
+          { type: 'warning', feature: 'streaming' },
+        ]),
+      });
+      const result = await collectWarnings(metadata);
+      expect(result[0].message).toBe('warning: streaming');
+    });
+
+    // Task 7.4: warnings 为空/undefined 时返回空数组
+    it('应该在 warnings 为 undefined 时返回空数组', async () => {
+      const metadata = createMockMetadata({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        warnings: Promise.resolve(undefined as any),
+      });
+      const result = await collectWarnings(metadata);
+      expect(result).toEqual([]);
+    });
   });
 
   describe('collectSources', () => {
@@ -131,6 +187,49 @@ describe('metadataCollector', () => {
         sources: Promise.reject(new Error('Collection error')),
       });
       await expect(collectSources(metadata)).rejects.toThrow(MetadataCollectionError);
+    });
+
+    // Task 6.1: 仅保留 url 类型来源
+    it('应该仅保留 sourceType 为 url 的来源', async () => {
+      const mockSources = [
+        { sourceType: 'url', id: '1', url: 'https://example.com' },
+        { sourceType: 'file', id: '2', url: 'file:///path' },
+        { sourceType: 'url', id: '3', url: 'https://other.com', title: 'Other' },
+      ];
+      const metadata = createMockMetadata({
+        sources: Promise.resolve(mockSources),
+      });
+      const result = await collectSources(metadata);
+      expect(result).toHaveLength(2);
+      expect(result?.[0].sourceType).toBe('url');
+      expect(result?.[1].sourceType).toBe('url');
+    });
+
+    // Task 6.2: 过滤后空数组返回 undefined
+    it('应该在所有 source 都不是 url 类型时返回 undefined', async () => {
+      const mockSources = [
+        { sourceType: 'file', id: '1', url: 'file:///path' },
+        { sourceType: 'text', id: '2', url: 'text://content' },
+      ];
+      const metadata = createMockMetadata({
+        sources: Promise.resolve(mockSources),
+      });
+      const result = await collectSources(metadata);
+      expect(result).toBeUndefined();
+    });
+
+    // Task 6.3: 非空数组保留
+    it('应该在有 url 类型来源时保留过滤后的数组', async () => {
+      const mockSources = [
+        { sourceType: 'url', id: '1', url: 'https://example.com', title: 'Example', providerMetadata: { foo: 'bar' } },
+      ];
+      const metadata = createMockMetadata({
+        sources: Promise.resolve(mockSources),
+      });
+      const result = await collectSources(metadata);
+      expect(result).toEqual([
+        { sourceType: 'url', id: '1', url: 'https://example.com', title: 'Example', providerMetadata: { foo: 'bar' } },
+      ]);
     });
   });
 
@@ -171,6 +270,82 @@ describe('metadataCollector', () => {
       });
       const result = collectResponseMetadata(metadata);
       expect(result.headers).toBeUndefined();
+    });
+
+    // Task 5.1: 四个敏感 header 逐一移除（含大小写变体）
+    it('应该逐一移除四个敏感 header（含大小写变体）', () => {
+      const metadata = createMockMetadata({
+        response: {
+          id: 'test-id',
+          modelId: 'deepseek-chat',
+          timestamp: new Date('2024-01-01T00:00:00Z'),
+          headers: {
+            'authorization': 'Bearer secret1',
+            'Authorization': 'Bearer secret2',
+            'x-api-key': 'key1',
+            'X-API-Key': 'key2',
+            'content-type': 'application/json',
+          },
+        },
+      });
+      const result = collectResponseMetadata(metadata);
+      expect(result.headers).not.toHaveProperty('authorization');
+      expect(result.headers).not.toHaveProperty('Authorization');
+      expect(result.headers).not.toHaveProperty('x-api-key');
+      expect(result.headers).not.toHaveProperty('X-API-Key');
+      expect(result.headers).toHaveProperty('content-type', 'application/json');
+    });
+
+    // Task 5.2: 非敏感 header 保留
+    it('应该保留非敏感 header', () => {
+      const metadata = createMockMetadata({
+        response: {
+          id: 'test-id',
+          modelId: 'deepseek-chat',
+          timestamp: new Date('2024-01-01T00:00:00Z'),
+          headers: {
+            'content-type': 'application/json',
+            'x-request-id': 'req-123',
+            'x-rate-limit': '100',
+          },
+        },
+      });
+      const result = collectResponseMetadata(metadata);
+      expect(result.headers).toEqual({
+        'content-type': 'application/json',
+        'x-request-id': 'req-123',
+        'x-rate-limit': '100',
+      });
+    });
+
+    // Task 5.3: 精确化无 headers 测试
+    it('应该在无 headers 时返回 headers 为 undefined', () => {
+      const metadata = createMockMetadata({
+        response: {
+          id: 'test-id',
+          modelId: 'deepseek-chat',
+          timestamp: new Date('2024-01-01T00:00:00Z'),
+          headers: undefined,
+        },
+      });
+      const result = collectResponseMetadata(metadata);
+      expect(result.headers).toBeUndefined();
+    });
+
+    // Task 5.4: timestamp 为非 Date 值时使用 new Date().toISOString()
+    it('应该在 timestamp 为非 Date 值时使用当前时间', () => {
+      const beforeTime = new Date().toISOString();
+      const metadata = createMockMetadata({
+        response: {
+          id: 'test-id',
+          modelId: 'deepseek-chat',
+          timestamp: 'not-a-date' as unknown as Date,
+        },
+      });
+      const result = collectResponseMetadata(metadata);
+      const afterTime = new Date().toISOString();
+      expect(result.timestamp >= beforeTime).toBe(true);
+      expect(result.timestamp <= afterTime).toBe(true);
     });
   });
 
@@ -215,6 +390,125 @@ describe('metadataCollector', () => {
       const result = collectRequestMetadata(metadata);
       expect(result.body).toBe('plain text body');
     });
+
+    // Task 2.1: body 为 undefined 时返回默认空对象字符串
+    it('应该在 body 为 undefined 时返回 "{}"', () => {
+      const metadata = createMockMetadata({
+        request: { body: undefined },
+      });
+      const result = collectRequestMetadata(metadata);
+      expect(result.body).toBe('{}');
+    });
+
+    // Task 2.2: body 为 string 时直接返回（不做 JSON 解析）
+    it('应该在 body 为 string 时直接返回原始字符串', () => {
+      const metadata = createMockMetadata({
+        request: { body: 'raw string' },
+      });
+      const result = collectRequestMetadata(metadata);
+      expect(result.body).toBe('raw string');
+    });
+
+    // Task 2.3: body 为 object 时序列化
+    it('应该在 body 为 object 时序列化为 JSON 字符串', () => {
+      const metadata = createMockMetadata({
+        request: { body: { model: 'gpt-4', prompt: 'test' } },
+      });
+      const result = collectRequestMetadata(metadata);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody).toEqual({ model: 'gpt-4', prompt: 'test' });
+    });
+
+    // Task 3.1: 四个敏感字段全部被删除
+    it('应该删除全部四个敏感字段（apiKey/api_key/authorization/Authorization）', () => {
+      const metadata = createMockMetadata({
+        request: {
+          body: JSON.stringify({
+            apiKey: 'sk-123',
+            api_key: 'sk-456',
+            authorization: 'Bearer t1',
+            Authorization: 'Bearer t2',
+            model: 'gpt-4',
+          }),
+        },
+      });
+      const result = collectRequestMetadata(metadata);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.apiKey).toBeUndefined();
+      expect(parsedBody.api_key).toBeUndefined();
+      expect(parsedBody.authorization).toBeUndefined();
+      expect(parsedBody.Authorization).toBeUndefined();
+    });
+
+    // Task 3.2: 非敏感字段保留
+    it('应该保留非敏感字段', () => {
+      const metadata = createMockMetadata({
+        request: {
+          body: JSON.stringify({
+            model: 'gpt-4',
+            messages: [{ role: 'user', content: 'hi' }],
+            temperature: 0.7,
+          }),
+        },
+      });
+      const result = collectRequestMetadata(metadata);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.model).toBe('gpt-4');
+      expect(parsedBody.messages).toEqual([{ role: 'user', content: 'hi' }]);
+      expect(parsedBody.temperature).toBe(0.7);
+    });
+
+    // Task 3.3: 精确化已有脱敏测试 - 逐字段验证
+    it('应该逐字段验证脱敏：每个敏感字段独立验证存在/不存在', () => {
+      const metadata = createMockMetadata({
+        request: {
+          body: JSON.stringify({
+            apiKey: 'secret',
+            safe1: 'value1',
+            api_key: 'secret2',
+            safe2: 'value2',
+            authorization: 'Bearer x',
+            safe3: 'value3',
+            Authorization: 'Bearer y',
+            safe4: 'value4',
+          }),
+        },
+      });
+      const result = collectRequestMetadata(metadata);
+      const parsedBody = JSON.parse(result.body);
+      // 敏感字段不存在
+      expect('apiKey' in parsedBody).toBe(false);
+      expect('api_key' in parsedBody).toBe(false);
+      expect('authorization' in parsedBody).toBe(false);
+      expect('Authorization' in parsedBody).toBe(false);
+      // 非敏感字段存在
+      expect('safe1' in parsedBody).toBe(true);
+      expect('safe2' in parsedBody).toBe(true);
+      expect('safe3' in parsedBody).toBe(true);
+      expect('safe4' in parsedBody).toBe(true);
+    });
+
+    // Task 4.1: 超过 10240 字符截断
+    it('应该在超过 10240 字符时截断并以 "... (truncated)" 结尾', () => {
+      const longValue = 'a'.repeat(10241);
+      const metadata = createMockMetadata({
+        request: { body: longValue },
+      });
+      const result = collectRequestMetadata(metadata);
+      expect(result.body.endsWith('... (truncated)')).toBe(true);
+      expect(result.body.length).toBe(10240 + '... (truncated)'.length);
+    });
+
+    // Task 4.2: 恰好 10240 字符不截断
+    it('应该在恰好 10240 字符时不截断', () => {
+      const exactBody = 'x'.repeat(10240);
+      const metadata = createMockMetadata({
+        request: { body: exactBody },
+      });
+      const result = collectRequestMetadata(metadata);
+      expect(result.body).toBe(exactBody);
+      expect(result.body).not.toContain('... (truncated)');
+    });
   });
 
   describe('collectUsageMetadata', () => {
@@ -254,6 +548,21 @@ describe('metadataCollector', () => {
         raw: undefined,
       });
     });
+
+    // Task 8.1: usage 为 undefined 时默认值为 0（已由上方测试覆盖）
+
+    // Task 8.2: usage 部分字段缺失时使用默认值
+    it('应该在 usage 部分字段缺失时使用默认值', () => {
+      const metadata = createMockMetadata({
+        usage: {
+          inputTokens: 100,
+        },
+      });
+      const result = collectUsageMetadata(metadata);
+      expect(result.inputTokens).toBe(100);
+      expect(result.outputTokens).toBe(0);
+      expect(result.totalTokens).toBe(0);
+    });
   });
 
   describe('collectFinishReasonMetadata', () => {
@@ -291,6 +600,15 @@ describe('metadataCollector', () => {
         reason: 'other',
         rawReason: undefined,
       });
+    });
+
+    // Task 10.4: collectFinishReasonMetadata 失败包装为 MetadataCollectionError
+    it('应该在收集完成原因失败时抛出 MetadataCollectionError', async () => {
+      const metadata = createMockMetadata({
+        finishReason: Promise.reject(new Error('Finish reason error')),
+      });
+      await expect(collectFinishReasonMetadata(metadata)).rejects.toThrow(MetadataCollectionError);
+      await expect(collectFinishReasonMetadata(metadata)).rejects.toThrow('Failed to collect finishReason');
     });
   });
 
