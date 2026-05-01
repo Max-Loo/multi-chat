@@ -14,7 +14,8 @@
     "src/utils/crypto.ts",
     "src/store/keyring/masterKey.ts",
     "src/services/chat/metadataCollector.ts",
-    "src/services/modelRemote/index.ts"
+    "src/services/modelRemote/index.ts",
+    "src/utils/resourceLoader.ts"
   ],
   "reporters": ["html", "clear-text", "progress"],
   "thresholds": {

@@ -27,8 +27,7 @@
     "test:integration": "vitest -c vitest.integration.config.ts",
     "test:integration:run": "vitest run -c vitest.integration.config.ts",
     "test:all": "pnpm test:run && pnpm test:integration:run && pnpm test:mutation",
-    "test:mutation": "stryker run",
-    "test:mutation:core": "stryker run --mutate 'src/services/chat/**/*.ts' 'src/store/slices/chatSlices.ts'"
+    "test:mutation": "stryker run"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.24",
