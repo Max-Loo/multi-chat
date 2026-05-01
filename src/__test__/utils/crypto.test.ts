@@ -227,10 +227,15 @@ describe('Crypto 工具函数', () => {
 
       const encrypted = await encryptField(plaintext, correctKey);
 
-      await testInvalidInput(
-        () => decryptField(encrypted, wrongKey),
-        '解密敏感数据失败，可能是主密钥已更改或数据已损坏'
-      );
+      try {
+        await decryptField(encrypted, wrongKey);
+        expect.unreachable('应该抛出错误');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe('解密敏感数据失败，可能是主密钥已更改或数据已损坏');
+        expect((error as Error).cause).toBeDefined();
+        expect((error as Error).cause).toBeInstanceOf(Error);
+      }
     });
 
     it('缺少 enc: 前缀应该抛出错误', async () => {
@@ -602,9 +607,15 @@ Line 5`;
             const modifiedBase64 = bytesToBase64(decodedData);
             const modifiedCiphertext = `enc:${modifiedBase64}`;
 
-            await expect(decryptField(modifiedCiphertext, masterKey)).rejects.toThrow(
-              '解密敏感数据失败，可能是主密钥已更改或数据已损坏'
-            );
+            try {
+              await decryptField(modifiedCiphertext, masterKey);
+              expect.unreachable('应该抛出错误');
+            } catch (error) {
+              expect(error).toBeInstanceOf(Error);
+              expect((error as Error).message).toBe('解密敏感数据失败，可能是主密钥已更改或数据已损坏');
+              expect((error as Error).cause).toBeDefined();
+              expect((error as Error).cause).toBeInstanceOf(Error);
+            }
           }
         });
       });

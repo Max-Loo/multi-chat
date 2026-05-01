@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { getProviderSDKLoader } from '@/services/chat/providerLoader';
 import { ModelProviderKeyEnum } from '@/utils/enums';
+import { ResourceLoader } from '@/utils/resourceLoader';
 
 describe('ProviderSDKLoader', () => {
   let loader: ReturnType<typeof getProviderSDKLoader>;
@@ -167,6 +168,69 @@ describe('ProviderSDKLoader', () => {
 
       controller.abort();
       preloadSpy.mockRestore();
+    });
+  });
+
+  describe('构造函数 window 环境检测', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('无 window 环境时不注册 online 事件监听器', async () => {
+      // 模拟无窗口环境
+      vi.stubGlobal('window', undefined);
+      vi.resetModules();
+
+      // 在无 window 环境下重新导入模块，验证不会因调用 undefined.addEventListener 而崩溃
+      const { getProviderSDKLoader: getFreshLoader } = await import('@/services/chat/providerLoader');
+      const freshLoader = getFreshLoader();
+
+      // 验证 handleNetworkRecover 功能本身正常（手动调用）
+      const preloadSpy = vi.spyOn(freshLoader, 'preloadProviders');
+      (freshLoader as any).handleNetworkRecover();
+      expect(preloadSpy).toHaveBeenCalledOnce();
+
+      preloadSpy.mockRestore();
+    });
+
+    it('有 window 环境时构造函数注册的 online 监听器触发 handleNetworkRecover 并传入 allProviderKeys', async () => {
+      vi.resetModules();
+
+      // 重新导入模块以获取新实例，验证构造函数注册的事件监听器
+      const { getProviderSDKLoader: getFreshLoader } = await import('@/services/chat/providerLoader');
+      const freshLoader = getFreshLoader();
+      const preloadSpy = vi.spyOn(freshLoader, 'preloadProviders');
+
+      // 派发 online 事件，验证构造函数注册的监听器触发
+      window.dispatchEvent(new Event('online'));
+
+      expect(preloadSpy).toHaveBeenCalledOnce();
+      const calledKeys = preloadSpy.mock.calls[0][0];
+      expect(calledKeys).toContain(ModelProviderKeyEnum.DEEPSEEK);
+      expect(calledKeys).toContain(ModelProviderKeyEnum.MOONSHOTAI);
+      expect(calledKeys).toContain(ModelProviderKeyEnum.ZHIPUAI);
+      expect(calledKeys).toContain(ModelProviderKeyEnum.ZHIPUAI_CODING_PLAN);
+
+      preloadSpy.mockRestore();
+    });
+  });
+
+  describe('ZHIPUAI_CODING_PLAN loader 返回值验证', () => {
+    it('加载 ZHIPUAI_CODING_PLAN 应返回有效的工厂函数', async () => {
+      const factory = await loader.loadProvider(ModelProviderKeyEnum.ZHIPUAI_CODING_PLAN);
+
+      expect(typeof factory).toBe('function');
+      expect(loader.isProviderLoaded(ModelProviderKeyEnum.ZHIPUAI_CODING_PLAN)).toBe(true);
+    });
+  });
+
+  describe('getLoader() 方法', () => {
+    it('应返回 ResourceLoader 实例且与内部 loader 引用相同', () => {
+      const resourceLoader = loader.getLoader();
+
+      expect(resourceLoader).toBeInstanceOf(ResourceLoader);
+      // 多次调用应返回同一引用
+      expect(loader.getLoader()).toBe(resourceLoader);
     });
   });
 });
