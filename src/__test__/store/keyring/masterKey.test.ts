@@ -92,10 +92,26 @@ describe('masterKey 完整测试套件', () => {
 
     it('应该返回 false 当密钥不存在时', async () => {
       vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
-      
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       const exists = await isMasterKeyExists();
-      
+
       expect(exists).toBe(false);
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('应该返回 false 当 getPassword 返回 undefined', async () => {
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(undefined);
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const exists = await isMasterKeyExists();
+
+      expect(exists).toBe(false);
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
     });
 
     it('应该返回 false 当密钥为空字符串', async () => {
@@ -256,16 +272,16 @@ describe('masterKey 完整测试套件', () => {
       vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
       vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      
+
       await initializeMasterKey();
-      
-      // 检查是否输出了警告（至少有一条警告）
-      expect(consoleWarnSpy).toHaveBeenCalled();
-      // 检查是否输出了关于旧数据无法解密的警告
+
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Old encrypted data cannot be decrypted')
+        expect.stringContaining('system secure storage')
       );
-      
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('browser secure storage')
+      );
+
       consoleWarnSpy.mockRestore();
     });
 
@@ -382,6 +398,16 @@ describe('masterKey 完整测试套件', () => {
 
     it('应该拒绝空字符串', async () => {
       await expect(importMasterKey('')).rejects.toThrow('密钥格式无效，请输入 64 字符的 hex 编码字符串');
+      expect(keyring.setPassword).not.toHaveBeenCalled();
+    });
+
+    it('应该拒绝前缀含多余字符的密钥', async () => {
+      await expect(importMasterKey('xx' + 'a'.repeat(64))).rejects.toThrow('密钥格式无效，请输入 64 字符的 hex 编码字符串');
+      expect(keyring.setPassword).not.toHaveBeenCalled();
+    });
+
+    it('应该拒绝后缀含多余字符的密钥', async () => {
+      await expect(importMasterKey('a'.repeat(64) + 'xx')).rejects.toThrow('密钥格式无效，请输入 64 字符的 hex 编码字符串');
       expect(keyring.setPassword).not.toHaveBeenCalled();
     });
 
