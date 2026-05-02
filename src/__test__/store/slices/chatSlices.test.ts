@@ -2795,7 +2795,7 @@ describe('chatSlices', () => {
 
       // 变异 ConditionalExpression length === 0 → !== 0 → 非空时走 early return 跳过预加载
       expect(mockPreloadProviders).toHaveBeenCalledTimes(1);
-      const calledKeys = mockPreloadProviders.mock.calls[0][0];
+      const calledKeys = (mockPreloadProviders.mock.calls[0] as string[])[0];
       expect(calledKeys).toContain('PROV_1');
       expect(calledKeys).toContain('PROV_2');
       // 非空时不应 early return，返回值包含 chatData

@@ -103,7 +103,7 @@ describe('masterKey 完整测试套件', () => {
     });
 
     it('应该返回 false 当 getPassword 返回 undefined', async () => {
-      vi.spyOn(keyring, 'getPassword').mockResolvedValue(undefined);
+      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const exists = await isMasterKeyExists();
