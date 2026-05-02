@@ -511,6 +511,109 @@ describe('metadataCollector', () => {
     });
   });
 
+  // Phase 2: 敏感字段 falsy 值处理（杀变异体 ID:94,96,98,100）
+  describe('collectRequestMetadata - 敏感字段 falsy 值处理', () => {
+    it('应该保留 falsy 值的敏感字段（空字符串、0、false、null）', () => {
+      const metadata = createMockMetadata({
+        request: {
+          body: JSON.stringify({
+            apiKey: '',
+            api_key: 0,
+            authorization: false,
+            Authorization: null,
+            model: 'gpt-4',
+          }),
+        },
+      });
+      const result = collectRequestMetadata(metadata);
+      const parsedBody = JSON.parse(result.body);
+      // falsy 敏感字段应保留（原始行为），变异体 if(true) 会错误删除
+      expect(parsedBody.apiKey).toBe('');
+      expect(parsedBody.api_key).toBe(0);
+      expect(parsedBody.authorization).toBe(false);
+      expect(parsedBody.Authorization).toBeNull();
+      expect(parsedBody.model).toBe('gpt-4');
+    });
+
+    it('应该保留空字符串的单一 falsy 敏感字段', () => {
+      const metadata = createMockMetadata({
+        request: {
+          body: JSON.stringify({ apiKey: '', model: 'gpt-4' }),
+        },
+      });
+      const result = collectRequestMetadata(metadata);
+      const parsedBody = JSON.parse(result.body);
+      expect('apiKey' in parsedBody).toBe(true);
+      expect(parsedBody.apiKey).toBe('');
+    });
+
+    it('应该在 truthy 和 falsy 混合时正确区分处理', () => {
+      const metadata = createMockMetadata({
+        request: {
+          body: JSON.stringify({
+            apiKey: 'secret',
+            api_key: '',
+            model: 'gpt-4',
+          }),
+        },
+      });
+      const result = collectRequestMetadata(metadata);
+      const parsedBody = JSON.parse(result.body);
+      // truthy 的 apiKey 应被删除
+      expect('apiKey' in parsedBody).toBe(false);
+      // falsy 的 api_key 应保留
+      expect('api_key' in parsedBody).toBe(true);
+      expect(parsedBody.api_key).toBe('');
+      expect(parsedBody.model).toBe('gpt-4');
+    });
+  });
+
+  // Phase 2: requestBody 安全检查（杀变异体 ID:83,84,88 + 覆盖 ID:91）
+  describe('collectRequestMetadata - requestBody 安全检查', () => {
+    it('应该在 body 为字符串 "undefined" 时重置为 "{}"', () => {
+      const metadata = createMockMetadata({
+        request: { body: 'undefined' },
+      });
+      const result = collectRequestMetadata(metadata);
+      expect(result.body).toBe('{}');
+    });
+
+    it('应该正确序列化 object 类型 body 且不触发安全网误判', () => {
+      const metadata = createMockMetadata({
+        request: { body: { some: 'object', nested: { value: 42 } } },
+      });
+      const result = collectRequestMetadata(metadata);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody).toEqual({ some: 'object', nested: { value: 42 } });
+    });
+  });
+
+  // Phase 2: warning message 非字符串（杀变异体 ID:28,30）
+  describe('collectWarnings - warning message 非字符串处理', () => {
+    it('应该在 message 为数字时走 fallback 拼接路径', async () => {
+      const metadata = createMockMetadata({
+        warnings: Promise.resolve([
+          { code: 'rate_limit', message: 123 },
+        ]),
+      });
+      const result = await collectWarnings(metadata);
+      // message 不是 string，走 fallback 拼接路径，不等于 123
+      expect(result[0].message).not.toBe(123);
+      expect(typeof result[0].message).toBe('string');
+    });
+
+    it('应该在 message 为 null 时走 fallback 拼接路径', async () => {
+      const metadata = createMockMetadata({
+        warnings: Promise.resolve([
+          { type: 'test', feature: 'feat', message: null },
+        ]),
+      });
+      const result = await collectWarnings(metadata);
+      // message 是 null（非 string），走 fallback
+      expect(result[0].message).toBe('test: feat');
+    });
+  });
+
   describe('collectUsageMetadata', () => {
     it('应该收集 usage 元数据', () => {
       const metadata = createMockMetadata({
