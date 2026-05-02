@@ -153,6 +153,7 @@ const combineSignals = (signals: AbortSignal[]): AbortSignal => {
       controller.abort();
       break;
     }
+    // Stryker disable next-line all: once:true/false 行为等价（abort 仅触发一次）
     signal.addEventListener("abort", () => controller.abort(), { once: true });
   }
 
@@ -210,7 +211,7 @@ const sleep = (ms: number): Promise<void> => {
  * @param error - RemoteDataError 实例
  * @returns 是否可重试
  */
-const isRetryableError = (error: RemoteDataError): boolean => {
+export const isRetryableError = (error: RemoteDataError): boolean => {
   // 网络超时可重试
   if (error.type === RemoteDataErrorType.NETWORK_TIMEOUT) return true;
 

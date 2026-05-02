@@ -12,6 +12,7 @@ import {
   saveCachedProviderData,
   loadCachedProviderData,
   isRemoteDataFresh,
+  isRetryableError,
   RemoteDataError,
   RemoteDataErrorType,
 } from '@/services/modelRemote';
@@ -441,10 +442,15 @@ describe('modelRemoteService', () => {
     });
 
     it('SERVER_ERROR 且 statusCode < 500 不应该重试', async () => {
+      vi.useFakeTimers();
+
       // 404 应该立即失败
       mockFetch.mockResolvedValue(createMockResponse(undefined, 404, API_URL));
 
-      const error = await fetchRemoteData({ maxRetries: 3 }).catch(err => err);
+      const errorPromise = fetchRemoteData({ maxRetries: 1 }).catch(err => err);
+      await vi.runAllTimersAsync();
+      const error = await errorPromise;
+
       expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
       expect(error.statusCode).toBe(404);
@@ -452,6 +458,8 @@ describe('modelRemoteService', () => {
 
       // 验证没有重试
       expect(mockFetch).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
     });
 
     it('NO_CACHE 等其他错误类型不应该重试', async () => {
@@ -462,6 +470,209 @@ describe('modelRemoteService', () => {
       expect(error).toBeInstanceOf(RemoteDataError);
       expect(error.type).toBe(RemoteDataErrorType.NO_CACHE);
       expect(error.message).toBe('无可用缓存');
+    });
+  });
+
+  describe('fetchRemoteData - 4xx 边界值精确验证', () => {
+    it('status=400 时应抛出 SERVER_ERROR 且 statusCode 为 400', async () => {
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 400, API_URL));
+
+      const error = await fetchRemoteData({ maxRetries: 2 }).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(400);
+      expect(error.message).toContain('客户端错误');
+      expect(error.message).toContain('400');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('status=499 时应抛出 SERVER_ERROR 且 statusCode 为 499', async () => {
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 499, API_URL));
+
+      const error = await fetchRemoteData({ maxRetries: 2 }).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(499);
+      expect(error.message).toContain('客户端错误');
+      expect(error.message).toContain('499');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('status=399（< 400）时不走 4xx 分支，错误消息为"服务器错误"', async () => {
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 399, API_URL));
+
+      const error = await fetchRemoteData({ maxRetries: 2 }).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(399);
+      // 399 不满足 >=400 && <500，走通用 5xx 分支，消息应为"服务器错误"而非"客户端错误"
+      expect(error.message).toContain('服务器错误');
+      // statusCode 399 < 500，isRetryableError 返回 false，不重试
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('status=500（≥ 500）时走 5xx 重试逻辑而非 4xx 立即失败', async () => {
+      vi.useFakeTimers();
+
+      const successResponse = createMockApiResponse([createDeepSeekApiResponse()]);
+      mockFetch
+        .mockResolvedValueOnce(createMockResponse(undefined, 500, API_URL))
+        .mockResolvedValueOnce(createMockResponse(successResponse, 200, API_URL));
+
+      const resultPromise = fetchRemoteData({ maxRetries: 1 });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      // 500 不满足 >=400 && <500，走 5xx 路径，可重试
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(result.fullApiResponse).toEqual(successResponse);
+
+      vi.useRealTimers();
+    });
+
+    it('status=404 时 isRetryableError 返回 false 且不重试', async () => {
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 404, API_URL));
+
+      const error = await fetchRemoteData({ maxRetries: 3 }).catch(err => err);
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(404);
+      expect(error.message).toContain('客户端错误');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('status=500 重试耗尽后错误消息应为"服务器错误"', async () => {
+      vi.useFakeTimers();
+
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 500, API_URL));
+
+      const errorPromise = fetchRemoteData({ maxRetries: 1 }).catch(err => err);
+      await vi.runAllTimersAsync();
+      const error = await errorPromise;
+
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(500);
+      // 500 不满足 >=400 && <500，走 5xx 分支，消息应为"服务器错误"
+      expect(error.message).toContain('服务器错误');
+      expect(error.message).not.toContain('客户端错误');
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('isRetryableError 条件链和重试参数', () => {
+    it('SERVER_ERROR 类型 + statusCode >= 500 应返回 true', () => {
+      const error = new RemoteDataError(RemoteDataErrorType.SERVER_ERROR, 'test', undefined, 500);
+      expect(isRetryableError(error)).toBe(true);
+    });
+
+    it('SERVER_ERROR 类型 + statusCode < 500 应返回 false', () => {
+      const error = new RemoteDataError(RemoteDataErrorType.SERVER_ERROR, 'test', undefined, 404);
+      expect(isRetryableError(error)).toBe(false);
+    });
+
+    it('SERVER_ERROR 类型 + statusCode 为 undefined 应返回 false', () => {
+      const error = new RemoteDataError(RemoteDataErrorType.SERVER_ERROR, 'test', undefined, undefined);
+      expect(isRetryableError(error)).toBe(false);
+    });
+
+    it('NETWORK_TIMEOUT 类型应返回 true', () => {
+      const error = new RemoteDataError(RemoteDataErrorType.NETWORK_TIMEOUT, 'test');
+      expect(isRetryableError(error)).toBe(true);
+    });
+
+    it('NETWORK_ERROR 类型应返回 true', () => {
+      const error = new RemoteDataError(RemoteDataErrorType.NETWORK_ERROR, 'test');
+      expect(isRetryableError(error)).toBe(true);
+    });
+
+    it('NO_CACHE 类型应返回 false', () => {
+      const error = new RemoteDataError(RemoteDataErrorType.NO_CACHE, 'test');
+      expect(isRetryableError(error)).toBe(false);
+    });
+
+    it('SERVER_ERROR 且 statusCode >= 500 应该可重试', async () => {
+      vi.useFakeTimers();
+
+      const successResponse = createMockApiResponse([createDeepSeekApiResponse()]);
+      mockFetch
+        .mockResolvedValueOnce(createMockResponse(undefined, 503, API_URL))
+        .mockResolvedValueOnce(createMockResponse(successResponse, 200, API_URL));
+
+      const resultPromise = fetchRemoteData({ maxRetries: 1 });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      // 503 (>= 500) 满足 isRetryableError，会重试
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(result.fullApiResponse).toEqual(successResponse);
+
+      vi.useRealTimers();
+    });
+
+    it('SERVER_ERROR 且 statusCode 499（< 500）不应该重试', async () => {
+      vi.useFakeTimers();
+
+      // 499 是 SERVER_ERROR 但 statusCode < 500，不应重试
+      mockFetch.mockResolvedValue(createMockResponse(undefined, 499, API_URL));
+
+      const errorPromise = fetchRemoteData({ maxRetries: 1 }).catch(err => err);
+      await vi.runAllTimersAsync();
+      const error = await errorPromise;
+
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.SERVER_ERROR);
+      expect(error.statusCode).toBe(499);
+      // 499 < 500，isRetryableError 返回 false，仅调用 1 次
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+
+    it('sleep 延迟应为指数退避（base * 2^retryCount）', async () => {
+      vi.useFakeTimers();
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+
+      const successResponse = createMockApiResponse([createDeepSeekApiResponse()]);
+      mockFetch
+        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockResolvedValueOnce(createMockResponse(successResponse, 200, API_URL));
+
+      const resultPromise = fetchRemoteData({ maxRetries: 2 });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      expect(result.fullApiResponse).toEqual(successResponse);
+
+      // 验证 sleep 的延迟值：retryCount=0 → 1000*2^0=1000, retryCount=1 → 1000*2^1=2000
+      // setTimeout 的调用包括 fetchWithTimeout 的 timeout 和 sleep 的延迟
+      // 找到 sleep 相关的 setTimeout 调用（延迟值为 1000 和 2000）
+      const sleepCalls = setTimeoutSpy.mock.calls.map(call => call[1] as number).filter(d => d === 1000 || d === 2000);
+      expect(sleepCalls).toContain(1000);
+      expect(sleepCalls).toContain(2000);
+
+      setTimeoutSpy.mockRestore();
+      vi.useRealTimers();
+    });
+
+    it('retryCount 等于 maxRetries 时不再重试', async () => {
+      vi.useFakeTimers();
+
+      mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+      const errorPromise = fetchRemoteData({ maxRetries: 2 }).catch(err => err);
+      await vi.runAllTimersAsync();
+      const error = await errorPromise;
+
+      expect(error).toBeInstanceOf(RemoteDataError);
+      expect(error.type).toBe(RemoteDataErrorType.NETWORK_ERROR);
+      // maxRetries=2，总调用 = 1（初始）+ 2（重试）= 3
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+
+      vi.useRealTimers();
     });
   });
 
