@@ -23,6 +23,21 @@ vi.mock('@/services/chat/providerLoader', () => ({
   }),
 }));
 
+// 使用 vi.hoisted 创建 mock，确保 vi.mock 工厂函数可用
+const { mockAIStreamText, mockAIGenerateId } = vi.hoisted(() => ({
+  mockAIStreamText: vi.fn(),
+  mockAIGenerateId: vi.fn(() => 'default-ai-id'),
+}));
+
+vi.mock('ai', async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return {
+    ...actual,
+    streamText: mockAIStreamText,
+    generateId: mockAIGenerateId,
+  };
+});
+
 // ========================================
 // Mock Helpers
 // ========================================
@@ -430,6 +445,76 @@ describe('index - streamChatCompletion', () => {
       const streamTextCall = mockStreamText.mock.calls[0][0];
       expect(streamTextCall.messages).toBeDefined();
       // 消息构建应该包含 reasoning 内容的处理
+    });
+
+    it('默认 transmitHistoryReasoning=false 时应排除 reasoning 内容', async () => {
+      // Arrange
+      const model = createDeepSeekModel();
+      const historyList: StandardMessage[] = [
+        {
+          id: '1',
+          timestamp: 1000,
+          modelKey: 'deepseek-chat',
+          finishReason: 'stop',
+          role: ChatRoleEnum.ASSISTANT,
+          content: 'Previous answer',
+          reasoningContent: 'Internal reasoning process',
+        },
+      ];
+      // 不传 transmitHistoryReasoning，使用默认值 false
+      const params = {
+        model,
+        historyList,
+        message: 'Follow up',
+      };
+
+      const events = [{ type: 'text-delta', text: 'Response' }];
+      mockStreamText.mockReturnValue(createMockStreamResult(events));
+
+      // Act
+      const messages: StandardMessage[] = [];
+      for await (const msg of streamChatCompletion(params, { dependencies })) {
+        messages.push(msg);
+        break;
+      }
+
+      // Assert
+      expect(mockStreamText).toHaveBeenCalledOnce();
+      const streamTextCall = mockStreamText.mock.calls[0][0];
+      const assistantMsg = streamTextCall.messages[0];
+      // assistant 消息的 content 应该只有 text 部分，不包含 reasoning
+      expect(assistantMsg.content).toEqual(
+        expect.not.arrayContaining([
+          expect.objectContaining({ type: 'reasoning' }),
+        ]),
+      );
+    });
+  });
+
+  describe('默认依赖测试', () => {
+    it('不注入 dependencies 时应使用 defaultAISDKDependencies', async () => {
+      // Arrange — 使用 ai 模块级别的 mock
+      const model = createDeepSeekModel();
+      const params = {
+        model,
+        historyList: [],
+        message: 'Hello',
+      };
+
+      const events = [{ type: 'text-delta', text: 'Hi' }];
+      mockAIStreamText.mockReturnValue(createMockStreamResult(events));
+
+      // Act — 不传 dependencies，触发 defaultAISDKDependencies 路径
+      const messages: StandardMessage[] = [];
+      for await (const msg of streamChatCompletion(params)) {
+        messages.push(msg);
+        break;
+      }
+
+      // Assert — mockAIStreamText 被调用证明 defaultAISDKDependencies.streamText 可用
+      expect(mockAIStreamText).toHaveBeenCalledOnce();
+      expect(messages.length).toBeGreaterThan(0);
+      expect(messages[0].role).toBe(ChatRoleEnum.ASSISTANT);
     });
   });
 

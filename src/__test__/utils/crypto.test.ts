@@ -120,6 +120,19 @@ describe('Crypto 工具函数', () => {
   });
 
   describe('base64ToBytes', () => {
+    describe('error.cause 保留验证', () => {
+      it('base64ToBytes 抛出错误时应保留原始错误为 cause', () => {
+        try {
+          base64ToBytes('!!!');
+          expect.unreachable('应该抛出错误');
+        } catch (error) {
+          expect(error).toBeInstanceOf(Error);
+          expect((error as Error).cause).toBeDefined();
+          expect((error as Error).cause).toBeInstanceOf(Error);
+        }
+      });
+    });
+
     describe('正常转换', () => {
       it('应该正确转换 Base64 字符串', () => {
         const base64 = 'SGVsbG8='; // "Hello"
@@ -207,6 +220,33 @@ describe('Crypto 工具函数', () => {
 
       await expect(encryptField(plaintext, '')).rejects.toThrow('密钥不能为空');
     });
+
+    it('无效密钥加密失败时错误应保留原始错误为 cause', async () => {
+      const invalidKey = 'g'.repeat(64);
+      const plaintext = 'Test data';
+
+      try {
+        await encryptField(plaintext, invalidKey);
+        expect.unreachable('应该抛出错误');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe('加密敏感数据失败，请检查主密钥是否有效');
+        expect((error as Error).cause).toBeDefined();
+        expect((error as Error).cause).toBeInstanceOf(Error);
+      }
+    });
+
+    it('encryptField 应以 extractable=false 导入密钥', async () => {
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      await encryptField('test', masterKey);
+
+      expect(importKeySpy).toHaveBeenCalledOnce();
+      // extractable 参数（第 4 个参数）应为 false
+      expect(importKeySpy.mock.calls[0][3]).toBe(false);
+
+      importKeySpy.mockRestore();
+    });
   });
 
   describe('decryptField', () => {
@@ -236,6 +276,19 @@ describe('Crypto 工具函数', () => {
         expect((error as Error).cause).toBeDefined();
         expect((error as Error).cause).toBeInstanceOf(Error);
       }
+    });
+
+    it('decryptField 应以 extractable=false 导入密钥', async () => {
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      const encrypted = await encryptField('test', masterKey);
+      await decryptField(encrypted, masterKey);
+
+      // importKey 被调用了两次（encrypt + decrypt），取第二次调用
+      expect(importKeySpy).toHaveBeenCalledTimes(2);
+      expect(importKeySpy.mock.calls[1][3]).toBe(false);
+
+      importKeySpy.mockRestore();
     });
 
     it('缺少 enc: 前缀应该抛出错误', async () => {

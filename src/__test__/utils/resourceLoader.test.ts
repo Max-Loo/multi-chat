@@ -778,6 +778,55 @@ describe('ResourceLoader', () => {
       vi.useRealTimers();
     });
 
+    it('预加载从未加载过的资源失败时，retryCount 应为 undefined（非 crash）', async () => {
+      vi.useFakeTimers();
+
+      const error = new Error('Load failed');
+      loader.register('resource1', {
+        loader: vi.fn().mockRejectedValue(error),
+        retryCount: 2,
+        retryDelay: 10,
+      });
+
+      // 预加载一个从未加载过的资源（this.states.get(key) 返回 undefined）
+      await loader.preload(['resource1']);
+
+      const state = loader.getState('resource1');
+      // preloadFailed 应为 true，retryCount 应为 undefined（而非 crash）
+      expect(state).toEqual({
+        status: 'error',
+        error,
+        preloadFailed: true,
+        retryCount: undefined,
+      });
+
+      vi.useRealTimers();
+    });
+
+    it('reset 后 setTimeout 回调访问不存在的 state 不抛异常', async () => {
+      vi.useFakeTimers();
+
+      const error = new Error('Load failed');
+      loader.register('resource1', {
+        loader: vi.fn().mockRejectedValue(error),
+        retryCount: 0,
+      });
+
+      // 预加载失败 → 设置 preloadFailed=true 并启动 5 秒 setTimeout
+      await loader.preload(['resource1']);
+      expect(loader.getState('resource1')?.preloadFailed).toBe(true);
+
+      // reset 删除 state
+      loader.reset('resource1');
+      expect(loader.getState('resource1')).toBeUndefined();
+
+      // 5 秒后 setTimeout 触发，state 不存在（state?.preloadFailed 为 undefined），不应抛异常
+      expect(() => vi.advanceTimersByTime(5000)).not.toThrow();
+      expect(loader.getState('resource1')).toBeUndefined();
+
+      vi.useRealTimers();
+    });
+
     it('用户加载成功后 setTimeout 不应清除 loaded 状态', async () => {
       vi.useFakeTimers();
 
