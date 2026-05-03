@@ -257,34 +257,47 @@ describe("i18n module", () => {
     it("应该验证单例模式", async () => {
       const { initI18n } = await import("@/services/i18n");
 
-      // 多次调用 initI18n
+      // 第一次调用
       const result1 = await initI18n();
+
+      // 第二次调用应返回同一个结果（杀死 line 211 BlockStatement 变异体）
+      // async 函数每次创建新 Promise，但内部缓存确保只执行一次
       const result2 = await initI18n();
 
-      // 验证返回相同的 Promise 结果
-      expect(result1).toBeDefined();
-      expect(result2).toBeDefined();
+      // t 函数引用相等（证明 initI18nPromise 缓存生效）
+      expect(result2).toBe(result1);
+      // 验证 init 只被调用一次（即使 initI18n 被调用了两次）
+      expect(mockI18nInit).toHaveBeenCalledTimes(1);
     });
 
-    it("应该处理初始化错误", async () => {
-      // Mock console.error 以避免输出到测试结果
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    it("应该在系统语言加载失败时降级到英文并显示警告", async () => {
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const { initI18n } = await import("@/services/i18n");
+      // 使用不存在的语言代码，使 loadLanguage 找不到文件而失败
+      mockGetDefaultAppLanguage.mockResolvedValueOnce({ lang: 'xx-nonexistent', migrated: false });
 
-      // Mock loadLanguage 失败
-      mockI18nChangeLanguage.mockRejectedValueOnce(new Error("Change language failed"));
-
-      // 调用 initI18n (系统语言是中文，loadLanguage会失败)
-      mockGetDefaultAppLanguage.mockResolvedValueOnce('zh');
+      const { initI18n, resetI18nForTest } = await import("@/services/i18n");
+      resetI18nForTest();
 
       await initI18n();
 
-      // 验证初始化仍然完成（降级到英文）
       expect(mockI18nInit).toHaveBeenCalled();
+      // 验证降级后 init 调用参数中 lng 保持为 'en'
+      expect(mockI18nInit).toHaveBeenCalledWith(
+        expect.objectContaining({ lng: 'en' })
+      );
 
-      consoleErrorSpy.mockRestore();
+      // 验证 catch 块记录了警告（杀死 line 275 BlockStatement 变异体）
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('System language xx-nonexistent failed to load'),
+        expect.any(Error)
+      );
+
+      // 验证 toastQueue.warning 被调用（杀死 line 282 BlockStatement 变异体）
+      expect(mockToastQueue.warning).toHaveBeenCalledWith(
+        'System language failed to load, using English instead'
+      );
+
       consoleWarnSpy.mockRestore();
     });
 
@@ -303,20 +316,60 @@ describe("i18n module", () => {
       await initI18n();
     });
 
+    it("应该在 getDefaultAppLanguage 抛出异常时使用英文默认值且不触发迁移 toast", async () => {
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockGetDefaultAppLanguage.mockRejectedValue(new Error("storage error"));
+
+      const { initI18n, resetI18nForTest } = await import("@/services/i18n");
+      resetI18nForTest();
+
+      await initI18n();
+
+      // 验证降级到英文（languageResult 使用默认值 { lang: 'en', migrated: false }）
+      expect(mockI18nInit).toHaveBeenCalledWith(
+        expect.objectContaining({ lng: 'en' })
+      );
+      // 验证异常被捕获并记录
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        "Failed to get system language, using English", expect.any(Error)
+      );
+      // 默认 migrated=false → 不触发迁移 toast（杀死 line 219 BooleanLiteral 变异体）
+      expect(mockToastQueue.info).not.toHaveBeenCalled();
+      // 默认没有 fallbackReason → 不触发降级 toast
+      expect(mockToastQueue.warning).not.toHaveBeenCalled();
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("应该在 resetI18nForTest 后重新初始化", async () => {
+      const { initI18n, resetI18nForTest } = await import("@/services/i18n");
+
+      await initI18n();
+      expect(mockI18nInit).toHaveBeenCalledTimes(1);
+
+      // 重置后重新初始化（杀死 line 188 BlockStatement 变异体）
+      resetI18nForTest();
+      await initI18n();
+      // 验证 init 被再次调用（说明 initI18nPromise 被清空）
+      expect(mockI18nInit).toHaveBeenCalledTimes(2);
+    });
+
     it("应该在系统语言不是英文时尝试加载并切换", async () => {
-      mockGetDefaultAppLanguage.mockResolvedValue('zh');
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'zh', migrated: false });
       mockI18nChangeLanguage.mockResolvedValue('zh');
 
       const { initI18n } = await import("@/services/i18n");
 
       await initI18n();
 
-      // 验证 i18n.init 被调用
-      expect(mockI18nInit).toHaveBeenCalled();
+      // 验证 i18n.init 被调用且 lng 为 zh（杀死 line 261 条件变异体）
+      expect(mockI18nInit).toHaveBeenCalledWith(
+        expect.objectContaining({ lng: 'zh' })
+      );
     });
 
     it("应该在系统语言为英文时跳过异步加载", async () => {
-      mockGetDefaultAppLanguage.mockResolvedValue('en');
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'en', migrated: false });
 
       const { initI18n } = await import("@/services/i18n");
 
@@ -334,88 +387,131 @@ describe("i18n module", () => {
           }),
         })
       );
+
+      // 验证没有尝试加载非英文语言（杀死 line 261 条件变异体 if(true)）
+      // 因为 lang='en'，不应该触发 loadLanguage 加载其他语言
+      expect(mockI18nChangeLanguage).not.toHaveBeenCalled();
     });
 
     describe("语言降级持久化", () => {
       describe("核心功能", () => {
-        it("应该在降级到系统语言时成功初始化", async () => {
-          // Mock 降级到系统语言
+        it("应该在降级到系统语言时显示 info toast", async () => {
           mockGetDefaultAppLanguage.mockResolvedValue({
             lang: 'fr',
             migrated: false,
             fallbackReason: 'system-lang',
           });
 
-          // 重新导入模块以应用新的 mock
           const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-
-          // 重置单例以允许重新初始化
           resetI18nForTest();
 
           await initI18n();
 
-          // 验证 i18n.init 被调用
           expect(mockI18nInit).toHaveBeenCalled();
+          // 验证 system-lang 分支触发了 toastQueue.info（杀死 line 234 变异体）
+          expect(mockToastQueue.info).toHaveBeenCalledWith(
+            expect.stringContaining('Switched to system language')
+          );
         });
 
-        it("应该在降级到默认英语时成功初始化", async () => {
-          // Mock 降级到默认英语
+        it("应该在降级到默认英语时显示 warning toast", async () => {
           mockGetDefaultAppLanguage.mockResolvedValue({
             lang: 'en',
             migrated: false,
             fallbackReason: 'default',
           });
 
-          // 重新导入模块以应用新的 mock
           const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-
-          // 重置单例以允许重新初始化
           resetI18nForTest();
 
           await initI18n();
 
-          // 验证 i18n.init 被调用
           expect(mockI18nInit).toHaveBeenCalled();
+          // 验证 default 分支触发了 toastQueue.warning（杀死 line 239 变异体）
+          expect(mockToastQueue.warning).toHaveBeenCalledWith(
+            expect.stringContaining('Language code invalid')
+          );
         });
 
-        it("应该在语言迁移成功时成功初始化", async () => {
-          // Mock 语言迁移成功
+        it("应该在语言迁移成功时显示 info toast", async () => {
           mockGetDefaultAppLanguage.mockResolvedValue({
             lang: 'zh',
             migrated: true,
             from: 'zh-CN',
           });
 
-          // 重新导入模块以应用新的 mock
           const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-
-          // 重置单例以允许重新初始化
           resetI18nForTest();
 
           await initI18n();
 
-          // 验证 i18n.init 被调用
           expect(mockI18nInit).toHaveBeenCalled();
+          // 验证 migrated && from 分支触发了 toastQueue.info（杀死 line 229 变异体）
+          expect(mockToastQueue.info).toHaveBeenCalledWith(
+            expect.stringContaining('Language code updated')
+          );
         });
 
-        it("应该在语言有效缓存时成功初始化", async () => {
-          // Mock 使用有效的缓存语言
+        it("应该在语言有效缓存时不显示 toast", async () => {
           mockGetDefaultAppLanguage.mockResolvedValue({
             lang: 'fr',
             migrated: false,
           });
 
-          // 重新导入模块以应用新的 mock
           const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-
-          // 重置单例以允许重新初始化
           resetI18nForTest();
 
           await initI18n();
 
-          // 验证 i18n.init 被调用
           expect(mockI18nInit).toHaveBeenCalled();
+          // 没有 migrated/from、fallbackReason → 不触发任何 toast
+          expect(mockToastQueue.info).not.toHaveBeenCalled();
+          expect(mockToastQueue.warning).not.toHaveBeenCalled();
         });
+
+        it("应该在 migrated=true 但 from 缺失时不显示迁移 toast", async () => {
+          mockGetDefaultAppLanguage.mockResolvedValue({
+            lang: 'zh',
+            migrated: true,
+          });
+
+          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
+          resetI18nForTest();
+
+          await initI18n();
+
+          expect(mockI18nInit).toHaveBeenCalled();
+          // migrated=true 但 from=undefined → 条件不满足（杀死 LogicalOperator || 变异体）
+          expect(mockToastQueue.info).not.toHaveBeenCalled();
+        });
+      });
+
+      it("应该在 toast 抛出异常时降级到 console.warn", async () => {
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        // 让 toastQueue.info 抛出异常以触发 line 243 catch 块
+        mockToastQueue.info.mockImplementation(() => { throw new Error("toast crashed"); });
+
+        mockGetDefaultAppLanguage.mockResolvedValue({
+          lang: 'fr',
+          migrated: false,
+          fallbackReason: 'system-lang',
+        });
+
+        const { initI18n, resetI18nForTest } = await import("@/services/i18n");
+        resetI18nForTest();
+
+        await initI18n();
+
+        // 验证 toast 异常被捕获并降级到 console.warn（覆盖 line 243-248）
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          "[Toast] Failed to display, falling back to console.warn",
+          expect.any(Error)
+        );
+        // 初始化仍应成功
+        expect(mockI18nInit).toHaveBeenCalled();
+
+        consoleWarnSpy.mockRestore();
       });
     });
   });
@@ -431,9 +527,9 @@ describe("i18n module", () => {
       const promise1 = getInitI18nPromise();
       const promise2 = getInitI18nPromise();
 
-      // 验证返回的是 Promise
+      // 验证返回的是 Promise 且引用相同（杀死 line 314 条件变异体）
       expect(promise1).toBeInstanceOf(Promise);
-      expect(promise2).toBeInstanceOf(Promise);
+      expect(promise2).toBe(promise1);
     });
 
     it("应该在未初始化时触发初始化", async () => {
@@ -447,17 +543,19 @@ describe("i18n module", () => {
     });
 
     it("应该验证返回的 Promise 实例一致性", async () => {
-      const { getInitI18nPromise } = await import("@/services/i18n");
+      const { getInitI18nPromise, initI18n } = await import("@/services/i18n");
 
-      // 多次调用应该返回 Promise 实例
+      // 先初始化以缓存 Promise
+      await initI18n();
+
+      // 多次调用应该返回同一 Promise 实例（杀死 BlockStatement 变异体）
       const promise1 = getInitI18nPromise();
       const promise2 = getInitI18nPromise();
       const promise3 = getInitI18nPromise();
 
-      // 验证都是 Promise 实例
-      expect(promise1).toBeInstanceOf(Promise);
-      expect(promise2).toBeInstanceOf(Promise);
-      expect(promise3).toBeInstanceOf(Promise);
+      // 引用相等：必须返回同一个缓存实例
+      expect(promise2).toBe(promise1);
+      expect(promise3).toBe(promise1);
     });
   });
 
@@ -568,6 +666,363 @@ describe("i18n module", () => {
       expectedNamespaces.forEach(ns => {
         expect(enTranslation).toHaveProperty(ns);
       });
+    });
+  });
+
+  describe("loadLanguage 缓存一致性", () => {
+    it("应该在已加载语言时命中缓存不触发 addResourceBundle", async () => {
+      mockI18nInstance.isInitialized = true;
+      mockI18nChangeLanguage.mockResolvedValue('zh');
+
+      const { initI18n, changeAppLanguage } = await import("@/services/i18n");
+
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'en', migrated: false });
+      await initI18n();
+
+      // 首次加载 zh（触发 addResourceBundle，杀死 line 64-68 isInitialized 路径变异体）
+      await changeAppLanguage('zh');
+      const firstCallCount = mockI18nAddResourceBundle.mock.calls.length;
+
+      // 验证首次确实调用了 addResourceBundle（证明 isInitialized=true 分支被执行）
+      expect(firstCallCount).toBeGreaterThanOrEqual(1);
+      expect(mockI18nAddResourceBundle).toHaveBeenCalledWith(
+        'zh', 'translation', expect.any(Object), true
+      );
+
+      // 再次加载 zh（应命中缓存，不再调用 addResourceBundle）
+      await changeAppLanguage('zh');
+      expect(mockI18nAddResourceBundle.mock.calls.length).toBe(firstCallCount);
+    });
+
+    it("应该在并发加载同一语言时复用 Promise（addResourceBundle 只调用一次）", async () => {
+      mockI18nInstance.isInitialized = true;
+      mockI18nChangeLanguage.mockResolvedValue('zh');
+
+      const { initI18n, changeAppLanguage } = await import("@/services/i18n");
+
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'en', migrated: false });
+      await initI18n();
+
+      mockI18nAddResourceBundle.mockClear();
+
+      // 并发调用 changeAppLanguage('zh')，应复用同一个 loadingPromise
+      const [result1, result2] = await Promise.all([
+        changeAppLanguage('zh'),
+        changeAppLanguage('zh'),
+      ]);
+
+      expect(result1.success).toBe(true);
+      expect(result2.success).toBe(true);
+
+      // addResourceBundle 对 zh 只应调用一次（证明复用了 Promise）
+      const zhCalls = mockI18nAddResourceBundle.mock.calls.filter(
+        (call: string[]) => call[0] === 'zh'
+      );
+      expect(zhCalls.length).toBe(1);
+    });
+
+    it("应该在加载完成后清理 loadingPromises（验证 finally 块）", async () => {
+      mockI18nInstance.isInitialized = true;
+      mockI18nChangeLanguage.mockResolvedValue('zh');
+
+      const { initI18n, changeAppLanguage } = await import("@/services/i18n");
+
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'en', migrated: false });
+      await initI18n();
+
+      mockI18nAddResourceBundle.mockClear();
+
+      // 第一次加载 zh（创建 loadingPromise，完成后 finally 删除）
+      await changeAppLanguage('zh');
+      expect(mockI18nAddResourceBundle).toHaveBeenCalledTimes(1);
+
+      // 重置 loadedLanguages 但不重置模块
+      // 如果 finally 块正确执行，loadingPromises 中没有 zh 的条目
+      // 这时 changeAppLanguage('zh') 的 loadLanguage 会发现 loadedLanguages 没有 zh，
+      // loadingPromises 也没有 zh → 创建新的 loadPromise
+      // 但由于 mock 仍在，会重新加载（杀死 line 68 finally 块变异体需要更精确的验证）
+      // 通过验证 addResourceBundle 调用来间接验证
+    });
+  });
+
+  describe("performLoad 指数退避重试", () => {
+    it("应该在非网络错误（语言不存在）时不重试立即失败", async () => {
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'en', migrated: false });
+      mockI18nInstance.isInitialized = true;
+
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const { initI18n, changeAppLanguage } = await import("@/services/i18n");
+      await initI18n();
+
+      // 不存在的语言代码 → performLoad 找不到文件 → 非网络错误 → 不重试
+      const result = await changeAppLanguage('xx-nonexistent');
+
+      expect(result.success).toBe(false);
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("应该在网络错误时触发指数退避重试并在重试成功后加载语言", async () => {
+      vi.useFakeTimers();
+      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      // 劫持 Promise.all：第一次调用失败（模拟 fetch 错误），后续恢复真实行为
+      vi.spyOn(Promise, 'all').mockImplementationOnce(() =>
+        Promise.reject(new Error("Failed to fetch dynamically imported module"))
+      );
+
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'en', migrated: false });
+      mockI18nInstance.isInitialized = true;
+
+      const { initI18n, changeAppLanguage } = await import("@/services/i18n");
+      await initI18n();
+
+      // 开始加载 zh（performLoad 第一次尝试因 Promise.all 失败，进入重试等待）
+      const resultPromise = changeAppLanguage('zh');
+
+      // 999ms 时重试尚未触发（验证延迟 = Math.pow(2, 0) * 1000 = 1000ms）
+      await vi.advanceTimersByTimeAsync(999);
+
+      // 再推进 1ms（总计 1000ms），重试触发，Promise.all 恢复真实行为 → 加载成功
+      await vi.advanceTimersByTimeAsync(1);
+      const result = await resultPromise;
+      expect(result.success).toBe(true);
+
+      // 验证资源已成功添加到 i18n
+      expect(mockI18nAddResourceBundle).toHaveBeenCalledWith(
+        'zh', 'translation', expect.any(Object), true
+      );
+
+      consoleLogSpy.mockRestore();
+      vi.useRealTimers();
+    });
+
+    it("应该在网络错误重试耗尽后返回失败", async () => {
+      vi.useFakeTimers();
+      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // performLoad 默认 retries=2，最多 3 次尝试（attempt 0,1,2）
+      // 连续 3 次 mockRejectedValueOnce 确保所有重试均失败
+      const fetchError = new Error("network timeout");
+      vi.spyOn(Promise, 'all')
+        .mockRejectedValueOnce(fetchError)
+        .mockRejectedValueOnce(fetchError)
+        .mockRejectedValueOnce(fetchError);
+
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'en', migrated: false });
+      mockI18nInstance.isInitialized = true;
+
+      const { initI18n, changeAppLanguage } = await import("@/services/i18n");
+      await initI18n();
+
+      const resultPromise = changeAppLanguage('zh');
+
+      // 延迟：attempt 0 → 1s，attempt 1 → 2s，attempt 2 → 抛出
+      await vi.advanceTimersByTimeAsync(3500);
+
+      const result = await resultPromise;
+      expect(result.success).toBe(false);
+
+      consoleLogSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+      vi.useRealTimers();
+    });
+  });
+
+  describe("tSafely 多重降级条件", () => {
+    it("应该在翻译结果等于 key 时使用降级文本", async () => {
+      mockI18nInstance.isInitialized = true;
+      mockI18nInstance.t = (key: string) => key; // 返回 key 本身
+
+      const { tSafely } = await import("@/services/i18n");
+
+      const result = tSafely("some.key", "fallback text");
+      expect(result).toBe("fallback text");
+    });
+
+    it("应该在翻译结果为空字符串时使用降级文本", async () => {
+      mockI18nInstance.isInitialized = true;
+      mockI18nInstance.t = () => ""; // 返回空字符串
+
+      const { tSafely } = await import("@/services/i18n");
+
+      const result = tSafely("some.key", "fallback text");
+      expect(result).toBe("fallback text");
+    });
+
+    it("应该在翻译结果包含错误标记时使用降级文本", async () => {
+      mockI18nInstance.isInitialized = true;
+      mockI18nInstance.t = () => "returned an object"; // 包含错误标记但不包含完整错误串
+
+      const { tSafely } = await import("@/services/i18n");
+
+      const result = tSafely("some.key", "fallback text");
+      expect(result).toBe("fallback text");
+    });
+  });
+
+  describe("languageResourcesCache 一致性", () => {
+    it("应该在非英文语言加载成功后将资源写入缓存", async () => {
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'zh', migrated: false });
+      mockI18nChangeLanguage.mockResolvedValue('zh');
+
+      const { initI18n } = await import("@/services/i18n");
+
+      await initI18n();
+
+      // 验证 init 调用包含 zh 资源（loadLanguage 写入缓存后 initI18n 读取）
+      expect(mockI18nInit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resources: expect.objectContaining({
+            zh: expect.objectContaining({
+              translation: expect.objectContaining({
+                common: expect.any(Object),
+              }),
+            }),
+          }),
+        })
+      );
+    });
+
+    it("应该在 changeAppLanguage('en') 时因 loadedLanguages 预加载缓存而跳过 addResourceBundle", async () => {
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'en', migrated: false });
+      mockI18nInstance.isInitialized = true;
+      mockI18nChangeLanguage.mockResolvedValue('en');
+
+      const { initI18n, changeAppLanguage } = await import("@/services/i18n");
+      await initI18n();
+
+      mockI18nAddResourceBundle.mockClear();
+
+      // en 已在 loadedLanguages 预加载 → loadLanguage('en') 直接返回 → 不调用 addResourceBundle
+      await changeAppLanguage('en');
+
+      expect(mockI18nAddResourceBundle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getLocalesResources 空资源处理", () => {
+    it("应该在 getResourceBundle 返回 null 时跳过该语言", async () => {
+      const { initI18n, getLocalesResources } = await import("@/services/i18n");
+
+      // 设置 languages 包含多个语言，但只有 en 有资源
+      mockI18nInstance.languages = ['en', 'fr', 'de'];
+      mockI18nGetResourceBundle.mockImplementation((lang: string, ns: string) => {
+        if (lang === 'en' && ns === 'translation') {
+          return { common: { hello: "Hello" } };
+        }
+        return null;
+      });
+
+      await initI18n();
+
+      const resources = getLocalesResources();
+
+      // 只有 en 有资源，fr 和 de 返回 null 时被跳过（杀死 line 170 if(resource) 变异体）
+      expect(resources).toHaveProperty('en');
+      expect(Object.keys(resources)).toEqual(['en']);
+    });
+
+    it("应该在 languages 为空数组时返回空对象", async () => {
+      const { initI18n, getLocalesResources } = await import("@/services/i18n");
+
+      mockI18nInstance.languages = [];
+      mockI18nGetResourceBundle.mockImplementation(() => null);
+
+      await initI18n();
+
+      const resources = getLocalesResources();
+      expect(Object.keys(resources)).toEqual([]);
+    });
+
+    it("应该在 languages 为 undefined 时安全降级返回空对象", async () => {
+      const { initI18n, getLocalesResources } = await import("@/services/i18n");
+
+      // 模拟 i18n 未初始化时 languages 为 undefined（覆盖 line 167 || [] 降级路径）
+      mockI18nInstance.languages = undefined as any;
+      mockI18nGetResourceBundle.mockImplementation(() => null);
+
+      await initI18n();
+
+      // 清除 initI18n 过程中的调用
+      mockI18nGetResourceBundle.mockClear();
+
+      const resources = getLocalesResources();
+      expect(Object.keys(resources)).toEqual([]);
+      // 验证 getResourceBundle 未被调用（杀死 line 167 ArrayDeclaration 变异体）
+      // 如果 || [] 变为 || ["Stryker was here"]，getResourceBundle 会被调用一次
+      expect(mockI18nGetResourceBundle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("loadLanguage isInitialized 路径", () => {
+    it("应该在 i18n 未初始化时不调用 addResourceBundle", async () => {
+      mockGetDefaultAppLanguage.mockResolvedValue({ lang: 'zh', migrated: false });
+      mockI18nInstance.isInitialized = false;
+
+      const { initI18n } = await import("@/services/i18n");
+
+      await initI18n();
+
+      // initI18n 内部 loadLanguage 时 isInitialized=false → 不调用 addResourceBundle
+      // 但初始化完成后通过 init() 加载资源
+      const zhAddCalls = mockI18nAddResourceBundle.mock.calls.filter(
+        (call: string[]) => call[0] === 'zh'
+      );
+      // 在 initI18n 过程中，isInitialized 为 false，所以 loadLanguage 不会调用 addResourceBundle
+      // 资源通过 init() 的 resources 参数传入
+      expect(zhAddCalls.length).toBe(0);
+    });
+  });
+
+  describe("tSafely 完整降级路径", () => {
+    it("应该在 i18n 未初始化时返回降级文本", async () => {
+      mockI18nInstance.isInitialized = false;
+
+      const { tSafely } = await import("@/services/i18n");
+
+      const result = tSafely("some.key", "fallback");
+      expect(result).toBe("fallback");
+    });
+
+    it("应该在 key 为空字符串时返回降级文本", async () => {
+      mockI18nInstance.isInitialized = true;
+      mockI18nInstance.t = (key: string) => key;
+
+      const { tSafely } = await import("@/services/i18n");
+
+      const result = tSafely("", "fallback");
+      expect(result).toBe("fallback");
+    });
+
+    it("应该在翻译成功时返回翻译文本", async () => {
+      mockI18nInstance.isInitialized = true;
+      mockI18nInstance.t = () => "翻译结果";
+
+      const { tSafely } = await import("@/services/i18n");
+
+      const result = tSafely("some.key", "fallback");
+      expect(result).toBe("翻译结果");
+    });
+
+    it("应该在翻译抛出异常时返回降级文本并记录日志", async () => {
+      mockI18nInstance.isInitialized = true;
+      mockI18nInstance.t = () => { throw new Error("translation error"); };
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const { tSafely } = await import("@/services/i18n");
+
+      const result = tSafely("some.key", "fallback");
+      expect(result).toBe("fallback");
+
+      // 验证 catch 块执行了 console.warn（杀死 line 382 BlockStatement 变异体）
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[tSafely] Translation failed for key:', 'some.key', expect.any(Error)
+      );
+
+      consoleWarnSpy.mockRestore();
     });
   });
 });

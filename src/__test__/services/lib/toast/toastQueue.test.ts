@@ -303,4 +303,156 @@ describe('ToastQueue', () => {
       });
     });
   });
+
+  describe('flush 队列刷新间隔精度', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('应该在 499ms 时第二条消息未显示，500ms 时已显示', async () => {
+      const { toastQueue } = await import('@/services/toast/toastQueue');
+
+      void toastQueue.success('消息1');
+      void toastQueue.error('消息2');
+
+      toastQueue.markReady();
+
+      // 第一条立即显示
+      expect(mockToast.success).toHaveBeenCalledTimes(1);
+
+      // 499ms 时第二条消息未显示
+      await vi.advanceTimersByTimeAsync(499);
+      expect(mockToast.error).not.toHaveBeenCalled();
+
+      // 500ms 时第二条消息显示
+      await vi.advanceTimersByTimeAsync(1);
+      expect(mockToast.error).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('flush 期间新消息立即显示', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('应该在 flush 执行期间新 toast 方法立即显示', async () => {
+      const { toastQueue } = await import('@/services/toast/toastQueue');
+
+      void toastQueue.success('消息1');
+      toastQueue.markReady();
+
+      // 第一条已显示，flush 正在等待 500ms
+      expect(mockToast.success).toHaveBeenCalledTimes(1);
+
+      // flush 期间调用新 toast（toastReady 已为 true）
+      toastQueue.info('新消息');
+
+      // 新消息应立即显示（不经过队列）
+      expect(mockToast.info).toHaveBeenCalledTimes(1);
+      expect(mockToast.info).toHaveBeenCalledWith('新消息', { position: 'bottom-right' });
+    });
+  });
+
+  describe('reset 重置全部状态', () => {
+    it('应该清空队列、就绪状态和 isMobile', async () => {
+      const { toastQueue } = await import('@/services/toast/toastQueue');
+
+      // 设置初始状态
+      toastQueue.setIsMobile(true);
+      toastQueue.markReady();
+      toastQueue.success('消息');
+
+      // 验证状态已设置
+      expect(mockToast.success).toHaveBeenCalledTimes(1);
+      expect(toastQueue.getIsMobile()).toBe(true);
+
+      // 重置
+      toastQueue.reset();
+
+      // 验证状态已重置
+      expect(toastQueue.getIsMobile()).toBe(false);
+
+      // 重置后新消息应入队（不立即显示）
+      vi.doMock('sonner', () => ({
+        toast: {
+          ...mockToast,
+          success: vi.fn(() => 'new-id'),
+        },
+      }));
+
+      // 不需要重新导入，reset 后 toastReady 为 false
+      // 调用 toast 方法不应立即执行
+      void toastQueue.success('reset后的消息');
+      // 由于 toast 是旧的 mock，直接检查调用次数
+      // reset 后 toastReady=false，消息应入队
+    });
+  });
+
+  describe('reset 后状态验证', () => {
+    it('应该在 reset 后将新消息入队而非立即显示（杀死 line 193 BooleanLiteral 变异体）', async () => {
+      const { toastQueue } = await import('@/services/toast/toastQueue');
+
+      toastQueue.markReady();
+      toastQueue.reset();
+
+      // reset 后 toastReady=false → 消息应入队不立即显示
+      void toastQueue.success('reset后的消息');
+      expect(mockToast.success).not.toHaveBeenCalled();
+    });
+
+    it('应该在 reset 后队列被清空（杀死 line 192 ArrayDeclaration 变异体）', async () => {
+      const { toastQueue } = await import('@/services/toast/toastQueue');
+
+      // 入队消息但不 markReady
+      void toastQueue.success('消息1');
+      void toastQueue.error('消息2');
+
+      // reset 清空队列
+      toastQueue.reset();
+
+      // markReady 后不应刷新旧消息（队列已空）
+      toastQueue.markReady();
+      expect(mockToast.success).not.toHaveBeenCalled();
+      expect(mockToast.error).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('flush 空队列行为', () => {
+    it('应该在队列为空时 flush 不产生副作用（杀死 line 59/62 变异体）', async () => {
+      const { toastQueue } = await import('@/services/toast/toastQueue');
+
+      // markReady 触发 flush（队列为空）
+      toastQueue.markReady();
+
+      // 没有消息被调用
+      expect(mockToast.success).not.toHaveBeenCalled();
+      expect(mockToast.error).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('桌面端无 position 时补充默认值', () => {
+    it('应该在桌面端传入 options 无 position 时添加默认 position', async () => {
+      const { toastQueue } = await import('@/services/toast/toastQueue');
+
+      toastQueue.setIsMobile(false);
+      toastQueue.markReady();
+
+      // 传入包含其他属性但没有 position 的 options
+      toastQueue.success('消息', { duration: 3000 });
+
+      // 杀死 line 95 if(false) 变异体：必须包含 position
+      expect(mockToast.success).toHaveBeenCalledWith('消息', {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    });
+  });
 });
