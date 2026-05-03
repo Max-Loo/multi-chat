@@ -20,7 +20,10 @@
     "src/services/initialization/InitializationManager.ts",
     "src/services/toast/toastQueue.ts",
     "src/store/slices/modelProviderSlice.ts",
-    "src/utils/highlightLanguageManager.ts"
+    "src/utils/highlightLanguageManager.ts",
+    "src/utils/tauriCompat/store.ts",
+    "src/utils/tauriCompat/http.ts",
+    "src/utils/tauriCompat/shell.ts"
   ],
   "reporters": ["html", "clear-text", "progress"],
   "thresholds": {

@@ -39,10 +39,34 @@ describe('tauriCompat/http', () => {
       vi.stubEnv('DEV', true);
       mockIsTauri.mockReturnValue(false);
 
+      // 设置 plugin-http mock 以验证 DEV 分支不使用它
+      vi.doMock('@tauri-apps/plugin-http', () => ({
+        fetch: mockTauriFetch,
+      }));
+
       vi.resetModules();
       const http = await import('@/utils/tauriCompat/http');
 
       // DEV 分支直接返回 originFetch，不检查 isTauri
+      expect(http.getFetchFunc()).toBeTypeOf('function');
+      expect(http.getFetchFunc()).not.toBe(mockTauriFetch);
+      expect(mockTauriFetch).not.toHaveBeenCalled();
+    });
+
+    it('DEV=true + isTauri=true 仍返回原生 fetch', async () => {
+      vi.stubEnv('DEV', true);
+      mockIsTauri.mockReturnValue(true);
+
+      // 设置 plugin-http mock 以验证 DEV 分支不使用它
+      vi.doMock('@tauri-apps/plugin-http', () => ({
+        fetch: mockTauriFetch,
+      }));
+
+      vi.resetModules();
+      const http = await import('@/utils/tauriCompat/http');
+
+      // DEV 分支短路，不检查 isTauri
+      expect(http.getFetchFunc()).toBeTypeOf('function');
       expect(http.getFetchFunc()).not.toBe(mockTauriFetch);
       expect(mockTauriFetch).not.toHaveBeenCalled();
     });
@@ -59,6 +83,7 @@ describe('tauriCompat/http', () => {
       const http = await import('@/utils/tauriCompat/http');
 
       expect(http.getFetchFunc()).toBe(mockTauriFetch);
+      expect(http.getFetchFunc()).toBeTypeOf('function');
     });
 
     it('生产 + Tauri 插件导入失败降级到原生 fetch', async () => {
@@ -81,6 +106,7 @@ describe('tauriCompat/http', () => {
       );
 
       // 降级到原生 fetch
+      expect(http.getFetchFunc()).toBeTypeOf('function');
       expect(http.getFetchFunc()).not.toBe(mockTauriFetch);
     });
 
@@ -88,10 +114,16 @@ describe('tauriCompat/http', () => {
       vi.stubEnv('DEV', false);
       mockIsTauri.mockReturnValue(false);
 
+      // 设置 plugin-http mock 以验证 Web 分支不使用它
+      vi.doMock('@tauri-apps/plugin-http', () => ({
+        fetch: mockTauriFetch,
+      }));
+
       vi.resetModules();
       const http = await import('@/utils/tauriCompat/http');
 
       expect(http.getFetchFunc()).not.toBe(mockTauriFetch);
+      expect(http.getFetchFunc()).toBeTypeOf('function');
       expect(mockTauriFetch).not.toHaveBeenCalled();
     });
   });
@@ -108,6 +140,7 @@ describe('tauriCompat/http', () => {
       const func2 = http.getFetchFunc();
 
       expect(func1).toBe(func2);
+      expect(func1).toBeTypeOf('function');
     });
   });
 
@@ -129,6 +162,26 @@ describe('tauriCompat/http', () => {
       const result = await http.fetch('https://example.com/api', { method: 'POST' });
 
       expect(mockTauriFetch).toHaveBeenCalledWith('https://example.com/api', { method: 'POST' });
+      expect(result).toBe(mockResponse);
+    });
+
+    it('fetch 无 init 参数时透传 undefined', async () => {
+      vi.stubEnv('DEV', false);
+      mockIsTauri.mockReturnValue(true);
+
+      const mockResponse = new Response('ok');
+      mockTauriFetch.mockResolvedValue(mockResponse);
+
+      vi.doMock('@tauri-apps/plugin-http', () => ({
+        fetch: mockTauriFetch,
+      }));
+
+      vi.resetModules();
+      const http = await import('@/utils/tauriCompat/http');
+
+      const result = await http.fetch('https://example.com/api');
+
+      expect(mockTauriFetch).toHaveBeenCalledWith('https://example.com/api', undefined);
       expect(result).toBe(mockResponse);
     });
   });
