@@ -18,7 +18,9 @@
     "src/utils/resourceLoader.ts",
     "src/services/i18n.ts",
     "src/services/initialization/InitializationManager.ts",
-    "src/services/toast/toastQueue.ts"
+    "src/services/toast/toastQueue.ts",
+    "src/store/slices/modelProviderSlice.ts",
+    "src/utils/highlightLanguageManager.ts"
   ],
   "reporters": ["html", "clear-text", "progress"],
   "thresholds": {

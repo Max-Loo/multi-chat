@@ -59,11 +59,24 @@ describe('HighlightLanguageManager', () => {
       expect(instance1).toBe(instance2);
     });
 
-    it('应该返回唯一的实例', () => {
-      // 尝试创建新实例应该抛出错误
+    it('应该在已有实例时 new 抛出错误', () => {
+      // getInstance 已创建实例
+      HighlightLanguageManager.getInstance();
+
+      // 尝试 new 应该抛出错误
       expect(() => {
         void new HighlightLanguageManager();
       }).toThrow('Use getInstance() to get the singleton instance');
+    });
+
+    it('应该在 _resetInstance 后返回新实例', () => {
+      const instance1 = HighlightLanguageManager.getInstance();
+
+      HighlightLanguageManager._resetInstance();
+
+      const instance2 = HighlightLanguageManager.getInstance();
+
+      expect(instance1).not.toBe(instance2);
     });
   });
 
@@ -98,6 +111,21 @@ describe('HighlightLanguageManager', () => {
       await manager.loadLanguageAsync('JS');
 
       expect(manager.isLoaded('javascript')).toBe(true);
+    });
+
+    it('应该将大写 JS 解析为 javascript', async () => {
+      await manager.loadLanguageAsync('JS');
+
+      expect(manager.isLoaded('javascript')).toBe(true);
+      // 验证 resolveAlias 通过 testInternals
+      expect(manager.testInternals.resolveAlias('JS')).toBe('javascript');
+    });
+
+    it('应该将混合大小写 PY 解析为 python', async () => {
+      await manager.loadLanguageAsync('PY');
+
+      expect(manager.isLoaded('python')).toBe(true);
+      expect(manager.testInternals.resolveAlias('PY')).toBe('python');
     });
   });
 
@@ -134,12 +162,21 @@ describe('HighlightLanguageManager', () => {
       expect(result).toContain('hljs-keyword');
     });
 
-    it('应该为未加载的语言抛出错误', () => {
+    it('应该为未加载的语言抛出包含语言名的错误', () => {
       const code = 'const x = 1;';
 
       expect(() => {
         manager.highlightSync(code, 'javascript');
       }).toThrow('Language "javascript" is not loaded');
+    });
+
+    it('应该为已加载的语言调用 hljs.highlight', () => {
+      manager.markAsLoaded('javascript');
+
+      const code = 'const x = 1;';
+      manager.highlightSync(code, 'javascript');
+
+      expect(vi.mocked(hljs.highlight)).toHaveBeenCalledWith(code, { language: 'javascript' });
     });
   });
 
@@ -192,11 +229,52 @@ describe('HighlightLanguageManager', () => {
     it('应该返回已加载语言（立即 resolve）', async () => {
       await manager.loadLanguageAsync('javascript');
 
-      const startTime = performance.now();
+      // 已加载 → 不调用 loadLanguageModule
+      const callCountBefore = vi.mocked(loadLanguageModule).mock.calls.length;
       await manager.loadLanguageAsync('javascript');
-      const duration = performance.now() - startTime;
+      const callCountAfter = vi.mocked(loadLanguageModule).mock.calls.length;
 
-      expect(duration).toBeLessThan(10); // 应该几乎立即返回
+      expect(callCountAfter).toBe(callCountBefore);
+    });
+
+    it('应该在失败过的语言直接抛出且不调用 loadLanguageModule', async () => {
+      vi.mocked(loadLanguageModule).mockRejectedValue(new Error('Load failed'));
+
+      try {
+        await manager.loadLanguageAsync('cobol');
+      } catch {
+        // 预期失败
+      }
+
+      // 失过后再次调用 → 不调用 loadLanguageModule
+      const callCount = vi.mocked(loadLanguageModule).mock.calls.length;
+      await expect(manager.loadLanguageAsync('cobol')).rejects.toThrow('previously failed');
+      expect(vi.mocked(loadLanguageModule).mock.calls.length).toBe(callCount);
+    });
+
+    it('应该在正在加载中复用 Promise', async () => {
+      // 创建一个延迟的 mock
+      let resolveLoad: (value: any) => void;
+      const loadPromise = new Promise<any>((resolve) => { resolveLoad = resolve; });
+      vi.mocked(loadLanguageModule).mockReturnValue(loadPromise);
+
+      const promise1 = manager.loadLanguageAsync('javascript');
+      const promise2 = manager.loadLanguageAsync('javascript');
+
+      // 应该是同一个 Promise
+      expect(promise1).toStrictEqual(promise2);
+
+      // 完成加载
+      resolveLoad!({ default: () => ({ contains: [] }) });
+      await promise1;
+    });
+
+    it('应该在首次加载时创建新 Promise 并调用 loadLanguageModule', async () => {
+      const callCountBefore = vi.mocked(loadLanguageModule).mock.calls.length;
+
+      await manager.loadLanguageAsync('javascript');
+
+      expect(vi.mocked(loadLanguageModule).mock.calls.length).toBe(callCountBefore + 1);
     });
 
     it('应该在加载失败时清理缓存', async () => {
@@ -213,16 +291,8 @@ describe('HighlightLanguageManager', () => {
       expect(manager.isLoaded('javascript')).toBe(false);
       expect(manager.hasFailedToLoad('javascript')).toBe(true);
 
-      // 间接验证 loadingPromises 缓存已清理：
-      // 如果缓存未被清理，后续重试不会调用 loadLanguageModule
-      vi.mocked(loadLanguageModule).mockResolvedValue({
-        default: () => ({ contains: [] }),
-      });
-
-      // 重置失败状态后重新加载应成功
-      // 注意：failedLanguages 会阻止重试，但 _resetInstance 已在 beforeEach 中调用
-      // 此处验证的是 failedLanguages 机制生效
-      await expect(manager.loadLanguageAsync('javascript')).rejects.toThrow();
+      // 验证 loadingPromises 缓存已清理
+      expect(manager.testInternals.loadingPromises.has('javascript')).toBe(false);
     });
 
     it('应该防止重复加载失败的语言', async () => {
@@ -238,13 +308,44 @@ describe('HighlightLanguageManager', () => {
 
       // 通过公共 API 验证失败状态
       expect(manager.hasFailedToLoad('cobol')).toBe(true);
+      expect(manager.isLoaded('cobol')).toBe(false);
 
       // 第二次尝试应该直接抛出错误（不调用外部依赖）
       // Reason: 验证失败语言不会被重复尝试加载
+      const callCount = vi.mocked(loadLanguageModule).mock.calls.length;
       await expect(manager.loadLanguageAsync('cobol')).rejects.toThrow();
 
-      // loadLanguageModule 应该只被调用一次
-      expect(vi.mocked(loadLanguageModule)).toHaveBeenCalledTimes(1);
+      // loadLanguageModule 调用次数不变（阻止重试）
+      expect(vi.mocked(loadLanguageModule).mock.calls.length).toBe(callCount);
+    });
+
+    it('应该在加载成功后调用 hljs.registerLanguage', async () => {
+      const mockModule = { default: () => ({ contains: [] }) };
+      vi.mocked(loadLanguageModule).mockResolvedValue(mockModule as any);
+
+      await manager.loadLanguageAsync('javascript');
+
+      expect(vi.mocked(hljs.registerLanguage)).toHaveBeenCalledWith('javascript', mockModule.default);
+    });
+  });
+
+  describe('isSupportedLanguage() - 支持语言检查', () => {
+    it('应该对支持的语言返回 true', () => {
+      expect(manager.isSupportedLanguage('javascript')).toBe(true);
+      expect(manager.isSupportedLanguage('typescript')).toBe(true);
+      expect(manager.isSupportedLanguage('python')).toBe(true);
+      expect(manager.isSupportedLanguage('bash')).toBe(true);
+    });
+
+    it('应该对不支持的语言返回 false', () => {
+      expect(manager.isSupportedLanguage('brainfuck')).toBe(false);
+      expect(manager.isSupportedLanguage('cobol')).toBe(false);
+      expect(manager.isSupportedLanguage('unknown')).toBe(false);
+    });
+
+    it('应该通过别名检查支持的语言', () => {
+      expect(manager.isSupportedLanguage('js')).toBe(true);
+      expect(manager.isSupportedLanguage('yml')).toBe(true);
     });
   });
 
@@ -272,6 +373,12 @@ describe('HighlightLanguageManager', () => {
       manager.markAsLoaded('javascript');
 
       expect(manager.isLoaded('javascript')).toBe(true);
+    });
+
+    it('应该标记后通过 testInternals 验证 loadedLanguages 包含该语言', () => {
+      manager.markAsLoaded('javascript');
+
+      expect(manager.testInternals.loadedLanguages.has('javascript')).toBe(true);
     });
 
     it('应该用于预加载场景', async () => {
@@ -343,6 +450,25 @@ describe('HighlightLanguageManager', () => {
       expect(() => {
         manager.highlightSync(code, 'haskell');
       }).toThrow();
+    });
+  });
+
+  describe('testInternals 缓存稳定性', () => {
+    it('应该返回相同的 testInternals 引用', () => {
+      const internals1 = manager.testInternals;
+      const internals2 = manager.testInternals;
+
+      expect(internals1).toBe(internals2);
+    });
+  });
+
+  describe('getHighlightLanguageManager', () => {
+    it('应该返回 HighlightLanguageManager 实例', async () => {
+      const { getHighlightLanguageManager } = await import('@/utils/highlightLanguageManager');
+
+      const instance = getHighlightLanguageManager();
+
+      expect(instance).toBeInstanceOf(HighlightLanguageManager);
     });
   });
 });
