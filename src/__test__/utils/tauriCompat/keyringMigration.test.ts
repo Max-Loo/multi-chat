@@ -10,6 +10,9 @@ vi.mock('@/utils/tauriCompat/env', () => ({
   DERIVED_KEY_LENGTH: 256,
 }));
 
+// 静态导入帮助 Stryker 变异测试的覆盖分析正确归因测试到源文件
+import '@/utils/tauriCompat/keyringMigration';
+
 /**
  * Keyring 迁移模块测试套件
  *
@@ -263,6 +266,10 @@ describe('Keyring 迁移模块测试套件', () => {
       const newSeed = localStorage.getItem('multi-chat-keyring-seed');
       expect(newSeed).toBeDefined();
       expect(newSeed).not.toBe(oldSeed);
+      // 验证新种子是有效的 base64 编码 32 字节数组（非 undefined 或空字符串）
+      expect(newSeed!.length).toBeGreaterThanOrEqual(40);
+      const decoded = atob(newSeed!);
+      expect(decoded.length).toBe(32);
     });
   });
 
@@ -284,6 +291,17 @@ describe('Keyring 迁移模块测试套件', () => {
   });
 
   describe('4.7 测试场景：Tauri 环境跳过', () => {
+    afterEach(() => {
+      // 恢复 vi.doMock 对 env 模块的覆盖，防止污染后续测试
+      vi.doMock('@/utils/tauriCompat/env', () => ({
+        isTauri: vi.fn(() => false),
+        isTestEnvironment: vi.fn(() => true),
+        getPBKDF2Iterations: vi.fn(() => 1000),
+        PBKDF2_ALGORITHM: 'SHA-256',
+        DERIVED_KEY_LENGTH: 256,
+      }));
+    });
+
     it('应该在 Tauri 环境中跳过迁移', async () => {
       // 重新配置 mock 为 Tauri 环境
       vi.doMock('@/utils/tauriCompat/env', () => ({
@@ -459,6 +477,442 @@ describe('Keyring 迁移模块测试套件', () => {
 
       expect(result.migrated).toBe(false);
       expect(result.reset).toBe(false);
+    });
+  });
+
+  // ==================== 变异测试补强 ====================
+
+  describe('变异测试补强 - migrateKeyringV1ToV2 提前返回路径', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('indexedDB 不可用时跳过迁移并标记完成', async () => {
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      vi.stubGlobal('indexedDB', undefined);
+
+      const { migrateKeyringV1ToV2, KEYRING_VERSION_KEY } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const result = await migrateKeyringV1ToV2();
+
+      expect(result.migrated).toBe(false);
+      expect(result.reset).toBe(false);
+      expect(localStorage.getItem(KEYRING_VERSION_KEY)).toBe('2');
+    });
+
+    it('localStorage 不可用时跳过迁移并标记完成', async () => {
+      vi.stubGlobal('localStorage', undefined);
+
+      const { migrateKeyringV1ToV2 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const result = await migrateKeyringV1ToV2();
+
+      expect(result.migrated).toBe(false);
+      expect(result.reset).toBe(false);
+    });
+  });
+
+  describe('变异测试补强 - 无种子不访问 IndexedDB', () => {
+    it('无种子时不应打开 IndexedDB 数据库', async () => {
+      const openSpy = vi.spyOn(indexedDB, 'open');
+
+      const { migrateKeyringV1ToV2 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      // 无种子 = 新用户
+      const result = await migrateKeyringV1ToV2();
+
+      expect(result.migrated).toBe(false);
+      expect(result.reset).toBe(false);
+      expect(openSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('变异测试补强 - deriveEncryptionKeyV1 使用 userAgent', () => {
+    it('V1 密钥派生 importKey 输入包含 userAgent + seed 编码', async () => {
+      const { deriveEncryptionKeyV1 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      const encoder = new TextEncoder();
+      const expectedData = encoder.encode(navigator.userAgent + seed);
+
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      await deriveEncryptionKeyV1(seed);
+
+      expect(importKeySpy).toHaveBeenCalledWith(
+        'raw',
+        expectedData,
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits', 'deriveKey']
+      );
+    });
+  });
+
+  describe('变异测试补强 - deriveEncryptionKeyV2 仅使用 seed', () => {
+    it('V2 密钥派生 importKey 输入仅包含 seed 编码', async () => {
+      const { deriveEncryptionKeyV2 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      const encoder = new TextEncoder();
+      const expectedData = encoder.encode(seed);
+
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      await deriveEncryptionKeyV2(seed);
+
+      expect(importKeySpy).toHaveBeenCalledWith(
+        'raw',
+        expectedData,
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits', 'deriveKey']
+      );
+    });
+  });
+
+  describe('变异测试补强 - PBKDF2 参数传递', () => {
+    it('deriveKey iterations 等于 getPBKDF2Iterations()', async () => {
+      const { deriveEncryptionKeyV2 } = await import('@/utils/tauriCompat/keyringMigration');
+      const { getPBKDF2Iterations } = await import('@/utils/tauriCompat/env');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      const deriveKeySpy = vi.spyOn(crypto.subtle, 'deriveKey');
+
+      await deriveEncryptionKeyV2(seed);
+
+      expect(deriveKeySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'PBKDF2',
+          iterations: getPBKDF2Iterations(),
+        }),
+        expect.any(Object),
+        expect.objectContaining({ name: 'AES-GCM', length: 256 }),
+        false,
+        ['encrypt', 'decrypt']
+      );
+    });
+
+    it('importKey extractable 为 false', async () => {
+      const { deriveEncryptionKeyV2 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      await deriveEncryptionKeyV2(seed);
+
+      const call = importKeySpy.mock.calls[0];
+      expect(call[3]).toBe(false);
+    });
+
+    it('deriveKey extractable 为 false', async () => {
+      const { deriveEncryptionKeyV2 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      const deriveKeySpy = vi.spyOn(crypto.subtle, 'deriveKey');
+
+      await deriveEncryptionKeyV2(seed);
+
+      const call = deriveKeySpy.mock.calls[0];
+      expect(call[3]).toBe(false);
+    });
+  });
+
+  describe('变异测试补强 - deriveEncryptionKeyV1 PBKDF2 参数', () => {
+    it('V1 importKey extractable 为 false', async () => {
+      const { deriveEncryptionKeyV1 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      await deriveEncryptionKeyV1(seed);
+
+      const call = importKeySpy.mock.calls[0];
+      expect(call[3]).toBe(false);
+    });
+
+    it('V1 deriveKey extractable 为 false', async () => {
+      const { deriveEncryptionKeyV1 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      const deriveKeySpy = vi.spyOn(crypto.subtle, 'deriveKey');
+
+      await deriveEncryptionKeyV1(seed);
+
+      const call = deriveKeySpy.mock.calls[0];
+      expect(call[3]).toBe(false);
+    });
+
+    it('V1 deriveKey iterations 等于 getPBKDF2Iterations()', async () => {
+      const { deriveEncryptionKeyV1 } = await import('@/utils/tauriCompat/keyringMigration');
+      const { getPBKDF2Iterations } = await import('@/utils/tauriCompat/env');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      const deriveKeySpy = vi.spyOn(crypto.subtle, 'deriveKey');
+
+      await deriveEncryptionKeyV1(seed);
+
+      expect(deriveKeySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'PBKDF2',
+          iterations: getPBKDF2Iterations(),
+        }),
+        expect.any(Object),
+        expect.objectContaining({ name: 'AES-GCM', length: 256 }),
+        false,
+        ['encrypt', 'decrypt']
+      );
+    });
+  });
+
+  describe('变异测试补强 - 迁移成功后数据完整性', () => {
+    it('迁移成功后 IndexedDB 记录能被 V2 密钥解密', async () => {
+      const {
+        migrateKeyringV1ToV2,
+        deriveEncryptionKeyV1,
+        deriveEncryptionKeyV2,
+      } = await import('@/utils/tauriCompat/keyringMigration');
+      const { encrypt: cryptoEncrypt, decrypt: cryptoDecrypt } = await import('@/utils/tauriCompat/crypto-helpers');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      // 使用 V1 密钥加密数据
+      const v1Key = await deriveEncryptionKeyV1(seed);
+      const plaintext = 'test-secret-password';
+      const { ciphertext, iv } = await cryptoEncrypt(plaintext, v1Key);
+
+      // 存储到 IndexedDB
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('multi-chat-keyring', 1);
+        request.addEventListener('upgradeneeded', (event) => {
+          const database = (event.target as IDBOpenDBRequest).result;
+          if (!database.objectStoreNames.contains('keys')) {
+            database.createObjectStore('keys', { keyPath: ['service', 'user'] });
+          }
+        });
+        request.addEventListener('success', () => resolve(request.result));
+        request.addEventListener('error', () => reject(request.error));
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('keys', 'readwrite');
+        const store = tx.objectStore('keys');
+        const request = store.put({
+          service: 'integrity-service',
+          user: 'integrity-user',
+          encryptedPassword: ciphertext,
+          iv,
+          createdAt: Date.now(),
+        });
+        request.addEventListener('success', () => resolve());
+        request.addEventListener('error', () => reject(request.error));
+      });
+      db.close();
+
+      // 执行迁移
+      const result = await migrateKeyringV1ToV2();
+      expect(result.migrated).toBe(true);
+      expect(result.reset).toBe(false);
+
+      // 从 IndexedDB 读取迁移后的记录
+      const db2 = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('multi-chat-keyring', 1);
+        request.addEventListener('success', () => resolve(request.result));
+        request.addEventListener('error', () => reject(request.error));
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const record = await new Promise<any>((resolve, reject) => {
+        const tx = db2.transaction('keys', 'readonly');
+        const store = tx.objectStore('keys');
+        const request = store.get(['integrity-service', 'integrity-user']);
+        request.addEventListener('success', () => resolve(request.result));
+        request.addEventListener('error', () => reject(request.error));
+      });
+      db2.close();
+
+      // 使用 V2 密钥解密 - 应该成功
+      const v2Key = await deriveEncryptionKeyV2(seed);
+      const decrypted = await cryptoDecrypt(record.encryptedPassword, record.iv, v2Key);
+      expect(decrypted).toBe(plaintext);
+    });
+
+    it('迁移成功后 keyring.resetState 被调用', async () => {
+      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const resetSpy = vi.spyOn(WebKeyringCompat.prototype, 'resetState');
+
+      const { migrateKeyringV1ToV2, deriveEncryptionKeyV1 } = await import('@/utils/tauriCompat/keyringMigration');
+      const { encrypt: cryptoEncrypt } = await import('@/utils/tauriCompat/crypto-helpers');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      // 创建有效 V1 数据
+      const v1Key = await deriveEncryptionKeyV1(seed);
+      const { ciphertext, iv } = await cryptoEncrypt('secret', v1Key);
+
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('multi-chat-keyring', 1);
+        request.addEventListener('upgradeneeded', (event) => {
+          const database = (event.target as IDBOpenDBRequest).result;
+          if (!database.objectStoreNames.contains('keys')) {
+            database.createObjectStore('keys', { keyPath: ['service', 'user'] });
+          }
+        });
+        request.addEventListener('success', () => resolve(request.result));
+        request.addEventListener('error', () => reject(request.error));
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('keys', 'readwrite');
+        const store = tx.objectStore('keys');
+        const request = store.put({
+          service: 'reset-service',
+          user: 'reset-user',
+          encryptedPassword: ciphertext,
+          iv,
+          createdAt: Date.now(),
+        });
+        request.addEventListener('success', () => resolve());
+        request.addEventListener('error', () => reject(request.error));
+      });
+      db.close();
+
+      await migrateKeyringV1ToV2();
+
+      expect(resetSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('变异测试补强 - 迁移失败重置路径', () => {
+    it('迁移失败后 keyring.resetState 被调用', async () => {
+      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const resetSpy = vi.spyOn(WebKeyringCompat.prototype, 'resetState');
+
+      const { migrateKeyringV1ToV2 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      // 创建无效数据
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('multi-chat-keyring', 1);
+        request.addEventListener('upgradeneeded', (event) => {
+          const database = (event.target as IDBOpenDBRequest).result;
+          if (!database.objectStoreNames.contains('keys')) {
+            database.createObjectStore('keys', { keyPath: ['service', 'user'] });
+          }
+        });
+        request.addEventListener('success', () => resolve(request.result));
+        request.addEventListener('error', () => reject(request.error));
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('keys', 'readwrite');
+        const store = tx.objectStore('keys');
+        const request = store.put({
+          service: 'fail-service',
+          user: 'fail-user',
+          encryptedPassword: 'aW52YWxpZC1jaXBoZXJ0ZXh0',
+          iv: 'aW52YWxpZC1pdg==',
+          createdAt: Date.now(),
+        });
+        request.addEventListener('success', () => resolve());
+        request.addEventListener('error', () => reject(request.error));
+      });
+      db.close();
+
+      const result = await migrateKeyringV1ToV2();
+
+      expect(result.reset).toBe(true);
+      expect(resetSpy).toHaveBeenCalled();
+    });
+
+    it('迁移失败后 clearAllKeyringData 调用 deleteDatabase', async () => {
+      const { migrateKeyringV1ToV2 } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('multi-chat-keyring', 1);
+        request.addEventListener('upgradeneeded', (event) => {
+          const database = (event.target as IDBOpenDBRequest).result;
+          if (!database.objectStoreNames.contains('keys')) {
+            database.createObjectStore('keys', { keyPath: ['service', 'user'] });
+          }
+        });
+        request.addEventListener('success', () => resolve(request.result));
+        request.addEventListener('error', () => reject(request.error));
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('keys', 'readwrite');
+        const store = tx.objectStore('keys');
+        const request = store.put({
+          service: 'fail-service',
+          user: 'fail-user',
+          encryptedPassword: 'aW52YWxpZC1jaXBoZXJ0ZXh0',
+          iv: 'aW52YWxpZC1pdg==',
+          createdAt: Date.now(),
+        });
+        request.addEventListener('success', () => resolve());
+        request.addEventListener('error', () => reject(request.error));
+      });
+      db.close();
+
+      const deleteDbSpy = vi.spyOn(indexedDB, 'deleteDatabase');
+
+      await migrateKeyringV1ToV2();
+
+      // 验证至少调用了 deleteDatabase（清除了 keyring 和 store 数据库）
+      expect(deleteDbSpy).toHaveBeenCalled();
+      // 验证清除了 keyring 和 store 两个数据库
+      const deletedNames = deleteDbSpy.mock.calls.map(call => call[0]);
+      expect(deletedNames).toContain('multi-chat-keyring');
+      expect(deletedNames).toContain('multi-chat-store');
+    });
+  });
+
+  describe('变异测试补强 - noMigrationNeeded 返回值', () => {
+    it('已迁移用户调用返回 { migrated: false, reset: false }', async () => {
+      const { migrateKeyringV1ToV2, KEYRING_VERSION_KEY } = await import('@/utils/tauriCompat/keyringMigration');
+
+      localStorage.setItem(KEYRING_VERSION_KEY, '2');
+
+      const result = await migrateKeyringV1ToV2();
+
+      expect(result).toEqual({ migrated: false, reset: false });
+    });
+  });
+
+  describe('变异测试补强 - markMigrationComplete 写入版本', () => {
+    it('新用户迁移完成后版本标记为 "2"', async () => {
+      const { migrateKeyringV1ToV2, KEYRING_VERSION_KEY } = await import('@/utils/tauriCompat/keyringMigration');
+
+      // 新用户 - 无种子
+      await migrateKeyringV1ToV2();
+
+      expect(localStorage.getItem(KEYRING_VERSION_KEY)).toBe('2');
+    });
+  });
+
+  // 放在最后：此测试会修改 Storage 原型，可能影响后续测试的 localStorage 行为
+  describe('变异测试补强 - isMigrationToV2Complete localStorage 异常', () => {
+    it('localStorage.getItem 抛异常时返回 false', async () => {
+      const { isMigrationToV2Complete } = await import('@/utils/tauriCompat/keyringMigration');
+
+      const originalGetItem = Storage.prototype.getItem;
+      Storage.prototype.getItem = function () {
+        throw new Error('localStorage not available');
+      };
+
+      expect(isMigrationToV2Complete()).toBe(false);
+
+      Storage.prototype.getItem = originalGetItem;
     });
   });
 });

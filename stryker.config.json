@@ -23,7 +23,9 @@
     "src/utils/highlightLanguageManager.ts",
     "src/utils/tauriCompat/store.ts",
     "src/utils/tauriCompat/http.ts",
-    "src/utils/tauriCompat/shell.ts"
+    "src/utils/tauriCompat/shell.ts",
+    "src/utils/tauriCompat/keyring.ts",
+    "src/utils/tauriCompat/keyringMigration.ts"
   ],
   "reporters": ["html", "clear-text", "progress"],
   "thresholds": {
