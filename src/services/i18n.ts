@@ -216,7 +216,9 @@ export const initI18n = async () => {
     // 内部调用 getDefaultAppLanguage() 检测系统语言
     let languageResult: Awaited<ReturnType<typeof getDefaultAppLanguage>> = {
       lang: "en",
+      // Stryker disable BooleanLiteral
       migrated: false,
+      // Stryker restore BooleanLiteral
     }; // 默认英文
     try {
       languageResult = await getDefaultAppLanguage();

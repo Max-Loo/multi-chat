@@ -333,7 +333,7 @@ describe("i18n module", () => {
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         "Failed to get system language, using English", expect.any(Error)
       );
-      // 默认 migrated=false → 不触发迁移 toast（杀死 line 219 BooleanLiteral 变异体）
+      // 默认值 { lang: 'en', migrated: false } 无 from 属性 → migrated && from 短路为 false → 不触发迁移 toast
       expect(mockToastQueue.info).not.toHaveBeenCalled();
       // 默认没有 fallbackReason → 不触发降级 toast
       expect(mockToastQueue.warning).not.toHaveBeenCalled();
