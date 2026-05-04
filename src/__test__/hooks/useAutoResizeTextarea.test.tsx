@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, renderHook } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useAutoResizeTextarea } from '@/hooks/useAutoResizeTextarea';
 
@@ -274,6 +274,127 @@ describe('useAutoResizeTextarea', () => {
 
       expect(isScrollable).toBe(true);
       expect(textarea.style.height).toBe('100px');
+    });
+  });
+
+  describe('高度 clamp 边界值测试', () => {
+    it('应在 scrollHeight 等于 maxHeight 时设置 isScrollable 为 false', () => {
+      let isScrollable = true;
+
+      const { rerender } = render(
+        <TestTextarea
+          value="初始"
+          options={{ minHeight: 60, maxHeight: 200 }}
+          onScrollableChange={(scrollable) => {
+            isScrollable = scrollable;
+          }}
+        />,
+        { container }
+      );
+
+      const textarea = screen.getByTestId('test-textarea') as HTMLTextAreaElement;
+
+      // scrollHeight 等于 maxHeight（边界值：> 不是 >=）
+      Object.defineProperty(textarea, 'scrollHeight', {
+        writable: true,
+        value: 200,
+      });
+
+      rerender(
+        <TestTextarea
+          value="边界值"
+          options={{ minHeight: 60, maxHeight: 200 }}
+          onScrollableChange={(scrollable) => {
+            isScrollable = scrollable;
+          }}
+        />
+      );
+
+      // scrollHeight(200) > maxHeight(200) 应为 false
+      expect(isScrollable).toBe(false);
+      expect(textarea.style.height).toBe('200px');
+    });
+
+    it('应在 scrollHeight 等于 minHeight 时保持 minHeight', () => {
+      let currentHeight = '';
+
+      const { rerender } = render(
+        <TestTextarea
+          value="初始"
+          options={{ minHeight: 60, maxHeight: 200 }}
+          onHeightChange={(height) => {
+            currentHeight = height;
+          }}
+        />,
+        { container }
+      );
+
+      const textarea = screen.getByTestId('test-textarea') as HTMLTextAreaElement;
+
+      // scrollHeight 正好等于 minHeight
+      Object.defineProperty(textarea, 'scrollHeight', {
+        writable: true,
+        value: 60,
+      });
+
+      rerender(
+        <TestTextarea
+          value="精确最小"
+          options={{ minHeight: 60, maxHeight: 200 }}
+          onHeightChange={(height) => {
+            currentHeight = height;
+          }}
+        />
+      );
+
+      expect(currentHeight).toBe('60px');
+    });
+
+    it('应在 scrollHeight 小于 minHeight 时 clamp 到 minHeight', () => {
+      let currentHeight = '';
+
+      const { rerender } = render(
+        <TestTextarea
+          value="初始"
+          options={{ minHeight: 60, maxHeight: 200 }}
+          onHeightChange={(height) => {
+            currentHeight = height;
+          }}
+        />,
+        { container }
+      );
+
+      const textarea = screen.getByTestId('test-textarea') as HTMLTextAreaElement;
+
+      // scrollHeight 低于 minHeight
+      Object.defineProperty(textarea, 'scrollHeight', {
+        writable: true,
+        value: 20,
+      });
+
+      rerender(
+        <TestTextarea
+          value="很小内容"
+          options={{ minHeight: 60, maxHeight: 200 }}
+          onHeightChange={(height) => {
+            currentHeight = height;
+          }}
+        />
+      );
+
+      expect(currentHeight).toBe('60px');
+    });
+  });
+
+  describe('null textarea 路径测试', () => {
+    it('应在没有 textarea DOM 元素时保持 isScrollable 为 false', () => {
+      // 直接使用 renderHook，不渲染 textarea DOM
+      const { result } = renderHook(() =>
+        useAutoResizeTextarea('test', { minHeight: 60, maxHeight: 200 })
+      );
+
+      // ref 为 null，effect 提前返回，isScrollable 保持初始值 false
+      expect(result.current.isScrollable).toBe(false);
     });
   });
 

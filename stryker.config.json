@@ -25,7 +25,16 @@
     "src/utils/tauriCompat/http.ts",
     "src/utils/tauriCompat/shell.ts",
     "src/utils/tauriCompat/keyring.ts",
-    "src/utils/tauriCompat/keyringMigration.ts"
+    "src/utils/tauriCompat/keyringMigration.ts",
+    "src/hooks/useConfirm.tsx",
+    "src/hooks/useBasicModelTable.tsx",
+    "src/hooks/useResetDataDialog.tsx",
+    "src/hooks/useAdaptiveScrollbar.ts",
+    "src/hooks/useAutoResizeTextarea.ts",
+    "src/hooks/useMediaQuery.ts",
+    "src/hooks/useCreateChat.ts",
+    "src/hooks/useDebounce.ts",
+    "src/hooks/useScrollContainer.ts"
   ],
   "reporters": ["html", "clear-text", "progress"],
   "thresholds": {

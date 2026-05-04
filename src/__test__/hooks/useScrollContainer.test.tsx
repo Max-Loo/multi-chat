@@ -82,4 +82,19 @@ describe('useScrollContainer', () => {
       expect(el.dataset.classname).toBe('scrollbar-thin');
     });
   });
+
+  describe('ref 为空时的安全处理', () => {
+    it('不应该崩溃 当 ref 未绑定到 DOM 元素', () => {
+      function TestWithoutRef() {
+        const { scrollbarClassname } = useScrollContainer();
+        return <div data-classname={scrollbarClassname} />;
+      }
+
+      const { unmount } = render(<TestWithoutRef />);
+
+      // 如果 early return 失效，container.addEventListener 会抛出 TypeError
+      // 组件正常渲染 + 卸载说明 null 检查生效
+      expect(() => unmount()).not.toThrow();
+    });
+  });
 });

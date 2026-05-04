@@ -172,4 +172,243 @@ describe('useBasicModelTable', () => {
     });
 
   });
+
+  describe('四字段独立过滤验证', () => {
+    it('应通过 nickname 字段过滤', async () => {
+      const model1 = createMockModel({ id: '1', nickname: 'AlphaModel', providerName: 'OpenAI', modelName: 'gpt-4', remark: 'fast' });
+      const model2 = createMockModel({ id: '2', nickname: 'BetaModel', providerName: 'Anthropic', modelName: 'claude', remark: 'slow' });
+
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1, model2] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      act(() => { result.current.setFilterText('alpha'); });
+      await waitFor(() => {
+        expect(result.current.filteredModels).toHaveLength(1);
+      });
+      expect(result.current.filteredModels[0].nickname).toBe('AlphaModel');
+    });
+
+    it('应通过 providerName 字段过滤', async () => {
+      const model1 = createMockModel({ id: '1', nickname: 'A', providerName: 'OpenAI', modelName: 'gpt', remark: '' });
+      const model2 = createMockModel({ id: '2', nickname: 'B', providerName: 'Anthropic', modelName: 'claude', remark: '' });
+
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1, model2] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      act(() => { result.current.setFilterText('anthropic'); });
+      await waitFor(() => {
+        expect(result.current.filteredModels).toHaveLength(1);
+      });
+      expect(result.current.filteredModels[0].providerName).toBe('Anthropic');
+    });
+
+    it('应通过 modelName 字段过滤', async () => {
+      const model1 = createMockModel({ id: '1', nickname: 'A', providerName: 'X', modelName: 'gpt-4o-mini', remark: '' });
+      const model2 = createMockModel({ id: '2', nickname: 'B', providerName: 'Y', modelName: 'claude-3', remark: '' });
+
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1, model2] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      act(() => { result.current.setFilterText('gpt-4o'); });
+      await waitFor(() => {
+        expect(result.current.filteredModels).toHaveLength(1);
+      });
+      expect(result.current.filteredModels[0].modelName).toBe('gpt-4o-mini');
+    });
+
+    it('应通过 remark 字段过滤', async () => {
+      const model1 = createMockModel({ id: '1', nickname: 'A', providerName: 'X', modelName: 'gpt', remark: 'production grade' });
+      const model2 = createMockModel({ id: '2', nickname: 'B', providerName: 'Y', modelName: 'claude', remark: 'experimental' });
+
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1, model2] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      act(() => { result.current.setFilterText('production'); });
+      await waitFor(() => {
+        expect(result.current.filteredModels).toHaveLength(1);
+      });
+      expect(result.current.filteredModels[0].remark).toBe('production grade');
+    });
+  });
+
+  describe('大小写不敏感过滤验证', () => {
+    it('应忽略大小写过滤模型', async () => {
+      const model1 = createMockModel({ id: '1', nickname: 'GPT-4', providerName: 'OpenAI', modelName: 'gpt-4-turbo', remark: '' });
+
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      // 用小写搜索大写的 nickname
+      act(() => { result.current.setFilterText('gpt-4'); });
+      await waitFor(() => {
+        expect(result.current.filteredModels).toHaveLength(1);
+      });
+
+      // 用大写搜索小写的 modelName
+      act(() => { result.current.setFilterText('GPT-4-TURBO'); });
+      await waitFor(() => {
+        expect(result.current.filteredModels).toHaveLength(1);
+      });
+
+      // 混合大小写搜索 providerName
+      act(() => { result.current.setFilterText('oPeNaI'); });
+      await waitFor(() => {
+        expect(result.current.filteredModels).toHaveLength(1);
+      });
+    });
+  });
+
+  describe('isDeleted 模型排除验证', () => {
+    it('应排除所有 isDeleted 为 true 的模型', async () => {
+      const model1 = createMockModel({ id: '1', nickname: 'Active', isDeleted: false });
+      const model2 = createMockModel({ id: '2', nickname: 'Deleted1', isDeleted: true });
+      const model3 = createMockModel({ id: '3', nickname: 'Deleted2', isDeleted: true });
+
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1, model2, model3] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      expect(result.current.filteredModels).toHaveLength(1);
+      expect(result.current.filteredModels[0].id).toBe('1');
+    });
+
+    it('应返回全部模型 当没有 isDeleted 的模型', async () => {
+      const model1 = createMockModel({ id: '1', nickname: 'A', isDeleted: false });
+      const model2 = createMockModel({ id: '2', nickname: 'B', isDeleted: false });
+
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [model1, model2] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      expect(result.current.filteredModels).toHaveLength(2);
+    });
+  });
+
+  describe('列定义渲染函数测试', () => {
+    it('remark 列应在 remark 为空时返回 "-"', () => {
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const remarkCol = result.current.tableColumns.find((col: any) => col.accessorKey === 'remark') as any;
+      const mockRow = { getValue: vi.fn().mockReturnValue(undefined) };
+      expect(remarkCol.cell({ row: mockRow })).toBe('-');
+    });
+
+    it('remark 列应在 remark 有值时返回原值', () => {
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const remarkCol = result.current.tableColumns.find((col: any) => col.accessorKey === 'remark') as any;
+      const mockRow = { getValue: vi.fn().mockReturnValue('测试备注') };
+      expect(remarkCol.cell({ row: mockRow })).toBe('测试备注');
+    });
+
+    it('nickname 列应返回 row 的 nickname 值', () => {
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nicknameCol = result.current.tableColumns.find((col: any) => col.accessorKey === 'nickname') as any;
+      const mockRow = { getValue: vi.fn().mockReturnValue('TestNick') };
+      expect(nicknameCol.cell({ row: mockRow })).toBe('TestNick');
+    });
+
+    it('modelName 列应返回 row 的 modelName 值', () => {
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const modelNameCol = result.current.tableColumns.find((col: any) => col.accessorKey === 'modelName') as any;
+      const mockRow = { getValue: vi.fn().mockReturnValue('gpt-4') };
+      expect(modelNameCol.cell({ row: mockRow })).toBe('gpt-4');
+    });
+
+    it('updateAt 列应返回 row 的 updateAt 值', () => {
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateAtCol = result.current.tableColumns.find((col: any) => col.accessorKey === 'updateAt') as any;
+      const mockRow = { getValue: vi.fn().mockReturnValue('2024-01-01') };
+      expect(updateAtCol.cell({ row: mockRow })).toBe('2024-01-01');
+    });
+
+    it('createdAt 列应返回 row 的 createdAt 值', () => {
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const createdAtCol = result.current.tableColumns.find((col: any) => col.accessorKey === 'createdAt') as any;
+      const mockRow = { getValue: vi.fn().mockReturnValue('2024-06-01') };
+      expect(createdAtCol.cell({ row: mockRow })).toBe('2024-06-01');
+    });
+
+    it('providerKey 列应渲染 ModelProviderDisplay 组件', () => {
+      const { result } = renderHookWithProviders(() => useBasicModelTable(), {
+        preloadedState: {
+          models: createModelSliceState({ models: [] }),
+          chat: createChatSliceState(),
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const providerCol = result.current.tableColumns.find((col: any) => col.accessorKey === 'providerKey') as any;
+      const mockRow = { getValue: vi.fn().mockReturnValue(ModelProviderKeyEnum.DEEPSEEK) };
+      const rendered = providerCol.cell({ row: mockRow });
+      // cell 应返回 JSX（ModelProviderDisplay 组件）
+      expect(rendered).toBeTruthy();
+    });
+  });
 });

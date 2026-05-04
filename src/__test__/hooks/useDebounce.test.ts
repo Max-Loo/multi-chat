@@ -84,6 +84,27 @@ describe('useDebounce', () => {
       });
       expect(result.current).toBe('updated');
     });
+
+    it('应该在值变化前清除旧定时器 防止旧值被应用', () => {
+      const { result, rerender } = renderHook(
+        ({ value, delay }) => useDebounce(value, delay),
+        { initialProps: { value: 'a', delay: 100 } }
+      );
+
+      rerender({ value: 'b', delay: 100 });
+
+      act(() => {
+        vi.advanceTimersByTime(50);
+      });
+
+      rerender({ value: 'c', delay: 500 });
+
+      act(() => {
+        vi.advanceTimersByTime(50);
+      });
+
+      expect(result.current).toBe('a');
+    });
   });
 
 });
