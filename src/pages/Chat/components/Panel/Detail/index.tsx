@@ -76,6 +76,9 @@ const Detail: React.FC<DetailProps> = ({
   // isAtBottom 的 ref 镜像，供 effect 读取避免重建
   const isAtBottomRef = useRef(true)
 
+  // 流式自动跟随期间保护 isAtBottom 状态，避免竞态导致按钮闪现
+  const isStreamingRef = useRef(false)
+
   // Virtualizer 的 startMargin（Title 的高度）
   const [startMargin, setStartMargin] = useState(0)
 
@@ -107,11 +110,13 @@ const Detail: React.FC<DetailProps> = ({
 
     // 检测是否需要滚动条（内容高度大于容器高度）
     const hasScrollbar = container.scrollHeight > container.clientHeight
+    setNeedsScrollbar(prev => prev === hasScrollbar ? prev : hasScrollbar)
+
+    // 流式自动跟随期间保护 isAtBottom 状态：若正在流式跟随且原本在底部，跳过检测
+    if (isStreamingRef.current && isAtBottomRef.current) return
 
     // 检测是否在底部
     const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= SCROLL_BOTTOM_THRESHOLD
-
-    setNeedsScrollbar(prev => prev === hasScrollbar ? prev : hasScrollbar)
     setIsAtBottom(prev => prev === atBottom ? prev : atBottom)
     isAtBottomRef.current = atBottom
   }, [])
@@ -134,6 +139,7 @@ const Detail: React.FC<DetailProps> = ({
   // 流式自动跟随：当用户在底部且有流式数据更新时，等待 DOM 更新后自动滚动到底部
   useEffect(() => {
     if (isAtBottomRef.current && runningChatData) {
+      isStreamingRef.current = true
       requestAnimationFrame(() => {
         scrollToBottom()
       })
@@ -167,6 +173,9 @@ const Detail: React.FC<DetailProps> = ({
 
     const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= SCROLL_BOTTOM_THRESHOLD
     isAtBottomRef.current = atBottom
+
+    // 滚动回调中重置流式保护，确保 auto-scroll 完成后或用户主动上滚时恢复正常检测
+    isStreamingRef.current = false
 
     checkScrollStatus()
     onScrollEvent()
