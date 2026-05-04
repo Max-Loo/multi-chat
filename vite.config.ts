@@ -162,7 +162,7 @@ export default defineConfig(async () => ({
 
     // 覆盖率配置
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reporter: ["text", "html", "json", "lcov"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: [
@@ -215,41 +215,41 @@ export default defineConfig(async () => ({
         // 仅用于测试的页面组件
         "src/pages/Setting/components/ToastTest/**",
       ],
-      // 覆盖率阈值（分模块分级，汇总模式）
+      // 覆盖率阈值（分模块分级，汇总模式，Istanbul provider）
       thresholds: {
         // 全局底线
-        lines: 65,
-        functions: 55,
-        branches: 55,
-        statements: 55,
+        lines: 70,
+        functions: 60,
+        branches: 60,
+        statements: 60,
         // 分模块阈值（汇总，非逐文件）
         '**/src/hooks/**': {
-          lines: 85,
-          branches: 80,
+          lines: 90,
+          branches: 85,
         },
         '**/src/services/**': {
-          lines: 75,
-          branches: 70,
+          lines: 80,
+          branches: 75,
         },
         '**/src/store/**': {
-          lines: 75,
-          branches: 70,
+          lines: 80,
+          branches: 75,
         },
         '**/src/utils/**': {
-          lines: 75,
-          branches: 65,
+          lines: 80,
+          branches: 70,
         },
         '**/src/components/**': {
-          lines: 65,
-          branches: 50,
+          lines: 70,
+          branches: 55,
         },
         '**/src/config/**': {
-          lines: 50,
-          branches: 50,
+          lines: 55,
+          branches: 55,
         },
         '**/src/pages/**': {
-          lines: 50,
-          branches: 40,
+          lines: 55,
+          branches: 45,
         },
         '**/src/router/**': {
           lines: 50,
