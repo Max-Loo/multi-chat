@@ -33,5 +33,7 @@
   "supplier": "供应商",
   "model": "模型",
   "nickname": "昵称",
-  "shiftDeleteChat": "Shift+点击快捷删除"
+  "shiftDeleteChat": "Shift+点击快捷删除",
+  "copyCode": "复制代码",
+  "copied": "已复制"
 }
