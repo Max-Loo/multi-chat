@@ -8,4 +8,4 @@
 - **REQ-2**：所有 state setter 必须通过 functional updater 比较新旧值，值不变时不得触发渲染
 - **REQ-3**：ResizeObserver 必须在组件挂载时创建一次（空依赖），不得随内容数据变化而重建
 - **REQ-4**：`checkScrollStatus` 禁止使用 `requestAnimationFrame` 嵌套和防递归标志，改用 functional updater 天然防重
-- **REQ-5**：`scrollToBottom` 的 `useCallback` 依赖必须为空数组，通过 ref 读取当前消息长度
+- **REQ-5**：`scrollToBottom` 的 `useCallback` 依赖必须为空数组，通过 `displayLengthRef` 读取当前合并列表（含流式消息）的长度，确保流式和非流式场景下 `scrollToIndex` 都能精确到达真正的底部

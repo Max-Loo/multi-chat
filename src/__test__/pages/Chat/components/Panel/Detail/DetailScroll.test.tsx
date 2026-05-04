@@ -44,10 +44,6 @@ vi.mock('@/pages/Chat/components/Panel/Detail/Title', () => ({
   default: () => <div data-testid="detail-title" />,
 }));
 
-vi.mock('@/pages/Chat/components/Panel/Detail/RunningBubble', () => ({
-  default: () => null,
-}));
-
 vi.mock('@/components/chat/ChatBubble', () => ({
   ChatBubble: ({ content }: any) => (
     <div data-testid="chat-bubble">{content}</div>
@@ -126,10 +122,9 @@ describe('Detail 滚动行为', () => {
     expect(bubbles).toHaveLength(0);
   });
 
-  it('应该渲染 RunningBubble 组件', () => {
+  it('应该不抛错 当无流式数据时', () => {
     const chatModel = createChatModelWithHistory(0);
 
-    // RunningBubble mock 返回 null，此处仅验证不抛错
     expect(() => render(<Detail chatModel={chatModel} />)).not.toThrow();
   });
 

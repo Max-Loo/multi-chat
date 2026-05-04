@@ -165,7 +165,7 @@ describe('ChatPanelContentDetail', () => {
         { store }
       );
 
-      // runningChat 为空，RunningBubble 返回 null，不应有 spinner
+      // runningChat 为空，不应有 spinner
       expect(container.querySelector('svg.animate-spin')).toBeNull();
     });
   });

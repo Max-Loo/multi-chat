@@ -8,9 +8,9 @@ import { ArrowDown } from "lucide-react"
 import Title from "./Title";
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import { ChatBubble } from "@/components/chat/ChatBubble"
-import RunningBubble from "./RunningBubble";
 import { useIsSending } from "@/pages/Chat/hooks/useIsSending";
 import { isNotNil } from "es-toolkit"
+import { Spinner } from "@/components/ui/spinner"
 import { useTranslation } from "react-i18next"
 import { Virtualizer } from "virtua"
 import type { VirtualizerHandle } from "virtua"
@@ -42,18 +42,30 @@ const Detail: React.FC<DetailProps> = ({
     isSending,
   } = useIsSending()
 
-  // 组合起来的，进行循环渲染的列表
-  // 🔧 修复：直接返回原数组引用，避免每次 useMemo 都创建新数组导致无限循环
+  // 历史消息列表
   const historyList = useMemo<StandardMessage[]>(() => {
     return Array.isArray(chatModel.chatHistoryList) ? chatModel.chatHistoryList : []
   }, [chatModel.chatHistoryList])
 
+  // 合并列表：历史消息 + 流式消息（统一由 Virtualizer 管理）
+  const displayList = useMemo(() => {
+    const list: { message: StandardMessage; isRunning: boolean }[] =
+      historyList.map(msg => ({ message: msg, isRunning: false }))
+
+    if (runningChatData?.isSending && runningChatData.history &&
+      (runningChatData.history.content || runningChatData.history.reasoningContent)) {
+      list.push({ message: runningChatData.history, isRunning: true })
+    }
+
+    return list
+  }, [historyList, runningChatData?.isSending, runningChatData?.history])
+
   // 引用滚动容器
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  // 同步 historyList.length 到 ref，供 scrollToBottom 稳定引用
-  const historyLengthRef = useRef(historyList.length)
-  useEffect(() => { historyLengthRef.current = historyList.length }, [historyList.length])
+  // 同步 displayList.length 到 ref，供 scrollToBottom 稳定引用
+  const displayLengthRef = useRef(displayList.length)
+  useEffect(() => { displayLengthRef.current = displayList.length }, [displayList.length])
 
   // Virtualizer 引用
   const virtualizerRef = useRef<VirtualizerHandle>(null)
@@ -82,10 +94,10 @@ const Detail: React.FC<DetailProps> = ({
 
   /**
    * 滚动到列表底部
-   * 优先使用 Virtualizer API 以确保与虚拟化引擎协调
+   * 通过 displayLengthRef 读取合并列表长度，流式/非流式统一使用 scrollToIndex
    */
   const scrollToBottom = useCallback(() => {
-    virtualizerRef.current?.scrollToIndex(historyLengthRef.current - 1, { align: 'end' })
+    virtualizerRef.current?.scrollToIndex(displayLengthRef.current - 1, { align: 'end' })
   }, [])
 
   // 检测是否需要滚动条以及是否在底部
@@ -146,7 +158,7 @@ const Detail: React.FC<DetailProps> = ({
   // 内容变化时检测滚动状态
   useEffect(() => {
     checkScrollStatus()
-  }, [historyList.length, runningChatData, checkScrollStatus])
+  }, [displayList.length, runningChatData, checkScrollStatus])
 
   // Virtualizer 滚动事件处理
   const handleVirtualizerScroll = useCallback((_offset: number) => {
@@ -174,7 +186,7 @@ const Detail: React.FC<DetailProps> = ({
     <div ref={titleRef} className="w-full">
       <Title chatModel={chatModel} />
     </div>
-    {/* 历史记录列表 — 使用 Virtualizer 虚拟化渲染 */}
+    {/* 消息列表 — 使用 Virtualizer 虚拟化渲染（历史 + 流式统一管理） */}
     <div className="w-full">
       <Virtualizer
         ref={virtualizerRef}
@@ -182,19 +194,26 @@ const Detail: React.FC<DetailProps> = ({
         scrollRef={scrollContainerRef}
         onScroll={handleVirtualizerScroll}
       >
-        {historyList.map(historyRecord => {
+        {displayList.map(({ message, isRunning }) => {
           return <ChatBubble
-            key={historyRecord.id}
-            role={historyRecord.role}
-            content={historyRecord.content || ''}
-            reasoningContent={historyRecord.reasoningContent}
-            isRunning={false}
+            key={message.id}
+            role={message.role}
+            content={message.content || ''}
+            reasoningContent={message.reasoningContent}
+            isRunning={isRunning}
           />
         })}
       </Virtualizer>
     </div>
-    {/* 单独展示正在生成的消息（放在 Virtualizer 外部，不参与虚拟化） */}
-    <RunningBubble chatModel={chatModel} />
+    {/* 流式消息尚未产出内容时展示 loading spinner */}
+    {runningChatData?.isSending &&
+      (!runningChatData.history || (!runningChatData.history.content && !runningChatData.history.reasoningContent)) && (
+      <div className="w-full mt-3 flex justify-start">
+        <div className="bg-muted text-muted-foreground px-4 py-3 rounded-lg flex items-center">
+          <Spinner className="size-4" />
+        </div>
+      </div>
+    )}
     {/* 展示可能的错误信息 */}
     {
       isNotNil(selectedChat) && runningChatData?.errorMessage

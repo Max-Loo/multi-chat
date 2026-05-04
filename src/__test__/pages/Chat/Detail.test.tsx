@@ -256,10 +256,10 @@ describe('Detail Component', () => {
   });
 
   /**
-   * 测试 RunningBubble 渲染
+   * 测试流式消息渲染（纳入 Virtualizer 内部）
    */
-  describe('RunningBubble 渲染', () => {
-    it('应该渲染 RunningBubble 在 Virtualizer 外部 当有流式数据', () => {
+  describe('流式消息渲染', () => {
+    it('应该在 Virtualizer 内渲染流式消息 当有流式数据', () => {
       renderDetail({
         messages: [],
         runningChat: {
@@ -275,13 +275,12 @@ describe('Detail Component', () => {
         },
       });
 
-      // RunningBubble 渲染 ChatBubble（流式内容），共 1 个
-      // 同时虚拟化区域无历史消息
+      // 流式消息作为 Virtualizer 内的最后一项渲染
       const bubbles = screen.queryAllByTestId('chat-bubble');
       expect(bubbles.length).toBe(1);
     });
 
-    it('应该不显示 RunningBubble 当没有流式数据', () => {
+    it('应该不显示流式消息 当没有流式数据', () => {
       renderDetail({ messages: [] });
 
       // 无流式数据时，不应有 ChatBubble
