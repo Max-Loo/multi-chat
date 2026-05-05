@@ -15,6 +15,8 @@ import {
   startSendChatMessage,
   generateChatName,
   releaseCompletedBackgroundChat,
+  editAndResendMessage,
+  regenerateMessage,
 } from "../slices/chatSlices";
 
 export const saveChatListMiddleware = createListenerMiddleware<RootState>();
@@ -94,6 +96,8 @@ saveChatListMiddleware.startListening({
     editChatName,
     deleteChat,
     generateChatName.fulfilled,
+    editAndResendMessage.fulfilled,
+    regenerateMessage.fulfilled,
   ),
   effect: async (action, listenerApi) => {
     const state = listenerApi.getState();
@@ -139,6 +143,12 @@ saveChatListMiddleware.startListening({
       startSendChatMessage.rejected.match(action)
     ) {
       chatId = action.meta.arg.chat.id;
+      chatData = state.chat.activeChatData[chatId];
+    } else if (
+      editAndResendMessage.fulfilled.match(action) ||
+      regenerateMessage.fulfilled.match(action)
+    ) {
+      chatId = action.meta.arg.chatId;
       chatData = state.chat.activeChatData[chatId];
     }
 

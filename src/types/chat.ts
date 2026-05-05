@@ -173,10 +173,10 @@ export interface StandardMessage {
   modelKey: string;
   // 角色标识
   role: ChatRoleEnum;
-  // 发送或者接收的内容
-  content: string;
-  // thinking / reasoning 模式下，思考的内容
-  reasoningContent?: string;
+  // 发送或者接收的内容（string = 未编辑，string[] = 有编辑历史，最后一个元素为当前版本）
+  content: string | string[];
+  // thinking / reasoning 模式下，思考的内容（同 content，支持编辑历史）
+  reasoningContent?: string | string[];
   // 本次对话结束的原因
   finishReason: string | null;
   /**

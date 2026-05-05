@@ -22,9 +22,10 @@ vi.mock('@/pages/Chat/hooks/useSelectedChat', () => ({
 vi.mock('@/hooks/redux', () => ({
   useAppSelector: (selector: any) => selector({
     chat: {
-      runningChat: { 'chat-1': { 'model-1': mockRunningChatModelData } },
+      runningChat: { 'chat-1': { 'model-1': Object.keys(mockRunningChatModelData).length ? mockRunningChatModelData : undefined } },
     },
   }),
+  useAppDispatch: () => vi.fn(),
 }));
 
 vi.mock('@/pages/Chat/hooks/useIsSending', () => ({
@@ -61,6 +62,24 @@ vi.mock('react-i18next', () => {
   const R = { chat: { scrollToBottom: '滚动到底部' } };
   return globalThis.__createI18nMockReturn(R);
 });
+
+// Mock 消息操作相关模块
+vi.mock('@/store/slices/chatSlices', () => ({
+  editAndResendMessage: vi.fn(),
+  regenerateMessage: vi.fn(),
+}));
+
+vi.mock('@/services/toast', () => ({
+  toastQueue: { success: vi.fn(), error: vi.fn() },
+}));
+
+vi.mock('@/utils/clipboard', () => ({
+  copyToClipboard: vi.fn(),
+}));
+
+vi.mock('@/services/chat/chatHistoryHelper', () => ({
+  getCurrentContent: (content: any) => Array.isArray(content) ? content[content.length - 1] : content,
+}));
 
 /**
  * 创建带历史的 ChatModel

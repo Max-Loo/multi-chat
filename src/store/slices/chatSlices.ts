@@ -12,6 +12,15 @@ import { getCurrentTimestamp } from "@/utils/utils";
 import { selectTransmitHistoryReasoning, selectAutoNamingEnabled } from "./appConfigSlices";
 import { getProviderSDKLoader } from "@/services/chat/providerLoader";
 import { ModelProviderKeyEnum } from "@/utils/enums";
+import {
+  commitEdit as commitEditHelper,
+  rollbackEdit as rollbackEditHelper,
+  commitRegenerate as commitRegenerateHelper,
+  rollbackRegenerate as rollbackRegenerateHelper,
+  updateHistoryContent as updateHistoryContentHelper,
+  findMessageIndex,
+  getCurrentContent,
+} from "@/services/chat/chatHistoryHelper";
 
 // 生成用户消息 ID 的工具函数（带前缀）
 const generateUserMessageId = createIdGenerator({ prefix: USER_MESSAGE_ID_PREFIX });
@@ -287,6 +296,182 @@ export const startSendChatMessage = createAsyncThunk<
 )
 
 
+/**
+ * @description 编辑最新用户消息并重新生成 AI 回复
+ */
+export const editAndResendMessage = createAsyncThunk<
+  void,
+  {
+    chatId: string;
+    userMessageId: string;
+    newContent: string;
+  },
+  { state: RootState }
+>(
+  'chat/editAndResendMessage',
+  async ({ chatId, userMessageId, newContent }, { getState, dispatch, signal }) => {
+    const state = getState();
+    const chat = state.chat.activeChatData[chatId];
+    if (!chat?.chatModelList) return;
+
+    // 1. 提交编辑（原子更新数组）
+    dispatch(chatSlice.actions.commitEdit({ chatId, userMessageId, newContent }));
+
+    // 2. 重新获取最新状态（commitEdit 已更新 chatHistoryList）
+    const updatedState = getState();
+    const updatedChat = updatedState.chat.activeChatData[chatId];
+    if (!updatedChat?.chatModelList) return;
+
+    const models = updatedState.models.models;
+
+    // 通过位置索引获取 userMessageIndex
+    const userMessageIndex = findMessageIndex(
+      updatedState.chat as WritableDraft<ChatSliceState>,
+      chatId,
+      userMessageId,
+    );
+    if (userMessageIndex === -1) return;
+
+    // 3. 对每个启用模型裁剪历史并调用流式生成
+    await Promise.all(updatedChat.chatModelList.map((chatModel) => {
+      const model = models.find(m => m.id === chatModel.modelId);
+      if (isNil(model) || model.isDeleted || !model.isEnable) return;
+
+      // 裁剪历史：不包含编辑的用户消息和旧 AI 回复（用户消息通过 message 参数追加）
+      const trimmedHistory = chatModel.chatHistoryList.slice(0, userMessageIndex);
+      const transmitHistoryReasoning = selectTransmitHistoryReasoning(getState());
+
+      return (async () => {
+        // 初始化 runningChat 结构
+        dispatch({ type: 'chatModel/editRegenerateInit', payload: { chatId, modelId: model.id } });
+
+        const fetchResponse = streamChatCompletion(
+          {
+            model,
+            historyList: trimmedHistory,
+            message: newContent,
+            transmitHistoryReasoning,
+          },
+          { signal },
+        );
+
+        for await (const element of fetchResponse) {
+          if (signal.aborted) break;
+          dispatch(pushRunningChatHistory({
+            chat: updatedChat,
+            model,
+            message: element,
+          }));
+        }
+
+        // 4. 流式完成：获取最新状态中的 runningChat 数据
+        const currentState = getState() as RootState;
+        const runningEntry = currentState.chat.runningChat[chatId]?.[model.id];
+        if (runningEntry?.history) {
+          dispatch(updateHistoryContent({
+            chatId,
+            modelId: model.id,
+            messageIndex: userMessageIndex + 1,
+            content: runningEntry.history.content
+              ? getCurrentContent(runningEntry.history.content)
+              : '',
+            reasoningContent: runningEntry.history.reasoningContent
+              ? getCurrentContent(runningEntry.history.reasoningContent)
+              : undefined,
+          }));
+        }
+      })();
+    }));
+  },
+)
+
+
+/**
+ * @description 重新生成最后一条 AI 回复
+ */
+export const regenerateMessage = createAsyncThunk<
+  void,
+  {
+    chatId: string;
+    assistantMessageId: string;
+  },
+  { state: RootState }
+>(
+  'chat/regenerateMessage',
+  async ({ chatId, assistantMessageId }, { getState, dispatch, signal }) => {
+    const state = getState();
+    const chat = state.chat.activeChatData[chatId];
+    if (!chat?.chatModelList) return;
+
+    // 1. 提交重新生成（push 旧内容 + 追加占位）
+    dispatch(chatSlice.actions.commitRegenerate({ chatId, assistantMessageId }));
+
+    const models = state.models.models;
+
+    // 通过位置索引获取 assistantMessageIndex
+    const assistantMessageIndex = findMessageIndex(
+      state.chat as WritableDraft<ChatSliceState>,
+      chatId,
+      assistantMessageId,
+    );
+    if (assistantMessageIndex === -1) return;
+
+    // 2. 对每个启用模型裁剪历史并调用流式生成
+    await Promise.all(chat.chatModelList.map((chatModel) => {
+      const model = models.find(m => m.id === chatModel.modelId);
+      if (isNil(model) || model.isDeleted || !model.isEnable) return;
+
+      // 裁剪历史：不包含用户消息和旧 AI 回复（用户消息通过 message 参数追加）
+      const trimmedHistory = chatModel.chatHistoryList.slice(0, assistantMessageIndex - 1);
+      const transmitHistoryReasoning = selectTransmitHistoryReasoning(getState());
+
+      return (async () => {
+        // 初始化 runningChat 结构
+        dispatch({ type: 'chatModel/editRegenerateInit', payload: { chatId, modelId: model.id } });
+
+        const fetchResponse = streamChatCompletion(
+          {
+            model,
+            historyList: trimmedHistory,
+            message: getCurrentContent(
+              chatModel.chatHistoryList[assistantMessageIndex - 1]?.content || ''
+            ),
+            transmitHistoryReasoning,
+          },
+          { signal },
+        );
+
+        for await (const element of fetchResponse) {
+          if (signal.aborted) break;
+          dispatch(pushRunningChatHistory({
+            chat,
+            model,
+            message: element,
+          }));
+        }
+
+        // 3. 流式完成
+        const currentState = getState() as RootState;
+        const runningEntry = currentState.chat.runningChat[chatId]?.[model.id];
+        if (runningEntry?.history) {
+          dispatch(updateHistoryContent({
+            chatId,
+            modelId: model.id,
+            messageIndex: assistantMessageIndex,
+            content: runningEntry.history.content
+              ? getCurrentContent(runningEntry.history.content)
+              : '',
+            reasoningContent: runningEntry.history.reasoningContent
+              ? getCurrentContent(runningEntry.history.reasoningContent)
+              : undefined,
+          }));
+        }
+      })();
+    }));
+  },
+)
+
+
 
 
 /**
@@ -497,6 +682,50 @@ const chatSlice = createSlice({
 
       appendHistoryToModel(state, chat.id, model.id, message)
     },
+    // 提交编辑：原子更新用户消息和 AI 回复的 content 数组
+    commitEdit: (state, action: PayloadAction<{
+      chatId: string;
+      userMessageId: string;
+      newContent: string;
+    }>) => {
+      const { chatId, userMessageId, newContent } = action.payload;
+      commitEditHelper(state, chatId, userMessageId, newContent);
+    },
+    // 回滚编辑：恢复用户消息和 AI 回复到编辑前的状态
+    rollbackEdit: (state, action: PayloadAction<{
+      chatId: string;
+      userMessageId: string;
+    }>) => {
+      const { chatId, userMessageId } = action.payload;
+      rollbackEditHelper(state, chatId, userMessageId);
+    },
+    // 提交重新生成：将旧 AI 回复 push 进数组，追加空字符串占位
+    commitRegenerate: (state, action: PayloadAction<{
+      chatId: string;
+      assistantMessageId: string;
+    }>) => {
+      const { chatId, assistantMessageId } = action.payload;
+      commitRegenerateHelper(state, chatId, assistantMessageId);
+    },
+    // 回滚重新生成：弹出 AI 回复数组中的占位元素
+    rollbackRegenerate: (state, action: PayloadAction<{
+      chatId: string;
+      assistantMessageId: string;
+    }>) => {
+      const { chatId, assistantMessageId } = action.payload;
+      rollbackRegenerateHelper(state, chatId, assistantMessageId);
+    },
+    // 流式完成后更新 AI 回复的 content/reasoningContent 数组最后一个元素
+    updateHistoryContent: (state, action: PayloadAction<{
+      chatId: string;
+      modelId: string;
+      messageIndex: number;
+      content: string;
+      reasoningContent?: string;
+    }>) => {
+      const { chatId, modelId, messageIndex, content, reasoningContent } = action.payload;
+      updateHistoryContentHelper(state, chatId, modelId, messageIndex, content, reasoningContent);
+    },
   },
   // 处理异步action的状态变化
   extraReducers: (builder) => {
@@ -650,6 +879,59 @@ const chatSlice = createSlice({
         // 将 chatId 从 sendingChatIds 移除
         delete state.sendingChatIds[chat.id];
       })
+      // 编辑并重新发送消息 - pending
+      .addCase(editAndResendMessage.pending, (state, action) => {
+        const { chatId } = action.meta.arg;
+        state.sendingChatIds[chatId] = true;
+      })
+      // 编辑并重新发送消息 - fulfilled
+      .addCase(editAndResendMessage.fulfilled, (state, action) => {
+        const { chatId } = action.meta.arg;
+        delete state.sendingChatIds[chatId];
+      })
+      // 编辑并重新发送消息 - rejected（回滚）
+      .addCase(editAndResendMessage.rejected, (state, action) => {
+        const { chatId, userMessageId } = action.meta.arg;
+        console.error('[editAndResendMessage] failed, rolling back:', {
+          chatId, userMessageId, error: action.error,
+        });
+        rollbackEditHelper(state, chatId, userMessageId);
+        delete state.sendingChatIds[chatId];
+      })
+      // 重新生成消息 - pending
+      .addCase(regenerateMessage.pending, (state, action) => {
+        const { chatId } = action.meta.arg;
+        state.sendingChatIds[chatId] = true;
+      })
+      // 重新生成消息 - fulfilled
+      .addCase(regenerateMessage.fulfilled, (state, action) => {
+        const { chatId } = action.meta.arg;
+        delete state.sendingChatIds[chatId];
+      })
+      // 重新生成消息 - rejected（回滚）
+      .addCase(regenerateMessage.rejected, (state, action) => {
+        const { chatId, assistantMessageId } = action.meta.arg;
+        // 回滚重新生成
+        rollbackRegenerateHelper(state, chatId, assistantMessageId);
+        delete state.sendingChatIds[chatId];
+      })
+      // 编辑/重新生成时初始化 runningChat 结构
+      .addMatcher(
+        (action): action is PayloadAction<{ chatId: string; modelId: string }> =>
+          action.type === 'chatModel/editRegenerateInit',
+        (state, action) => {
+          const { chatId, modelId } = action.payload;
+          if (isNil(state.runningChat[chatId])) {
+            state.runningChat[chatId] = {};
+          }
+          if (isNil(state.runningChat[chatId][modelId])) {
+            state.runningChat[chatId][modelId] = {
+              isSending: true,
+              history: null,
+            };
+          }
+        },
+      )
   },
 })
 
@@ -671,6 +953,11 @@ export const {
 export const {
   pushRunningChatHistory,
   pushChatHistory,
+  commitEdit,
+  rollbackEdit,
+  commitRegenerate,
+  rollbackRegenerate,
+  updateHistoryContent,
 } = chatSlice.actions
 
 // 导出reducer

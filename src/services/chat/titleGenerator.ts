@@ -2,6 +2,7 @@ import { generateText } from 'ai';
 import { getProvider } from '@/services/chat/providerFactory';
 import { Model } from '@/types/model';
 import { StandardMessage, ChatRoleEnum } from '@/types/chat';
+import { getCurrentContent } from '@/services/chat/chatHistoryHelper';
 
 /**
  * 移除标题中的标点符号
@@ -33,8 +34,8 @@ export function truncateTitle(title: string, maxLength: number = 20): string {
  */
 export function buildTitlePrompt(messages: StandardMessage[]): string {
   const lastTwoMessages = messages.slice(-2);
-  const userMessage = lastTwoMessages.find(msg => msg.role === ChatRoleEnum.USER)?.content || '';
-  const assistantMessage = lastTwoMessages.find(msg => msg.role === ChatRoleEnum.ASSISTANT)?.content || '';
+  const userMessage = getCurrentContent(lastTwoMessages.find(msg => msg.role === ChatRoleEnum.USER)?.content || '');
+  const assistantMessage = getCurrentContent(lastTwoMessages.find(msg => msg.role === ChatRoleEnum.ASSISTANT)?.content || '');
 
   return `你是一个聊天标题生成助手。请根据以下对话内容生成一个简洁的标题。
 

@@ -40,6 +40,13 @@ interface Resources {
       model: string;
       nickname: string;
       shiftDeleteChat: string;
+      copyMessage: string;
+      copySuccess: string;
+      copyFailed: string;
+      editMessage: string;
+      editConfirm: string;
+      editCancel: string;
+      regenerateMessage: string;
     };
     common: {
       submit: string;

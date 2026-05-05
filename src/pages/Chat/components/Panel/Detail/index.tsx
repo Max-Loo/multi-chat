@@ -1,5 +1,5 @@
-import { useAppSelector } from "@/hooks/redux"
-import { ChatModel, StandardMessage } from "@/types/chat"
+import { useAppSelector, useAppDispatch } from "@/hooks/redux"
+import { ChatModel, ChatRoleEnum, StandardMessage } from "@/types/chat"
 import { useSelectedChat } from "@/pages/Chat/hooks/useSelectedChat"
 import { useMemo, useRef, useState, useEffect, useCallback } from "react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -14,6 +14,10 @@ import { Spinner } from "@/components/ui/spinner"
 import { useTranslation } from "react-i18next"
 import { Virtualizer } from "virtua"
 import type { VirtualizerHandle } from "virtua"
+import { getCurrentContent } from "@/services/chat/chatHistoryHelper"
+import { editAndResendMessage, regenerateMessage } from "@/store/slices/chatSlices"
+import { copyToClipboard } from "@/utils/clipboard"
+import { toastQueue } from "@/services/toast"
 
 /** 滚动到底部的阈值（px） */
 const SCROLL_BOTTOM_THRESHOLD = 24
@@ -29,6 +33,7 @@ const Detail: React.FC<DetailProps> = ({
   chatModel,
 }) => {
   const { t } = useTranslation()
+  const dispatch = useAppDispatch()
   const {
     selectedChat,
   } = useSelectedChat()
@@ -42,10 +47,43 @@ const Detail: React.FC<DetailProps> = ({
     isSending,
   } = useIsSending()
 
+  // 成对消息的历史索引状态（消息 ID → 当前查看的历史索引）
+  const [pairHistoryIndices, setPairHistoryIndices] = useState<Record<string, number>>({})
+
   // 历史消息列表
   const historyList = useMemo<StandardMessage[]>(() => {
     return Array.isArray(chatModel.chatHistoryList) ? chatModel.chatHistoryList : []
   }, [chatModel.chatHistoryList])
+
+  // 计算每条消息的操作属性
+  const messageMeta = useMemo(() => {
+    const result: Record<string, {
+      isLatestUserMessage: boolean;
+      isLastAssistant: boolean;
+    }> = {}
+
+    // 找到最后一条用户消息和最后一条 AI 回复的索引
+    let latestUserIndex = -1;
+    let lastAssistantIndex = -1;
+    for (let i = historyList.length - 1; i >= 0; i--) {
+      if (lastAssistantIndex === -1 && historyList[i].role === ChatRoleEnum.ASSISTANT) {
+        lastAssistantIndex = i;
+      }
+      if (latestUserIndex === -1 && historyList[i].role === ChatRoleEnum.USER) {
+        latestUserIndex = i;
+      }
+      if (latestUserIndex !== -1 && lastAssistantIndex !== -1) break;
+    }
+
+    historyList.forEach((msg, index) => {
+      result[msg.id] = {
+        isLatestUserMessage: index === latestUserIndex,
+        isLastAssistant: index === lastAssistantIndex,
+      };
+    });
+
+    return result;
+  }, [historyList])
 
   // 合并列表：历史消息 + 流式消息（统一由 Virtualizer 管理）
   const displayList = useMemo(() => {
@@ -53,12 +91,59 @@ const Detail: React.FC<DetailProps> = ({
       historyList.map(msg => ({ message: msg, isRunning: false }))
 
     if (runningChatData?.isSending && runningChatData.history &&
-      (runningChatData.history.content || runningChatData.history.reasoningContent)) {
+      (getCurrentContent(runningChatData.history.content) || runningChatData.history.reasoningContent)) {
       list.push({ message: runningChatData.history, isRunning: true })
     }
 
     return list
   }, [historyList, runningChatData?.isSending, runningChatData?.history])
+
+  // 计算消息配对关系（用户消息 → 下一条 AI 回复，双向映射）
+  const messagePairs = useMemo(() => {
+    const result: Record<string, string> = {}
+    for (let i = 0; i < displayList.length - 1; i++) {
+      if (displayList[i].message.role === ChatRoleEnum.USER &&
+          displayList[i + 1].message.role === ChatRoleEnum.ASSISTANT) {
+        result[displayList[i].message.id] = displayList[i + 1].message.id
+        result[displayList[i + 1].message.id] = displayList[i].message.id
+      }
+    }
+    return result
+  }, [displayList])
+
+  // 成对消息的稳定翻页回调（避免每次渲染重建导致 memo 失效）
+  const historyCallbacks = useMemo(() => {
+    const callbacks: Record<string, (index: number) => void> = {}
+    for (const msgId of Object.keys(messagePairs)) {
+      callbacks[msgId] = (index: number) => {
+        const pairedId = messagePairs[msgId]
+        setPairHistoryIndices(prev => ({
+          ...prev,
+          [msgId]: index,
+          ...(pairedId ? { [pairedId]: index } : {}),
+        }))
+      }
+    }
+    return callbacks
+  }, [messagePairs])
+
+  // 当消息内容变更时（如编辑确认），重置历史索引到最新版本
+  useEffect(() => {
+    setPairHistoryIndices(prev => {
+      const next: Record<string, number> = {}
+      let changed = false
+      for (const { message } of displayList) {
+        if (Array.isArray(message.content)) {
+          const maxIndex = message.content.length - 1
+          if (prev[message.id] !== maxIndex) {
+            next[message.id] = maxIndex
+            changed = true
+          }
+        }
+      }
+      return changed ? { ...prev, ...next } : prev
+    })
+  }, [displayList])
 
   // 引用滚动容器
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -181,6 +266,37 @@ const Detail: React.FC<DetailProps> = ({
     onScrollEvent()
   }, [checkScrollStatus, onScrollEvent])
 
+  // 复制消息回调
+  const handleCopy = useCallback(async (messageId: string) => {
+    const message = historyList.find(m => m.id === messageId);
+    if (!message) return;
+    try {
+      await copyToClipboard(getCurrentContent(message.content));
+      toastQueue.success(t($ => $.chat.copySuccess));
+    } catch {
+      toastQueue.error(t($ => $.chat.copyFailed));
+    }
+  }, [historyList, t]);
+
+  // 编辑消息回调
+  const handleEdit = useCallback((messageId: string, newContent: string) => {
+    if (!selectedChat) return;
+    dispatch(editAndResendMessage({
+      chatId: selectedChat.id,
+      userMessageId: messageId,
+      newContent,
+    }));
+  }, [selectedChat, dispatch]);
+
+  // 重新生成回调
+  const handleRegenerate = useCallback((messageId: string) => {
+    if (!selectedChat) return;
+    dispatch(regenerateMessage({
+      chatId: selectedChat.id,
+      assistantMessageId: messageId,
+    }));
+  }, [selectedChat, dispatch]);
+
   return (
     <>
       <div
@@ -204,19 +320,30 @@ const Detail: React.FC<DetailProps> = ({
         onScroll={handleVirtualizerScroll}
       >
         {displayList.map(({ message, isRunning }) => {
+          const meta = messageMeta[message.id];
+          const isPaired = !!messagePairs[message.id];
           return <ChatBubble
             key={message.id}
             role={message.role}
-            content={message.content || ''}
+            content={message.content}
             reasoningContent={message.reasoningContent}
             isRunning={isRunning}
+            messageId={message.id}
+            isLatestUserMessage={meta?.isLatestUserMessage}
+            isLastAssistant={meta?.isLastAssistant}
+            isChatSending={isSending}
+            historyIndexOverride={pairHistoryIndices[message.id]}
+            onHistoryIndexChange={isPaired ? historyCallbacks[message.id] : undefined}
+            onCopy={handleCopy}
+            onEdit={handleEdit}
+            onRegenerate={handleRegenerate}
           />
         })}
       </Virtualizer>
     </div>
     {/* 流式消息尚未产出内容时展示 loading spinner */}
     {runningChatData?.isSending &&
-      (!runningChatData.history || (!runningChatData.history.content && !runningChatData.history.reasoningContent)) && (
+      (!runningChatData.history || (!getCurrentContent(runningChatData.history.content) && !runningChatData.history.reasoningContent)) && (
       <div className="w-full mt-3 flex justify-start">
         <div className="bg-muted text-muted-foreground px-4 py-3 rounded-lg flex items-center">
           <Spinner className="size-4" />

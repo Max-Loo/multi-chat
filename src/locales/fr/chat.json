@@ -35,5 +35,12 @@
   "nickname": "Surnom",
   "shiftDeleteChat": "Shift+Clic pour suppression rapide",
   "copyCode": "Copier le code",
-  "copied": "Copié"
+  "copied": "Copié",
+  "copyMessage": "Copier le message",
+  "copySuccess": "Copié dans le presse-papiers",
+  "copyFailed": "Échec de la copie",
+  "editMessage": "Modifier le message",
+  "editConfirm": "Confirmer la modification",
+  "editCancel": "Annuler la modification",
+  "regenerateMessage": "Régénérer"
 }
