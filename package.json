@@ -26,6 +26,7 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest -c vitest.integration.config.ts",
     "test:integration:run": "vitest run -c vitest.integration.config.ts",
+    "test:basic:all": "pnpm test:run && pnpm test:integration:run",
     "test:all": "pnpm test:run && pnpm test:integration:run && pnpm test:mutation",
     "test:mutation": "stryker run"
   },
