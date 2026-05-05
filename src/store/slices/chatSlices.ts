@@ -20,6 +20,7 @@ import {
   updateHistoryContent as updateHistoryContentHelper,
   findMessageIndex,
   getCurrentContent,
+  getContentAtIndex,
 } from "@/services/chat/chatHistoryHelper";
 
 // 生成用户消息 ID 的工具函数（带前缀）
@@ -390,11 +391,12 @@ export const regenerateMessage = createAsyncThunk<
   {
     chatId: string;
     assistantMessageId: string;
+    historyIndex?: number;
   },
   { state: RootState }
 >(
   'chat/regenerateMessage',
-  async ({ chatId, assistantMessageId }, { getState, dispatch, signal }) => {
+  async ({ chatId, assistantMessageId, historyIndex }, { getState, dispatch, signal }) => {
     const state = getState();
     const chat = state.chat.activeChatData[chatId];
     if (!chat?.chatModelList) return;
@@ -417,7 +419,7 @@ export const regenerateMessage = createAsyncThunk<
     }
 
     // 2. 再 dispatch commitRegenerate（此时 runningChat 条目已存在，可写入回滚字段）
-    dispatch(chatSlice.actions.commitRegenerate({ chatId, assistantMessageId }));
+    dispatch(chatSlice.actions.commitRegenerate({ chatId, assistantMessageId, historyIndex }));
 
     // 3. 对每个启用模型裁剪历史并调用流式生成
     await Promise.all(chat.chatModelList.map((chatModel) => {
@@ -429,13 +431,17 @@ export const regenerateMessage = createAsyncThunk<
       const transmitHistoryReasoning = selectTransmitHistoryReasoning(getState());
 
       return (async () => {
+        // 按 historyIndex 提取用户消息内容作为 API prompt
+        const userMessageContent = chatModel.chatHistoryList[assistantMessageIndex - 1]?.content || '';
+        const promptMessage = historyIndex !== undefined
+          ? getContentAtIndex(userMessageContent, historyIndex)
+          : getCurrentContent(userMessageContent);
+
         const fetchResponse = streamChatCompletion(
           {
             model,
             historyList: trimmedHistory,
-            message: getCurrentContent(
-              chatModel.chatHistoryList[assistantMessageIndex - 1]?.content || ''
-            ),
+            message: promptMessage,
             transmitHistoryReasoning,
           },
           { signal },
@@ -464,6 +470,7 @@ export const regenerateMessage = createAsyncThunk<
             reasoningContent: runningEntry.history.reasoningContent
               ? getCurrentContent(runningEntry.history.reasoningContent)
               : undefined,
+            historyIndex,
           }));
         }
       })();
@@ -703,28 +710,31 @@ const chatSlice = createSlice({
     commitRegenerate: (state, action: PayloadAction<{
       chatId: string;
       assistantMessageId: string;
+      historyIndex?: number;
     }>) => {
-      const { chatId, assistantMessageId } = action.payload;
-      commitRegenerateHelper(state, chatId, assistantMessageId);
+      const { chatId, assistantMessageId, historyIndex } = action.payload;
+      commitRegenerateHelper(state, chatId, assistantMessageId, historyIndex);
     },
     // 回滚重新生成：弹出 AI 回复数组中的占位元素
     rollbackRegenerate: (state, action: PayloadAction<{
       chatId: string;
       assistantMessageId: string;
+      historyIndex?: number;
     }>) => {
-      const { chatId, assistantMessageId } = action.payload;
-      rollbackRegenerateHelper(state, chatId, assistantMessageId);
+      const { chatId, assistantMessageId, historyIndex } = action.payload;
+      rollbackRegenerateHelper(state, chatId, assistantMessageId, historyIndex);
     },
-    // 流式完成后更新 AI 回复的 content/reasoningContent 数组最后一个元素
+    // 流式完成后更新 AI 回复的 content/reasoningContent 数组目标元素
     updateHistoryContent: (state, action: PayloadAction<{
       chatId: string;
       modelId: string;
       messageIndex: number;
       content: string;
       reasoningContent?: string;
+      historyIndex?: number;
     }>) => {
-      const { chatId, modelId, messageIndex, content, reasoningContent } = action.payload;
-      updateHistoryContentHelper(state, chatId, modelId, messageIndex, content, reasoningContent);
+      const { chatId, modelId, messageIndex, content, reasoningContent, historyIndex } = action.payload;
+      updateHistoryContentHelper(state, chatId, modelId, messageIndex, content, reasoningContent, historyIndex);
     },
   },
   // 处理异步action的状态变化
@@ -910,9 +920,9 @@ const chatSlice = createSlice({
       })
       // 重新生成消息 - rejected（回滚）
       .addCase(regenerateMessage.rejected, (state, action) => {
-        const { chatId, assistantMessageId } = action.meta.arg;
-        // 回滚重新生成
-        rollbackRegenerateHelper(state, chatId, assistantMessageId);
+        const { chatId, assistantMessageId, historyIndex } = action.meta.arg;
+        // 回滚重新生成（传递 historyIndex 防止回滚写入错误索引）
+        rollbackRegenerateHelper(state, chatId, assistantMessageId, historyIndex);
         delete state.sendingChatIds[chatId];
       })
       // 编辑/重新生成时初始化 runningChat 结构

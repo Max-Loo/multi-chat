@@ -41,7 +41,7 @@ interface ChatBubbleProps {
   /** 编辑回调 */
   onEdit?: (messageId: string, newContent: string) => void;
   /** 重新生成回调 */
-  onRegenerate?: (messageId: string) => void;
+  onRegenerate?: (messageId: string, historyIndex: number) => void;
   /** 聊天是否正在发送中（禁用编辑/重新生成按钮） */
   isChatSending?: boolean;
   /** 外部历史索引（成对展示时由父组件控制） */
@@ -61,7 +61,8 @@ const ActionToolbar: React.FC<{
   disabled?: boolean;
   onCopy?: (messageId: string) => void;
   onEdit?: () => void;
-  onRegenerate?: (messageId: string) => void;
+  onRegenerate?: (messageId: string, historyIndex: number) => void;
+  historyIndex?: number;
 }> = ({
   role,
   messageId,
@@ -71,6 +72,7 @@ const ActionToolbar: React.FC<{
   onCopy,
   onEdit,
   onRegenerate,
+  historyIndex,
 }) => {
   const { t } = useTranslation();
 
@@ -113,7 +115,7 @@ const ActionToolbar: React.FC<{
           variant="ghost"
           size="icon"
           className="size-7"
-          onClick={() => onRegenerate(messageId)}
+          onClick={() => onRegenerate(messageId, historyIndex ?? 0)}
           disabled={disabled}
           title={t(($) => $.chat.regenerateMessage)}
         >
@@ -219,12 +221,15 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
   }, [reasoningContent, historyIndex]);
 
   // 当 content 外部更新时（如编辑确认后），重置内部 historyIndex 到最新
+  // paired 模式下仅更新 internalHistoryIndex，不覆盖父组件管理的索引
   useEffect(() => {
     if (Array.isArray(content)) {
       setInternalHistoryIndex(content.length - 1);
-      onHistoryIndexChange?.(content.length - 1);
+      if (historyIndexOverride === undefined) {
+        onHistoryIndexChange?.(content.length - 1);
+      }
     }
-  }, [content, onHistoryIndexChange]);
+  }, [content, onHistoryIndexChange, historyIndexOverride]);
 
   // 推理内容的加载状态
   const thinkingLoading = useMemo(() => {
@@ -414,6 +419,7 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
                     disabled={isChatSending}
                     onCopy={onCopy}
                     onRegenerate={onRegenerate}
+                    historyIndex={historyIndex}
                   />
                 </div>
               )}

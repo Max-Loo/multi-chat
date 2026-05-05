@@ -4,12 +4,26 @@ import type { WritableDraft } from '@reduxjs/toolkit';
 import { ChatRoleEnum } from '@/types/chat';
 
 /**
- * 获取消息内容的当前版本
+ * 获取消息内容的当前版本（数组末尾）
  * @param content 消息内容（string 或 string[]）
  * @returns 当前版本的内容字符串
  */
 export function getCurrentContent(content: string | string[]): string {
   return Array.isArray(content) ? content[content.length - 1] : content;
+}
+
+/**
+ * 按索引提取指定版本内容，含越界 clamp
+ * @param content 消息内容（string 或 string[]）
+ * @param index 目标索引，越界时 clamp 到合法范围
+ * @returns 指定索引的内容字符串
+ */
+export function getContentAtIndex(content: string | string[], index: number): string {
+  if (Array.isArray(content)) {
+    const clamped = Math.min(Math.max(index, 0), content.length - 1);
+    return content[clamped];
+  }
+  return content;
 }
 
 /**
@@ -151,12 +165,14 @@ export function rollbackEdit(
  * @param state 聊天状态（Immer 可写）
  * @param chatId 聊天 ID
  * @param assistantMessageId AI 回复消息 ID
+ * @param historyIndex 可选，覆盖指定索引而非数组末尾
  * @returns 操作是否成功
  */
 export function commitRegenerate(
   state: WritableDraft<ChatSliceState>,
   chatId: string,
   assistantMessageId: string,
+  historyIndex?: number,
 ): boolean {
   const chat = state.activeChatData[chatId];
   if (!chat?.chatModelList) return false;
@@ -172,28 +188,43 @@ export function commitRegenerate(
     const runningEntry = state.runningChat[chatId]?.[modelId];
     if (!runningEntry) continue;
 
-    // 暂存旧 content 最后一个元素到回滚字段
-    const oldContent = getCurrentContent(aiMessage.content);
+    // 计算目标索引：未传 historyIndex 时默认取数组末尾
+    const targetIndex = historyIndex !== undefined && Array.isArray(aiMessage.content)
+      ? Math.min(historyIndex, aiMessage.content.length - 1)
+      : undefined;
+
+    // 暂存旧 content 到回滚字段
+    const oldContent = targetIndex !== undefined
+      ? (aiMessage.content as string[])[targetIndex]
+      : getCurrentContent(aiMessage.content);
     runningEntry.rollbackContent = oldContent;
 
-    // 原地覆盖 content 最后一个元素为空字符串
+    // 原地覆盖 content 目标元素为空字符串
     if (Array.isArray(aiMessage.content)) {
+      const idx = targetIndex ?? aiMessage.content.length - 1;
       const arr = [...aiMessage.content];
-      arr[arr.length - 1] = '';
+      arr[idx] = '';
       aiMessage.content = arr;
     } else {
       aiMessage.content = '';
     }
 
-    // 暂存旧 reasoningContent 最后一个元素到回滚字段
+    // 暂存旧 reasoningContent 到回滚字段
     if (aiMessage.reasoningContent !== undefined) {
-      const oldReasoning = getCurrentContent(aiMessage.reasoningContent);
+      const reasoningTargetIndex = historyIndex !== undefined && Array.isArray(aiMessage.reasoningContent)
+        ? Math.min(historyIndex, (aiMessage.reasoningContent as string[]).length - 1)
+        : undefined;
+
+      const oldReasoning = reasoningTargetIndex !== undefined
+        ? (aiMessage.reasoningContent as string[])[reasoningTargetIndex]
+        : getCurrentContent(aiMessage.reasoningContent);
       runningEntry.rollbackReasoningContent = oldReasoning;
 
-      // 原地覆盖 reasoningContent 最后一个元素为空字符串
+      // 原地覆盖 reasoningContent 目标元素为空字符串
       if (Array.isArray(aiMessage.reasoningContent)) {
+        const idx = reasoningTargetIndex ?? aiMessage.reasoningContent.length - 1;
         const arr = [...aiMessage.reasoningContent];
-        arr[arr.length - 1] = '';
+        arr[idx] = '';
         aiMessage.reasoningContent = arr;
       } else {
         aiMessage.reasoningContent = '';
@@ -209,12 +240,14 @@ export function commitRegenerate(
  * @param state 聊天状态（Immer 可写）
  * @param chatId 聊天 ID
  * @param assistantMessageId AI 回复消息 ID
+ * @param historyIndex 可选，恢复到指定索引而非数组末尾
  * @returns 操作是否成功
  */
 export function rollbackRegenerate(
   state: WritableDraft<ChatSliceState>,
   chatId: string,
   assistantMessageId: string,
+  historyIndex?: number,
 ): boolean {
   const chat = state.activeChatData[chatId];
   if (!chat?.chatModelList) return false;
@@ -230,22 +263,34 @@ export function rollbackRegenerate(
     const runningEntry = state.runningChat[chatId]?.[modelId];
     if (!runningEntry) continue;
 
-    // 从回滚字段恢复 content 最后一个元素
+    // 计算目标索引
+    const contentTargetIndex = historyIndex !== undefined && Array.isArray(aiMessage.content)
+      ? Math.min(historyIndex, aiMessage.content.length - 1)
+      : undefined;
+
+    // 从回滚字段恢复 content 目标元素
     if (runningEntry.rollbackContent !== undefined) {
       if (Array.isArray(aiMessage.content)) {
+        const idx = contentTargetIndex ?? aiMessage.content.length - 1;
         const arr = [...aiMessage.content];
-        arr[arr.length - 1] = runningEntry.rollbackContent;
+        arr[idx] = runningEntry.rollbackContent;
         aiMessage.content = arr;
       } else {
         aiMessage.content = runningEntry.rollbackContent;
       }
     }
 
-    // 从回滚字段恢复 reasoningContent 最后一个元素
+    // 计算 reasoningContent 目标索引
+    const reasoningTargetIndex = historyIndex !== undefined && Array.isArray(aiMessage.reasoningContent)
+      ? Math.min(historyIndex, (aiMessage.reasoningContent as string[]).length - 1)
+      : undefined;
+
+    // 从回滚字段恢复 reasoningContent 目标元素
     if (runningEntry.rollbackReasoningContent !== undefined) {
       if (Array.isArray(aiMessage.reasoningContent)) {
+        const idx = reasoningTargetIndex ?? aiMessage.reasoningContent.length - 1;
         const arr = [...aiMessage.reasoningContent];
-        arr[arr.length - 1] = runningEntry.rollbackReasoningContent;
+        arr[idx] = runningEntry.rollbackReasoningContent;
         aiMessage.reasoningContent = arr;
       } else {
         aiMessage.reasoningContent = runningEntry.rollbackReasoningContent;
@@ -253,8 +298,9 @@ export function rollbackRegenerate(
     } else if (aiMessage.reasoningContent !== undefined) {
       // 无 reasoningContent 回滚值时，恢复为 undefined（若原来被设为空字符串）
       if (Array.isArray(aiMessage.reasoningContent)) {
+        const idx = reasoningTargetIndex ?? aiMessage.reasoningContent.length - 1;
         const arr = [...aiMessage.reasoningContent];
-        arr[arr.length - 1] = '';
+        arr[idx] = '';
         aiMessage.reasoningContent = arr;
       } else {
         aiMessage.reasoningContent = aiMessage.reasoningContent || undefined;
@@ -270,13 +316,14 @@ export function rollbackRegenerate(
 }
 
 /**
- * 流式完成后更新 AI 回复的 content/reasoningContent 数组最后一个元素
+ * 流式完成后更新 AI 回复的 content/reasoningContent 数组目标元素
  * @param state 聊天状态（Immer 可写）
  * @param chatId 聊天 ID
  * @param modelId 模型 ID
  * @param messageIndex 消息在 chatHistoryList 中的位置索引
  * @param content 新的 content 内容
  * @param reasoningContent 新的 reasoningContent 内容（可选）
+ * @param historyIndex 可选，写入指定索引而非数组末尾
  * @returns 操作是否成功
  */
 export function updateHistoryContent(
@@ -286,6 +333,7 @@ export function updateHistoryContent(
   messageIndex: number,
   content: string,
   reasoningContent?: string,
+  historyIndex?: number,
 ): boolean {
   const chat = state.activeChatData[chatId];
   if (!chat?.chatModelList) return false;
@@ -296,27 +344,39 @@ export function updateHistoryContent(
   const aiMessage = chatModel.chatHistoryList[messageIndex];
   if (!aiMessage) return false;
 
-  // 更新 content 数组最后一个元素
+  // 计算目标索引
+  const contentIdx = historyIndex !== undefined && Array.isArray(aiMessage.content)
+    ? Math.min(historyIndex, aiMessage.content.length - 1)
+    : undefined;
+
+  // 更新 content 数组目标元素
   if (Array.isArray(aiMessage.content)) {
+    const idx = contentIdx ?? aiMessage.content.length - 1;
     const arr = [...aiMessage.content];
-    arr[arr.length - 1] = content;
+    arr[idx] = content;
     aiMessage.content = arr;
   } else {
     aiMessage.content = content;
   }
 
-  // 更新 reasoningContent 数组最后一个元素
+  // 更新 reasoningContent 数组目标元素
   if (reasoningContent !== undefined) {
     if (Array.isArray(aiMessage.reasoningContent)) {
+      const reasoningIdx = historyIndex !== undefined
+        ? Math.min(historyIndex, aiMessage.reasoningContent.length - 1)
+        : aiMessage.reasoningContent.length - 1;
       const arr = [...aiMessage.reasoningContent];
-      arr[arr.length - 1] = reasoningContent;
+      arr[reasoningIdx] = reasoningContent;
       aiMessage.reasoningContent = arr;
     } else {
       aiMessage.reasoningContent = reasoningContent;
     }
   } else if (Array.isArray(aiMessage.reasoningContent)) {
+    const reasoningIdx = historyIndex !== undefined
+      ? Math.min(historyIndex, aiMessage.reasoningContent.length - 1)
+      : aiMessage.reasoningContent.length - 1;
     const arr = [...aiMessage.reasoningContent];
-    arr[arr.length - 1] = '';
+    arr[reasoningIdx] = '';
     aiMessage.reasoningContent = arr;
   }
 

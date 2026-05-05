@@ -50,6 +50,9 @@ const Detail: React.FC<DetailProps> = ({
   // 成对消息的历史索引状态（消息 ID → 当前查看的历史索引）
   const [pairHistoryIndices, setPairHistoryIndices] = useState<Record<string, number>>({})
 
+  // 当前正在重新生成的消息 ID（null 表示无重新生成或发送新消息）
+  const [regeneratingMessageId, setRegeneratingMessageId] = useState<string | null>(null)
+
   // 历史消息列表
   const historyList = useMemo<StandardMessage[]>(() => {
     return Array.isArray(chatModel.chatHistoryList) ? chatModel.chatHistoryList : []
@@ -87,16 +90,33 @@ const Detail: React.FC<DetailProps> = ({
 
   // 合并列表：历史消息 + 流式消息（统一由 Virtualizer 管理）
   const displayList = useMemo(() => {
-    const list: { message: StandardMessage; isRunning: boolean }[] =
-      historyList.map(msg => ({ message: msg, isRunning: false }))
+    type DisplayEntry = { message: StandardMessage; displayMessage: StandardMessage; isRunning: boolean }
+    const list: DisplayEntry[] =
+      historyList.map(msg => ({ message: msg, displayMessage: msg, isRunning: false }))
 
-    if (runningChatData?.isSending && runningChatData.history &&
-      (getCurrentContent(runningChatData.history.content) || runningChatData.history.reasoningContent)) {
-      list.push({ message: runningChatData.history, isRunning: true })
+    const runningHistory = runningChatData?.isSending ? runningChatData.history : null
+    const hasRunningContent = runningHistory &&
+      (getCurrentContent(runningHistory.content) || runningHistory.reasoningContent)
+
+    if (hasRunningContent && runningHistory) {
+      if (regeneratingMessageId) {
+        // 重新生成模式：在原位置替换显示内容
+        const targetIndex = list.findIndex(entry => entry.message.id === regeneratingMessageId)
+        if (targetIndex !== -1) {
+          list[targetIndex] = {
+            message: list[targetIndex].message,
+            displayMessage: runningHistory,
+            isRunning: true,
+          }
+        }
+      } else {
+        // 发送新消息模式：追加到末尾
+        list.push({ message: runningHistory, displayMessage: runningHistory, isRunning: true })
+      }
     }
 
     return list
-  }, [historyList, runningChatData?.isSending, runningChatData?.history])
+  }, [historyList, runningChatData?.isSending, runningChatData?.history, regeneratingMessageId])
 
   // 计算消息配对关系（用户消息 → 下一条 AI 回复，双向映射）
   const messagePairs = useMemo(() => {
@@ -127,22 +147,36 @@ const Detail: React.FC<DetailProps> = ({
     return callbacks
   }, [messagePairs])
 
-  // 当消息内容变更时（如编辑确认），重置历史索引到最新版本
+  // 追踪每条消息的上一次 content.length，用于区分"编辑推送新版本"与"原地覆盖"
+  const prevContentLengthsRef = useRef<Record<string, number>>({});
+
+  // 当消息内容长度增长时（编辑推送新版本），重置历史索引到最新版本；原地覆盖（长度不变）不触发重置
   useEffect(() => {
     setPairHistoryIndices(prev => {
       const next: Record<string, number> = {}
       let changed = false
+      const prevLengths = prevContentLengthsRef.current;
+      const newLengths: Record<string, number> = {};
+
       for (const { message } of displayList) {
         if (Array.isArray(message.content)) {
-          const maxIndex = message.content.length - 1
-          if (prev[message.id] !== maxIndex) {
-            next[message.id] = maxIndex
-            changed = true
+          const length = message.content.length;
+          newLengths[message.id] = length;
+          const prevLength = prevLengths[message.id];
+          // 仅在长度增长时重置（编辑推送新版本）；首次出现或长度不变时跳过
+          if (prevLength !== undefined && length > prevLength) {
+            const maxIndex = length - 1;
+            if (prev[message.id] !== maxIndex) {
+              next[message.id] = maxIndex;
+              changed = true;
+            }
           }
         }
       }
-      return changed ? { ...prev, ...next } : prev
-    })
+
+      prevContentLengthsRef.current = newLengths;
+      return changed ? { ...prev, ...next } : prev;
+    });
   }, [displayList])
 
   // 引用滚动容器
@@ -289,12 +323,14 @@ const Detail: React.FC<DetailProps> = ({
   }, [selectedChat, dispatch]);
 
   // 重新生成回调
-  const handleRegenerate = useCallback((messageId: string) => {
+  const handleRegenerate = useCallback((messageId: string, historyIndex: number) => {
     if (!selectedChat) return;
+    setRegeneratingMessageId(messageId);
     dispatch(regenerateMessage({
       chatId: selectedChat.id,
       assistantMessageId: messageId,
-    }));
+      historyIndex,
+    })).finally(() => setRegeneratingMessageId(null));
   }, [selectedChat, dispatch]);
 
   return (
@@ -319,14 +355,14 @@ const Detail: React.FC<DetailProps> = ({
         scrollRef={scrollContainerRef}
         onScroll={handleVirtualizerScroll}
       >
-        {displayList.map(({ message, isRunning }) => {
+        {displayList.map(({ message, displayMessage, isRunning }) => {
           const meta = messageMeta[message.id];
           const isPaired = !!messagePairs[message.id];
           return <ChatBubble
             key={message.id}
             role={message.role}
-            content={message.content}
-            reasoningContent={message.reasoningContent}
+            content={displayMessage.content}
+            reasoningContent={displayMessage.reasoningContent}
             isRunning={isRunning}
             messageId={message.id}
             isLatestUserMessage={meta?.isLatestUserMessage}
