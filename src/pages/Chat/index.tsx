@@ -69,10 +69,10 @@ const ChatPage: React.FC = () => {
       // 聊天不存在，清除 URL 中的 chatId 参数
       clearChatIdParam();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- chatMetaList 仅在函数体内使用，不在依赖数组中以消除 createNewChat 时的竞态条件
   }, [
     dispatch,
     searchParams,
-    chatMetaList,
     loading,
     initializationError,
     clearChatIdParam,

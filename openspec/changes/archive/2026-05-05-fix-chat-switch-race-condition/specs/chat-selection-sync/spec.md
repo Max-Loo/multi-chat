@@ -1,17 +1,4 @@
-## ADDED Requirements
-
-### Requirement: 创建新聊天时立即设置选中的聊天 ID
-
-系统 SHALL 在创建新聊天时同步设置 `selectedChatId`，无需等待 useEffect 执行。
-
-#### Scenario: 创建新聊天后 selectedChatId 立即更新
-- **WHEN** 用户创建新聊天
-- **THEN** `selectedChatId` SHALL 立即被设置为新聊天的 ID
-- **AND** URL 参数 SHALL 包含新聊天的 ID
-
-#### Scenario: 创建新聊天不触发 SDK 预加载
-- **WHEN** 用户创建新聊天
-- **THEN** 系统 SHALL NOT 尝试预加载供应商 SDK（新聊天无模型）
+## MODIFIED Requirements
 
 ### Requirement: 保留 URL 同步机制
 
@@ -35,6 +22,8 @@
 #### Scenario: URL 变化时 useEffect 正常触发
 - **WHEN** 用户通过导航改变 URL 中的 `chatId` 参数
 - **THEN** useEffect SHALL dispatch `setSelectedChatIdWithPreload` 加载新聊天数据
+
+## ADDED Requirements
 
 ### Requirement: 删除聊天时清理 URL 参数
 

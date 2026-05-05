@@ -112,6 +112,17 @@ saveChatListMiddleware.startListening({
       // deleteChatFromStorage 会从存储加载完整数据再标记 isDeleted
       const { chat } = action.payload as { chat: Chat };
       await deleteChatFromStorage(chat.id, index);
+
+      // 防御性兜底：如果删除的是当前选中的聊天，清除 URL 中的 chatId 参数
+      const currentState = listenerApi.getState();
+      if (currentState.chat.selectedChatId === chat.id) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has("chatId")) {
+          url.searchParams.delete("chatId");
+          window.history.replaceState({}, "", url.pathname + url.search);
+        }
+      }
+
       return;
     }
 
