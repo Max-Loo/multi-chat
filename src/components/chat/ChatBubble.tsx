@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChatRoleEnum } from "@/types/chat";
 import { memo, useMemo, useState, useCallback, useEffect } from "react";
 import { ThinkingSection } from "./ThinkingSection";
-import { generateCleanHtml } from "@/utils/markdown";
+import { StreamingContent } from "./StreamingContent";
 import { useTranslation } from "react-i18next";
 import { getCurrentContent } from "@/services/chat/chatHistoryHelper";
 import { useAutoResizeTextarea } from "@/hooks/useAutoResizeTextarea";
@@ -239,11 +239,6 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
     return isRunning && !currentContent;
   }, [isRunning, currentContent]);
 
-  // 缓存消息内容的 HTML（避免重复生成导致重新渲染）
-  const contentHtml = useMemo(() => {
-    return generateCleanHtml(currentContent);
-  }, [currentContent]);
-
   // 进入编辑模式
   const handleStartEdit = useCallback(() => {
     setEditText(getCurrentContent(content));
@@ -347,11 +342,10 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
               // 展示模式
               <>
                 <Card className="bg-gray-100 text-gray-800 border-none shadow-none">
-                  <div
+                  <StreamingContent
                     className="p-4"
-                    dangerouslySetInnerHTML={{
-                      __html: contentHtml,
-                    }}
+                    content={currentContent}
+                    isRunning={isRunning}
                   />
                 </Card>
                 {/* 操作栏和翻页器合并到同一行，右对齐 */}
@@ -405,11 +399,10 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
               )}
               {/* 正式回复内容 */}
               {currentContent && (
-                <div
+                <StreamingContent
                   className="mt-2"
-                  dangerouslySetInnerHTML={{
-                    __html: contentHtml,
-                  }}
+                  content={currentContent}
+                  isRunning={isRunning}
                 />
               )}
               {/* 操作工具栏（生成中隐藏） */}
