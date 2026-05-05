@@ -14,9 +14,14 @@ import {
   RefreshCw,
   Check,
   X,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination";
 
 /**
  * 聊天气泡组件的属性接口
@@ -140,29 +145,27 @@ const HistoryPager: React.FC<{
   if (total <= 1) return null;
 
   return (
-    <div className="flex items-center gap-1 mt-1 text-xs text-gray-500 dark:text-gray-400">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7"
-        onClick={() => onIndexChange(Math.max(0, currentIndex - 1))}
-        disabled={currentIndex === 0 || disabled}
-      >
-        <ChevronLeft className="size-3.5" />
-      </Button>
-      <span className="min-w-8 text-center">
-        {currentIndex + 1}/{total}
-      </span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7"
-        onClick={() => onIndexChange(Math.min(total - 1, currentIndex + 1))}
-        disabled={currentIndex === total - 1 || disabled}
-      >
-        <ChevronRight className="size-3.5" />
-      </Button>
-    </div>
+    <Pagination className="mx-0 w-auto mt-1">
+      <PaginationContent className="gap-1 text-xs text-gray-500 dark:text-gray-400">
+        <PaginationItem>
+          <PaginationPrevious
+            onClick={() => onIndexChange(currentIndex - 1)}
+            disabled={currentIndex === 0 || disabled}
+          />
+        </PaginationItem>
+        <PaginationItem>
+          <span className="min-w-8 text-center inline-block">
+            {currentIndex + 1}/{total}
+          </span>
+        </PaginationItem>
+        <PaginationItem>
+          <PaginationNext
+            onClick={() => onIndexChange(currentIndex + 1)}
+            disabled={currentIndex === total - 1 || disabled}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
   );
 };
 
