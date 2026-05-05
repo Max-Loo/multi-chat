@@ -1,10 +1,13 @@
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ChatRoleEnum } from "@/types/chat";
-import { memo, useMemo, useState, useRef, useCallback, useEffect } from "react";
+import { memo, useMemo, useState, useCallback, useEffect } from "react";
 import { ThinkingSection } from "./ThinkingSection";
 import { generateCleanHtml } from "@/utils/markdown";
 import { useTranslation } from "react-i18next";
 import { getCurrentContent } from "@/services/chat/chatHistoryHelper";
+import { useAutoResizeTextarea } from "@/hooks/useAutoResizeTextarea";
 import {
   Copy,
   Pencil,
@@ -80,36 +83,42 @@ const ActionToolbar: React.FC<{
   return (
     <div className="flex items-center gap-1 mt-1">
       {/* 复制按钮 — 所有消息都有 */}
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7"
         onClick={handleCopy}
-        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
         title={t(($) => $.chat.copyMessage)}
       >
         <Copy className="size-3.5" />
-      </button>
+      </Button>
 
       {/* 编辑按钮 — 仅最新用户消息 */}
       {role === ChatRoleEnum.USER && isLatestUserMessage && onEdit && (
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
           onClick={onEdit}
           disabled={disabled}
-          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           title={t(($) => $.chat.editMessage)}
         >
           <Pencil className="size-3.5" />
-        </button>
+        </Button>
       )}
 
       {/* 重新生成按钮 — 仅最后一条 AI 回复 */}
       {role === ChatRoleEnum.ASSISTANT && isLastAssistant && onRegenerate && (
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
           onClick={() => onRegenerate(messageId)}
           disabled={disabled}
-          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           title={t(($) => $.chat.regenerateMessage)}
         >
           <RefreshCw className="size-3.5" />
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -122,30 +131,35 @@ const HistoryPager: React.FC<{
   content: string | string[];
   currentIndex: number;
   onIndexChange: (index: number) => void;
-}> = ({ content, currentIndex, onIndexChange }) => {
+  disabled?: boolean;
+}> = ({ content, currentIndex, onIndexChange, disabled }) => {
   const total = Array.isArray(content) ? content.length : 1;
 
   if (total <= 1) return null;
 
   return (
     <div className="flex items-center gap-1 mt-1 text-xs text-gray-500 dark:text-gray-400">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7"
         onClick={() => onIndexChange(Math.max(0, currentIndex - 1))}
-        disabled={currentIndex === 0}
-        className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        disabled={currentIndex === 0 || disabled}
       >
         <ChevronLeft className="size-3.5" />
-      </button>
+      </Button>
       <span className="min-w-8 text-center">
         {currentIndex + 1}/{total}
       </span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7"
         onClick={() => onIndexChange(Math.min(total - 1, currentIndex + 1))}
-        disabled={currentIndex === total - 1}
-        className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        disabled={currentIndex === total - 1 || disabled}
       >
         <ChevronRight className="size-3.5" />
-      </button>
+      </Button>
     </div>
   );
 };
@@ -175,7 +189,11 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
   const [internalHistoryIndex, setInternalHistoryIndex] = useState(() =>
     Array.isArray(content) ? content.length - 1 : 0,
   );
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const { textareaRef, isScrollable } = useAutoResizeTextarea(editText, {
+    minHeight: 60,
+    maxHeight: 240,
+  });
 
   // 使用外部索引（成对同步）或内部索引
   const historyIndex =
@@ -230,7 +248,7 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
         textareaRef.current.value.length,
       );
     }, 0);
-  }, [content]);
+  }, [content, textareaRef]);
 
   // 确认编辑
   const handleConfirmEdit = useCallback(() => {
@@ -283,63 +301,71 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
           className="flex justify-end w-full mt-3 mr-2"
           data-testid="chat-bubble"
         >
-          <div className="flex flex-col items-end max-w-[80%]">
-            <Card className="bg-gray-100 text-gray-800 border-none shadow-none">
-              {isEditing ? (
-                // 编辑模式
-                <div className="p-3">
-                  <textarea
-                    ref={textareaRef}
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    onKeyDown={handleEditKeyDown}
-                    className="w-full min-h-15 resize-none bg-white border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                  />
-                  <div className="flex items-center gap-1 mt-2 justify-end">
-                    <button
-                      onClick={handleCancelEdit}
-                      className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors"
-                      title={t(($) => $.chat.editCancel)}
-                    >
-                      <X className="size-4" />
-                    </button>
-                    <button
-                      onClick={handleConfirmEdit}
-                      disabled={!editText.trim()}
-                      className="p-1.5 rounded hover:bg-blue-100 text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title={t(($) => $.chat.editConfirm)}
-                    >
-                      <Check className="size-4" />
-                    </button>
-                  </div>
+          <div className="flex flex-col items-end w-[80%]">
+            {isEditing ? (
+              // 编辑模式：无 Card 背景，Textarea 带边框自动伸缩
+              <>
+                <Textarea
+                  ref={textareaRef}
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={handleEditKeyDown}
+                  className="resize-none"
+                  style={{ overflowY: isScrollable ? "auto" : "hidden" }}
+                />
+                <div className="flex items-center gap-1 mt-2 justify-end">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    onClick={handleCancelEdit}
+                    title={t(($) => $.chat.editCancel)}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    onClick={handleConfirmEdit}
+                    disabled={!editText.trim()}
+                    title={t(($) => $.chat.editConfirm)}
+                  >
+                    <Check className="size-3.5" />
+                  </Button>
                 </div>
-              ) : (
-                // 展示模式
-                <div
-                  className="p-4"
-                  dangerouslySetInnerHTML={{
-                    __html: contentHtml,
-                  }}
-                />
-              )}
-            </Card>
-            {/* 操作栏和翻页器合并到同一行，右对齐 */}
-            {!isEditing && showActions && (
-              <div className="flex items-center gap-1 mt-1">
-                <ActionToolbar
-                  role={role}
-                  messageId={messageId}
-                  isLatestUserMessage={isLatestUserMessage}
-                  disabled={isChatSending}
-                  onEdit={handleStartEdit}
-                  onCopy={onCopy}
-                />
-                <HistoryPager
-                  content={content}
-                  currentIndex={historyIndex}
-                  onIndexChange={handleHistoryIndexChange}
-                />
-              </div>
+              </>
+            ) : (
+              // 展示模式
+              <>
+                <Card className="bg-gray-100 text-gray-800 border-none shadow-none">
+                  <div
+                    className="p-4"
+                    dangerouslySetInnerHTML={{
+                      __html: contentHtml,
+                    }}
+                  />
+                </Card>
+                {/* 操作栏和翻页器合并到同一行，右对齐 */}
+                {showActions && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <ActionToolbar
+                      role={role}
+                      messageId={messageId}
+                      isLatestUserMessage={isLatestUserMessage}
+                      disabled={isChatSending}
+                      onEdit={handleStartEdit}
+                      onCopy={onCopy}
+                    />
+                    <HistoryPager
+                      content={content}
+                      currentIndex={historyIndex}
+                      onIndexChange={handleHistoryIndexChange}
+                      disabled={isChatSending}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
