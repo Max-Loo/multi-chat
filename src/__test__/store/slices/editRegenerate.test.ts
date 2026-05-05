@@ -292,12 +292,14 @@ describe('regenerateMessage thunk', () => {
     });
     store.dispatch(createChat({ chat }));
 
-    // 模拟先 commit 了重新生成（手动 dispatch commitRegenerate）
+    // 先初始化 runningChat 条目（覆盖策略要求 runningChat 先存在）
+    store.dispatch({ type: 'chatModel/editRegenerateInit', payload: { chatId, modelId: 'model-1' } });
+    // 再 commit 重新生成
     store.dispatch({ type: 'chat/commitRegenerate', payload: { chatId, assistantMessageId: assistantMsgId } });
 
-    // 验证 commit 已生效
+    // 验证 commit 已生效（覆盖模式下 string 被覆盖为空字符串）
     const history = store.getState().chat.activeChatData[chatId].chatModelList[0].chatHistoryList;
-    expect(history[1].content).toEqual(['Hi there', '']);
+    expect(history[1].content).toBe('');
 
     // rejected 后回滚
     store.dispatch(regenerateMessage.rejected(new Error('Stream failed'), 'req-1', {
@@ -305,14 +307,14 @@ describe('regenerateMessage thunk', () => {
       assistantMessageId: assistantMsgId,
     }));
 
-    // 验证回滚
+    // 验证回滚（从回滚字段恢复旧值）
     const state = store.getState().chat;
     expect(state.sendingChatIds[chatId]).toBeUndefined();
     const rolledBack = state.activeChatData[chatId].chatModelList[0].chatHistoryList;
     expect(rolledBack[1].content).toBe('Hi there');
   });
 
-  it('应该完成完整的重新生成流程（commit → stream → updateHistoryContent）', async () => {
+  it('应该完成完整的重新生成流程（init → commit → stream → updateHistoryContent）', async () => {
     const chatId = 'test-chat-1';
     const userMsgId = 'msg-user-1';
     const assistantMsgId = 'msg-assistant-1';
@@ -348,9 +350,8 @@ describe('regenerateMessage thunk', () => {
     expect(state.sendingChatIds[chatId]).toBeUndefined();
 
     const history = state.activeChatData[chatId].chatModelList[0].chatHistoryList;
-    // AI 回复应该有重新生成历史
-    expect(Array.isArray(history[1].content)).toBe(true);
-    expect((history[1].content as string[]).length).toBeGreaterThanOrEqual(2);
+    // 覆盖模式下，string content 仍为 string，被替换为新生成的内容
+    expect(history[1].content).toBe('Regenerated response');
   });
 
   it('应该在聊天不存在时安全退出', async () => {

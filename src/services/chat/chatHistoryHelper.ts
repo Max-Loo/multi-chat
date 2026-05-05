@@ -147,7 +147,7 @@ export function rollbackEdit(
 }
 
 /**
- * 提交重新生成：将旧 AI 回复 push 进数组，追加空字符串占位
+ * 提交重新生成：暂存旧 content/reasoningContent 到 runningChat 回滚字段，原地覆盖为空字符串
  * @param state 聊天状态（Immer 可写）
  * @param chatId 聊天 ID
  * @param assistantMessageId AI 回复消息 ID
@@ -166,10 +166,37 @@ export function commitRegenerate(
 
   for (const chatModel of chat.chatModelList) {
     const aiMessage = chatModel.chatHistoryList[messageIndex];
-    if (aiMessage) {
-      aiMessage.content = pushContent(aiMessage.content, '');
-      if (aiMessage.reasoningContent !== undefined) {
-        aiMessage.reasoningContent = pushContent(aiMessage.reasoningContent, '');
+    if (!aiMessage) continue;
+
+    const modelId = chatModel.modelId;
+    const runningEntry = state.runningChat[chatId]?.[modelId];
+    if (!runningEntry) continue;
+
+    // 暂存旧 content 最后一个元素到回滚字段
+    const oldContent = getCurrentContent(aiMessage.content);
+    runningEntry.rollbackContent = oldContent;
+
+    // 原地覆盖 content 最后一个元素为空字符串
+    if (Array.isArray(aiMessage.content)) {
+      const arr = [...aiMessage.content];
+      arr[arr.length - 1] = '';
+      aiMessage.content = arr;
+    } else {
+      aiMessage.content = '';
+    }
+
+    // 暂存旧 reasoningContent 最后一个元素到回滚字段
+    if (aiMessage.reasoningContent !== undefined) {
+      const oldReasoning = getCurrentContent(aiMessage.reasoningContent);
+      runningEntry.rollbackReasoningContent = oldReasoning;
+
+      // 原地覆盖 reasoningContent 最后一个元素为空字符串
+      if (Array.isArray(aiMessage.reasoningContent)) {
+        const arr = [...aiMessage.reasoningContent];
+        arr[arr.length - 1] = '';
+        aiMessage.reasoningContent = arr;
+      } else {
+        aiMessage.reasoningContent = '';
       }
     }
   }
@@ -178,7 +205,7 @@ export function commitRegenerate(
 }
 
 /**
- * 回滚重新生成：弹出 AI 回复数组中的占位元素
+ * 回滚重新生成：从 runningChat 回滚字段恢复 AI 回复的 content/reasoningContent
  * @param state 聊天状态（Immer 可写）
  * @param chatId 聊天 ID
  * @param assistantMessageId AI 回复消息 ID
@@ -197,17 +224,46 @@ export function rollbackRegenerate(
 
   for (const chatModel of chat.chatModelList) {
     const aiMessage = chatModel.chatHistoryList[messageIndex];
-    if (aiMessage) {
+    if (!aiMessage) continue;
+
+    const modelId = chatModel.modelId;
+    const runningEntry = state.runningChat[chatId]?.[modelId];
+    if (!runningEntry) continue;
+
+    // 从回滚字段恢复 content 最后一个元素
+    if (runningEntry.rollbackContent !== undefined) {
       if (Array.isArray(aiMessage.content)) {
-        aiMessage.content = popContent(aiMessage.content);
-      }
-      if (aiMessage.reasoningContent !== undefined && Array.isArray(aiMessage.reasoningContent)) {
-        aiMessage.reasoningContent = popContent(aiMessage.reasoningContent);
-        if (typeof aiMessage.reasoningContent === 'string') {
-          aiMessage.reasoningContent = aiMessage.reasoningContent || undefined;
-        }
+        const arr = [...aiMessage.content];
+        arr[arr.length - 1] = runningEntry.rollbackContent;
+        aiMessage.content = arr;
+      } else {
+        aiMessage.content = runningEntry.rollbackContent;
       }
     }
+
+    // 从回滚字段恢复 reasoningContent 最后一个元素
+    if (runningEntry.rollbackReasoningContent !== undefined) {
+      if (Array.isArray(aiMessage.reasoningContent)) {
+        const arr = [...aiMessage.reasoningContent];
+        arr[arr.length - 1] = runningEntry.rollbackReasoningContent;
+        aiMessage.reasoningContent = arr;
+      } else {
+        aiMessage.reasoningContent = runningEntry.rollbackReasoningContent;
+      }
+    } else if (aiMessage.reasoningContent !== undefined) {
+      // 无 reasoningContent 回滚值时，恢复为 undefined（若原来被设为空字符串）
+      if (Array.isArray(aiMessage.reasoningContent)) {
+        const arr = [...aiMessage.reasoningContent];
+        arr[arr.length - 1] = '';
+        aiMessage.reasoningContent = arr;
+      } else {
+        aiMessage.reasoningContent = aiMessage.reasoningContent || undefined;
+      }
+    }
+
+    // 清除回滚字段
+    delete runningEntry.rollbackContent;
+    delete runningEntry.rollbackReasoningContent;
   }
 
   return true;

@@ -283,73 +283,73 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
           className="flex justify-end w-full mt-3 mr-2"
           data-testid="chat-bubble"
         >
-          <Card className="bg-gray-100 text-gray-800 max-w-[80%] border-none shadow-none">
-            {isEditing ? (
-              // 编辑模式
-              <div className="p-3">
-                <textarea
-                  ref={textareaRef}
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  onKeyDown={handleEditKeyDown}
-                  className="w-full min-h-15 resize-none bg-white border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                />
-                <div className="flex items-center gap-1 mt-2 justify-end">
-                  <button
-                    onClick={handleCancelEdit}
-                    className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors"
-                    title={t(($) => $.chat.editCancel)}
-                  >
-                    <X className="size-4" />
-                  </button>
-                  <button
-                    onClick={handleConfirmEdit}
-                    disabled={!editText.trim()}
-                    className="p-1.5 rounded hover:bg-blue-100 text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    title={t(($) => $.chat.editConfirm)}
-                  >
-                    <Check className="size-4" />
-                  </button>
+          <div className="flex flex-col items-end max-w-[80%]">
+            <Card className="bg-gray-100 text-gray-800 border-none shadow-none">
+              {isEditing ? (
+                // 编辑模式
+                <div className="p-3">
+                  <textarea
+                    ref={textareaRef}
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onKeyDown={handleEditKeyDown}
+                    className="w-full min-h-15 resize-none bg-white border border-gray-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                  <div className="flex items-center gap-1 mt-2 justify-end">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors"
+                      title={t(($) => $.chat.editCancel)}
+                    >
+                      <X className="size-4" />
+                    </button>
+                    <button
+                      onClick={handleConfirmEdit}
+                      disabled={!editText.trim()}
+                      className="p-1.5 rounded hover:bg-blue-100 text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title={t(($) => $.chat.editConfirm)}
+                    >
+                      <Check className="size-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              // 展示模式
-              <>
+              ) : (
+                // 展示模式
                 <div
                   className="p-4"
                   dangerouslySetInnerHTML={{
                     __html: contentHtml,
                   }}
                 />
-                {/* 编辑历史翻页 */}
-                <div className="px-4 pb-1">
-                  <HistoryPager
-                    content={content}
-                    currentIndex={historyIndex}
-                    onIndexChange={handleHistoryIndexChange}
-                  />
-                </div>
-                {/* 操作工具栏 */}
-                {showActions && (
-                  <div className="px-4 pb-2">
-                    <ActionToolbar
-                      role={role}
-                      messageId={messageId}
-                      isLatestUserMessage={isLatestUserMessage}
-                      disabled={isChatSending}
-                      onEdit={handleStartEdit}
-                      onCopy={onCopy}
-                    />
-                  </div>
-                )}
-              </>
+              )}
+            </Card>
+            {/* 操作栏和翻页器合并到同一行，右对齐 */}
+            {!isEditing && showActions && (
+              <div className="flex items-center gap-1 mt-1">
+                <ActionToolbar
+                  role={role}
+                  messageId={messageId}
+                  isLatestUserMessage={isLatestUserMessage}
+                  disabled={isChatSending}
+                  onEdit={handleStartEdit}
+                  onCopy={onCopy}
+                />
+                <HistoryPager
+                  content={content}
+                  currentIndex={historyIndex}
+                  onIndexChange={handleHistoryIndexChange}
+                />
+              </div>
             )}
-          </Card>
+          </div>
         </div>
       );
     }
     // AI 助手对话气泡
     case ChatRoleEnum.ASSISTANT: {
+      // AI 消息生成中隐藏操作栏
+      const showAssistantActions = showActions && !isRunning;
+
       return (
         <div
           className="flex justify-start w-full mt-3 ml-2"
@@ -378,16 +378,8 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
                   }}
                 />
               )}
-              {/* 编辑历史翻页 */}
-              <div className="mt-1">
-                <HistoryPager
-                  content={content}
-                  currentIndex={historyIndex}
-                  onIndexChange={handleHistoryIndexChange}
-                />
-              </div>
-              {/* 操作工具栏 */}
-              {showActions && (
+              {/* 操作工具栏（生成中隐藏） */}
+              {showAssistantActions && (
                 <div className="mt-1">
                   <ActionToolbar
                     role={role}

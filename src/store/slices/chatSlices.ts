@@ -1,4 +1,4 @@
-import { Chat, ChatMeta, ChatRoleEnum, StandardMessage, chatToMeta } from "@/types/chat";
+import { Chat, ChatMeta, ChatRoleEnum, RunningChatEntry, StandardMessage, chatToMeta } from "@/types/chat";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { WritableDraft } from "@reduxjs/toolkit";
 import { loadChatIndex, loadChatById } from "../storage";
@@ -41,11 +41,7 @@ export interface ChatSliceState {
   // 初始化错误信息
   initializationError: string | null;
   // 当前正在运行中的聊天（还有网络传输）。chatId - modelId - history
-  runningChat: Record<string, Record<string, {
-    isSending: boolean;
-    history: StandardMessage | null;
-    errorMessage?: string
-  }>>;
+  runningChat: Record<string, Record<string, RunningChatEntry>>;
 }
 
 // 聊天管理的初始状态
@@ -403,9 +399,6 @@ export const regenerateMessage = createAsyncThunk<
     const chat = state.chat.activeChatData[chatId];
     if (!chat?.chatModelList) return;
 
-    // 1. 提交重新生成（push 旧内容 + 追加占位）
-    dispatch(chatSlice.actions.commitRegenerate({ chatId, assistantMessageId }));
-
     const models = state.models.models;
 
     // 通过位置索引获取 assistantMessageIndex
@@ -416,7 +409,17 @@ export const regenerateMessage = createAsyncThunk<
     );
     if (assistantMessageIndex === -1) return;
 
-    // 2. 对每个启用模型裁剪历史并调用流式生成
+    // 1. 先为每个启用模型 dispatch editRegenerateInit 创建 runningChat 条目
+    for (const chatModel of chat.chatModelList) {
+      const model = models.find(m => m.id === chatModel.modelId);
+      if (isNil(model) || model.isDeleted || !model.isEnable) continue;
+      dispatch({ type: 'chatModel/editRegenerateInit', payload: { chatId, modelId: model.id } });
+    }
+
+    // 2. 再 dispatch commitRegenerate（此时 runningChat 条目已存在，可写入回滚字段）
+    dispatch(chatSlice.actions.commitRegenerate({ chatId, assistantMessageId }));
+
+    // 3. 对每个启用模型裁剪历史并调用流式生成
     await Promise.all(chat.chatModelList.map((chatModel) => {
       const model = models.find(m => m.id === chatModel.modelId);
       if (isNil(model) || model.isDeleted || !model.isEnable) return;
@@ -426,9 +429,6 @@ export const regenerateMessage = createAsyncThunk<
       const transmitHistoryReasoning = selectTransmitHistoryReasoning(getState());
 
       return (async () => {
-        // 初始化 runningChat 结构
-        dispatch({ type: 'chatModel/editRegenerateInit', payload: { chatId, modelId: model.id } });
-
         const fetchResponse = streamChatCompletion(
           {
             model,
@@ -450,7 +450,7 @@ export const regenerateMessage = createAsyncThunk<
           }));
         }
 
-        // 3. 流式完成
+        // 4. 流式完成
         const currentState = getState() as RootState;
         const runningEntry = currentState.chat.runningChat[chatId]?.[model.id];
         if (runningEntry?.history) {

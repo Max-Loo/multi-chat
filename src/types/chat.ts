@@ -45,6 +45,17 @@ export function chatToMeta(chat: Chat): ChatMeta {
   };
 }
 
+// 正在运行中的聊天条目
+export interface RunningChatEntry {
+  isSending: boolean;
+  history: StandardMessage | null;
+  errorMessage?: string;
+  /** 被覆盖的 content（重新生成时暂存） */
+  rollbackContent?: string;
+  /** 被覆盖的 reasoningContent（重新生成时暂存） */
+  rollbackReasoningContent?: string;
+}
+
 // 聊天角色枚举值
 export enum ChatRoleEnum {
   // 留给特殊角色

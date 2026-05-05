@@ -1,82 +1,4 @@
-# Message Operations Capability Specification
-
-## Purpose
-
-定义聊天消息的操作功能规格，包括复制消息内容、编辑最新用户消息、重新生成 AI 回复、编辑历史翻页浏览、用户消息操作栏独立布局，以及多模型并发场景下的数据一致性保障。
-
-## Requirements
-
-### Requirement: 复制消息内容
-
-系统 SHALL 允许用户将单条消息的纯文本内容复制到系统剪贴板。
-
-#### Scenario: 复制用户消息
-- **WHEN** 用户点击用户消息气泡上的复制按钮
-- **THEN** 系统调用 `copyToClipboard` 将消息当前版本的 `content`（数组最后一个元素）纯文本复制到剪贴板
-- **AND** 显示"已复制到剪贴板"的 Toast 成功提示
-
-#### Scenario: 复制 AI 助手消息
-- **WHEN** 用户点击 AI 助手消息气泡上的复制按钮
-- **THEN** 系统将消息当前版本的 `content`（数组最后一个元素）纯文本（不含 Markdown 标记）复制到剪贴板
-- **AND** 显示"已复制到剪贴板"的 Toast 成功提示
-
-#### Scenario: 复制失败时的降级处理
-- **WHEN** 剪贴板写入失败（如权限被拒）
-- **THEN** 系统显示复制失败的 Toast 提示
-- **AND** 操作按钮保持可用，允许用户重试
-
----
-
-### Requirement: 编辑最新用户消息
-
-系统 SHALL 允许用户编辑已发送的最新一条用户消息，保留编辑历史并重新生成对应的 AI 回复。
-
-#### Scenario: 进入编辑模式
-- **WHEN** 用户点击最新一条用户消息气泡上的编辑按钮
-- **THEN** 消息气泡内容区变为 textarea，预填当前消息文本
-- **AND** textarea 自动获得焦点并将光标置于文本末尾
-- **AND** 操作栏切换为"确认"和"取消"按钮
-
-#### Scenario: 确认编辑并重新生成
-- **WHEN** 用户修改消息内容后点击确认按钮（或按 Enter 键，非 Shift+Enter）
-- **AND** 新内容不为空
-- **THEN** 系统通过位置索引原子性地更新所有 ChatModel 中对应用户消息和 AI 回复：
-  - 用户消息：旧 content push 进数组，新内容设为数组最后一个元素
-  - AI 回复（若存在）：旧 content 和 reasoningContent push 进各自数组，追加空字符串占位
-- **AND** 对每个 ChatModel 重新调用 `streamChatCompletion`
-- **AND** 生成完成后 AI 回复数组最后一个元素设为实际结果
-- **AND** 退出编辑模式
-
-#### Scenario: 确认编辑时 AI 回复不存在
-- **WHEN** 用户确认编辑，但该用户消息之后不存在 AI 回复（如上一轮发送失败）
-- **THEN** 系统仅更新用户消息的 content 数组
-- **AND** 跳过 AI 回复的更新
-- **AND** 对每个 ChatModel 重新调用 `streamChatCompletion`（使用编辑后的用户消息作为最新消息）
-
-#### Scenario: 取消编辑
-- **WHEN** 用户点击取消按钮（或按 Escape 键）
-- **THEN** 气泡恢复原始展示内容
-- **AND** 不修改任何消息数据
-
-#### Scenario: 编辑内容为空时拒绝提交
-- **WHEN** 用户清空 textarea 内容后点击确认
-- **THEN** 系统不执行任何操作
-- **AND** 保持编辑模式
-
-#### Scenario: 重新生成失败时回滚
-- **WHEN** 编辑确认后 AI 重新生成失败
-- **THEN** 系统调用 `rollbackEdit` 回滚用户消息和 AI 回复的 content/reasoningContent 数组
-- **AND** 弹出最后添加的历史元素和占位元素，恢复为编辑前的状态
-
-#### Scenario: 编辑非最新用户消息
-- **WHEN** 用户查看非最新的用户消息时
-- **THEN** 不显示编辑按钮
-
-#### Scenario: 编辑正在发送中的消息
-- **WHEN** 用户尝试编辑一条消息，但该聊天正在发送中（`sendingChatIds[chatId] === true`）
-- **THEN** 编辑按钮 SHALL 处于禁用状态
-
----
+## MODIFIED Requirements
 
 ### Requirement: 重新生成 AI 回复
 
@@ -157,7 +79,7 @@
 - **THEN** chatMiddleware 监听到对应 action 并调用 `saveChatAndIndex` 持久化
 - **AND** `updatedAt` 时间戳更新为当前时间
 
----
+## ADDED Requirements
 
 ### Requirement: 用户消息操作栏独立布局
 

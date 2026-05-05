@@ -235,19 +235,28 @@ describe('rollbackEdit', () => {
 // Task 8.3: commitRegenerate / rollbackRegenerate / updateHistoryContent 测试
 // =============================
 describe('commitRegenerate', () => {
-  it('应该将 AI 回复旧内容 push 进数组并追加空占位', () => {
+  it('应该原地覆盖 AI 回复 content 为空字符串并暂存旧值到回滚字段', () => {
     const aiMsg = createAssistantMessage('Old response');
     const state = createTestState({
       'chat-1': createChatWithHistory('chat-1', [
         { modelId: 'model-1', messages: [createUserMessage('Q'), aiMsg] },
       ]),
     });
+    // 设置 runningChat 条目（commitRegenerate 需要此条目来暂存回滚数据）
+    (state as any).runningChat = {
+      'chat-1': {
+        'model-1': { isSending: true, history: null },
+      },
+    };
 
     const result = commitRegenerate(state as any, 'chat-1', aiMsg.id);
     expect(result).toBe(true);
 
     const updated = state.activeChatData['chat-1']!.chatModelList![0].chatHistoryList[1];
-    expect(updated.content).toEqual(['Old response', '']);
+    // 原地覆盖为空字符串（不改变类型，string 仍为 string）
+    expect(updated.content).toBe('');
+    // 回滚字段暂存旧值
+    expect(state.runningChat['chat-1']['model-1'].rollbackContent).toBe('Old response');
   });
 
   it('应该返回 false 当聊天不存在', () => {
@@ -258,7 +267,7 @@ describe('commitRegenerate', () => {
 });
 
 describe('rollbackRegenerate', () => {
-  it('应该回滚重新生成 弹出占位元素', () => {
+  it('应该从回滚字段恢复旧内容', () => {
     const aiMsg = createAssistantMessage('Old response');
     const aiMsg2 = createAssistantMessage('Old response 2');
     const state = createTestState({
@@ -267,36 +276,53 @@ describe('rollbackRegenerate', () => {
         { modelId: 'model-2', messages: [createUserMessage('Q'), aiMsg2] },
       ]),
     });
+    // 设置 runningChat 条目
+    (state as any).runningChat = {
+      'chat-1': {
+        'model-1': { isSending: true, history: null },
+        'model-2': { isSending: true, history: null },
+      },
+    };
 
-    // 先 commit
+    // 先 commit（覆盖 + 暂存回滚数据）
     commitRegenerate(state as any, 'chat-1', aiMsg.id);
     // 再 rollback
     const result = rollbackRegenerate(state as any, 'chat-1', aiMsg.id);
     expect(result).toBe(true);
 
     const updated = state.activeChatData['chat-1']!.chatModelList![0].chatHistoryList[1];
+    // 从回滚字段恢复为旧值
     expect(updated.content).toBe('Old response');
+    // 回滚字段已清除
+    expect(state.runningChat['chat-1']['model-1'].rollbackContent).toBeUndefined();
   });
 });
 
 describe('updateHistoryContent', () => {
-  it('应该替换 AI 回复 content 数组最后一个元素', () => {
+  it('应该替换 AI 回复 content 为新内容（覆盖模式下 string 不变数组）', () => {
     const aiMsg = createAssistantMessage('Old');
     const state = createTestState({
       'chat-1': createChatWithHistory('chat-1', [
         { modelId: 'model-1', messages: [createUserMessage('Q'), aiMsg] },
       ]),
     });
+    // 设置 runningChat 条目
+    (state as any).runningChat = {
+      'chat-1': {
+        'model-1': { isSending: true, history: null },
+      },
+    };
 
-    // 先 commitRegenerate 让 content 变成数组
+    // 先 commitRegenerate（覆盖为空字符串）
     commitRegenerate(state as any, 'chat-1', aiMsg.id);
 
-    // 然后更新最后一个元素
+    // 然后更新为新内容
     const result = updateHistoryContent(state as any, 'chat-1', 'model-1', 1, 'New response');
     expect(result).toBe(true);
 
     const updated = state.activeChatData['chat-1']!.chatModelList![0].chatHistoryList[1];
-    expect(updated.content).toEqual(['Old', 'New response']);
+    // 覆盖模式下，string 仍为 string
+    expect(updated.content).toBe('New response');
   });
 
   it('应该同时更新 reasoningContent', () => {
@@ -310,13 +336,19 @@ describe('updateHistoryContent', () => {
         { modelId: 'model-1', messages: [createUserMessage('Q'), aiMsg] },
       ]),
     });
+    // 设置 runningChat 条目
+    (state as any).runningChat = {
+      'chat-1': {
+        'model-1': { isSending: true, history: null },
+      },
+    };
 
     commitRegenerate(state as any, 'chat-1', aiMsg.id);
     updateHistoryContent(state as any, 'chat-1', 'model-1', 1, 'New response', 'New reasoning');
 
     const updated = state.activeChatData['chat-1']!.chatModelList![0].chatHistoryList[1];
-    expect(updated.content).toEqual(['Old', 'New response']);
-    expect(updated.reasoningContent).toEqual(['Old reasoning', 'New reasoning']);
+    expect(updated.content).toBe('New response');
+    expect(updated.reasoningContent).toBe('New reasoning');
   });
 
   it('应该返回 false 当聊天或模型不存在', () => {
