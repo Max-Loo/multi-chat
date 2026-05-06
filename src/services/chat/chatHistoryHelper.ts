@@ -27,16 +27,14 @@ export function getContentAtIndex(content: string | string[], index: number): st
 }
 
 /**
- * 将内容转换为数组形式（追加新元素）
- * @param content 当前内容
- * @param newElement 要追加的新元素
- * @returns 追加后的数组
+ * 计算内容数组中 clamp 后的目标索引
+ * @param content 消息内容（string 或 string[]）
+ * @param historyIndex 可选的目标索引
+ * @returns clamp 后的索引，非数组或无 historyIndex 时返回 undefined
  */
-function pushContent(content: string | string[], newElement: string): string[] {
-  if (Array.isArray(content)) {
-    return [...content, newElement];
-  }
-  return [content, newElement];
+function resolveTargetIndex(content: string | string[] | undefined, historyIndex?: number): number | undefined {
+  if (!Array.isArray(content) || historyIndex === undefined) return undefined;
+  return Math.min(Math.max(historyIndex, 0), content.length - 1);
 }
 
 /**
@@ -102,15 +100,26 @@ export function commitEdit(
     const { chatHistoryList } = chatModel;
     const userMessage = chatHistoryList[messageIndex];
     if (userMessage) {
-      userMessage.content = pushContent(userMessage.content, newContent);
+      if (Array.isArray(userMessage.content)) {
+        userMessage.content.push(newContent);
+      } else {
+        userMessage.content = [userMessage.content, newContent];
+      }
     }
 
-    // AI 回复（索引 + 1 位置）
     const aiMessage = chatHistoryList[messageIndex + 1];
     if (aiMessage && aiMessage.role === ChatRoleEnum.ASSISTANT) {
-      aiMessage.content = pushContent(aiMessage.content, '');
+      if (Array.isArray(aiMessage.content)) {
+        aiMessage.content.push('');
+      } else {
+        aiMessage.content = [aiMessage.content, ''];
+      }
       if (aiMessage.reasoningContent !== undefined) {
-        aiMessage.reasoningContent = pushContent(aiMessage.reasoningContent, '');
+        if (Array.isArray(aiMessage.reasoningContent)) {
+          aiMessage.reasoningContent.push('');
+        } else {
+          aiMessage.reasoningContent = [aiMessage.reasoningContent, ''];
+        }
       }
     }
   }
@@ -188,44 +197,25 @@ export function commitRegenerate(
     const runningEntry = state.runningChat[chatId]?.[modelId];
     if (!runningEntry) continue;
 
-    // 计算目标索引：未传 historyIndex 时默认取数组末尾
-    const targetIndex = historyIndex !== undefined && Array.isArray(aiMessage.content)
-      ? Math.min(historyIndex, aiMessage.content.length - 1)
-      : undefined;
-
-    // 暂存旧 content 到回滚字段
-    const oldContent = targetIndex !== undefined
-      ? (aiMessage.content as string[])[targetIndex]
+    const contentIdx = resolveTargetIndex(aiMessage.content, historyIndex);
+    runningEntry.rollbackContent = contentIdx !== undefined
+      ? aiMessage.content[contentIdx]
       : getCurrentContent(aiMessage.content);
-    runningEntry.rollbackContent = oldContent;
 
-    // 原地覆盖 content 目标元素为空字符串
     if (Array.isArray(aiMessage.content)) {
-      const idx = targetIndex ?? aiMessage.content.length - 1;
-      const arr = [...aiMessage.content];
-      arr[idx] = '';
-      aiMessage.content = arr;
+      aiMessage.content[contentIdx ?? aiMessage.content.length - 1] = '';
     } else {
       aiMessage.content = '';
     }
 
-    // 暂存旧 reasoningContent 到回滚字段
     if (aiMessage.reasoningContent !== undefined) {
-      const reasoningTargetIndex = historyIndex !== undefined && Array.isArray(aiMessage.reasoningContent)
-        ? Math.min(historyIndex, (aiMessage.reasoningContent as string[]).length - 1)
-        : undefined;
-
-      const oldReasoning = reasoningTargetIndex !== undefined
-        ? (aiMessage.reasoningContent as string[])[reasoningTargetIndex]
+      const reasoningIdx = resolveTargetIndex(aiMessage.reasoningContent, historyIndex);
+      runningEntry.rollbackReasoningContent = reasoningIdx !== undefined
+        ? aiMessage.reasoningContent[reasoningIdx]
         : getCurrentContent(aiMessage.reasoningContent);
-      runningEntry.rollbackReasoningContent = oldReasoning;
 
-      // 原地覆盖 reasoningContent 目标元素为空字符串
       if (Array.isArray(aiMessage.reasoningContent)) {
-        const idx = reasoningTargetIndex ?? aiMessage.reasoningContent.length - 1;
-        const arr = [...aiMessage.reasoningContent];
-        arr[idx] = '';
-        aiMessage.reasoningContent = arr;
+        aiMessage.reasoningContent[reasoningIdx ?? aiMessage.reasoningContent.length - 1] = '';
       } else {
         aiMessage.reasoningContent = '';
       }
@@ -263,51 +253,32 @@ export function rollbackRegenerate(
     const runningEntry = state.runningChat[chatId]?.[modelId];
     if (!runningEntry) continue;
 
-    // 计算目标索引
-    const contentTargetIndex = historyIndex !== undefined && Array.isArray(aiMessage.content)
-      ? Math.min(historyIndex, aiMessage.content.length - 1)
-      : undefined;
+    const contentIdx = resolveTargetIndex(aiMessage.content, historyIndex);
 
-    // 从回滚字段恢复 content 目标元素
     if (runningEntry.rollbackContent !== undefined) {
       if (Array.isArray(aiMessage.content)) {
-        const idx = contentTargetIndex ?? aiMessage.content.length - 1;
-        const arr = [...aiMessage.content];
-        arr[idx] = runningEntry.rollbackContent;
-        aiMessage.content = arr;
+        aiMessage.content[contentIdx ?? aiMessage.content.length - 1] = runningEntry.rollbackContent;
       } else {
         aiMessage.content = runningEntry.rollbackContent;
       }
     }
 
-    // 计算 reasoningContent 目标索引
-    const reasoningTargetIndex = historyIndex !== undefined && Array.isArray(aiMessage.reasoningContent)
-      ? Math.min(historyIndex, (aiMessage.reasoningContent as string[]).length - 1)
-      : undefined;
+    const reasoningIdx = resolveTargetIndex(aiMessage.reasoningContent, historyIndex);
 
-    // 从回滚字段恢复 reasoningContent 目标元素
     if (runningEntry.rollbackReasoningContent !== undefined) {
       if (Array.isArray(aiMessage.reasoningContent)) {
-        const idx = reasoningTargetIndex ?? aiMessage.reasoningContent.length - 1;
-        const arr = [...aiMessage.reasoningContent];
-        arr[idx] = runningEntry.rollbackReasoningContent;
-        aiMessage.reasoningContent = arr;
+        aiMessage.reasoningContent[reasoningIdx ?? aiMessage.reasoningContent.length - 1] = runningEntry.rollbackReasoningContent;
       } else {
         aiMessage.reasoningContent = runningEntry.rollbackReasoningContent;
       }
     } else if (aiMessage.reasoningContent !== undefined) {
-      // 无 reasoningContent 回滚值时，恢复为 undefined（若原来被设为空字符串）
       if (Array.isArray(aiMessage.reasoningContent)) {
-        const idx = reasoningTargetIndex ?? aiMessage.reasoningContent.length - 1;
-        const arr = [...aiMessage.reasoningContent];
-        arr[idx] = '';
-        aiMessage.reasoningContent = arr;
+        aiMessage.reasoningContent[reasoningIdx ?? aiMessage.reasoningContent.length - 1] = '';
       } else {
         aiMessage.reasoningContent = aiMessage.reasoningContent || undefined;
       }
     }
 
-    // 清除回滚字段
     delete runningEntry.rollbackContent;
     delete runningEntry.rollbackReasoningContent;
   }
@@ -344,40 +315,24 @@ export function updateHistoryContent(
   const aiMessage = chatModel.chatHistoryList[messageIndex];
   if (!aiMessage) return false;
 
-  // 计算目标索引
-  const contentIdx = historyIndex !== undefined && Array.isArray(aiMessage.content)
-    ? Math.min(historyIndex, aiMessage.content.length - 1)
-    : undefined;
+  const contentIdx = resolveTargetIndex(aiMessage.content, historyIndex);
 
-  // 更新 content 数组目标元素
   if (Array.isArray(aiMessage.content)) {
-    const idx = contentIdx ?? aiMessage.content.length - 1;
-    const arr = [...aiMessage.content];
-    arr[idx] = content;
-    aiMessage.content = arr;
+    aiMessage.content[contentIdx ?? aiMessage.content.length - 1] = content;
   } else {
     aiMessage.content = content;
   }
 
-  // 更新 reasoningContent 数组目标元素
   if (reasoningContent !== undefined) {
+    const reasoningIdx = resolveTargetIndex(aiMessage.reasoningContent, historyIndex);
     if (Array.isArray(aiMessage.reasoningContent)) {
-      const reasoningIdx = historyIndex !== undefined
-        ? Math.min(historyIndex, aiMessage.reasoningContent.length - 1)
-        : aiMessage.reasoningContent.length - 1;
-      const arr = [...aiMessage.reasoningContent];
-      arr[reasoningIdx] = reasoningContent;
-      aiMessage.reasoningContent = arr;
+      aiMessage.reasoningContent[reasoningIdx ?? aiMessage.reasoningContent.length - 1] = reasoningContent;
     } else {
       aiMessage.reasoningContent = reasoningContent;
     }
   } else if (Array.isArray(aiMessage.reasoningContent)) {
-    const reasoningIdx = historyIndex !== undefined
-      ? Math.min(historyIndex, aiMessage.reasoningContent.length - 1)
-      : aiMessage.reasoningContent.length - 1;
-    const arr = [...aiMessage.reasoningContent];
-    arr[reasoningIdx] = '';
-    aiMessage.reasoningContent = arr;
+    const reasoningIdx = resolveTargetIndex(aiMessage.reasoningContent, historyIndex);
+    aiMessage.reasoningContent[reasoningIdx ?? aiMessage.reasoningContent.length - 1] = '';
   }
 
   // 清理 runningChat 条目

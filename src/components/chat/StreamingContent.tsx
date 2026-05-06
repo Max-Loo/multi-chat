@@ -42,42 +42,48 @@ export const StreamingContent: React.FC<StreamingContentProps> = ({
   isRunning,
   className,
 }) => {
-  /** 冻结块 HTML 缓存（append-only，仅在新分割点出现时追加） */
   const frozenBlocksRef = useRef<string[]>([]);
-  /** 上一次记录的分割点位置（用于检测分割点前进/回退） */
-  const lastSplitPointRef = useRef(0);
+  const prevSplitPointRef = useRef(0);
+  const lastAppendedStartRef = useRef(-1);
 
-  // 非流式模式的完整 HTML（memo 避免历史消息重复计算）
   const fullHtml = useMemo(() => {
     if (isRunning) return "";
     return generateCleanHtml(content);
   }, [content, isRunning]);
 
-  // 流式期间：根据分割点变化更新冻结块缓存
-  if (isRunning) {
-    const splitPoint = findSafeSplitPoint(content);
-    const lastSplit = lastSplitPointRef.current;
-
-    if (splitPoint < lastSplit) {
-      // 内容缩短（编辑回退/重新生成），重置缓存
-      frozenBlocksRef.current = [];
-      lastSplitPointRef.current = 0;
-    } else if (splitPoint > lastSplit) {
-      // 新安全分割点出现，将新确认的内容毕业为冻结块
-      const newFrozenContent = content.slice(lastSplit, splitPoint);
-      frozenBlocksRef.current = [
-        ...frozenBlocksRef.current,
-        generateCleanHtml(newFrozenContent),
-      ];
-      lastSplitPointRef.current = splitPoint;
+  const { frozenBlocks, activeStart } = useMemo(() => {
+    if (!isRunning) {
+      prevSplitPointRef.current = 0;
+      return { frozenBlocks: [] as string[], activeStart: 0 };
     }
-  } else if (frozenBlocksRef.current.length > 0) {
-    // 流式结束 → 清除冻结缓存，下次渲染走 fullHtml 路径
+
+    const splitPoint = findSafeSplitPoint(content);
+    const prevSplit = prevSplitPointRef.current;
+
+    if (splitPoint < prevSplit) {
+      prevSplitPointRef.current = 0;
+      return { frozenBlocks: [] as string[], activeStart: 0 };
+    }
+
+    if (splitPoint === prevSplit) {
+      return { frozenBlocks: [] as string[], activeStart: prevSplit };
+    }
+
+    const newBlock = generateCleanHtml(content.slice(prevSplit, splitPoint));
+    prevSplitPointRef.current = splitPoint;
+    return { frozenBlocks: [newBlock], activeStart: splitPoint };
+  }, [content, isRunning]);
+
+  if (activeStart === 0 && frozenBlocksRef.current.length > 0) {
     frozenBlocksRef.current = [];
-    lastSplitPointRef.current = 0;
+    lastAppendedStartRef.current = -1;
   }
 
-  // 非流式：单次完整渲染
+  if (frozenBlocks.length > 0 && activeStart !== lastAppendedStartRef.current) {
+    frozenBlocksRef.current.push(...frozenBlocks);
+    lastAppendedStartRef.current = activeStart;
+  }
+
   if (!isRunning) {
     return (
       <div
@@ -87,8 +93,7 @@ export const StreamingContent: React.FC<StreamingContentProps> = ({
     );
   }
 
-  // 流式：冻结块（memo 跳过） + 活跃块
-  const activeContent = content.slice(lastSplitPointRef.current);
+  const activeContent = content.slice(activeStart);
   const activeHtml = generateCleanHtml(activeContent);
 
   return (

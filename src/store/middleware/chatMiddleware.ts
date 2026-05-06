@@ -17,6 +17,7 @@ import {
   releaseCompletedBackgroundChat,
   editAndResendMessage,
   regenerateMessage,
+  sendMessage,
 } from "../slices/chatSlices";
 
 export const saveChatListMiddleware = createListenerMiddleware<RootState>();
@@ -26,9 +27,7 @@ const generatingTitleChatIds = new Set<string>();
 
 // 监听 sendMessage.fulfilled，检测是否需要触发自动标题生成
 saveChatListMiddleware.startListening({
-  predicate: (action, _currentState, _previousState) => {
-    return action.type === 'chatModel/sendMessage/fulfilled';
-  },
+  matcher: sendMessage.fulfilled.match,
   effect: async (action: any, listenerApi) => {
     const { chat, model } = action.meta.arg;
     const state = listenerApi.getState();

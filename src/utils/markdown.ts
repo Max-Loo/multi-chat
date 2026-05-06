@@ -148,6 +148,7 @@ const markdownInstance = createMarkdownInstance();
  * @returns 转换后的安全 HTML 字符串
  */
 export const generateCleanHtml = (dirtyMarkdown: string) => {
+  if (!dirtyMarkdown) return '';
   return DOMPurify.sanitize(markdownInstance.render(dirtyMarkdown), {
     ADD_TAGS: ['button', 'svg', 'path', 'polyline', 'rect'],
     ADD_ATTR: ['d', 'viewBox', 'xmlns', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'rx', 'ry', 'points', 'width', 'height', 'x', 'y', 'type'],

@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -31,8 +30,7 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
   const [expanded, setExpanded] = useState(initiallyExpanded);
 
   return (
-    <Card className="mb-2 bg-transparent border-none shadow-none">
-      {/* 折叠按钮 */}
+    <div className="mb-2">
       <Button
         variant="ghost"
         size="sm"
@@ -40,19 +38,16 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
         className="w-full font-normal hover:bg-muted/50"
       >
         <div className="flex items-center w-full">
-          {/* 标题 */}
           <span
             className={`text-sm text-left mr-2 ${loading && "animate-pulse-fade"}`}
           >
             {title}
           </span>
 
-          {/* 右侧：折叠/展开图标 */}
           {expanded ? <ChevronDown size={4} /> : <ChevronRight size={4} />}
         </div>
       </Button>
 
-      {/* 推理内容 */}
       {expanded && (
         <div className="pl-4 pb-4 mt-2 border-l-2 border-gray-300">
           <StreamingContent
@@ -62,6 +57,6 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
           />
         </div>
       )}
-    </Card>
+    </div>
   );
 };

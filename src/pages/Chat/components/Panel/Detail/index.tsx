@@ -121,17 +121,16 @@ const Detail: React.FC<DetailProps> = ({
   // 计算消息配对关系（用户消息 → 下一条 AI 回复，双向映射）
   const messagePairs = useMemo(() => {
     const result: Record<string, string> = {}
-    for (let i = 0; i < displayList.length - 1; i++) {
-      if (displayList[i].message.role === ChatRoleEnum.USER &&
-          displayList[i + 1].message.role === ChatRoleEnum.ASSISTANT) {
-        result[displayList[i].message.id] = displayList[i + 1].message.id
-        result[displayList[i + 1].message.id] = displayList[i].message.id
+    for (let i = 0; i < historyList.length - 1; i++) {
+      if (historyList[i].role === ChatRoleEnum.USER &&
+          historyList[i + 1].role === ChatRoleEnum.ASSISTANT) {
+        result[historyList[i].id] = historyList[i + 1].id
+        result[historyList[i + 1].id] = historyList[i].id
       }
     }
     return result
-  }, [displayList])
+  }, [historyList])
 
-  // 成对消息的稳定翻页回调（避免每次渲染重建导致 memo 失效）
   const historyCallbacks = useMemo(() => {
     const callbacks: Record<string, (index: number) => void> = {}
     for (const msgId of Object.keys(messagePairs)) {
@@ -300,9 +299,16 @@ const Detail: React.FC<DetailProps> = ({
     onScrollEvent()
   }, [checkScrollStatus, onScrollEvent])
 
-  // 复制消息回调
+  const messageMap = useMemo(() => {
+    const map = new Map<string, StandardMessage>()
+    for (const msg of historyList) {
+      map.set(msg.id, msg)
+    }
+    return map
+  }, [historyList])
+
   const handleCopy = useCallback(async (messageId: string) => {
-    const message = historyList.find(m => m.id === messageId);
+    const message = messageMap.get(messageId);
     if (!message) return;
     try {
       await copyToClipboard(getCurrentContent(message.content));
@@ -310,7 +316,7 @@ const Detail: React.FC<DetailProps> = ({
     } catch {
       toastQueue.error(t($ => $.chat.copyFailed));
     }
-  }, [historyList, t]);
+  }, [messageMap, t]);
 
   // 编辑消息回调
   const handleEdit = useCallback((messageId: string, newContent: string) => {

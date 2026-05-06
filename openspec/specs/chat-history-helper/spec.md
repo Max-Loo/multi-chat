@@ -109,7 +109,7 @@
 
 ### Requirement: commitRegenerate 辅助函数
 
-系统 SHALL 提供一个 `commitRegenerate(state, chatId, assistantMessageId)` 辅助函数，用于在重新生成时将旧 AI 回复内容 push 进数组。
+系统 SHALL 提供一个 `commitRegenerate(state, chatId, assistantMessageId)` 辅助函数，用于在重新生成时将旧 AI 回复内容 push 进数组。`commitRegenerate` SHALL 使用共享的 `resolveTargetIndex` 辅助函数消除重复的索引 clamp 逻辑。数组元素替换 SHALL 直接使用 Immer draft 索引赋值（`arr[idx] = value`），而非创建新数组拷贝。
 
 > **定位策略**：由于不同模型的 AI 回复消息 ID 不同，`commitRegenerate` 采用**位置索引定位**：
 > 1. 在所有 ChatModel 的 chatHistoryList 中找到包含该 `assistantMessageId` 的模型
@@ -128,11 +128,27 @@
 - **WHEN** 调用 `commitRegenerate` 且 chatId 在 activeChatData 中找不到
 - **THEN** 函数 SHALL 不修改任何状态并返回 `false`
 
+#### Scenario: resolveTargetIndex 正确计算 clamp 索引
+- **WHEN** historyIndex 为 5 但 content 数组只有 3 个元素
+- **THEN** resolveTargetIndex 返回 2（Math.min(5, 3-1)）
+
+#### Scenario: resolveTargetIndex 对非数组内容返回 undefined
+- **WHEN** content 为 string 类型（非数组）
+- **THEN** resolveTargetIndex 返回 undefined
+
+#### Scenario: Immer draft 中直接替换数组元素
+- **WHEN** aiMessage.content 为 ["a", "b", "c"]（在 WritableDraft 上下文中），需要将索引 1 的元素替换为 "x"
+- **THEN** 直接使用 `aiMessage.content[1] = "x"`，Immer 自动处理不可变性
+
+#### Scenario: Immer draft 中非数组内容直接赋值
+- **WHEN** aiMessage.content 为 "old"（非数组，在 WritableDraft 上下文中）
+- **THEN** 直接使用 `aiMessage.content = "new"`，无需数组操作
+
 ---
 
 ### Requirement: rollbackRegenerate 辅助函数
 
-系统 SHALL 提供一个 `rollbackRegenerate(state, chatId, assistantMessageId)` 辅助函数，用于在重新生成失败时回滚 AI 回复的数组。
+系统 SHALL 提供一个 `rollbackRegenerate(state, chatId, assistantMessageId)` 辅助函数，用于在重新生成失败时回滚 AI 回复的数组。`rollbackRegenerate` SHALL 使用共享的 `resolveTargetIndex` 辅助函数消除重复的索引 clamp 逻辑。数组元素替换 SHALL 直接使用 Immer draft 索引赋值。
 
 > **定位策略**：与 `commitRegenerate` 相同，通过位置索引跨模型定位。
 
@@ -151,7 +167,7 @@
 
 ### Requirement: updateHistoryContent 辅助函数
 
-系统 SHALL 提供一个 `updateHistoryContent(state, chatId, modelId, messageIndex, content, reasoningContent?)` 辅助函数，用于在流式完成后更新 AI 回复的 content/reasoningContent 数组最后一个元素，替换占位空字符串。
+系统 SHALL 提供一个 `updateHistoryContent(state, chatId, modelId, messageIndex, content, reasoningContent?)` 辅助函数，用于在流式完成后更新 AI 回复的 content/reasoningContent 数组最后一个元素，替换占位空字符串。`updateHistoryContent` SHALL 使用共享的 `resolveTargetIndex` 辅助函数消除重复的索引 clamp 逻辑。数组元素替换 SHALL 直接使用 Immer draft 索引赋值。
 
 > **定位策略**：直接通过 `chatId` → `modelId` → `messageIndex` 三级定位，无需跨模型搜索。
 
@@ -167,3 +183,25 @@
 #### Scenario: 聊天或模型不存在
 - **WHEN** 调用 `updateHistoryContent` 且 chatId 在 activeChatData 中找不到，或 modelId 在 chatModelList 中找不到
 - **THEN** 函数 SHALL 不修改任何状态并返回 `false`
+
+---
+
+### Requirement: findMessageIndex 保持遍历所有模型
+findMessageIndex SHALL 保持遍历所有 chatModel 的 chatHistoryList 查找消息索引。每个模型的 chatHistoryList 使用独立的消息 ID（`generateUserMessageId()` 每次调用生成唯一 ID），"只查第一个模型"会导致非首选模型的重新生成功能失效。
+
+#### Scenario: 消息存在于某个模型中
+- **WHEN** 目标 messageId 在某个 chatModel 的 chatHistoryList 中
+- **THEN** 遍历所有模型直到找到，返回该消息的索引位置
+
+#### Scenario: 消息不存在
+- **WHEN** 目标 messageId 不在任何 chatModel 的 chatHistoryList 中
+- **THEN** 返回 -1
+
+---
+
+### Requirement: commitEdit 使用 Immer draft push 追加
+在 `commitEdit` 中对 Immer draft 的 content 数组追加元素 SHALL 使用 `.push()` 方法，而非 `pushContent` 创建新数组。
+
+#### Scenario: commitEdit 使用 push 追加
+- **WHEN** 用户消息 content 为 ["v1", "v2"]（在 Immer draft 上下文中）
+- **THEN** 使用 `content.push("v3")` 追加新版本，Immer 自动处理不可变性

@@ -6,15 +6,12 @@ import { memo, useMemo, useState, useCallback, useEffect } from "react";
 import { ThinkingSection } from "./ThinkingSection";
 import { StreamingContent } from "./StreamingContent";
 import { useTranslation } from "react-i18next";
-import { getCurrentContent } from "@/services/chat/chatHistoryHelper";
-import { useAutoResizeTextarea } from "@/hooks/useAutoResizeTextarea";
 import {
-  Copy,
-  Pencil,
-  RefreshCw,
-  Check,
-  X,
-} from "lucide-react";
+  getCurrentContent,
+  getContentAtIndex,
+} from "@/services/chat/chatHistoryHelper";
+import { useAutoResizeTextarea } from "@/hooks/useAutoResizeTextarea";
+import { Copy, Pencil, RefreshCw, Check, X } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -208,19 +205,12 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
 
   // 当前版本的内容
   const currentContent = useMemo(() => {
-    if (Array.isArray(content)) {
-      return content[historyIndex] ?? content[content.length - 1];
-    }
-    return content;
+    return getContentAtIndex(content, historyIndex);
   }, [content, historyIndex]);
 
   const currentReasoning = useMemo(() => {
     if (!reasoningContent) return undefined;
-    if (Array.isArray(reasoningContent)) {
-      const idx = Math.min(historyIndex, reasoningContent.length - 1);
-      return reasoningContent[idx];
-    }
-    return reasoningContent;
+    return getContentAtIndex(reasoningContent, historyIndex);
   }, [reasoningContent, historyIndex]);
 
   // 当 content 外部更新时（如编辑确认后），重置内部 historyIndex 到最新
@@ -440,7 +430,7 @@ const isContentEqual = (
 ): boolean => {
   if (a === b) return true;
   if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a[a.length - 1] === b[b.length - 1];
+    return a.length === b.length && a.every((val, i) => val === b[i]);
   }
   return false;
 };
