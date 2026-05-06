@@ -9,12 +9,7 @@ import * as tauriEnv from '@/utils/tauriCompat/env';
 
 // 使用 vi.hoisted 确保 mock 在 hoisted 阶段可用
 const { mockStoreMethods } = vi.hoisted(() => ({
-  mockStoreMethods: {
-    init: () => Promise.resolve(),
-    keys: () => Promise.resolve(['models']),
-    delete: () => Promise.resolve(undefined),
-    save: () => Promise.resolve(undefined),
-  },
+  mockStoreMethods: globalThis.__createMemoryStorageMock(),
 }));
 
 vi.mock('@/utils/tauriCompat', async (importOriginal) => {
@@ -28,7 +23,6 @@ vi.mock('@/utils/tauriCompat', async (importOriginal) => {
 describe('resetAllData', () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.clearAllMocks();
     vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
     vi.spyOn(keyring, 'deletePassword').mockResolvedValue(undefined);
     vi.spyOn(keyring, 'resetState').mockImplementation(() => {});

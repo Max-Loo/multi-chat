@@ -4,7 +4,7 @@
 
 ### Requirement: 发送聊天消息
 
-系统 MUST 在 Redux Thunk `sendMessage` 中使用 `ChatService.streamChatCompletion()` 发起流式聊天请求。
+系统 MUST 在 Redux Thunk `sendMessage` 中使用 `ChatService.streamChatCompletion()` 发起流式聊天请求。前端 `sendMessage` 调用函数 SHALL 在调用点添加异步异常处理（`.catch(console.error)`）。并发守卫由调用点的 `isSending` 检查负责，SHALL NOT 使用 `abortSendEventRef.current` 作为发送锁。
 
 系统 MUST 将 `model` 对象、`historyList` 和 `message` 作为参数传递给 `ChatService.streamChatCompletion()`。
 
@@ -23,6 +23,10 @@
 - **AND** 系统通过 `for await (const msg of response)` 迭代流式响应
 - **AND** 系统将每个响应消息 dispatch 到 Redux store
 - **AND** 聊天界面实时显示流式响应
+
+#### Scenario: 前端 sendMessage 异步异常捕获
+- **WHEN** 前端 `sendMessage` 的 async 流程中抛出异常
+- **THEN** 调用点 SHALL 通过 `.catch(console.error)` 捕获，避免 unhandled rejection
 
 #### Scenario: 不再使用 Provider 工厂的 fetchApi
 - **WHEN** Redux Thunk `sendMessage` 执行

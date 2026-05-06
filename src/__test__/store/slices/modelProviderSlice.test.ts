@@ -20,6 +20,7 @@ import modelProviderReducer, {
   refreshModelProvider,
   silentRefreshModelProvider,
   clearError,
+  triggerSilentRefreshIfNeeded,
 } from "@/store/slices/modelProviderSlice";
 import {
   fetchRemoteData,
@@ -32,7 +33,7 @@ import { ALLOWED_REMOTE_MODEL_PROVIDERS } from "@/services/modelRemote/config";
 import {
   createDeepSeekProvider,
   createMockRemoteProviders,
-} from "@/__test__/fixtures/modelProvider";
+} from "@/__test__/helpers/fixtures";
 
 // Mock 服务层依赖
 vi.mock("@/services/modelRemote", () => ({
@@ -99,11 +100,8 @@ describe("modelProviderSlice", () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createTestStore();
   });
-
-  // initialState 测试已被删除：基本的 Redux reducer 测试
 
   describe("clearError", () => {
     it("应该清除错误信息", () => {
@@ -119,6 +117,48 @@ describe("modelProviderSlice", () => {
   });
 
   describe("initializeModelProvider", () => {
+    it("应该在 pending 时设置 loading=true 并清除 error", () => {
+      // 先设置 error 状态
+      store.dispatch(clearError());
+
+      // Dispatch pending
+      store.dispatch(initializeModelProvider.pending("test-req-pending"));
+
+      const state = store.getState().modelProvider;
+      expect(state.loading).toBe(true);
+      expect(state.error).toBe(null);
+    });
+
+    it("应该在 rejected 且有 providers payload 时保存 providers", () => {
+      // 直接 dispatch rejected 并携带 providers（第四个参数是 payload）
+      store.dispatch(initializeModelProvider.rejected(new Error("test"), "test-req-providers", undefined, {
+        providers: mockProviders,
+        lastUpdate: null,
+        error: "自定义错误",
+      }));
+
+      const state = store.getState().modelProvider;
+      expect(state.providers).toEqual(mockProviders);
+      expect(state.error).toBe("自定义错误");
+    });
+
+    it("应该在 rejected payload 无 providers 时保持 providers 不变", () => {
+      // 先设置初始 providers
+      store.dispatch(initializeModelProvider.fulfilled({
+        providers: mockProviders,
+        lastUpdate: null,
+      }, "test-req-init"));
+
+      // dispatch rejected 有 error 但无 providers
+      store.dispatch(initializeModelProvider.rejected(new Error("test"), "test-req-no-providers", undefined, {
+        error: "仅有错误",
+      }));
+
+      const state = store.getState().modelProvider;
+      expect(state.providers).toEqual(mockProviders);
+      expect(state.error).toBe("仅有错误");
+    });
+
     it("应该使用缓存快速启动（快速路径）", async () => {
       // Mock loadCachedProviderData 成功返回缓存数据
       mockLoadCachedProviderData.mockResolvedValue(mockProviders);
@@ -242,6 +282,26 @@ describe("modelProviderSlice", () => {
   });
 
   describe("refreshModelProvider", () => {
+    it("应该在 pending 时设置 loading=true 并清除 error", () => {
+      store.dispatch(refreshModelProvider.pending("test-req-refresh-pending"));
+
+      const state = store.getState().modelProvider;
+      expect(state.loading).toBe(true);
+      expect(state.error).toBe(null);
+    });
+
+    it("应该在 rejected 后设置 loading=false", async () => {
+      // Mock fetchRemoteData 失败
+      mockFetchRemoteData.mockRejectedValue(
+        new RemoteDataError(RemoteDataErrorType.NETWORK_ERROR, "网络请求失败"),
+      );
+
+      await store.dispatch(refreshModelProvider());
+
+      const state = store.getState().modelProvider;
+      expect(state.loading).toBe(false);
+    });
+
     it("应该成功刷新并更新状态", async () => {
       // Mock fetchRemoteData 成功返回
       mockFetchRemoteData.mockResolvedValue({
@@ -275,18 +335,6 @@ describe("modelProviderSlice", () => {
         mockFullApiResponse,
       );
     });
-
-    // 刷新失败时保留原有数据测试已被删除：
-    // - 已标记 skip，无法在单元测试中设置 Redux store 的初始状态
-    // - 集成测试 app-loading.integration.test.ts 已覆盖此行为
-
-    // AbortSignal 取消请求测试已被删除：
-    // - 已标记 skip，refreshModelProvider 不接受外部 signal 参数
-    // - 集成测试已覆盖取消场景
-
-    // pending 状态测试已被删除：
-    // - 测试 loading: true 内部状态，属于 Redux Toolkit 自动生成的行为
-    // - 集成测试 app-loading.integration.test.ts 已覆盖加载指示器行为
 
     it("应该正确处理 rejectWithValue", async () => {
       // Mock fetchRemoteData 失败
@@ -486,6 +534,24 @@ describe("modelProviderSlice", () => {
       expect(state.backgroundRefreshing).toBe(false);
     });
 
+    it("应该在无错误时 fulfilled 保持 error 为 null", async () => {
+      // 不设置错误，初始状态 error 为 null
+      const stateBefore = store.getState().modelProvider;
+      expect(stateBefore.error).toBe(null);
+
+      // Mock fetchRemoteData 成功返回
+      mockFetchRemoteData.mockResolvedValue({
+        fullApiResponse: mockFullApiResponse,
+        filteredData: mockProviders,
+      });
+      mockSaveCachedProviderData.mockResolvedValue(undefined);
+
+      await store.dispatch(silentRefreshModelProvider());
+
+      const stateAfter = store.getState().modelProvider;
+      expect(stateAfter.error).toBe(null);
+    });
+
     it("应该在失败时不清除现有的 error", async () => {
       // 先设置初始状态（有错误）
       store.dispatch(initializeModelProvider.rejected(new Error("init error"), "test-req-no-clear"));
@@ -503,6 +569,90 @@ describe("modelProviderSlice", () => {
       // 验证 error 保持不变
       const state = store.getState().modelProvider;
       expect(state.error).toEqual(errorBefore);
+    });
+  });
+
+  describe("refreshModelProvider 非 RemoteDataError 分支", () => {
+    it("应该在 RemoteDataError 时使用错误消息", async () => {
+      // Mock fetchRemoteData 抛出 RemoteDataError（自定义消息）
+      mockFetchRemoteData.mockRejectedValue(
+        new RemoteDataError(RemoteDataErrorType.SERVER_ERROR, "服务器内部错误"),
+      );
+
+      const result = await store.dispatch(refreshModelProvider());
+
+      expect(result.type).toBe("modelProvider/refresh/rejected");
+
+      const state = store.getState().modelProvider;
+      expect(state.error).toBe("服务器内部错误");
+    });
+
+    it("应该在非 RemoteDataError 时使用默认错误消息", async () => {
+      // Mock fetchRemoteData 抛出普通 Error（非 RemoteDataError）
+      mockFetchRemoteData.mockRejectedValue(new TypeError("fetch is not a function"));
+
+      const result = await store.dispatch(refreshModelProvider());
+
+      expect(result.type).toBe("modelProvider/refresh/rejected");
+
+      const state = store.getState().modelProvider;
+      expect(state.error).toBe("刷新失败，请稍后重试");
+    });
+
+    it("应该在 initialize rejected 无 payload 时使用 error.message", () => {
+      // 直接 dispatch rejected（不通过 rejectWithValue）
+      store.dispatch(initializeModelProvider.rejected(new Error("Network disconnected"), "req-init-no-payload"));
+
+      const state = store.getState().modelProvider;
+      expect(state.error).toBe("Network disconnected");
+    });
+
+    it("应该在 rejected 无 payload 时使用 error.message", () => {
+      // 直接 dispatch rejected（不通过 rejectWithValue）
+      store.dispatch(refreshModelProvider.rejected(new Error("Connection timeout"), "req-no-payload"));
+
+      const state = store.getState().modelProvider;
+      expect(state.error).toBe("Connection timeout");
+    });
+  });
+
+  describe("triggerSilentRefreshIfNeeded", () => {
+    it("应该在 backgroundRefreshing 为 false 时触发刷新", () => {
+      const dispatchSpy = vi.fn();
+      const mockStore = {
+        getState: () => ({
+          modelProvider: {
+            loading: false,
+            backgroundRefreshing: false,
+            providers: [],
+            error: null,
+          },
+        }),
+        dispatch: dispatchSpy,
+      };
+
+      triggerSilentRefreshIfNeeded(mockStore as any);
+
+      expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("应该在 backgroundRefreshing 为 true 时跳过刷新", () => {
+      const dispatchSpy = vi.fn();
+      const mockStore = {
+        getState: () => ({
+          modelProvider: {
+            loading: false,
+            backgroundRefreshing: true,
+            providers: [],
+            error: null,
+          },
+        }),
+        dispatch: dispatchSpy,
+      };
+
+      triggerSilentRefreshIfNeeded(mockStore as any);
+
+      expect(dispatchSpy).not.toHaveBeenCalled();
     });
   });
 });

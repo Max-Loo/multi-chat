@@ -3,18 +3,15 @@
  * 测试模型详情标题组件的渲染和功能
  */
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import DetailTitle from '@/pages/Chat/components/Panel/Detail/Title';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createMockModel, createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用' }, common: { confirm: '确认', cancel: '取消' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * 创建测试用的 Redux store
@@ -33,10 +30,7 @@ const createTestStore = (models: ReturnType<typeof createMockModel>[] = []) => {
 };
 
 describe('DetailTitle', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   describe('6.1 测试正常状态渲染（Logo + 昵称）', () => {
     it('应该显示「昵称 (模型名)」格式', () => {
       const testModel = createMockModel({
@@ -99,8 +93,8 @@ describe('DetailTitle', () => {
     });
   });
 
-  describe('6.3 测试长文本截断样式', () => {
-    it('应该为显示名称容器添加 truncate 类', () => {
+  describe('6.3 测试语义化标题元素', () => {
+    it('应该使用 heading 元素显示模型名称', () => {
       const testModel = createMockModel({
         nickname: '这是一个非常长的昵称用于测试截断效果',
         modelName: 'very-long-model-name-for-testing',
@@ -110,8 +104,9 @@ describe('DetailTitle', () => {
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
-      const displayNameElement = screen.getByText(/这是一个非常长的昵称用于测试截断效果/);
-      expect(displayNameElement).toHaveClass('truncate');
+      const heading = screen.getByRole('heading');
+      expect(heading).toBeInTheDocument();
+      expect(heading.textContent).toContain('这是一个非常长的昵称用于测试截断效果');
     });
   });
 
@@ -158,7 +153,7 @@ describe('DetailTitle', () => {
 
       renderWithProviders(<DetailTitle chatModel={chatModel} />, { store });
 
-      const disabledBadge = screen.getByText('已禁用');
+      const disabledBadge = screen.getByText('被禁用');
       expect(disabledBadge).toBeInTheDocument();
     });
 

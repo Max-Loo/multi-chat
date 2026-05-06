@@ -1,21 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { ModelSearch } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ModelSearch'
 
-vi.mock('react-i18next', () => {
-  const R = { setting: { modelProvider: { searchPlaceholder: 'setting.modelProvider.searchPlaceholder', searchResult: 'setting.modelProvider.searchResult', totalModels: 'setting.modelProvider.totalModels' } } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  setting: { modelProvider: { searchPlaceholder: 'setting.modelProvider.searchPlaceholder', searchResult: 'setting.modelProvider.searchResult', totalModels: 'setting.modelProvider.totalModels' } },
+}));
 
 describe('ModelSearch', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  afterEach(() => {
-    cleanup()
-  })
 
   const defaultProps = {
     value: '',
@@ -105,16 +97,16 @@ describe('ModelSearch', () => {
 
   describe('组件渲染', () => {
     it('应该渲染搜索图标', () => {
-      const { container } = render(<ModelSearch {...defaultProps} />)
-      const svgIcon = container.querySelector('svg')
+      render(<ModelSearch {...defaultProps} />)
+      const svgIcon = screen.getByTestId('model-search-icon')
 
       expect(svgIcon).toBeInTheDocument()
     })
 
-    it('应该正确应用样式类名', () => {
-      const { container } = render(<ModelSearch {...defaultProps} />)
-      const wrapper = container.querySelector('.space-y-2')
-      const searchContainer = container.querySelector('.relative')
+    it('应该正确渲染包装容器', () => {
+      render(<ModelSearch {...defaultProps} />)
+      const wrapper = screen.getByTestId('model-search-wrapper')
+      const searchContainer = screen.getByTestId('model-search-container')
 
       expect(wrapper).toBeInTheDocument()
       expect(searchContainer).toBeInTheDocument()

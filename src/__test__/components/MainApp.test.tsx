@@ -4,47 +4,26 @@
  * 验证 decryptionFailureCount Toast 行为和 KeyRecoveryDialog 触发
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { createMainApp } from '@/MainApp';
 import type { InitResult } from '@/services/initialization';
 
 // Mock toastQueue
-vi.mock('@/services/toast', () => ({
-  toastQueue: {
-    warning: vi.fn(),
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    loading: vi.fn(),
-    dismiss: vi.fn(),
-    promise: vi.fn(),
-  },
-}));
+vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());
 
-// Mock i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (fn: (k: unknown) => string) => {
-      const mockObj = {
-        common: {
-          decryptionFailureMessage: '2 个模型的 API Key 无法解密',
-          decryptionFailureImport: '导入密钥',
-          decryptionFailureDismiss: '我知道了',
-          masterKeyRegeneratedMessage: '密钥已重新生成',
-          masterKeyRegeneratedImport: '导入密钥',
-          masterKeyRegeneratedDismiss: '我知道了',
-        },
-      };
-      try {
-        return fn(mockObj as unknown);
-      } catch {
-        return 'mocked';
-      }
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    common: {
+      decryptionFailureMessage: '2 个模型的 API Key 无法解密',
+      decryptionFailureImport: '导入密钥',
+      decryptionFailureDismiss: '我知道了',
+      masterKeyRegeneratedMessage: '密钥已重新生成',
+      masterKeyRegeneratedImport: '导入密钥',
+      masterKeyRegeneratedDismiss: '我知道了',
     },
-    i18n: { language: 'zh' },
   }),
-}));
+);
 
 // Mock router - 使用 createMemoryRouter 避免浏览器历史依赖
 vi.mock('@/router', async () => {
@@ -97,10 +76,6 @@ const createMockResult = (overrides: Partial<InitResult> = {}): InitResult => ({
 });
 
 describe('MainApp', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('应该在 decryptionFailureCount > 0 时显示 Toast 警告', () => {
     const MainApp = createMainApp(createMockResult({ decryptionFailureCount: 2 }));
     render(<MainApp />);

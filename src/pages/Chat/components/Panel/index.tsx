@@ -58,7 +58,7 @@ const Panel: React.FC = () => {
   }, [shouldUseSplitter, board]);
 
   return (
-    <div className="relative flex flex-col items-center justify-start w-full h-full">
+    <div className="relative flex flex-col items-center justify-start w-full h-full" data-testid="chat-panel">
       {/* 为了实现「上中下」的布局，内部采用 absolute 定位 ，为了保持层级正常，将组件写在最前面 */}
       {renderContent}
       {/* 头部 */}

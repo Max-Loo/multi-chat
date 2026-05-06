@@ -28,7 +28,6 @@ vi.mock('@/utils/tauriCompat/env', () => ({
 describe('Keyring 兼容层测试套件', () => {
   // 全局 beforeEach：清理所有 Mock 和状态
   beforeEach(() => {
-    vi.clearAllMocks();
     localStorage.clear(); // 清理 localStorage
   });
 
@@ -697,8 +696,277 @@ describe('Keyring 兼容层测试套件', () => {
         vi.unstubAllGlobals();
 
         // 结果应该是 false（因为 IndexedDB 不可用）
-        expect(typeof result).toBe('boolean');
+        expect(result).toBe(false);
       });
+    });
+  });
+
+  // ==================== 变异测试补强 ====================
+
+  describe('变异测试补强 - isSupported', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('Web 环境（有 IndexedDB + Crypto）应该返回 true', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+
+      const module = await import('@/utils/tauriCompat/keyring');
+      expect(module.keyring.isSupported()).toBe(true);
+    });
+
+    it('Web 环境（无 IndexedDB）应该返回 false', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      vi.stubGlobal('indexedDB', undefined);
+
+      const module = await import('@/utils/tauriCompat/keyring');
+      expect(module.keyring.isSupported()).toBe(false);
+    });
+
+    it('Web 环境（无 Crypto.subtle）应该返回 false', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+      vi.stubGlobal('crypto', { subtle: undefined });
+
+      const module = await import('@/utils/tauriCompat/keyring');
+      expect(module.keyring.isSupported()).toBe(false);
+    });
+  });
+
+  describe('变异测试补强 - resetState', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('Web 环境 resetState 清除加密密钥后需要重新初始化', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+      localStorage.clear();
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      const { keyring } = await import('@/utils/tauriCompat/keyring');
+
+      await keyring.setPassword('service', 'user', 'password');
+
+      keyring.resetState();
+
+      // resetState 后重新操作应该正常（触发自动初始化）
+      await keyring.setPassword('service', 'user', 'new-password');
+      const result = await keyring.getPassword('service', 'user');
+      expect(result).toBe('new-password');
+    });
+
+    it('Web 环境 resetState 关闭 db 并清除内部状态', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+      localStorage.clear();
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const compat = new WebKeyringCompat();
+      await compat.init();
+
+      // 获取内部 db 引用并 spy close 方法
+      const db = (compat as unknown as { db: IDBDatabase }).db;
+      const closeSpy = vi.spyOn(db, 'close');
+
+      compat.resetState();
+
+      // 验证 db.close() 被调用
+      expect(closeSpy).toHaveBeenCalledTimes(1);
+      // 验证内部状态被清除
+      expect((compat as unknown as { db: IDBDatabase | null }).db).toBeNull();
+      expect((compat as unknown as { encryptionKey: CryptoKey | null }).encryptionKey).toBeNull();
+      expect((compat as unknown as { currentSeed: string | null }).currentSeed).toBeNull();
+    });
+
+    it('Tauri 环境 resetState 不抛错', async () => {
+      vi.mocked(isTauri).mockReturnValue(true);
+
+      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      expect(() => keyring.resetState()).not.toThrow();
+    });
+  });
+
+  describe('变异测试补强 - close 别名', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('close() 调用 resetState()', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+      localStorage.clear();
+
+      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const compat = new WebKeyringCompat();
+      const resetSpy = vi.spyOn(compat, 'resetState');
+
+      compat.close();
+
+      expect(resetSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('变异测试补强 - createKeyringAPI duck typing', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('Web 环境 keyring.resetState 执行实际方法', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+      localStorage.clear();
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      const { keyring } = await import('@/utils/tauriCompat/keyring');
+
+      await keyring.setPassword('service', 'user', 'password');
+      keyring.resetState();
+
+      // 重置后重新操作正常（证明 resetState 实际清除了状态）
+      await keyring.setPassword('service', 'user', 'new-password');
+      const result = await keyring.getPassword('service', 'user');
+      expect(result).toBe('new-password');
+    });
+
+    it('Tauri 环境 keyring.resetState 为空操作不抛错', async () => {
+      vi.mocked(isTauri).mockReturnValue(true);
+
+      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      expect(() => keyring.resetState()).not.toThrow();
+    });
+  });
+
+  describe('变异测试补强 - init 种子变化检测', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('种子未变化时不重新派生密钥', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+      localStorage.clear();
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const compat = new WebKeyringCompat();
+
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      // 第一次 init - 应该调用 importKey
+      await compat.init();
+      expect(importKeySpy.mock.calls.length).toBeGreaterThan(0);
+
+      importKeySpy.mockClear();
+
+      // 第二次 init（种子未变）- 不应再调用 importKey
+      await compat.init();
+      expect(importKeySpy).not.toHaveBeenCalled();
+    });
+
+    it('种子变化时重新派生密钥', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+      localStorage.clear();
+      const seed1 = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed1);
+
+      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const compat = new WebKeyringCompat();
+
+      await compat.init();
+
+      // 更换种子
+      const seed2 = 'bmV3LXNlZWQtMzItYnl0ZXM=';
+      localStorage.setItem('multi-chat-keyring-seed', seed2);
+
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      // 重新 init（种子已变）- 应该调用 importKey
+      await compat.init();
+      expect(importKeySpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('变异测试补强 - setPassword createdAt', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('存储记录包含接近当前时间的毫秒时间戳', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+      localStorage.clear();
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      const { keyring } = await import('@/utils/tauriCompat/keyring');
+
+      const beforeTime = Date.now();
+      await keyring.setPassword('ts-service', 'ts-user', 'password');
+      const afterTime = Date.now();
+
+      // 从 IndexedDB 直接读取记录检查 createdAt
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('multi-chat-keyring', 1);
+        request.addEventListener('success', () => resolve(request.result));
+        request.addEventListener('error', () => reject(request.error));
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const record = await new Promise<any>((resolve, reject) => {
+        const tx = db.transaction('keys', 'readonly');
+        const store = tx.objectStore('keys');
+        const request = store.get(['ts-service', 'ts-user']);
+        request.addEventListener('success', () => resolve(request.result));
+        request.addEventListener('error', () => reject(request.error));
+      });
+
+      expect(record.createdAt).toBeGreaterThanOrEqual(beforeTime);
+      expect(record.createdAt).toBeLessThanOrEqual(afterTime);
+
+      db.close();
+    });
+  });
+
+  describe('变异测试补强 - ensureInitialized', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('未初始化时调用 getPassword 自动初始化', async () => {
+      vi.mocked(isTauri).mockReturnValue(false);
+      const fakeDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', fakeDB);
+      localStorage.clear();
+      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+      localStorage.setItem('multi-chat-keyring-seed', seed);
+
+      const { keyring } = await import('@/utils/tauriCompat/keyring');
+
+      // 不调用 init，直接调用 getPassword - 应自动初始化
+      const result = await keyring.getPassword('service', 'user');
+      expect(result).toBeNull();
+
+      // 存储后能正确读取
+      await keyring.setPassword('service', 'user', 'password');
+      const retrieved = await keyring.getPassword('service', 'user');
+      expect(retrieved).toBe('password');
     });
   });
 
@@ -756,14 +1024,19 @@ describe('Keyring 兼容层测试套件', () => {
     });
 
     describe('解密失败', () => {
-      // 注：由于 Web Crypto API 的 mock 在测试环境中的限制，这两个测试难以可靠地实现
-      // 解密失败路径已经在实际使用中验证，这里跳过单元测试
+      // Skip reason: vi.spyOn(crypto.subtle, 'decrypt') 在 happy-dom 中拦截不稳定，
+      // mock 的 rejectedValue 直接穿透了 getPassword 的 catch 块（原因未明）。
+      // IndexedDB 数据篡改方案也因 fake-indexedDB 数据库连接隔离问题无法跨连接写入。
+      // 加密失败测试可用 vi.spyOn 在 import 前拦截，但解密需要先写入再拦截，时序不同导致不可靠。
+      // Verified alternative: 使用真实浏览器进行集成测试验证解密失败路径。
+      // Unblock condition: 使用真正的 Web Crypto API polyfill 替代 vi.fn() mock，
+      // 或使用 vitest workspace 隔离模块缓存后用 vi.mock 拦截 crypto-helpers 的 decrypt 导出。
       it.skip('应该抛出"密码读取或解密失败"错误', async () => {
-        // 跳过：Web Crypto API mock 在 Vitest/happy-dom 环境中不可靠
+        // Web Crypto API mock 在 Vitest/happy-dom 环境中不可靠
       });
 
       it.skip('应该记录错误日志到 console.error', async () => {
-        // 跳过：Web Crypto API mock 在 Vitest/happy-dom 环境中不可靠
+        // Web Crypto API mock 在 Vitest/happy-dom 环境中不可靠
       });
     });
 

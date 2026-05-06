@@ -292,7 +292,8 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
       return (
         <div
           className="flex justify-end w-full mt-3 mr-2"
-          data-testid="chat-bubble"
+          data-testid="user-message"
+          aria-label={t($ => $.common.a11y.userMessage)}
         >
           <div className="flex flex-col items-end w-[80%]">
             {isEditing ? (
@@ -360,6 +361,7 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
               </>
             )}
           </div>
+
         </div>
       );
     }
@@ -371,7 +373,8 @@ const ChatBubbleInner: React.FC<ChatBubbleProps> = ({
       return (
         <div
           className="flex justify-start w-full mt-3 ml-2"
-          data-testid="chat-bubble"
+          data-testid="assistant-message"
+          aria-label={t($ => $.common.a11y.assistantMessage)}
         >
           <Card className="border-none shadow-none max-w-[80%]">
             <div className="w-full">

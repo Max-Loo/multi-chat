@@ -42,5 +42,8 @@
   "editMessage": "编辑消息",
   "editConfirm": "确认编辑",
   "editCancel": "取消编辑",
-  "regenerateMessage": "重新生成"
+  "regenerateMessage": "重新生成",
+  "moreActions": "更多操作",
+  "increaseColumns": "增加列数",
+  "decreaseColumns": "减少列数"
 }

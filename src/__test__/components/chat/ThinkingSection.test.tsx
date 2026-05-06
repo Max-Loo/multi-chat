@@ -4,53 +4,22 @@
  * 测试推理内容折叠组件的各种场景
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThinkingSection } from '@/components/chat/ThinkingSection';
 
-// Mock highlight.js
-vi.mock('highlight.js', () => ({
-  default: {
-    highlight: (str: string, _options: { language: string }) => ({ value: str }),
-    highlightAuto: (str: string) => ({ value: str }),
-    getLanguage: (lang: string) => lang !== undefined,
-  },
-}));
+// Mock highlight.js（使用共享 mock 工厂）
+vi.mock('highlight.js', () => globalThis.__createHighlightJsMock());
 
-// Mock markdown-it
-vi.mock('markdown-it', () => ({
-  default: vi.fn(() => ({
-    render: (str: string) => {
-      // 简单的 markdown 渲染模拟
-      return str
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // **粗体**
-        .replace(/\*(.+?)\*/g, '<em>$1</em>') // *斜体*
-        .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code>$2</code></pre>') // 代码块
-        .replace(/\n/g, '<br>'); // 换行
-    },
-  })),
-}));
+// Mock markdown-it（使用共享 mock 工厂）
+vi.mock('markdown-it', () => globalThis.__createMarkdownItMock());
 
-// Mock DOMPurify
-vi.mock('dompurify', () => ({
-  default: {
-    sanitize: (html: string) => {
-      // 简单的 XSS 清理模拟：移除 script 标签和危险的 HTML 属性
-      return html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/onerror=["'][^"']*["']/gi, '')
-        .replace(/onload=["'][^"']*["']/gi, '');
-    },
-  },
-}));
+// Mock DOMPurify（使用共享 mock 工厂）
+vi.mock('dompurify', () => globalThis.__createDompurifyMock());
 
 describe('ThinkingSection UI 组件', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    cleanup();
-  });
-
+  
   describe('基础渲染', () => {
     it('应该正确渲染推理内容区域', () => {
       render(
@@ -169,9 +138,7 @@ describe('ThinkingSection UI 组件', () => {
         />
       );
 
-      // 检查是否有加载动画（pulse-fade）
-      const spinner = document.querySelector('.animate-pulse-fade');
-      expect(spinner).not.toBe(null);
+      expect(screen.getByTestId('thinking-loading')).toBeInTheDocument();
     });
 
     it('应该显示"思考中"标题', () => {
@@ -195,8 +162,7 @@ describe('ThinkingSection UI 组件', () => {
         />
       );
 
-      const spinner = document.querySelector('.animate-pulse-fade');
-      expect(spinner).toBe(null);
+      expect(screen.queryByTestId('thinking-loading')).not.toBeInTheDocument();
     });
   });
 
@@ -387,26 +353,50 @@ describe('ThinkingSection UI 组件', () => {
       );
 
       expect(screen.getByText('思考完成')).toBeVisible();
-      expect(document.querySelector('.animate-pulse-fade')).toBe(null);
+      expect(screen.queryByTestId('thinking-loading')).not.toBeInTheDocument();
     });
   });
 
   describe('可访问性', () => {
-    it('应该有可访问的按钮标签', () => {
-      const { container } = render(
+    it('按钮应该有 aria-expanded 属性反映展开状态', () => {
+      render(
         <ThinkingSection
           title="推理过程"
           content="内容"
         />
       );
 
-      // 查找按钮元素
-      const button = container.querySelector('button');
-      expect(button).not.toBe(null);
-      if (button) {
-        // 检查按钮的标签名
-        expect(button.tagName.toLowerCase()).toBe('button');
-      }
+      const button = screen.getByRole('button', { name: /推理过程/ });
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('展开后按钮的 aria-expanded 应变为 true', async () => {
+      const user = userEvent.setup();
+      render(
+        <ThinkingSection
+          title="推理过程"
+          content="内容"
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /推理过程/ });
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+
+      await user.click(button);
+      expect(button).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('初始展开时 aria-expanded 应为 true', () => {
+      render(
+        <ThinkingSection
+          title="推理过程"
+          content="内容"
+          initiallyExpanded={true}
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /推理过程/ });
+      expect(button).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('应该在折叠时显示右箭头图标', () => {
@@ -416,10 +406,8 @@ describe('ThinkingSection UI 组件', () => {
           content="内容"
         />
       );
-      
-      // ChevronRight icon 应该存在
-      const chevronRight = document.querySelector('svg.lucide-chevron-right');
-      expect(chevronRight).not.toBe(null);
+
+      expect(screen.getByTestId('chevron-right')).toBeInTheDocument();
     });
 
     it('应该在展开时显示下箭头图标', () => {
@@ -430,10 +418,8 @@ describe('ThinkingSection UI 组件', () => {
           initiallyExpanded={true}
         />
       );
-      
-      // ChevronDown icon 应该存在
-      const chevronDown = document.querySelector('svg.lucide-chevron-down');
-      expect(chevronDown).not.toBe(null);
+
+      expect(screen.getByTestId('chevron-down')).toBeInTheDocument();
     });
   });
 });

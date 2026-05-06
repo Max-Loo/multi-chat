@@ -32,7 +32,6 @@ describe('useCreateChat', () => {
   const mockNavigateToChat = vi.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.mocked(useNavigateToChat).mockReturnValue({
       navigateToChat: mockNavigateToChat,
       clearChatIdParam: vi.fn(),
@@ -90,6 +89,24 @@ describe('useCreateChat', () => {
     const secondRef = result.current.createNewChat;
 
     expect(firstRef).toBe(secondRef);
+  });
+
+  it('createNewChat 引用应该变化 当 navigateToChat 依赖变化', () => {
+    const { result, rerender } = renderHookWithProviders(() => useCreateChat());
+
+    const firstRef = result.current.createNewChat;
+
+    // 改变 navigateToChat 返回值，模拟依赖变化
+    vi.mocked(useNavigateToChat).mockReturnValue({
+      navigateToChat: vi.fn(),
+      clearChatIdParam: vi.fn(),
+    });
+
+    rerender();
+
+    const secondRef = result.current.createNewChat;
+
+    expect(firstRef).not.toBe(secondRef);
   });
 
   it('应该在创建聊天后同步设置 selectedChatId', () => {

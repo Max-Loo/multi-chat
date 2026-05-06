@@ -1,12 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, createEvent } from '@testing-library/react';
 import { ProviderCard } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ProviderCard';
 import type { RemoteProviderData } from '@/services/modelRemote';
 
-vi.mock('react-i18next', () => {
-  const R = { setting: { modelProvider: { status: { available: '可用', unavailable: '不可用' }, modelCount: '共 {{count}} 个模型', clickToViewDetails: '点击查看详情', searchPlaceholder: '搜索模型', searchResult: '找到 {{count}} 个模型', totalModels: '共 {{count}} 个模型', noModels: '暂无模型' } } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  setting: { modelProvider: { status: { available: '可用', unavailable: '不可用' }, modelCount: '共 {{count}} 个模型', clickToViewDetails: '点击查看详情', searchPlaceholder: '搜索模型', searchResult: '找到 {{count}} 个模型', totalModels: '共 {{count}} 个模型', noModels: '暂无模型' } },
+}));
 
 const mockProvider: RemoteProviderData = {
   providerKey: 'deepseek',
@@ -61,7 +60,7 @@ describe('ProviderCard', () => {
   it('点击时应该调用 onToggle', () => {
     const onToggle = vi.fn();
 
-    const { container } = render(
+    render(
       <ProviderCard
         provider={mockProvider}
         isExpanded={false}
@@ -70,10 +69,9 @@ describe('ProviderCard', () => {
       />
     );
 
-    // 直接查找带有 .cursor-pointer 类的 Card 元素
-    const cardElement = container.querySelector('.cursor-pointer');
+    const cardElement = screen.getByTestId('provider-card');
     expect(cardElement).toBeInTheDocument();
-    fireEvent.click(cardElement!);
+    fireEvent.click(cardElement);
 
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
@@ -95,7 +93,7 @@ describe('ProviderCard', () => {
 
   // 任务 4.5.1: 收起时不应该显示模型列表
   it('收起时不应该显示模型列表', () => {
-    const { container } = render(
+    render(
       <ProviderCard
         provider={mockProvider}
         isExpanded={false}
@@ -104,8 +102,7 @@ describe('ProviderCard', () => {
       />
     );
 
-    // 检查模型列表不应该显示（使用 container 限制查询范围）
-    expect(container.querySelector('.border-t')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('provider-card-details')).not.toBeInTheDocument();
   });
 
   // 任务 4.5.2: 应该渲染供应商图标（首字母）
@@ -142,7 +139,7 @@ describe('ProviderCard', () => {
     const onToggle = vi.fn();
 
     // 初始收起状态
-    const { container, rerender } = render(
+    const { rerender } = render(
       <ProviderCard
         provider={mockProvider}
         isExpanded={false}
@@ -152,9 +149,9 @@ describe('ProviderCard', () => {
     );
 
     // 点击展开
-    const cardElement = container.querySelector('.cursor-pointer');
+    const cardElement = screen.getByTestId('provider-card');
     expect(cardElement).toBeInTheDocument();
-    fireEvent.click(cardElement!);
+    fireEvent.click(cardElement);
     expect(onToggle).toHaveBeenCalledTimes(1);
 
     // 重新渲染为展开状态
@@ -175,7 +172,7 @@ describe('ProviderCard', () => {
   it('多次点击应该正确切换展开/收起状态', () => {
     const onToggle = vi.fn();
 
-    const { container } = render(
+    render(
       <ProviderCard
         provider={mockProvider}
         isExpanded={false}
@@ -184,7 +181,7 @@ describe('ProviderCard', () => {
       />
     );
 
-    const cardElement = container.querySelector('.cursor-pointer')!;
+    const cardElement = screen.getByTestId('provider-card');
     expect(cardElement).toBeInTheDocument();
 
     // 第一次点击
@@ -198,5 +195,44 @@ describe('ProviderCard', () => {
     // 第三次点击
     fireEvent.click(cardElement);
     expect(onToggle).toHaveBeenCalledTimes(3);
+  });
+
+  describe('键盘交互', () => {
+    it('按下 Enter 键应调用 onToggle', () => {
+      const onToggle = vi.fn();
+
+      render(
+        <ProviderCard
+          provider={mockProvider}
+          isExpanded={false}
+          onToggle={onToggle}
+          status="available"
+        />
+      );
+
+      const cardElement = screen.getByTestId('provider-card');
+      fireEvent.keyDown(cardElement, { key: 'Enter' });
+      expect(onToggle).toHaveBeenCalledTimes(1);
+    });
+
+    it('按下 Space 键应调用 onToggle 并 preventDefault', () => {
+      const onToggle = vi.fn();
+
+      render(
+        <ProviderCard
+          provider={mockProvider}
+          isExpanded={false}
+          onToggle={onToggle}
+          status="available"
+        />
+      );
+
+      const cardElement = screen.getByTestId('provider-card');
+      const event = createEvent.keyDown(cardElement, { key: ' ' });
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+      fireEvent(cardElement, event);
+      expect(preventDefaultSpy).toHaveBeenCalled();
+      expect(onToggle).toHaveBeenCalledTimes(1);
+    });
   });
 });

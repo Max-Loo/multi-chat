@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
  */
 const ModelSelectSkeleton: React.FC = () => {
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full h-full" aria-hidden="true">
       {/* 顶部操作栏骨架屏（高度 h-12） */}
       <div className="flex justify-between w-full h-12 pl-4 pr-4 border-b">
         {/* 左侧区域：已选模型标签预览 */}

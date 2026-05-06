@@ -4,8 +4,8 @@
  * 测试三个导航项渲染、路由导航、激活状态高亮、仅在Mobile模式显示
  */
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
 
 // Mock react-router-dom
 const mockNavigate = vi.fn();
@@ -16,18 +16,13 @@ vi.mock('react-router-dom', async () => ({
   }),
 }));
 
-// Mock useResponsive
+// 使用 vi.hoisted 确保响应式 mock 可动态切换
+const { mockIsMobile } = vi.hoisted(() => ({ mockIsMobile: { value: true } }));
 vi.mock('@/hooks/useResponsive', () => ({
-  useResponsive: () => ({
-    isMobile: true,
-    layoutMode: 'mobile',
-  }),
+  useResponsive: () => globalThis.__createResponsiveMock({ isMobile: mockIsMobile.value, layoutMode: mockIsMobile.value ? 'mobile' : 'desktop', isDesktop: !mockIsMobile.value }),
 }));
 
-vi.mock('react-i18next', () => {
-  const R = { nav: { chat: '聊天', model: '模型', setting: '设置' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock navigation配置（使用共享 mock）
 vi.mock('@/config/navigation', async () => {
@@ -38,12 +33,19 @@ vi.mock('@/config/navigation', async () => {
 import { BottomNav } from '@/components/BottomNav';
 
 describe('BottomNav 组件', () => {
-  afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
+
+  describe('桌面模式', () => {
+    it('应该在桌面模式下不渲染（返回 null）', () => {
+      mockIsMobile.value = false;
+      const { container } = render(<BottomNav />);
+      expect(container.innerHTML).toBe('');
+    });
   });
 
   describe('基础渲染', () => {
+    beforeEach(() => {
+      mockIsMobile.value = true;
+    });
     it('应该在移动端模式正确渲染', () => {
       render(
           <BottomNav />

@@ -162,8 +162,8 @@ TBD - created by archiving change responsive-layout-system. Update Purpose after
 
 #### Scenario: 底部导航栏 ARIA 角色
 - **WHEN** 底部导航栏渲染
-- **THEN** 容器有 `role="navigation"`
-- **AND** 有 `aria-label="主导航"`
+- **THEN** 容器使用原生 `<nav>` 元素（隐式 `role="navigation"`）
+- **AND** 有 `aria-label="底部导航"`，与 Sidebar 的"主导航"区分
 
 #### Scenario: 导航项按钮可访问性
 - **WHEN** 导航项按钮渲染
@@ -176,6 +176,11 @@ TBD - created by archiving change responsive-layout-system. Update Purpose after
 - **THEN** 可以在导航项之间导航
 - **AND** 焦点样式明显可见
 - **AND** 支持焦点 trap（可选）
+
+#### Scenario: 语义化查询可定位
+- **WHEN** 测试中使用 `screen.getByRole('navigation', { name: '底部导航' })`
+- **THEN** 能唯一匹配到底部导航栏组件
+- **AND** 不会与 Sidebar 的 `<nav aria-label="主导航">` 混淆
 
 ### Requirement: 底部导航栏性能优化
 

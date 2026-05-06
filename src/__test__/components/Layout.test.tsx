@@ -4,164 +4,121 @@
  * 测试布局渲染和基本结构
  */
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import Layout from '@/components/Layout';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 
-vi.mock('react-i18next', () => {
-  const R = {};
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
+
+/**
+ * Mock useResponsive hook，支持切换 isMobile 返回值
+ */
+const mockResponsive = vi.hoisted(() => globalThis.__createResponsiveMock());
+
+vi.mock('@/hooks/useResponsive', () => ({
+  useResponsive: () => mockResponsive,
+}));
 
 /**
  * 渲染 Layout 组件的辅助函数
  */
 function renderLayout(store: ReturnType<typeof createTypeSafeTestStore>, props?: { className?: string }) {
-  return render(
-    <Provider store={store}>
-        <BrowserRouter>
-          <Layout {...props} />
-        </BrowserRouter>
-    </Provider>
-  );
+  return renderWithProviders(<Layout {...props} />, { store });
 }
 
-// 每个测试后清理 DOM
-afterEach(() => {
-  cleanup();
-});
-
 describe('Layout 组件', () => {
+  // 共享 store：测试只验证 DOM 结构和组件行为，不依赖特定 Redux 状态
+  const store = createTypeSafeTestStore();
+
+  beforeEach(() => {
+    mockResponsive.isMobile = false;
+    mockResponsive.layoutMode = 'desktop';
+    mockResponsive.isDesktop = true;
+    mockResponsive.isCompact = false;
+    mockResponsive.isCompressed = false;
+  });
+
   describe('渲染测试', () => {
-    it('应该正确渲染 Layout 组件', () => {
-      const store = createTypeSafeTestStore();
+    it('应该正确渲染 Layout 组件并包含主内容区域', () => {
       renderLayout(store);
 
-      expect(screen.getByTestId('layout')).toBeInTheDocument();
-    });
-
-    it('应该渲染主内容区域', () => {
-      const store = createTypeSafeTestStore();
-      renderLayout(store);
-
-      expect(screen.getByRole('main')).toBeInTheDocument();
-    });
-
-    it('应该应用正确的布局结构', () => {
-      const store = createTypeSafeTestStore();
-      renderLayout(store);
-
-      const layoutDiv = screen.getByTestId('layout');
-      expect(layoutDiv).toBeInTheDocument();
-      expect(layoutDiv.children.length).toBeGreaterThan(0);
+      const layout = screen.getByTestId('layout-root');
+      const main = screen.getByRole('main');
+      expect(layout).toContainElement(main);
     });
 
     it('应该支持自定义 className', () => {
-      const store = createTypeSafeTestStore();
       renderLayout(store, { className: 'custom-class' });
 
-      expect(screen.getByTestId('layout')).toHaveClass('custom-class');
+      expect(screen.getByTestId('layout-root')).toHaveClass('custom-class');
     });
   });
 
   describe('布局结构测试', () => {
-    it('应该有正确的 Flexbox 布局结构', () => {
-      const store = createTypeSafeTestStore();
+    it('桌面端应有 Sidebar 和主内容区域并排', () => {
       renderLayout(store);
 
-      const layoutDiv = screen.getByTestId('layout');
-
-      // 验证布局容器存在并包含子元素
-      expect(layoutDiv).toBeInTheDocument();
-      expect(layoutDiv.children.length).toBeGreaterThan(0);
+      const layout = screen.getByTestId('layout-root');
+      const main = screen.getByRole('main');
+      // Sidebar 存在且在 main 之前（水平排列）
+      const children = Array.from(layout.children);
+      expect(children.indexOf(main)).toBeGreaterThan(0);
     });
 
-    it('应该占满整个屏幕高度', () => {
-      const store = createTypeSafeTestStore();
+    it('应该通过 Suspense 包裹 Outlet 内容', () => {
       renderLayout(store);
 
-      expect(screen.getByTestId('layout')).toBeInTheDocument();
-    });
-
-    it('主内容区域应该占据剩余空间', () => {
-      const store = createTypeSafeTestStore();
-      renderLayout(store);
-
-      expect(screen.getByRole('main')).toBeInTheDocument();
-    });
-  });
-
-  describe('Suspense 处理测试', () => {
-    it('应该使用 Suspense 包裹 Outlet', () => {
-      const store = createTypeSafeTestStore();
-      renderLayout(store);
-
-      expect(screen.getByTestId('layout')).toBeInTheDocument();
-    });
-  });
-
-  describe('子组件位置测试', () => {
-    it('应该正确渲染 Sidebar 组件', () => {
-      const store = createTypeSafeTestStore();
-      renderLayout(store);
-
-      expect(screen.getByTestId('layout')).toBeInTheDocument();
-    });
-
-    it('Sidebar 应该位于主内容区域之前', () => {
-      const store = createTypeSafeTestStore();
-      renderLayout(store);
-
-      const layoutDiv = screen.getByTestId('layout');
-      const mainContent = screen.getByRole('main');
-
-      // 验证主内容区域存在
-      expect(mainContent).toBeInTheDocument();
-
-      // 验证它们在同一个布局容器中
-      expect(layoutDiv).toContainElement(mainContent);
+      const main = screen.getByRole('main');
+      // main 区域存在于 layout-root 内，为 Suspense + Outlet 提供容器
+      const layout = screen.getByTestId('layout-root');
+      expect(layout).toContainElement(main);
     });
   });
 
   describe('响应式行为', () => {
     it('应该在移动端和桌面端都正确渲染', () => {
-      const store = createTypeSafeTestStore();
-      renderLayout(store);
+      // 桌面端：Sidebar 在 main 之前，无底部导航
+      mockResponsive.isMobile = false;
+      const { unmount } = renderLayout(store);
+      const desktopLayout = screen.getByTestId('layout-root');
+      const desktopMain = screen.getByRole('main');
+      expect(Array.from(desktopLayout.children).indexOf(desktopMain)).toBeGreaterThan(0);
+      // 桌面端只有侧边栏导航，无底部导航
+      expect(screen.getByRole('navigation', { name: '主导航' })).toBeInTheDocument();
+      expect(screen.queryByRole('navigation', { name: '底部导航' })).toBeNull();
+      unmount();
 
-      expect(screen.getByTestId('layout')).toBeInTheDocument();
+      // 移动端：main 是第一个子元素（无 Sidebar），有底部导航
+      mockResponsive.isMobile = true;
+      mockResponsive.layoutMode = 'mobile';
+      renderLayout(store);
+      const mobileLayout = screen.getByTestId('layout-root');
+      expect(mobileLayout.children[0]).toBe(screen.getByRole('main'));
     });
 
-    it('应该保持固定高度布局不受视口影响', () => {
-      const store = createTypeSafeTestStore();
+    it('主内容区域应该是 layout 的子元素', () => {
       renderLayout(store);
 
-      expect(screen.getByTestId('layout')).toBeInTheDocument();
-    });
-
-    it('主内容区域应该占满父容器高度', () => {
-      const store = createTypeSafeTestStore();
-      renderLayout(store);
-
-      expect(screen.getByRole('main')).toBeInTheDocument();
+      const layout = screen.getByTestId('layout-root');
+      const main = screen.getByRole('main');
+      expect(layout).toContainElement(main);
     });
   });
 
   describe('边界情况测试', () => {
     it('应该处理空 className', () => {
-      const store = createTypeSafeTestStore();
       renderLayout(store, { className: '' });
 
-      expect(screen.getByTestId('layout')).toBeInTheDocument();
+      const layout = screen.getByTestId('layout-root');
+      // 空 className 不添加额外 class，仅保留组件基础样式
+      expect(layout.className.trim()).toBe('flex h-screen bg-white');
     });
 
     it('应该处理多个自定义 className', () => {
-      const store = createTypeSafeTestStore();
       renderLayout(store, { className: 'class1 class2 class3' });
 
-      expect(screen.getByTestId('layout')).toHaveClass('class1', 'class2', 'class3');
+      expect(screen.getByTestId('layout-root')).toHaveClass('class1', 'class2', 'class3');
     });
   });
 });

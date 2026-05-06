@@ -35,16 +35,19 @@ export const ThinkingSection: React.FC<ThinkingSectionProps> = ({
         variant="ghost"
         size="sm"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="w-full font-normal hover:bg-muted/50"
       >
         <div className="flex items-center w-full">
           <span
+            data-testid={loading ? "thinking-loading" : undefined}
             className={`text-sm text-left mr-2 ${loading && "animate-pulse-fade"}`}
           >
             {title}
           </span>
 
-          {expanded ? <ChevronDown size={4} /> : <ChevronRight size={4} />}
+          {/* 右侧：折叠/展开图标 */}
+          {expanded ? <ChevronDown size={4} data-testid="chevron-down" /> : <ChevronRight size={4} data-testid="chevron-right" />}
         </div>
       </Button>
 

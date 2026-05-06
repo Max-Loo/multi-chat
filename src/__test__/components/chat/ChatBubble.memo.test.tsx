@@ -10,8 +10,8 @@
  * - 通过 DOM 断言验证 role/reasoningContent/isRunning 变化导致的重渲染
  */
 
-import { render, screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatRoleEnum } from '@/types/chat';
@@ -21,45 +21,13 @@ import { ChatRoleEnum } from '@/types/chat';
 // ========================================
 
 /** mock generateCleanHtml 并导出 spy */
-const mockGenerateCleanHtml = vi.fn((content: string) => `<p>${content}</p>`);
+const mockGenerateCleanHtml = vi.fn();
 
 vi.mock('@/utils/markdown', () => ({
   generateCleanHtml: (content: string) => mockGenerateCleanHtml(content),
 }));
 
-/**
- * Mock react-i18next for internationalization
- * 需支持 t($ => $.chat.thinking) 和 t($ => $.chat.thinkingComplete) 返回不同值
- */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            thinking: '思考中...',
-            thinkingComplete: '思考完成',
-          },
-          common: {
-            loading: '加载中',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
-    },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // ========================================
 // 渲染次数追踪 wrapper
@@ -89,15 +57,11 @@ describe('ChatBubble memo 重渲染行为', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     renderTracker.mockClear();
-    mockGenerateCleanHtml.mockClear();
+    mockGenerateCleanHtml.mockImplementation((content: string) => `<p>${content}</p>`);
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   it('应该不重渲染 当四个关键 props（role/content/reasoningContent/isRunning）都相同', () => {
     const { rerender } = render(<TrackedChatBubble {...defaultProps} />);
 
@@ -128,10 +92,9 @@ describe('ChatBubble memo 重渲染行为', () => {
 
     rerender(<TrackedChatBubble {...defaultProps} role={ChatRoleEnum.ASSISTANT} />);
 
-    // DOM 结构变化：user 的 justify-end 变为 assistant 的 justify-start
-    const bubble = screen.getByTestId('chat-bubble');
-    expect(bubble.className).toContain('justify-start');
-    expect(bubble.className).not.toContain('justify-end');
+    // role 变化触发重渲染：testid 从 user-message 切换为 assistant-message
+    expect(screen.queryByTestId('user-message')).not.toBeInTheDocument();
+    screen.getByTestId('assistant-message');
   });
 
   it('应该重渲染 当 reasoningContent 不同', () => {
@@ -145,7 +108,7 @@ describe('ChatBubble memo 重渲染行为', () => {
     );
 
     // 无 reasoningContent 时，不应有 ThinkingSection 相关内容
-    expect(screen.queryByText('思考完成')).not.toBeInTheDocument();
+    expect(screen.queryByText('思考完毕')).not.toBeInTheDocument();
 
     // reasoningContent 变化触发重渲染，ThinkingSection 出现
     rerender(
@@ -157,7 +120,7 @@ describe('ChatBubble memo 重渲染行为', () => {
       />
     );
 
-    expect(screen.getByText('思考完成')).toBeInTheDocument();
+    expect(screen.getByText('思考完毕')).toBeInTheDocument();
   });
 
   it('应该重渲染 当 isRunning 不同', () => {
@@ -170,8 +133,8 @@ describe('ChatBubble memo 重渲染行为', () => {
       />
     );
 
-    // isRunning=false 且 content="" → thinkingLoading=false → 显示 "思考完成"
-    expect(screen.getByText('思考完成')).toBeInTheDocument();
+    // isRunning=false 且 content="" → thinkingLoading=false → 显示 "思考完毕"
+    expect(screen.getByText('思考完毕')).toBeInTheDocument();
 
     // isRunning=true 且 content="" → thinkingLoading=true → 显示 "思考中..."
     rerender(

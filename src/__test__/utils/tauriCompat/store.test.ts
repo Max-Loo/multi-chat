@@ -1,236 +1,198 @@
+/**
+ * tauriCompat/store.ts 变异测试
+ *
+ * vi.unmock 绕过 setup/mocks.ts 的全局 mock，静态 import 获取真实模块
+ * 测试覆盖真实的 WebStoreCompat（IndexedDB 实现）
+ */
+
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+
+// 绕过 setup/mocks.ts 对 store 模块的全局 mock
+vi.unmock('@/utils/tauriCompat/store');
+
+// 覆盖 env 模块的 mock，控制 isTauri 返回值
+vi.mock('@/utils/tauriCompat/env', () => ({
+  isTauri: vi.fn(() => false),
+  isTestEnvironment: vi.fn(() => true),
+  getPBKDF2Iterations: vi.fn(() => 1000),
+  PBKDF2_ALGORITHM: 'SHA-256' as const,
+  DERIVED_KEY_LENGTH: 256,
+}));
+
+// Mock @tauri-apps/plugin-store 防止 Tauri 路径导入失败
+vi.mock('@tauri-apps/plugin-store', () => ({
+  LazyStore: vi.fn().mockImplementation(() => ({
+    init: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+    keys: vi.fn().mockResolvedValue([]),
+    save: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+
 import { createLazyStore } from '@/utils/tauriCompat/store';
 import type { StoreCompat } from '@/utils/tauriCompat/store';
-import { resetGlobals } from './helpers';
-import { initFakeIndexedDB, cleanupFakeIndexedDB } from './idb-helpers';
 
-/**
- * Store 兼容层测试套件
- *
- * 测试 src/utils/tauriCompat/store.ts 模块的功能
- * 覆盖环境检测、CRUD 操作、IndexedDB 集成的所有场景
- */
-describe('Store 兼容层', () => {
+describe('tauriCompat/store', () => {
   let store: StoreCompat;
-  let idbCtx: ReturnType<typeof initFakeIndexedDB>;
 
   beforeEach(() => {
-    resetGlobals();
-    idbCtx = initFakeIndexedDB();
+    vi.stubGlobal('indexedDB', new IDBFactory());
   });
 
   afterEach(() => {
-    cleanupFakeIndexedDB(idbCtx);
+    vi.unstubAllGlobals();
   });
 
-  describe('环境检测', () => {
-    it('应该创建 Store 实例', () => {
-      store = createLazyStore('test-store.json');
+  /**
+   * 辅助函数：创建已初始化的 store 实例
+   */
+  async function createInitStore(filename = 'test-store.json') {
+    const s = createLazyStore(filename);
+    await s.init();
+    return s;
+  }
 
-      expect(typeof store.init).toBe('function');
-      expect(typeof store.get).toBe('function');
-      expect(typeof store.set).toBe('function');
-      expect(typeof store.delete).toBe('function');
-      expect(typeof store.keys).toBe('function');
-      expect(typeof store.save).toBe('function');
+  describe('环境分发：createLazyStore', () => {
+    it('Web 环境创建 WebStoreCompat 实例', async () => {
+      store = await createInitStore('env-test.json');
+      expect(store.isSupported()).toBe(true);
     });
 
-    it('应该支持不同的文件名', () => {
-      const store1 = createLazyStore('store1.json');
-      const store2 = createLazyStore('store2.json');
+    it('Web 环境实例支持完整 CRUD 操作', async () => {
+      store = await createInitStore('crud-test.json');
 
-      expect(store1).toBeTruthy();
-      expect(store2).toBeTruthy();
-    });
-  });
+      await store.set('k1', 'v1');
+      expect(await store.get<string>('k1')).toBe('v1');
 
-  describe('初始化', () => {
-    it('init 应该成功初始化', async () => {
-      store = createLazyStore('test-init.json');
+      await store.delete('k1');
+      expect(await store.get<string>('k1')).toBeNull();
 
-      await expect(store.init()).resolves.not.toThrow();
-    });
-
-    it('应该支持多次初始化', async () => {
-      store = createLazyStore('test-init-multi.json');
-
-      await store.init();
-      await expect(store.init()).resolves.not.toThrow();
-    });
-  });
-
-  describe('get 操作', () => {
-    beforeEach(async () => {
-      store = createLazyStore('test-get.json');
-      await store.init();
-    });
-
-    it('应该支持 get 操作', async () => {
-      const value = await store.get<string>('any-key');
-
-      expect(value).toBeDefined();
-    });
-
-    it('键不存在时应该返回 null', async () => {
-      const value = await store.get<string>('non-existent-key');
-
-      expect(value).toBeNull();
-    });
-
-    it('应该处理读取错误', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      const value = await store.get('invalid-key');
-
-      expect(value).toBeDefined();
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('set 操作', () => {
-    beforeEach(async () => {
-      store = createLazyStore('test-set.json');
-      await store.init();
-    });
-
-    it('应该成功设置键值', async () => {
-      await expect(store.set('key1', 'value1')).resolves.not.toThrow();
-    });
-
-    it('应该支持多次 set 操作', async () => {
-      await store.set('key2', 'value2');
-      await store.set('key3', 'value3');
-
-      // 多次 set 不应抛出异常
-    });
-
-    it('应该处理写入错误', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      await store.set('test-key', 'test-value');
-
-      // 写入操作不应抛出异常
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('delete 操作', () => {
-    beforeEach(async () => {
-      store = createLazyStore('test-delete.json');
-      await store.init();
-    });
-
-    it('应该成功删除键', async () => {
-      await store.set('key-to-delete', 'value');
-      await expect(store.delete('key-to-delete')).resolves.not.toThrow();
-
-      const value = await store.get<string>('key-to-delete');
-      expect(value).toBeNull();
-    });
-
-    it('删除不存在的键不应该报错', async () => {
-      await expect(store.delete('non-existent-key')).resolves.not.toThrow();
-    });
-  });
-
-  describe('keys 操作', () => {
-    beforeEach(async () => {
-      store = createLazyStore('test-keys.json');
-      await store.init();
-    });
-
-    it('应该返回数组', async () => {
       const keys = await store.keys();
-
-      expect(Array.isArray(keys)).toBe(true);
-    });
-
-    it('新创建的 store 应该返回空数组', async () => {
-      const newStore = createLazyStore('test-keys-empty.json');
-      await newStore.init();
-
-      const keys = await newStore.keys();
-
       expect(keys).toEqual([]);
     });
   });
 
-  describe('save 操作', () => {
-    beforeEach(async () => {
-      store = createLazyStore('test-save.json');
-      await store.init();
-    });
-
-    it('应该成功保存', async () => {
+  describe('WebStoreCompat.get', () => {
+    it('set 后 get 返回精确值', async () => {
+      store = await createInitStore('get-precise.json');
       await store.set('key', 'value');
-      await expect(store.save()).resolves.not.toThrow();
+      expect(await store.get<string>('key')).toBe('value');
     });
 
-    it('Web 环境 save 操作为空操作', async () => {
-      await store.set('key', 'value');
-
-      const startTime = Date.now();
-      await store.save();
-      const duration = Date.now() - startTime;
-
-      expect(duration).toBeLessThan(100);
-    });
-  });
-
-  describe('复杂对象', () => {
-    beforeEach(async () => {
-      store = createLazyStore('test-complex.json');
-      await store.init();
+    it('键不存在时返回 null', async () => {
+      store = await createInitStore('get-null.json');
+      expect(await store.get<string>('non-existent-key')).toBeNull();
     });
 
-    it('应该支持存储对象', async () => {
+    it('存储对象后 get 返回精确对象', async () => {
+      store = await createInitStore('get-object.json');
       const testObject = { name: 'test', value: 123 };
-
-      await expect(store.set('obj-key', testObject)).resolves.not.toThrow();
-
-      const retrieved = await store.get('obj-key');
-      expect(retrieved).toBeDefined();
-    });
-
-    it('应该支持存储数组', async () => {
-      const testArray = [1, 2, 3, 4, 5];
-
-      await store.set('array-key', testArray);
-
-      const retrieved = await store.get('array-key');
-      expect(retrieved).toBeDefined();
+      await store.set('obj-key', testObject);
+      expect(await store.get<typeof testObject>('obj-key')).toEqual(testObject);
     });
   });
 
-  describe('IndexedDB 特性', () => {
-    beforeEach(async () => {
-      store = createLazyStore('test-indexeddb.json');
-      await store.init();
+  describe('WebStoreCompat.set', () => {
+    it('set 后 get 返回精确值', async () => {
+      store = await createInitStore('set-roundtrip.json');
+      await store.set('test-key', { name: 'test' });
+      expect(await store.get<{ name: string }>('test-key')).toEqual({ name: 'test' });
     });
 
-    it('应该支持存储复杂对象', async () => {
-      const complexObject = {
-        nested: {
-          level2: {
-            level3: {
-              value: 'deep',
-            },
-          },
-        },
-        array: [1, 2, { obj: 'test' }],
-        mixed: ['text', 123, true, null],
-      };
+    it('set 覆盖已有值', async () => {
+      store = await createInitStore('set-overwrite.json');
+      await store.set('key', 'old-value');
+      await store.set('key', 'new-value');
+      expect(await store.get<string>('key')).toBe('new-value');
+    });
+  });
 
-      await expect(store.set('complex-key', complexObject)).resolves.not.toThrow();
+  describe('WebStoreCompat.delete', () => {
+    it('delete 后 get 返回 null', async () => {
+      store = await createInitStore('delete-test.json');
+      await store.set('key', 'value');
+      await store.delete('key');
+      expect(await store.get<string>('key')).toBeNull();
     });
 
-    it('应该支持存储大数据', async () => {
-      const largeArray = Array.from({ length: 1000 }, (_, i) => ({
-        id: i,
-        name: `item-${i}`,
-      }));
+    it('删除不存在的键不报错', async () => {
+      store = await createInitStore('delete-noop.json');
+      await expect(store.delete('non-existent-key')).resolves.toBeUndefined();
+    });
+  });
 
-      await expect(store.set('large-data', largeArray)).resolves.not.toThrow();
+  describe('WebStoreCompat.keys', () => {
+    it('设置多个键后 keys 返回完整列表', async () => {
+      store = await createInitStore('keys-multi.json');
+      await store.set('a', 1);
+      await store.set('b', 2);
+      const keys = await store.keys();
+      expect(keys).toContain('a');
+      expect(keys).toContain('b');
+      expect(keys).toHaveLength(2);
+    });
+
+    it('新创建的 store 返回空数组', async () => {
+      store = await createInitStore('keys-empty.json');
+      expect(await store.keys()).toEqual([]);
+    });
+  });
+
+  describe('WebStoreCompat.close', () => {
+    it('close 后 get 抛出错误', async () => {
+      store = await createInitStore('close-test.json');
+      store.close();
+      try {
+        await store.get('any-key');
+        expect.unreachable('Expected get to throw after close');
+      } catch (error) {
+        expect((error as Error).message).toContain('Store 未初始化');
+      }
+    });
+
+    it('close 后 set 抛出错误', async () => {
+      store = await createInitStore('close-set-test.json');
+      store.close();
+      try {
+        await store.set('key', 'value');
+        expect.unreachable('Expected set to throw after close');
+      } catch (error) {
+        expect((error as Error).message).toContain('Store 未初始化');
+      }
+    });
+
+    it('未初始化时 get 抛出错误', async () => {
+      store = createLazyStore('no-init-test.json');
+      try {
+        await store.get('any-key');
+        expect.unreachable('Expected get to throw when not initialized');
+      } catch (error) {
+        expect((error as Error).message).toContain('Store 未初始化');
+      }
+    });
+  });
+
+  describe('WebStoreCompat.isSupported', () => {
+    it('fake-indexedDB 环境下返回 true', async () => {
+      store = await createInitStore('supported-test.json');
+      expect(store.isSupported()).toBe(true);
+    });
+
+    it('indexedDB 不可用时返回 false', () => {
+      vi.stubGlobal('indexedDB', undefined);
+      const s = createLazyStore('no-idb.json');
+      expect(s.isSupported()).toBe(false);
+    });
+  });
+
+  describe('WebStoreCompat.save', () => {
+    it('save 为空操作，不抛异常', async () => {
+      store = await createInitStore('save-test.json');
+      await store.set('key', 'value');
+      await expect(store.save()).resolves.toBeUndefined();
     });
   });
 });

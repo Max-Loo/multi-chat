@@ -4,23 +4,26 @@
  * 验证对话框渲染、输入、导入流程和验证失败二次确认
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { fireEvent } from '@testing-library/react';
 import { KeyRecoveryDialog } from '@/components/KeyRecoveryDialog';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (fn: (arg: any) => string) => {
-      const proxy = new Proxy({} as Record<string, string>, {
-        get: (_, prop: string) => prop,
-      });
-      return fn({ common: { keyRecovery: proxy, cancel: 'mockCancel' } });
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    common: {
+      keyRecovery: {
+        title: 'title',
+        description: 'description',
+        securityWarning: 'securityWarning',
+        importButton: 'importButton',
+        placeholder: 'placeholder',
+        mismatchWarning: 'mismatchWarning',
+        forceImport: 'forceImport',
+      },
     },
-    i18n: { language: 'zh' },
   }),
-}));
+);
 
 // Mock importMasterKeyWithValidation
 vi.mock('@/store/keyring/masterKey', () => ({
@@ -56,13 +59,6 @@ describe('KeyRecoveryDialog', () => {
     });
   };
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    cleanup();
-  });
 
   it('应该渲染对话框内容 当打开时', () => {
     render(<KeyRecoveryDialog {...defaultProps} />);

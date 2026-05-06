@@ -34,6 +34,23 @@ export function createToastQueueMocks(): Record<ToastMethod, ReturnType<typeof v
 }
 
 /**
+ * 创建 vi.mock('@/services/toast') 所需的完整模块 mock 对象
+ *
+ * 包装 createToastQueueMocks 为 vi.mock 兼容的模块级对象。
+ * 通过 globalThis.__createToastQueueModuleMock 注册。
+ *
+ * @example
+ * ```ts
+ * vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock());
+ * ```
+ */
+export function createToastQueueModuleMock() {
+  return {
+    toastQueue: createToastQueueMocks(),
+  };
+}
+
+/**
  * 为 toastQueue 实例创建 spyOn mock（用于 beforeEach）
  *
  * @param target 真实的 toastQueue 实例

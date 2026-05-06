@@ -5,8 +5,8 @@
  * 不 mock Detail 子组件，使用 renderWithProviders 渲染完整组件树
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { cleanup, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import Splitter from '@/pages/Chat/components/Panel/Splitter';
 import type { ChatModel } from '@/types/chat';
 import {
@@ -15,17 +15,7 @@ import {
 } from '@/__test__/helpers/mocks/panelLayout';
 import { renderWithProviders } from '@/__test__/helpers/render/redux';
 
-// Detail 组件内部使用 ResizeObserver
-globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
-vi.mock('react-i18next', () => {
-  const R = { chat: { modelDeleted: '模型已删除', deleted: '已删除', disabled: '已禁用', supplier: '供应商', model: '模型', nickname: '昵称' }, common: { loading: 'Loading...' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /** 渲染 Splitter 的辅助函数 */
 function renderSplitter(board: ChatModel[][]) {
@@ -34,11 +24,7 @@ function renderSplitter(board: ChatModel[][]) {
 }
 
 describe('Splitter', () => {
-  beforeEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('ResizablePanel 渲染', () => {
     it.each([
       {
@@ -61,17 +47,28 @@ describe('Splitter', () => {
         board: [[createMockPanelChatModel('model-1')]],
       },
     ])('应该渲染 ResizablePanelGroup ($name)', ({ board }) => {
-      const { container } = renderSplitter(board);
-      expect(container.querySelector('.pt-12.pb-30')).toBeInTheDocument();
+      renderSplitter(board);
+      expect(screen.getByTestId('splitter-container')).toBeInTheDocument();
     });
   });
 
   describe('样式验证', () => {
-    it('应该应用正确的容器样式', () => {
-      const { container } = renderSplitter([[createMockPanelChatModel('model-1')]]);
+    it('应该应用正确的容器方向和面板结构', () => {
+      const board = [
+        [createMockPanelChatModel('model-1'), createMockPanelChatModel('model-2')],
+        [createMockPanelChatModel('model-3')],
+      ];
+      renderSplitter(board);
 
-      const splitterContainer = container.querySelector('.pt-12.pb-30');
-      expect(splitterContainer).toBeInTheDocument();
+      const container = screen.getByTestId('splitter-container');
+      // 最外层 ResizablePanelGroup 为垂直方向（行排列）
+      const outerGroup = container.querySelector('[data-group]');
+      expect(outerGroup).toBeInTheDocument();
+      expect(outerGroup).toHaveStyle({ flexDirection: 'column' });
+
+      // 验证垂直面板数量等于 board 行数
+      const panels = outerGroup!.querySelectorAll(':scope > [data-panel]');
+      expect(panels).toHaveLength(2);
     });
   });
 

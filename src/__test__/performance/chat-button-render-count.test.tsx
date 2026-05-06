@@ -1,7 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { act, cleanup, render } from '@testing-library/react'
-import { Provider } from 'react-redux'
-import { BrowserRouter } from 'react-router-dom'
+import { act, cleanup } from '@testing-library/react'
 import { memo, useMemo } from 'react'
 import type { EnhancedStore } from '@reduxjs/toolkit'
 import { useAppSelector } from '@/hooks/redux'
@@ -9,7 +7,7 @@ import ChatButton from '@/pages/Chat/components/Sidebar/components/ChatButton'
 import type { ChatButtonProps } from '@/pages/Chat/components/Sidebar/components/ChatButton'
 import type { Chat } from '@/types/chat'
 import { chatToMeta } from '@/types/chat'
-import { createTestStore } from '@/__test__/helpers/render/redux'
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux'
 import { createMockChatList } from '@/__test__/helpers/mocks/chatSidebar'
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState'
 import { setSelectedChatId } from '@/store/slices/chatSlices'
@@ -18,7 +16,7 @@ import { setSelectedChatId } from '@/store/slices/chatSlices'
  * 创建性能测试用的 store
  */
 function createPerfStore(chatList: Chat[], selectedChatId: string) {
-  return createTestStore({
+  return createTypeSafeTestStore({
     chat: createChatSliceState({
       selectedChatId,
       chatMetaList: chatList.map(chatToMeta),
@@ -30,15 +28,7 @@ function createPerfStore(chatList: Chat[], selectedChatId: string) {
 
 // Mock ChatButton 的依赖（与 ChatButton.test.tsx 保持一致）
 vi.mock('@/hooks/useResponsive', () => ({
-  useResponsive: vi.fn(() => ({
-    layoutMode: 'desktop',
-    width: 1280,
-    height: 800,
-    isMobile: false,
-    isCompact: false,
-    isCompressed: false,
-    isDesktop: true,
-  })),
+  useResponsive: vi.fn(() => globalThis.__createResponsiveMock()),
 }))
 
 vi.mock('@/hooks/useNavigateToPage', () => ({
@@ -48,10 +38,7 @@ vi.mock('@/hooks/useNavigateToPage', () => ({
   }),
 }))
 
-vi.mock('react-i18next', () => {
-  const R = { chat: { unnamed: '未命名', rename: '重命名', delete: '删除' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 vi.mock('@/hooks/useConfirm', () => ({
   useConfirm: () => ({
@@ -62,12 +49,7 @@ vi.mock('@/hooks/useConfirm', () => ({
   ConfirmProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 
-vi.mock('@/services/toast', () => ({
-  toastQueue: {
-    success: vi.fn(async () => 'toast-id'),
-    error: vi.fn(async () => 'toast-id'),
-  },
-}))
+vi.mock('@/services/toast', () => globalThis.__createToastQueueModuleMock())
 
 /**
  * 渲染追踪器
@@ -160,13 +142,7 @@ function measureSelectionChange(
 ) {
   cleanup()
 
-  render(
-    <Provider store={store}>
-      <BrowserRouter>
-        <Pattern chatList={chatList} />
-      </BrowserRouter>
-    </Provider>
-  )
+  renderWithProviders(<Pattern chatList={chatList} />, { store })
 
   act(() => {
     store.dispatch(setSelectedChatId(newSelectedId))
@@ -254,13 +230,7 @@ describe('ChatButton selector 优化 - 连续切换稳定性', () => {
     const tracker = createRenderTracker()
     const OptimizedPattern = createOptimizedPattern(tracker)
 
-    render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <OptimizedPattern chatList={chatList} />
-        </BrowserRouter>
-      </Provider>
-    )
+    renderWithProviders(<OptimizedPattern chatList={chatList} />, { store })
 
     // 初始状态：每个 chat 渲染 1 次
     chatList.forEach(chat => {
@@ -302,13 +272,7 @@ describe('ChatButton selector 优化 - 边界情况', () => {
     const legacyTracker = createRenderTracker()
     const LegacyPattern = createLegacyPattern(legacyTracker)
 
-    render(
-      <Provider store={legacyStore}>
-        <BrowserRouter>
-          <LegacyPattern chatList={chatList} />
-        </BrowserRouter>
-      </Provider>
-    )
+    renderWithProviders(<LegacyPattern chatList={chatList} />, { store: legacyStore })
     act(() => { legacyStore.dispatch(setSelectedChatId(selectedId)) })
     chatList.forEach(chat => {
       expect(legacyTracker.getCount(chat.id)).toBe(1)
@@ -319,13 +283,7 @@ describe('ChatButton selector 优化 - 边界情况', () => {
     const optimizedTracker = createRenderTracker()
     const OptimizedPattern = createOptimizedPattern(optimizedTracker)
 
-    render(
-      <Provider store={optimizedStore}>
-        <BrowserRouter>
-          <OptimizedPattern chatList={chatList} />
-        </BrowserRouter>
-      </Provider>
-    )
+    renderWithProviders(<OptimizedPattern chatList={chatList} />, { store: optimizedStore })
     act(() => { optimizedStore.dispatch(setSelectedChatId(selectedId)) })
     chatList.forEach(chat => {
       expect(optimizedTracker.getCount(chat.id)).toBe(1)

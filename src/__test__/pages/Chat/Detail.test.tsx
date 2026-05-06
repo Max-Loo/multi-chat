@@ -9,7 +9,7 @@
  * - 通过 Redux store 的 preloadedState 控制组件行为
  */
 
-import { screen, act, cleanup } from '@testing-library/react';
+import { screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Detail from '@/pages/Chat/components/Panel/Detail';
 import { mockContainerMetrics } from '@/__test__/helpers/mocks/scrollMetrics';
@@ -44,66 +44,14 @@ vi.mock('virtua', async () => {
   return { Virtualizer: factory.MockVirtualizer, VList: factory.MockVList };
 });
 
-/**
- * Mock useAdaptiveScrollbar hook
- * 注意：必须包含 isScrolling，Detail 组件在 className 中使用了该值
- */
-vi.mock('@/hooks/useAdaptiveScrollbar', () => ({
-  useAdaptiveScrollbar: () => ({
-    onScrollEvent: vi.fn(),
-    scrollbarClassname: 'custom-scrollbar',
-    isScrolling: false,
-  }),
-}));
+vi.mock('@/hooks/useAdaptiveScrollbar', () => ({ useAdaptiveScrollbar: () => globalThis.__createScrollbarMock() }));
 
-/**
- * Mock react-i18next for internationalization
- * 使用 selector-based mock 模式，支持所有组件需要的翻译 key
- */
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: 第三方库类型定义不完整
-    t: ((keyOrSelector: string | ((resources: any) => string)) => {
-      if (typeof keyOrSelector === 'function') {
-        const mockResources = {
-          chat: {
-            scrollToBottom: '回到底部',
-            thinking: '思考中...',
-            thinkingComplete: '思考完成',
-            modelDeleted: '模型已删除',
-            deleted: '已删除',
-            disabled: '已禁用',
-            supplier: '供应商',
-            model: '模型',
-            nickname: '昵称',
-          },
-          common: {
-            loading: '加载中',
-          },
-        };
-        return keyOrSelector(mockResources);
-      }
-      return keyOrSelector;
-    }) as any,
-    i18n: {
-      language: 'zh',
-      changeLanguage: vi.fn(),
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    chat: {
+      scrollToBottom: '回到底部',
     },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: vi.fn(),
-  },
-}));
-
-// Mock ResizeObserver（jsdom 不提供）
-// 使用 class 语法确保可以作为构造函数使用
-global.ResizeObserver = class ResizeObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-} as any;
+  }));
 
 // ========================================
 // 测试常量和辅助函数
@@ -214,7 +162,6 @@ describe('Detail Component', () => {
   });
 
   afterEach(() => {
-    cleanup();
     vi.useRealTimers();
   });
 
@@ -228,7 +175,7 @@ describe('Detail Component', () => {
 
       // viewportHeight=600, itemHeight=80, overscan=2
       // 可见 8 个 + 2 个 overscan = 10 个
-      const bubbles = screen.queryAllByTestId('chat-bubble');
+      const bubbles = screen.queryAllByTestId('user-message').concat(screen.queryAllByTestId('assistant-message'));
       expect(bubbles.length).toBeLessThan(50);
       expect(bubbles.length).toBeLessThanOrEqual(10);
     });
@@ -237,7 +184,7 @@ describe('Detail Component', () => {
       const messages = createMessages(3);
       renderDetail({ messages });
 
-      const bubbles = screen.queryAllByTestId('chat-bubble');
+      const bubbles = screen.queryAllByTestId('user-message').concat(screen.queryAllByTestId('assistant-message'));
       expect(bubbles.length).toBe(3);
     });
   });
@@ -275,8 +222,9 @@ describe('Detail Component', () => {
         },
       });
 
-      // 流式消息作为 Virtualizer 内的最后一项渲染
-      const bubbles = screen.queryAllByTestId('chat-bubble');
+      // RunningBubble 渲染 ChatBubble（流式内容），共 1 个 assistant-message
+      // 同时虚拟化区域无历史消息
+      const bubbles = screen.queryAllByTestId('assistant-message');
       expect(bubbles.length).toBe(1);
     });
 
@@ -284,7 +232,7 @@ describe('Detail Component', () => {
       renderDetail({ messages: [] });
 
       // 无流式数据时，不应有 ChatBubble
-      const bubbles = screen.queryAllByTestId('chat-bubble');
+      const bubbles = screen.queryAllByTestId('user-message').concat(screen.queryAllByTestId('assistant-message'));
       expect(bubbles.length).toBe(0);
     });
   });

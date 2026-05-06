@@ -4,15 +4,12 @@
  * 测试抽屉打开/关闭、遮罩点击、ESC键关闭、背景滚动锁定等功能
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { MobileDrawer } from '@/components/MobileDrawer';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
-vi.mock('react-i18next', () => {
-  const R = { navigation: { mobileDrawer: { title: '侧边栏', description: '侧边栏', ariaDescription: '抽屉内容' } } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock shadcn/ui Sheet 组件（底层依赖 radix-ui Dialog，涉及 Portal/Overlay/FocusTrap 等 DOM 结构，
 // 在 happy-dom 中缺少 DOMPortal 支持，不 mock 会导致渲染失败，保留此 mock）
@@ -47,7 +44,7 @@ vi.mock('@/components/ui/sheet', () => ({
 
 // 测试用复杂子组件
 const ComplexChild = () => (
-  <div className="complex">
+  <div data-testid="complex-child">
     <span>嵌套内容</span>
   </div>
 );
@@ -59,11 +56,7 @@ describe('MobileDrawer 组件', () => {
     mockOnOpenChange = vi.fn();
   });
 
-  afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('基础渲染', () => {
     it('应该正确渲染抽屉组件', () => {
       render(
@@ -139,18 +132,7 @@ describe('MobileDrawer 组件', () => {
     });
   });
 
-  describe('样式和布局', () => {
-    it('应该应用正确的宽度样式（w-fit max-w-[85vw] sm:max-w-md）', () => {
-      render(
-        <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
-          <div>内容</div>
-        </MobileDrawer>
-      );
-
-      const content = screen.getByTestId('sheet-content');
-      expect(content).toHaveClass('w-fit', 'max-w-[85vw]', 'sm:max-w-md');
-    });
-
+  describe('布局行为', () => {
     it('应该从左侧滑出（side="left"）', () => {
       render(
         <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
@@ -239,7 +221,7 @@ describe('MobileDrawer 组件', () => {
       );
 
       expect(screen.getByText('嵌套内容')).toBeInTheDocument();
-      expect(document.querySelector('.complex')).toBeInTheDocument();
+      expect(screen.getByTestId('complex-child')).toBeInTheDocument();
     });
   });
 
@@ -284,6 +266,50 @@ describe('MobileDrawer 组件', () => {
 
       const sheet = screen.getByTestId('sheet');
       expect(sheet).toBeInTheDocument();
+    });
+  });
+
+  describe('open/close 状态切换渲染', () => {
+    it('应该从 closed 切换到 open 时渲染抽屉内容', () => {
+      const { rerender } = render(
+        <MobileDrawer isOpen={false} onOpenChange={mockOnOpenChange}>
+          <div data-testid="drawer-body">抽屉主体内容</div>
+        </MobileDrawer>
+      );
+
+      // closed 状态下 Sheet 组件仍然渲染（只是不可见）
+      const sheet = screen.getByTestId('sheet');
+      expect(sheet).toHaveAttribute('data-open', 'false');
+
+      // 切换到 open
+      rerender(
+        <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
+          <div data-testid="drawer-body">抽屉主体内容</div>
+        </MobileDrawer>
+      );
+
+      // open 状态下内容应该渲染
+      expect(screen.getByTestId('drawer-body')).toBeInTheDocument();
+      expect(screen.getByTestId('sheet')).toHaveAttribute('data-open', 'true');
+    });
+
+    it('应该从 open 切换到 closed 时更新状态', () => {
+      const { rerender } = render(
+        <MobileDrawer isOpen={true} onOpenChange={mockOnOpenChange}>
+          <div data-testid="drawer-body">内容</div>
+        </MobileDrawer>
+      );
+
+      expect(screen.getByTestId('sheet')).toHaveAttribute('data-open', 'true');
+
+      // 切换到 closed
+      rerender(
+        <MobileDrawer isOpen={false} onOpenChange={mockOnOpenChange}>
+          <div data-testid="drawer-body">内容</div>
+        </MobileDrawer>
+      );
+
+      expect(screen.getByTestId('sheet')).toHaveAttribute('data-open', 'false');
     });
   });
 

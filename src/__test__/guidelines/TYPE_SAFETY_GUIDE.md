@@ -119,22 +119,26 @@ expect(mockFetchData).toHaveBeenCalledWith('/api/data');
 import { Mock } from 'vitest';
 
 // 定义 Mock 函数类型
-interface CryptoMocks {
-  encryptField: Mock<(value: string, key: string) => Promise<string>>;
-  decryptField: Mock<(encryptedValue: string, key: string) => Promise<string>>;
-  isEncrypted: Mock<(value: string) => boolean>;
+interface TauriShellMock {
+  open: Mock<(url: string) => Promise<void>>;
+  Command: {
+    create: Mock<(program: string) => { execute: Mock<() => Promise<{ stdout: string; stderr: string }>> }>;
+  };
 }
 
 // 创建 Mock 工厂
-export const createCryptoMocks = (): CryptoMocks => ({
-  encryptField: vi.fn(),
-  decryptField: vi.fn(),
-  isEncrypted: vi.fn(),
+export const createShellMocks = (): TauriShellMock => ({
+  open: vi.fn().mockResolvedValue(undefined),
+  Command: {
+    create: vi.fn().mockReturnValue({
+      execute: vi.fn().mockResolvedValue({ stdout: '', stderr: '' }),
+    }),
+  },
 });
 
 // 使用
-const mocks = createCryptoMocks();
-mocks.encryptField.mockResolvedValue('encrypted-value');
+const mocks = createShellMocks();
+mocks.open.mockResolvedValue(undefined);
 ```
 
 ## Redux Store 类型安全

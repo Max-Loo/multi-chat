@@ -42,5 +42,8 @@
   "editMessage": "Modifier le message",
   "editConfirm": "Confirmer la modification",
   "editCancel": "Annuler la modification",
-  "regenerateMessage": "Régénérer"
+  "regenerateMessage": "Régénérer",
+  "moreActions": "Plus d'actions",
+  "increaseColumns": "Augmenter les colonnes",
+  "decreaseColumns": "Réduire les colonnes"
 }

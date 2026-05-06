@@ -14,13 +14,14 @@ import {
   createChatPageSliceState,
 } from '@/__test__/helpers/mocks/testState';
 
-vi.mock('react-i18next', () => {
-  const R = {
-    chat: { showSidebar: '显示侧边栏', unnamed: '未命名', enableSplitter: '启用分割模式', maxPerRow: '每行最多', itemsUnit: '项' },
-    common: { confirm: '确认', cancel: '取消' },
-  };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    chat: {
+      enableSplitter: '启用分割模式',
+      maxPerRow: '每行最多',
+      itemsUnit: '项',
+    },
+  }));
 
 /**
  * 创建测试用 store
@@ -56,7 +57,6 @@ const createStore = (chat?: Chat, isSidebarCollapsed = false) => {
 
 describe('ChatPanelHeader', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     // 清理 DOM
     document.body.innerHTML = '';
   });
@@ -66,7 +66,7 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={setColumnCount}
@@ -76,7 +76,7 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
+      const input = screen.getByRole('spinbutton');
       expect(input).toBeInTheDocument();
       expect((input as HTMLInputElement)?.value).toBe('2');
     });
@@ -85,7 +85,7 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={setColumnCount}
@@ -95,20 +95,19 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
-      if (input) {
-        fireEvent.change(input, { target: { value: '3' } });
-        await waitFor(() => {
-          expect(setColumnCount).toHaveBeenCalledWith(3);
-        });
-      }
+      const input = screen.getByRole('spinbutton') as HTMLInputElement;
+      expect(input).toBeInTheDocument();
+      fireEvent.change(input, { target: { value: '3' } });
+      await waitFor(() => {
+        expect(setColumnCount).toHaveBeenCalledWith(3);
+      });
     });
 
     it('应该在列数达到最大值时禁用加按钮', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={setColumnCount}
@@ -118,7 +117,7 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
+      const input = screen.getByRole('spinbutton');
       expect(input?.getAttribute('max')).toBe('2');
     });
 
@@ -126,7 +125,7 @@ describe('ChatPanelHeader', () => {
       const setColumnCount = vi.fn();
       const store = createStore();
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={1}
           setColumnCount={setColumnCount}
@@ -136,7 +135,7 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
+      const input = screen.getByRole('spinbutton');
       expect(input?.getAttribute('min')).toBe('1');
     });
 
@@ -339,7 +338,7 @@ describe('ChatPanelHeader', () => {
 
       const store = createStore(threeModelsChat);
 
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <ChatPanelHeader
           columnCount={2}
           setColumnCount={vi.fn()}
@@ -349,7 +348,7 @@ describe('ChatPanelHeader', () => {
         { store }
       );
 
-      const input = container.querySelector('input[type="number"]');
+      const input = screen.getByRole('spinbutton');
       expect(input?.getAttribute('max')).toBe('3');
     });
   });

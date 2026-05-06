@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next"
 import { toastQueue } from '@/services/toast'
 import { useConfirm } from "@/hooks/useConfirm"
 import { useResponsive } from "@/hooks/useResponsive"
+import { handleActivationKeyDown } from "@/utils/a11y"
 
 export interface ChatButtonProps {
   chatMeta: ChatMeta
@@ -206,7 +207,10 @@ const ChatButton = memo<ChatButtonProps>(({
   return (
     <div
       data-testid={`chat-button-${chatMeta.id}`}
-      className={`w-full flex justify-between min-w-0 rounded-none cursor-pointer
+      tabIndex={0}
+      aria-selected={isSelected}
+      data-variant={isNormalSize ? 'default' : 'compact'}
+      className={`w-full flex justify-between rounded-none cursor-pointer
         ${
           isNormalSize
             ? 'py-2 px-1'
@@ -216,6 +220,7 @@ const ChatButton = memo<ChatButtonProps>(({
         ${isRenaming && 'pl-1 pr-1'}
       `}
       onClick={() => onClickChat(chatMeta)}
+      onKeyDown={handleActivationKeyDown(() => onClickChat(chatMeta))}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
@@ -258,6 +263,8 @@ const ChatButton = memo<ChatButtonProps>(({
             <Button
               variant="ghost"
               size="icon"
+              data-testid="chat-menu-trigger"
+              aria-label={t($ => $.chat.moreActions)}
               className={`p-0 ${
                 isNormalSize
                   ? 'h-8 w-8'

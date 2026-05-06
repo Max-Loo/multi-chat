@@ -4,6 +4,7 @@ import SettingHeader from "./components/SettingHeader";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { useResponsive } from "@/hooks/useResponsive";
 import { MobileDrawer } from "@/components/MobileDrawer";
+import { useTranslation } from "react-i18next";
 import { setIsDrawerOpen } from "@/store/slices/settingPageSlices";
 
 /**
@@ -12,6 +13,7 @@ import { setIsDrawerOpen } from "@/store/slices/settingPageSlices";
  */
 const SettingPage: React.FC = () => {
   const { isMobile } = useResponsive();
+  const { t } = useTranslation();
   const isDrawerOpen = useAppSelector(
     (state) => state.settingPage.isDrawerOpen,
   );
@@ -42,17 +44,18 @@ const SettingPage: React.FC = () => {
 
       {/* 桌面端：直接显示侧边栏（无折叠功能） */}
       {!isMobile && (
-        <div className="w-64 h-full border-r border-gray-200 shrink-0">
+        <aside className="w-64 h-full border-r border-gray-200 shrink-0" aria-label={t($ => $.common.a11y.settingsNav)}>
           <SettingSidebar />
-        </div>
+        </aside>
       )}
 
       {/* 主内容区域 */}
-      <div
+      <main
+        data-testid="setting-content"
         className={`flex-1 w-full h-full overflow-y-auto relative ${isMobile && "pt-12"}`}
       >
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 };

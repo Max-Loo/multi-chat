@@ -4,8 +4,6 @@
  * 提供 Grid 和 Splitter 组件测试所需的 Mock 工厂函数
  */
 
-import { Provider } from 'react-redux';
-import React from 'react';
 import type { ChatModel } from '@/types/chat';
 import type { ChatSliceState } from '@/store/slices/chatSlices';
 import type { ModelSliceState } from '@/store/slices/modelSlice';
@@ -45,19 +43,3 @@ export const createPanelLayoutStore = (overrides?: {
   });
 };
 
-/**
- * 创建 Panel 布局测试的 Wrapper 组件
- * @param store Redux store 实例
- * @returns React Wrapper 组件
- */
-export const createPanelLayoutWrapper = (
-  store: ReturnType<typeof createPanelLayoutStore>
-) => {
-  return function PanelLayoutWrapper({
-    children,
-  }: {
-    children: React.ReactNode;
-  }) {
-    return <Provider store={store}>{children}</Provider>;
-  };
-};
