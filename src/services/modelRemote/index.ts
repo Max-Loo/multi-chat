@@ -263,11 +263,14 @@ const adaptApiResponseToInternalFormat = (
 };
 
 /**
- * 创建缓存 Store 实例
- * @returns Store 实例
+ * 缓存 Store 单例（延迟初始化）
  */
-const createCacheStore = (): StoreCompat => {
-  return createLazyStore("remote-cache.json");
+let _cacheStore: StoreCompat | undefined;
+const getRemoteCacheStore = (): StoreCompat => {
+  if (!_cacheStore) {
+    _cacheStore = createLazyStore("remote-cache.json");
+  }
+  return _cacheStore;
 };
 
 /**
@@ -277,8 +280,7 @@ const createCacheStore = (): StoreCompat => {
 export const saveCachedProviderData = async (
   fullApiResponse: ModelsDevApiResponse,
 ): Promise<void> => {
-  const store = createCacheStore();
-  await store.init();
+  await getRemoteCacheStore().init();
 
   const cachedData: CachedModelData = {
     apiResponse: fullApiResponse,
@@ -288,8 +290,8 @@ export const saveCachedProviderData = async (
     },
   };
 
-  await store.set(REMOTE_MODEL_CACHE_KEY, cachedData);
-  await store.save();
+  await getRemoteCacheStore().set(REMOTE_MODEL_CACHE_KEY, cachedData);
+  await getRemoteCacheStore().save();
 };
 
 /**
@@ -301,10 +303,9 @@ export const saveCachedProviderData = async (
 export const loadCachedProviderData = async (
   allowedProviders: readonly string[],
 ): Promise<RemoteProviderData[]> => {
-  const store = createCacheStore();
-  await store.init();
+  await getRemoteCacheStore().init();
 
-  const cached = await store.get<CachedModelData>(REMOTE_MODEL_CACHE_KEY);
+  const cached = await getRemoteCacheStore().get<CachedModelData>(REMOTE_MODEL_CACHE_KEY);
 
   if (!cached) {
     throw new RemoteDataError(RemoteDataErrorType.NO_CACHE, "无可用缓存");

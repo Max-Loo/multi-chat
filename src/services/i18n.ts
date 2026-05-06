@@ -197,12 +197,6 @@ export const resetI18nForTest = () => {
 };
 
 /**
- * @deprecated 使用 resetI18nForTest() 替代
- * @internal
- */
-export const resetInitI18nForTest = resetI18nForTest;
-
-/**
  * 初始化 i18n 配置
  * 不接受参数，内部检测系统语言并自动切换
  */

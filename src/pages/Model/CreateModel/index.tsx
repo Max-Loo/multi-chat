@@ -78,7 +78,7 @@ const CreateModel: React.FC = () => {
 
       {/* 桌面端：直接显示侧边栏（无折叠功能） */}
       {!isMobile && (
-        <aside className="h-full border-r border-gray-200 shrink-0" data-testid="model-sidebar" aria-label="模型供应商">
+        <aside className="h-full border-r border-gray-200 shrink-0" data-testid="model-sidebar" aria-label={t(($) => $.common.a11y.modelProvider)}>
           <ModelSidebar
             value={selectedModelProviderKey}
             onChange={setSelectedModelProviderKey}

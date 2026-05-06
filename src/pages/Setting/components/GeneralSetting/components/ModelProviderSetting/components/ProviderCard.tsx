@@ -4,6 +4,7 @@ import { RemoteProviderData } from '@/services/modelRemote';
 import { ProviderCardHeader } from './ProviderCardHeader';
 import { ProviderCardSummary } from './ProviderCardSummary';
 import { ProviderCardDetails } from './ProviderCardDetails';
+import { handleActivationKeyDown } from '@/utils/a11y';
 
 /**
  * ProviderCard 组件的属性
@@ -35,12 +36,7 @@ export const ProviderCard = React.memo<ProviderCardProps>(
           willChange: 'transform, opacity',
         }}
         onClick={onToggle}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            onToggle()
-          }
-        }}
+        onKeyDown={handleActivationKeyDown(onToggle)}
       >
         <div className="p-4 space-y-3">
           <ProviderCardHeader

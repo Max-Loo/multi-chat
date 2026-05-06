@@ -84,7 +84,7 @@ const SettingSidebar: React.FC = () => {
   return (
     <nav
       ref={scrollContainerRef}
-      aria-label="设置导航"
+      aria-label={t(($) => $.common.a11y.settingsNav)}
       className={`p-2 overflow-y-auto w-full h-full
       flex flex-col justify-start items-center
       ${scrollbarClassname}

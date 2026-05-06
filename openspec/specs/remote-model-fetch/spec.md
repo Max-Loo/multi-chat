@@ -144,7 +144,7 @@
 
 ### Requirement: 本地缓存策略
 
-系统 MUST 将远程获取的供应商数据保存到独立的 Store 文件 `remote-cache.json` 中。
+系统 MUST 将远程获取的供应商数据保存到独立的 Store 文件 `remote-cache.json` 中。缓存 Store SHALL 使用模块级单例，SHALL NOT 每次调用时创建新的 Store 实例。
 
 系统 MUST 在缓存数据中包含元数据字段：`lastRemoteUpdate`（最后更新时间）和 `source`（数据来源）。
 
@@ -157,7 +157,7 @@
 #### Scenario: 成功保存远程数据到缓存
 
 - **WHEN** 从 models.dev API 成功获取完整的供应商数据
-- **THEN** 系统调用 `saveCachedProviderData` 保存**完整的 API 响应**（未过滤）
+- **THEN** 系统使用模块级单例 Store 保存完整 API 响应
 - **AND** 缓存文件包含 `apiResponse` 字段（完整的 `ModelsDevApiResponse` 对象）
 - **AND** 缓存文件包含 `metadata` 字段
 - **AND** `metadata.lastRemoteUpdate` 设置为当前时间（ISO 8601 格式）
@@ -167,7 +167,9 @@
 
 - **WHEN** 网络请求失败
 - **AND** 本地存在缓存文件 `remote-cache.json`
-- **THEN** 系统调用 `loadCachedProviderData(ALLOWED_MODEL_PROVIDERS)` 加载数据
+- **THEN** 系统使用同一个模块级单例 Store 加载缓存数据
+- **AND** 系统 SHALL NOT 创建新的 Store 实例
+- **AND** 系统调用 `loadCachedProviderData(ALLOWED_MODEL_PROVIDERS)` 加载数据
 - **AND** 从缓存的 `apiResponse` 中提取完整的 API 响应
 - **AND** 使用 `ALLOWED_MODEL_PROVIDERS` 白名单过滤完整响应
 - **AND** 返回过滤后的 `RemoteProviderData[]` 数组
@@ -177,7 +179,7 @@
 
 - **WHEN** 网络请求失败
 - **AND** 本地不存在缓存文件 `remote-cache.json`
-- **THEN** `loadCachedProviderData` 抛出 `RemoteDataError.NO_CACHE` 错误
+- **THEN** 抛出 `RemoteDataError.NO_CACHE` 错误
 - **AND** 系统显示全屏错误提示
 
 #### Scenario: 白名单调整后缓存仍然有效

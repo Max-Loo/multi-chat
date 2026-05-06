@@ -35,6 +35,19 @@
   "decryptionFailureImport": "Importer la clé",
   "decryptionFailureDismiss": "Je comprends",
   "errorIcon": "Erreur",
+  "a11y": {
+    "bottomNav": "Navigation inférieure",
+    "mainNav": "Navigation principale",
+    "userMessage": "Message utilisateur",
+    "assistantMessage": "Message assistant",
+    "chatMessages": "Messages de chat",
+    "clearSelection": "Effacer la sélection",
+    "modelToolbar": "Barre d'outils des modèles",
+    "chatList": "Liste des chats",
+    "modelProvider": "Fournisseur de modèles",
+    "modelProviderNav": "Navigation des fournisseurs",
+    "settingsNav": "Navigation des paramètres"
+  },
   "keyRecovery": {
     "title": "Importer la clé",
     "description": "Entrez votre clé de sauvegarde pour récupérer les données chiffrées",

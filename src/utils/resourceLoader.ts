@@ -102,9 +102,8 @@ export class ResourceLoader<T> {
    */
   async load(key: string): Promise<T> {
     // 如果已缓存，直接返回
-    const cached = this.get(key);
-    if (cached !== undefined) {
-      return cached;
+    if (this.cache.has(key)) {
+      return this.cache.get(key)!;
     }
 
     // 如果正在加载，返回同一个 Promise（并发控制）

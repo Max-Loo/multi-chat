@@ -155,7 +155,7 @@ const Sender: React.FC = () => {
       return;
     }
 
-    sendMessage(text);
+    sendMessage(text).catch(console.error);
   };
 
   // 记录最近一次 compositionEnd 事件的 timestamp
@@ -189,7 +189,7 @@ const Sender: React.FC = () => {
       }
 
       // 进行发送逻辑
-      sendMessage(text);
+      sendMessage(text).catch(console.error);
     }
   };
 

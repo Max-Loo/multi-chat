@@ -81,6 +81,19 @@ interface Resources {
       decryptionFailureImport: string;
       decryptionFailureDismiss: string;
       errorIcon: string;
+      a11y: {
+        bottomNav: string;
+        mainNav: string;
+        userMessage: string;
+        assistantMessage: string;
+        chatMessages: string;
+        clearSelection: string;
+        modelToolbar: string;
+        chatList: string;
+        modelProvider: string;
+        modelProviderNav: string;
+        settingsNav: string;
+      };
       keyRecovery: {
         title: string;
         description: string;

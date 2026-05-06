@@ -77,9 +77,11 @@ export const saveChatAndIndex = async (chatId: string, chat: Chat, index: ChatMe
     index.unshift(meta);
   }
 
-  // 先写聊天数据，再写索引
-  await saveChatById(chatId, chat);
-  await saveChatIndex(index);
+  // 合并为单次 init + 批量 set + 单次 save
+  await chatsStore.init();
+  await chatsStore.set(chatKey(chatId), chat);
+  await chatsStore.set(CHAT_INDEX_KEY, index);
+  await chatsStore.save();
 };
 
 /**
@@ -88,7 +90,8 @@ export const saveChatAndIndex = async (chatId: string, chat: Chat, index: ChatMe
  * @param index 当前索引
  */
 export const deleteChatFromStorage = async (chatId: string, index: ChatMeta[]): Promise<void> => {
-  const storedChat = await loadChatById(chatId);
+  await chatsStore.init();
+  const storedChat = await chatsStore.get<Chat>(chatKey(chatId));
   if (!storedChat) {
     console.warn(`deleteChatFromStorage: 聊天 ${chatId} 在存储中不存在，跳过`);
     return;
@@ -102,8 +105,10 @@ export const deleteChatFromStorage = async (chatId: string, index: ChatMeta[]): 
     index[existingIdx] = meta;
   }
 
-  await saveChatById(chatId, deletedChat);
-  await saveChatIndex(index);
+  // 合并为单次 init + 批量 set + 单次 save
+  await chatsStore.set(chatKey(chatId), deletedChat);
+  await chatsStore.set(CHAT_INDEX_KEY, index);
+  await chatsStore.save();
 };
 
 /**

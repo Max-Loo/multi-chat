@@ -89,7 +89,7 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
           <PanelLeftClose size={isNormalSize ? 16 : 15} />
         </Button>
       ) : (
-        <div></div>
+        <span aria-hidden="true" />
       )}
       <div className={`flex ${isNormalSize ? "" : "gap-1"}`}>
         {isString(filterText) && (

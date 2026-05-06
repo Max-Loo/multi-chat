@@ -166,7 +166,7 @@ describe('ChatPage', () => {
 
       expect(screen.getByTestId('mock-mobile-drawer')).toBeInTheDocument();
       // mobile 模式下不直接渲染侧边栏 div
-      expect(screen.queryByTestId('chat-sidebar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('chat-sidebar-wrapper')).not.toBeInTheDocument();
     });
 
     it('应该直接渲染侧边栏 当 isMobile 为 false', () => {
@@ -183,7 +183,7 @@ describe('ChatPage', () => {
       renderChatPage();
 
       expect(screen.queryByTestId('mock-mobile-drawer')).not.toBeInTheDocument();
-      expect(screen.getByTestId('chat-sidebar')).toBeInTheDocument();
+      expect(screen.getByTestId('chat-sidebar-wrapper')).toBeInTheDocument();
     });
 
     it('应该在侧边栏折叠 + 桌面端时应用隐藏样式', () => {
@@ -204,7 +204,7 @@ describe('ChatPage', () => {
 
       renderWithProviders(<ChatPage />, { store, route: '/chat' });
 
-      const sidebar = screen.getByTestId('chat-sidebar');
+      const sidebar = screen.getByTestId('chat-sidebar-wrapper');
       expect(sidebar.className).toContain('-ml-56');
       expect(sidebar.className).toContain('-translate-x-full');
     });
@@ -227,7 +227,7 @@ describe('ChatPage', () => {
 
       renderWithProviders(<ChatPage />, { store, route: '/chat' });
 
-      const sidebar = screen.getByTestId('chat-sidebar');
+      const sidebar = screen.getByTestId('chat-sidebar-wrapper');
       expect(sidebar.className).toContain('-ml-48');
       expect(sidebar.className).toContain('w-48');
     });
@@ -245,7 +245,7 @@ describe('ChatPage', () => {
 
       renderChatPage();
 
-      const sidebar = screen.getByTestId('chat-sidebar');
+      const sidebar = screen.getByTestId('chat-sidebar-wrapper');
       expect(sidebar.className).toContain('w-48');
       expect(sidebar.className).toContain('ml-0');
     });

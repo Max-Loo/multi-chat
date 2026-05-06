@@ -1,10 +1,4 @@
-# Capability: sender-form-submit
-
-## Purpose
-
-Sender 组件表单提交行为控制，确保表单交互不会触发浏览器默认的页面刷新行为。
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Sender 表单禁止浏览器默认提交行为
 

@@ -172,7 +172,7 @@ const Detail: React.FC<DetailProps> = ({
         ref={scrollContainerRef}
         data-testid="detail-scroll-container"
         role="log"
-        aria-label="聊天消息"
+        aria-label={t($ => $.common.a11y.chatMessages)}
       >
     <div ref={titleRef} className="w-full">
       <Title chatModel={chatModel} />

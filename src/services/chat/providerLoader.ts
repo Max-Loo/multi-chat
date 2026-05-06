@@ -133,10 +133,15 @@ class ProviderSDKLoaderClass {
    * @private
    */
   private handleNetworkRecover(): void {
-    // 简单策略：重试所有供应商 SDK
-    // 更精确的策略需要 ResourceLoader 暴露遍历状态的方法
-    console.log('Network recovered, retrying to load all provider SDKs...');
-    this.preloadProviders(this.allProviderKeys);
+    // 仅重试处于 error 状态的供应商 SDK
+    const errorKeys = this.allProviderKeys.filter(
+      (key) => this.loader.getState(key)?.status === 'error',
+    );
+
+    if (errorKeys.length > 0) {
+      console.log(`Network recovered, retrying ${errorKeys.length} failed provider SDK(s)...`);
+      this.preloadProviders(errorKeys);
+    }
   }
 
   /**

@@ -35,6 +35,19 @@
   "decryptionFailureImport": "Import Key",
   "decryptionFailureDismiss": "I Understand",
   "errorIcon": "Error",
+  "a11y": {
+    "bottomNav": "Bottom Navigation",
+    "mainNav": "Main Navigation",
+    "userMessage": "User Message",
+    "assistantMessage": "Assistant Message",
+    "chatMessages": "Chat Messages",
+    "clearSelection": "Clear Selection",
+    "modelToolbar": "Model Toolbar",
+    "chatList": "Chat List",
+    "modelProvider": "Model Provider",
+    "modelProviderNav": "Model Provider Navigation",
+    "settingsNav": "Settings Navigation"
+  },
   "keyRecovery": {
     "title": "Import Key",
     "description": "Enter your backup key to recover encrypted data",

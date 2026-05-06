@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
 
 
   return (
-    <nav aria-label="主导航" className={`w-auto h-full bg-gray-50 border-r border-gray-200 ${className}`}>
+    <nav aria-label={t($ => $.common.a11y.mainNav)} className={`w-auto h-full bg-gray-50 border-r border-gray-200 ${className}`}>
       <div className="flex flex-col items-center py-4 space-y-2">
         {navigationItems.map((item) => {
           const {

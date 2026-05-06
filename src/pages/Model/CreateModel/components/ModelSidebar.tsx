@@ -62,7 +62,7 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({
 
   return (
     <nav
-      aria-label="模型供应商导航"
+      aria-label={t(($) => $.common.a11y.modelProviderNav)}
       className={`flex flex-col items-center justify-start h-full w-60 ${containerPadding}`}
     >
       {/* 表头部分 */}

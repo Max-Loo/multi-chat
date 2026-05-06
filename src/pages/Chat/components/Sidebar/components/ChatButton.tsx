@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next"
 import { toastQueue } from '@/services/toast'
 import { useConfirm } from "@/hooks/useConfirm"
 import { useResponsive } from "@/hooks/useResponsive"
+import { handleActivationKeyDown } from "@/utils/a11y"
 
 export interface ChatButtonProps {
   chatMeta: ChatMeta
@@ -219,12 +220,7 @@ const ChatButton = memo<ChatButtonProps>(({
         ${isRenaming && 'pl-1 pr-1'}
       `}
       onClick={() => onClickChat(chatMeta)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onClickChat(chatMeta)
-        }
-      }}
+      onKeyDown={handleActivationKeyDown(() => onClickChat(chatMeta))}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >

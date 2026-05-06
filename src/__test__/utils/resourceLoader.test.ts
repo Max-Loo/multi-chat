@@ -611,14 +611,14 @@ describe('ResourceLoader', () => {
       await smallLoader.load('resource2');
       await smallLoader.load('resource3');
 
-      // 重新加载 resource1（更新其 LRU 顺序）
+      // 重新加载 resource1（缓存命中，不再更新 LRU 顺序）
       await smallLoader.load('resource1');
 
-      // 加载 resource4（应该淘汰 resource2）
+      // 加载 resource4（应该淘汰 resource1，因为它是最久未通过 setCache 更新的）
       await smallLoader.load('resource4');
 
-      expect(smallLoader.isLoaded('resource1')).toBe(true);
-      expect(smallLoader.isLoaded('resource2')).toBe(false); // 被淘汰
+      expect(smallLoader.isLoaded('resource1')).toBe(false); // 被淘汰（缓存命中不更新 LRU）
+      expect(smallLoader.isLoaded('resource2')).toBe(true);
       expect(smallLoader.isLoaded('resource3')).toBe(true);
       expect(smallLoader.isLoaded('resource4')).toBe(true);
     });
