@@ -94,9 +94,8 @@ describe('ChatBubble 流式更新 generateCleanHtml 调用次数', () => {
       />,
     );
 
-    // ChatBubble 因 isRunning 变化而重渲染，但 useMemo([content]) 的 content 未变，
-    // 不会重新调用 generateCleanHtml
-    expect(mockGenerateCleanHtml).toHaveBeenCalledTimes(0);
+    // isRunning 从 true→false 触发 fullHtml useMemo 依赖变化，执行流式结束后的完整渲染
+    expect(mockGenerateCleanHtml).toHaveBeenCalledTimes(1);
   });
 
   it('多个 ChatBubble 独立计算', () => {
@@ -164,12 +163,12 @@ describe('ThinkingSection 推理内容更新 generateCleanHtml 调用次数', ()
   it('推理内容逐步增长时每次触发调用', () => {
     const contents = ['Step 1', 'Step 1\nStep 2', 'Step 1\nStep 2\nStep 3'];
     const { rerender } = render(
-      <ThinkingSection title="思考中" content={contents[0]} loading={true} />,
+      <ThinkingSection title="思考中" content={contents[0]} loading={true} initiallyExpanded={true} />,
     );
 
     for (let i = 1; i < contents.length; i++) {
       rerender(
-        <ThinkingSection title="思考中" content={contents[i]} loading={true} />,
+        <ThinkingSection title="思考中" content={contents[i]} loading={true} initiallyExpanded={true} />,
       );
     }
 
@@ -182,7 +181,7 @@ describe('ThinkingSection 推理内容更新 generateCleanHtml 调用次数', ()
 
   it('content 不变时 title 或 loading 变化不触发调用', () => {
     const { rerender } = render(
-      <ThinkingSection title="思考中" content="推理完成" loading={true} />,
+      <ThinkingSection title="思考中" content="推理完成" loading={true} initiallyExpanded={true} />,
     );
 
     // 初始渲染调用 1 次
@@ -191,15 +190,16 @@ describe('ThinkingSection 推理内容更新 generateCleanHtml 调用次数', ()
 
     // title 变化，content 不变
     rerender(
-      <ThinkingSection title="思考完毕" content="推理完成" loading={true} />,
+      <ThinkingSection title="思考完毕" content="推理完成" loading={true} initiallyExpanded={true} />,
     );
 
     // loading 变化，content 不变
     rerender(
-      <ThinkingSection title="思考完毕" content="推理完成" loading={false} />,
+      <ThinkingSection title="思考完毕" content="推理完成" loading={false} initiallyExpanded={true} />,
     );
 
-    // generateCleanHtml 不应被再次调用（useMemo 依赖未变）
-    expect(mockGenerateCleanHtml).toHaveBeenCalledTimes(0);
+    // title 变化：React Compiler 自动 memo 化，StreamingContent props 未变，跳过渲染（0 次调用）
+    // loading 变化：isRunning true→false 触发 fullHtml useMemo 重算（1 次调用）
+    expect(mockGenerateCleanHtml).toHaveBeenCalledTimes(1);
   });
 });
