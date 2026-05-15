@@ -35,7 +35,7 @@ function SkeletonList({
   className,
 }: SkeletonListProps) {
   return (
-    <div className={cn('flex flex-col', gap, className)}>
+    <div className={cn('flex flex-col', gap, className)} aria-hidden="true">
       {Array.from({ length: count }).map((_, index) => (
         <Skeleton key={index} variant="text" className={itemHeight} />
       ))}

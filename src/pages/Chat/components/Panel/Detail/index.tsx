@@ -1,5 +1,5 @@
-import { useAppSelector } from "@/hooks/redux"
-import { ChatModel, StandardMessage } from "@/types/chat"
+import { useAppSelector, useAppDispatch } from "@/hooks/redux"
+import { ChatModel, ChatRoleEnum, StandardMessage } from "@/types/chat"
 import { useSelectedChat } from "@/pages/Chat/hooks/useSelectedChat"
 import { useMemo, useRef, useState, useEffect, useCallback } from "react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -8,12 +8,16 @@ import { ArrowDown } from "lucide-react"
 import Title from "./Title";
 import { useAdaptiveScrollbar } from "@/hooks/useAdaptiveScrollbar"
 import { ChatBubble } from "@/components/chat/ChatBubble"
-import RunningBubble from "./RunningBubble";
 import { useIsSending } from "@/pages/Chat/hooks/useIsSending";
 import { isNotNil } from "es-toolkit"
+import { Spinner } from "@/components/ui/spinner"
 import { useTranslation } from "react-i18next"
 import { Virtualizer } from "virtua"
 import type { VirtualizerHandle } from "virtua"
+import { getCurrentContent } from "@/services/chat/chatHistoryHelper"
+import { editAndResendMessage, regenerateMessage } from "@/store/slices/chatSlices"
+import { copyToClipboard } from "@/utils/clipboard"
+import { toastQueue } from "@/services/toast"
 
 /** 滚动到底部的阈值（px） */
 const SCROLL_BOTTOM_THRESHOLD = 24
@@ -29,6 +33,7 @@ const Detail: React.FC<DetailProps> = ({
   chatModel,
 }) => {
   const { t } = useTranslation()
+  const dispatch = useAppDispatch()
   const {
     selectedChat,
   } = useSelectedChat()
@@ -42,18 +47,143 @@ const Detail: React.FC<DetailProps> = ({
     isSending,
   } = useIsSending()
 
-  // 组合起来的，进行循环渲染的列表
-  // 🔧 修复：直接返回原数组引用，避免每次 useMemo 都创建新数组导致无限循环
+  // 成对消息的历史索引状态（消息 ID → 当前查看的历史索引）
+  const [pairHistoryIndices, setPairHistoryIndices] = useState<Record<string, number>>({})
+
+  // 当前正在重新生成的消息 ID（null 表示无重新生成或发送新消息）
+  const [regeneratingMessageId, setRegeneratingMessageId] = useState<string | null>(null)
+
+  // 历史消息列表
   const historyList = useMemo<StandardMessage[]>(() => {
     return Array.isArray(chatModel.chatHistoryList) ? chatModel.chatHistoryList : []
   }, [chatModel.chatHistoryList])
 
+  // 计算每条消息的操作属性
+  const messageMeta = useMemo(() => {
+    const result: Record<string, {
+      isLatestUserMessage: boolean;
+      isLastAssistant: boolean;
+    }> = {}
+
+    // 找到最后一条用户消息和最后一条 AI 回复的索引
+    let latestUserIndex = -1;
+    let lastAssistantIndex = -1;
+    for (let i = historyList.length - 1; i >= 0; i--) {
+      if (lastAssistantIndex === -1 && historyList[i].role === ChatRoleEnum.ASSISTANT) {
+        lastAssistantIndex = i;
+      }
+      if (latestUserIndex === -1 && historyList[i].role === ChatRoleEnum.USER) {
+        latestUserIndex = i;
+      }
+      if (latestUserIndex !== -1 && lastAssistantIndex !== -1) break;
+    }
+
+    historyList.forEach((msg, index) => {
+      result[msg.id] = {
+        isLatestUserMessage: index === latestUserIndex,
+        isLastAssistant: index === lastAssistantIndex,
+      };
+    });
+
+    return result;
+  }, [historyList])
+
+  // 合并列表：历史消息 + 流式消息（统一由 Virtualizer 管理）
+  const displayList = useMemo(() => {
+    type DisplayEntry = { message: StandardMessage; displayMessage: StandardMessage; isRunning: boolean }
+    const list: DisplayEntry[] =
+      historyList.map(msg => ({ message: msg, displayMessage: msg, isRunning: false }))
+
+    const runningHistory = runningChatData?.isSending ? runningChatData.history : null
+    const hasRunningContent = runningHistory &&
+      (getCurrentContent(runningHistory.content) || runningHistory.reasoningContent)
+
+    if (hasRunningContent && runningHistory) {
+      if (regeneratingMessageId) {
+        // 重新生成模式：在原位置替换显示内容
+        const targetIndex = list.findIndex(entry => entry.message.id === regeneratingMessageId)
+        if (targetIndex !== -1) {
+          list[targetIndex] = {
+            message: list[targetIndex].message,
+            displayMessage: runningHistory,
+            isRunning: true,
+          }
+        }
+      } else {
+        // 发送新消息模式：追加到末尾
+        list.push({ message: runningHistory, displayMessage: runningHistory, isRunning: true })
+      }
+    }
+
+    return list
+  }, [historyList, runningChatData?.isSending, runningChatData?.history, regeneratingMessageId])
+
+  // 计算消息配对关系（用户消息 → 下一条 AI 回复，双向映射）
+  const messagePairs = useMemo(() => {
+    const result: Record<string, string> = {}
+    for (let i = 0; i < historyList.length - 1; i++) {
+      if (historyList[i].role === ChatRoleEnum.USER &&
+          historyList[i + 1].role === ChatRoleEnum.ASSISTANT) {
+        result[historyList[i].id] = historyList[i + 1].id
+        result[historyList[i + 1].id] = historyList[i].id
+      }
+    }
+    return result
+  }, [historyList])
+
+  const historyCallbacks = useMemo(() => {
+    const callbacks: Record<string, (index: number) => void> = {}
+    for (const msgId of Object.keys(messagePairs)) {
+      callbacks[msgId] = (index: number) => {
+        const pairedId = messagePairs[msgId]
+        setPairHistoryIndices(prev => ({
+          ...prev,
+          [msgId]: index,
+          ...(pairedId ? { [pairedId]: index } : {}),
+        }))
+      }
+    }
+    return callbacks
+  }, [messagePairs])
+
+  // 追踪每条消息的上一次 content.length，用于区分"编辑推送新版本"与"原地覆盖"
+  const prevContentLengthsRef = useRef<Record<string, number>>({});
+
+  // 当消息内容长度增长时（编辑推送新版本），重置历史索引到最新版本；原地覆盖（长度不变）不触发重置
+  useEffect(() => {
+    setPairHistoryIndices(prev => {
+      const next: Record<string, number> = {}
+      let changed = false
+      const prevLengths = prevContentLengthsRef.current;
+      const newLengths: Record<string, number> = {};
+
+      for (const { message } of displayList) {
+        if (Array.isArray(message.content)) {
+          const length = message.content.length;
+          newLengths[message.id] = length;
+          const prevLength = prevLengths[message.id];
+          // 仅在长度增长时重置（编辑推送新版本）；首次出现或长度不变时跳过
+          if (prevLength !== undefined && length > prevLength) {
+            const maxIndex = length - 1;
+            if (prev[message.id] !== maxIndex) {
+              next[message.id] = maxIndex;
+              changed = true;
+            }
+          }
+        }
+      }
+
+      prevContentLengthsRef.current = newLengths;
+      return changed ? { ...prev, ...next } : prev;
+    });
+  }, [displayList])
+
   // 引用滚动容器
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  // 同步 historyList.length 到 ref，供 scrollToBottom 稳定引用
-  const historyLengthRef = useRef(historyList.length)
-  useEffect(() => { historyLengthRef.current = historyList.length }, [historyList.length])
+  // 同步 displayList.length 到 ref，供 scrollToBottom 稳定引用
+  const displayLengthRef = useRef(displayList.length)
+  useEffect(() => { displayLengthRef.current = displayList.length }, [displayList.length])
 
   // Virtualizer 引用
   const virtualizerRef = useRef<VirtualizerHandle>(null)
@@ -63,6 +193,9 @@ const Detail: React.FC<DetailProps> = ({
 
   // isAtBottom 的 ref 镜像，供 effect 读取避免重建
   const isAtBottomRef = useRef(true)
+
+  // 流式自动跟随期间保护 isAtBottom 状态，避免竞态导致按钮闪现
+  const isStreamingRef = useRef(false)
 
   // Virtualizer 的 startMargin（Title 的高度）
   const [startMargin, setStartMargin] = useState(0)
@@ -82,10 +215,10 @@ const Detail: React.FC<DetailProps> = ({
 
   /**
    * 滚动到列表底部
-   * 优先使用 Virtualizer API 以确保与虚拟化引擎协调
+   * 通过 displayLengthRef 读取合并列表长度，流式/非流式统一使用 scrollToIndex
    */
   const scrollToBottom = useCallback(() => {
-    virtualizerRef.current?.scrollToIndex(historyLengthRef.current - 1, { align: 'end' })
+    virtualizerRef.current?.scrollToIndex(displayLengthRef.current - 1, { align: 'end' })
   }, [])
 
   // 检测是否需要滚动条以及是否在底部
@@ -95,11 +228,13 @@ const Detail: React.FC<DetailProps> = ({
 
     // 检测是否需要滚动条（内容高度大于容器高度）
     const hasScrollbar = container.scrollHeight > container.clientHeight
+    setNeedsScrollbar(prev => prev === hasScrollbar ? prev : hasScrollbar)
+
+    // 流式自动跟随期间保护 isAtBottom 状态：若正在流式跟随且原本在底部，跳过检测
+    if (isStreamingRef.current && isAtBottomRef.current) return
 
     // 检测是否在底部
     const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= SCROLL_BOTTOM_THRESHOLD
-
-    setNeedsScrollbar(prev => prev === hasScrollbar ? prev : hasScrollbar)
     setIsAtBottom(prev => prev === atBottom ? prev : atBottom)
     isAtBottomRef.current = atBottom
   }, [])
@@ -122,6 +257,7 @@ const Detail: React.FC<DetailProps> = ({
   // 流式自动跟随：当用户在底部且有流式数据更新时，等待 DOM 更新后自动滚动到底部
   useEffect(() => {
     if (isAtBottomRef.current && runningChatData) {
+      isStreamingRef.current = true
       requestAnimationFrame(() => {
         scrollToBottom()
       })
@@ -146,7 +282,7 @@ const Detail: React.FC<DetailProps> = ({
   // 内容变化时检测滚动状态
   useEffect(() => {
     checkScrollStatus()
-  }, [historyList.length, runningChatData, checkScrollStatus])
+  }, [displayList.length, runningChatData, checkScrollStatus])
 
   // Virtualizer 滚动事件处理
   const handleVirtualizerScroll = useCallback((_offset: number) => {
@@ -156,9 +292,52 @@ const Detail: React.FC<DetailProps> = ({
     const atBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) <= SCROLL_BOTTOM_THRESHOLD
     isAtBottomRef.current = atBottom
 
+    // 滚动回调中重置流式保护，确保 auto-scroll 完成后或用户主动上滚时恢复正常检测
+    isStreamingRef.current = false
+
     checkScrollStatus()
     onScrollEvent()
   }, [checkScrollStatus, onScrollEvent])
+
+  const messageMap = useMemo(() => {
+    const map = new Map<string, StandardMessage>()
+    for (const msg of historyList) {
+      map.set(msg.id, msg)
+    }
+    return map
+  }, [historyList])
+
+  const handleCopy = useCallback(async (messageId: string) => {
+    const message = messageMap.get(messageId);
+    if (!message) return;
+    try {
+      await copyToClipboard(getCurrentContent(message.content));
+      toastQueue.success(t($ => $.chat.copySuccess));
+    } catch {
+      toastQueue.error(t($ => $.chat.copyFailed));
+    }
+  }, [messageMap, t]);
+
+  // 编辑消息回调
+  const handleEdit = useCallback((messageId: string, newContent: string) => {
+    if (!selectedChat) return;
+    dispatch(editAndResendMessage({
+      chatId: selectedChat.id,
+      userMessageId: messageId,
+      newContent,
+    }));
+  }, [selectedChat, dispatch]);
+
+  // 重新生成回调
+  const handleRegenerate = useCallback((messageId: string, historyIndex: number) => {
+    if (!selectedChat) return;
+    setRegeneratingMessageId(messageId);
+    dispatch(regenerateMessage({
+      chatId: selectedChat.id,
+      assistantMessageId: messageId,
+      historyIndex,
+    })).finally(() => setRegeneratingMessageId(null));
+  }, [selectedChat, dispatch]);
 
   return (
     <>
@@ -170,11 +349,14 @@ const Detail: React.FC<DetailProps> = ({
           ${scrollbarClassname}
         `}
         ref={scrollContainerRef}
+        data-testid="detail-scroll-container"
+        role="log"
+        aria-label={t($ => $.common.a11y.chatMessages)}
       >
     <div ref={titleRef} className="w-full">
       <Title chatModel={chatModel} />
     </div>
-    {/* 历史记录列表 — 使用 Virtualizer 虚拟化渲染 */}
+    {/* 消息列表 — 使用 Virtualizer 虚拟化渲染（历史 + 流式统一管理） */}
     <div className="w-full">
       <Virtualizer
         ref={virtualizerRef}
@@ -182,19 +364,37 @@ const Detail: React.FC<DetailProps> = ({
         scrollRef={scrollContainerRef}
         onScroll={handleVirtualizerScroll}
       >
-        {historyList.map(historyRecord => {
+        {displayList.map(({ message, displayMessage, isRunning }) => {
+          const meta = messageMeta[message.id];
+          const isPaired = !!messagePairs[message.id];
           return <ChatBubble
-            key={historyRecord.id}
-            role={historyRecord.role}
-            content={historyRecord.content || ''}
-            reasoningContent={historyRecord.reasoningContent}
-            isRunning={false}
+            key={message.id}
+            role={message.role}
+            content={displayMessage.content}
+            reasoningContent={displayMessage.reasoningContent}
+            isRunning={isRunning}
+            messageId={message.id}
+            isLatestUserMessage={meta?.isLatestUserMessage}
+            isLastAssistant={meta?.isLastAssistant}
+            isChatSending={isSending}
+            historyIndexOverride={pairHistoryIndices[message.id]}
+            onHistoryIndexChange={isPaired ? historyCallbacks[message.id] : undefined}
+            onCopy={handleCopy}
+            onEdit={handleEdit}
+            onRegenerate={handleRegenerate}
           />
         })}
       </Virtualizer>
     </div>
-    {/* 单独展示正在生成的消息（放在 Virtualizer 外部，不参与虚拟化） */}
-    <RunningBubble chatModel={chatModel} />
+    {/* 流式消息尚未产出内容时展示 loading spinner */}
+    {runningChatData?.isSending &&
+      (!runningChatData.history || (!getCurrentContent(runningChatData.history.content) && !runningChatData.history.reasoningContent)) && (
+      <div className="w-full mt-3 flex justify-start">
+        <div className="bg-muted text-muted-foreground px-4 py-3 rounded-lg flex items-center">
+          <Spinner className="size-4" />
+        </div>
+      </div>
+    )}
     {/* 展示可能的错误信息 */}
     {
       isNotNil(selectedChat) && runningChatData?.errorMessage
@@ -213,6 +413,7 @@ const Detail: React.FC<DetailProps> = ({
         onClick={scrollToBottom}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full h-10 w-10 bg-gray-900 text-white shadow-md hover:shadow-lg hover:bg-gray-800 transition-all z-50"
         title={t($ => $.chat.scrollToBottom)}
+        aria-label={t($ => $.chat.scrollToBottom)}
         size="icon"
       >
         {isSending ? <>

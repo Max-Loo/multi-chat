@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import Grid from '@/pages/Chat/components/Panel/Grid';
 import { ChatModel } from '@/types/chat';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
@@ -23,13 +23,9 @@ describe('Grid', () => {
   it('应该渲染单行单列 当 board 为 1x1', () => {
     const board = [[createMockPanelChatModel('model-1')]];
 
-    const { container } = render(<Grid board={board} />);
+    render(<Grid board={board} />);
 
-    const rows = container.querySelectorAll('.flex.w-full.flex-1');
-    expect(rows).toHaveLength(1);
-
-    const details = container.querySelectorAll('[data-testid="detail"]');
-    expect(details).toHaveLength(1);
+    expect(screen.getAllByTestId('detail')).toHaveLength(1);
   });
 
   it('应该渲染 2 行 3 列 当 board 为 2x3', () => {
@@ -38,13 +34,9 @@ describe('Grid', () => {
       [createMockPanelChatModel('m4'), createMockPanelChatModel('m5'), createMockPanelChatModel('m6')],
     ];
 
-    const { container } = render(<Grid board={board} />);
+    render(<Grid board={board} />);
 
-    const rows = container.querySelectorAll('.flex.w-full.flex-1');
-    expect(rows).toHaveLength(2);
-
-    const details = container.querySelectorAll('[data-testid="detail"]');
-    expect(details).toHaveLength(6);
+    expect(screen.getAllByTestId('detail')).toHaveLength(6);
   });
 
   it('应该给非最后列的单元格添加右侧边框', () => {
@@ -52,10 +44,9 @@ describe('Grid', () => {
       [createMockPanelChatModel('m1'), createMockPanelChatModel('m2')],
     ];
 
-    const { container } = render(<Grid board={board} />);
+    render(<Grid board={board} />);
 
-    // border 类在包含 Detail mock 的父 div 上，使用 detail 作为锚点找父级
-    const details = container.querySelectorAll('[data-testid="detail"]');
+    const details = screen.getAllByTestId('detail');
     const cell0 = details[0].parentElement!;
     const cell1 = details[1].parentElement!;
     expect(cell0).toHaveClass('border-r');
@@ -68,9 +59,9 @@ describe('Grid', () => {
       [createMockPanelChatModel('m2')],
     ];
 
-    const { container } = render(<Grid board={board} />);
+    render(<Grid board={board} />);
 
-    const details = container.querySelectorAll('[data-testid="detail"]');
+    const details = screen.getAllByTestId('detail');
     const cell0 = details[0].parentElement!;
     const cell1 = details[1].parentElement!;
     expect(cell0).toHaveClass('border-b');
@@ -82,9 +73,9 @@ describe('Grid', () => {
       [createMockPanelChatModel('openai-gpt4'), createMockPanelChatModel('anthropic-claude')],
     ];
 
-    const { container } = render(<Grid board={board} />);
+    render(<Grid board={board} />);
 
-    const details = container.querySelectorAll('[data-testid="detail"]');
+    const details = screen.getAllByTestId('detail');
     expect(details[0]).toHaveAttribute('data-model-id', 'openai-gpt4');
     expect(details[1]).toHaveAttribute('data-model-id', 'anthropic-claude');
   });

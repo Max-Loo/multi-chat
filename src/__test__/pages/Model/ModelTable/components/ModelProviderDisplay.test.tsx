@@ -4,18 +4,15 @@
  * 测试模型供应商展示组件的各种场景
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import ModelProviderDisplay from '@/pages/Model/ModelTable/components/ModelProviderDisplay';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
-vi.mock('react-i18next', () => {
-  const R = { common: { confirm: '确认', cancel: '取消' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * 创建测试用 Redux store
@@ -31,13 +28,7 @@ const createTestStore = (
 
 
 describe('ModelProviderDisplay', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
-  afterEach(() => {
-    cleanup();
-  });
 
   describe('正常状态渲染', () => {
     it('应该显示供应商图标和名称', () => {
@@ -213,9 +204,9 @@ describe('ModelProviderDisplay', () => {
         ],
       });
 
-      const { container } = renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
+      renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
 
-      const flexContainer = container.querySelector('.flex.items-center.gap-2');
+      const flexContainer = screen.getByTestId('provider-display');
       expect(flexContainer).toBeInTheDocument();
     });
 
@@ -231,9 +222,9 @@ describe('ModelProviderDisplay', () => {
         ],
       });
 
-      const { container } = renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
+      renderWithProviders(<ModelProviderDisplay providerKey={ModelProviderKeyEnum.DEEPSEEK} />, { store });
 
-      const avatar = container.querySelector('.h-6.w-6');
+      const avatar = screen.getByTestId('provider-avatar');
       expect(avatar).toBeInTheDocument();
     });
   });

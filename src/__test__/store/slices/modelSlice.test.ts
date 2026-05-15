@@ -37,13 +37,6 @@ vi.mock('@/store/storage/chatStorage', () => ({
   saveChatsToJson: vi.fn(() => Promise.resolve(undefined)),
 }));
 
-// Mock storeUtils 模块
-vi.mock('@/store/storage/storeUtils', () => ({
-  createLazyStore: vi.fn(() => ({})),
-  saveToStore: vi.fn(() => Promise.resolve()),
-  loadFromStore: vi.fn(() => Promise.resolve([])),
-}));
-
 import { configureStore } from '@reduxjs/toolkit';
 import modelReducer, {
   clearError,
@@ -51,6 +44,7 @@ import modelReducer, {
   createModel,
   editModel,
   deleteModel,
+  initializeModels,
 } from '@/store/slices/modelSlice';
 
 describe('modelSlice', () => {
@@ -68,7 +62,6 @@ describe('modelSlice', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     // 重置 mock 返回默认值
     mockLoadModelsFromJson.mockResolvedValue([]);
     store = createTestStore();
@@ -86,15 +79,58 @@ describe('modelSlice', () => {
     });
   });
 
+  describe('initializeModels rejected', () => {
+    it('应该在 rejected 时恢复 loading 并设置 initializationError', () => {
+      // 先添加模型验证回滚
+      store.dispatch(createModel({ model: createMockModel({ id: 'existing-model' }) }));
+      expect(store.getState().models.models).toHaveLength(1);
 
+      // 设置 loading 状态
+      store.dispatch(initializeModels.pending('init-req'));
+      expect(store.getState().models.loading).toBe(true);
 
-  // 模型管理 reducers 测试已被删除：已被 model-config.integration.test.ts 覆盖
-  // - 创建新模型：集成测试覆盖 "添加模型配置"
-  // - 编辑模型：集成测试覆盖 "编辑模型配置"
-  // - 软删除模型：集成测试覆盖 "删除模型配置"
-  // - 编辑不存在模型：集成测试覆盖 "编辑模型配置" 的错误场景
+      // 触发 rejected
+      store.dispatch(initializeModels.rejected(new Error('Storage corrupted'), 'init-req'));
 
-  // 保留边缘情况测试
+      const state = store.getState().models;
+      expect(state.loading).toBe(false);
+      expect(state.initializationError).toBe('Storage corrupted');
+      // 现有模型列表不变
+      expect(state.models).toHaveLength(1);
+    });
+
+    it('应该在 loadModelsFromJson 抛出异常时正确处理错误', async () => {
+      // 先添加一个模型验证回滚
+      store.dispatch(createModel({ model: createMockModel({ id: 'existing' }) }));
+
+      // 设置 mock 使加载抛出异常
+      mockLoadModelsFromJson.mockRejectedValue(new Error('Network timeout'));
+
+      // 执行 thunk
+      const result = await store.dispatch(initializeModels());
+
+      const state = store.getState().models;
+      expect(state.loading).toBe(false);
+      expect(state.initializationError).toContain('Network timeout');
+      // 现有模型列表不变
+      expect(state.models).toHaveLength(1);
+      // thunk 应该被 rejected
+      expect(result.type).toBe('models/initialize/rejected');
+    });
+
+    it('应该在 loadModelsFromJson 抛出非 Error 类型时使用默认错误消息', async () => {
+      // 设置 mock 使加载抛出非 Error 类型
+      mockLoadModelsFromJson.mockRejectedValue('string error');
+
+      const result = await store.dispatch(initializeModels());
+
+      const state = store.getState().models;
+      expect(state.loading).toBe(false);
+      expect(state.initializationError).toBe('Failed to initialize model data');
+      expect(result.type).toBe('models/initialize/rejected');
+    });
+  });
+
   it('应该在编辑不存在模型时不修改状态', () => {
     const model1 = createMockModel({ id: 'model-1', nickname: 'Model 1' });
     const model2 = createMockModel({ id: 'model-2', nickname: 'Model 2' });
@@ -139,10 +175,7 @@ describe('modelSlice', () => {
     });
   });
 
-  // 模型列表过滤测试已被删除：集成测试已覆盖软删除和过滤逻辑
-
   describe('软删除模型查找', () => {
-    // 保留软删除模型查找测试：验证软删除逻辑
     it('应该查找已删除的模型', () => {
       const model = createMockModel();
       store.dispatch(createModel({ model }));

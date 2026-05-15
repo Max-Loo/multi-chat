@@ -35,9 +35,9 @@ export const ModelSearch = React.memo<ModelSearchProps>(
     );
 
     return (
-      <div className="space-y-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <div className="space-y-2" data-testid="model-search-wrapper">
+        <div className="relative" data-testid="model-search-container">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" data-testid="model-search-icon" />
           <Input
             type="text"
             placeholder={t($ => $.setting.modelProvider.searchPlaceholder)}

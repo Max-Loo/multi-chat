@@ -4,6 +4,58 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.0] - 2026-05-15
+
+### ✨ 新功能
+
+- **流式增量渲染**：实现流式增量渲染与 Markdown 安全分割，提升流式响应的渲染性能和安全性
+- **消息操作功能**：添加消息编辑、重新生成和复制操作，支持用户对已发送消息进行修改
+- **重新生成历史版本**：支持重新生成指定历史版本并原地流式显示，重新生成策略改为覆盖模式
+- **代码块复制按钮**：为代码块添加一键复制按钮，提升代码复制体验
+- **历史翻页控件重构**：使用 shadcn/ui Pagination 组件重构历史消息翻页控件
+- **基础测试命令**：增加基础测试命令，简化测试运行流程
+
+### 🐛 Bug 修复
+
+- **修复聊天切换竞态条件**：修复聊天切换时的竞态条件，并补充删除聊天时的 URL 清理
+- **修复滚动到底部按钮问题**：修复流式响应期间滚动到底部按钮闪现和无效的问题
+- **阻止表单默认提交**：阻止表单默认提交行为，避免输入框回车导致页面刷新
+- **修复 Vitest 竞态**：将 Vitest 池从 threads 切换为 forks，消除 react-redux 测试竞态问题
+
+### 🔧 重构
+
+- **流式渲染与历史辅助模块优化**：质量审查优化流式渲染与历史辅助模块
+- **气泡布局重构**：重新生成策略改为覆盖模式并重构聊天气泡布局
+- **状态结构适配**：适配 chatMetaList/activeChatData 新状态结构
+- **无障碍国际化**：国际化 aria-label，为 BottomNav 等组件添加无障碍标签
+- **服务层效率优化**：组件无障碍国际化与服务层效率优化
+- **Store 导入统一**：统一 createLazyStore 导入源并简化测试 mock
+- **删除死代码**：删除 getStandardRole 等死代码并排除不可测覆盖率项
+- **测试基础设施重构**：拆分单体测试设置为分层模块，统一 mock 工厂和语义化断言
+
+### 🧪 测试增强
+
+- **引入 Stryker 突变测试**：引入 Stryker 突变测试基础设施，全面提升测试质量标准
+- **突变测试覆盖率**：全面提升各模块突变测试覆盖率
+  - chatSlices 提升至 93%、masterKey 提升至 99%、resourceLoader 提升至 97.83%
+  - 覆盖 metadataCollector、modelRemote、providerLoader、crypto、hooks、密钥环安全模块、跨平台兼容层等
+- **单元测试补充**：补充 chatStorage 迁移逻辑、chatExport 服务层、ProviderGrid、ModelHeader、SettingSidebar、ChatButton 交互等模块的单元测试
+- **测试基础设施**：统一 mock 工厂、提取共享存储 mock、迁移 CSS 类断言为语义化选择器
+- **测试质量改进**：修复误判通过的测试、修复零信心断言、修复 mock 状态泄漏、重构集成测试分类
+- **性能行为测试**：添加流式渲染和代码高亮性能行为测试
+- **覆盖率工具**：切换 Istanbul 覆盖率提供者并调整分模块覆盖率阈值
+
+### 🎨 样式优化
+
+- **统一 UI 组件库**：统一编辑态和操作栏使用 shadcn/ui 组件库
+
+### 📝 文档变更
+
+- **工作规范更新**：更新 AGENTS.md 行数目标并新增十二条工作规范
+- **测试文档精简**：精简测试 README 从 2085 行到 489 行，补充 AI SDK Mock JSDoc
+
+---
+
 ## [0.4.2] - 2026-04-27
 
 ### ✨ 新功能

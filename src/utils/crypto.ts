@@ -28,11 +28,7 @@ export const hexToBytes = (hex: string): Uint8Array => {
 
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
-    const byteValue = parseInt(hex.substring(i, i + 2), 16);
-    if (isNaN(byteValue)) {
-      throw new Error(`无效的 hex 字符串：无法解析 "${hex.substring(i, i + 2)}"`);
-    }
-    bytes[i / 2] = byteValue;
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
   }
   return bytes;
 };

@@ -40,6 +40,18 @@ interface Resources {
       model: string;
       nickname: string;
       shiftDeleteChat: string;
+      copyCode: string;
+      copied: string;
+      copyMessage: string;
+      copySuccess: string;
+      copyFailed: string;
+      editMessage: string;
+      editConfirm: string;
+      editCancel: string;
+      regenerateMessage: string;
+      moreActions: string;
+      increaseColumns: string;
+      decreaseColumns: string;
     };
     common: {
       submit: string;
@@ -77,6 +89,20 @@ interface Resources {
       decryptionFailureMessage: string;
       decryptionFailureImport: string;
       decryptionFailureDismiss: string;
+      errorIcon: string;
+      a11y: {
+        bottomNav: string;
+        mainNav: string;
+        userMessage: string;
+        assistantMessage: string;
+        chatMessages: string;
+        clearSelection: string;
+        modelToolbar: string;
+        chatList: string;
+        modelProvider: string;
+        modelProviderNav: string;
+        settingsNav: string;
+      };
       keyRecovery: {
         title: string;
         description: string;

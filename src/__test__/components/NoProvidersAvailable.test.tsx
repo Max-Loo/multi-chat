@@ -1,15 +1,22 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { NoProvidersAvailable } from '@/components/NoProvidersAvailable'
 
-vi.mock('react-i18next', () => {
-  const R = { common: { noProvidersAvailable: '无可用模型供应商', noProvidersDescription: '请检查网络连接或稍后重试', noProvidersHint: '您可以尝试刷新页面', reload: '重新加载' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    common: {
+      noProvidersAvailable: '无可用模型供应商',
+      noProvidersDescription: '请检查网络连接或稍后重试',
+      noProvidersHint: '您可以尝试刷新页面',
+      reload: '重新加载',
+    },
+  }));
+
+/** 保存原始 window.location 用于测试后恢复 */
+const originalLocation = window.location;
 
 describe('NoProvidersAvailable', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     // Mock window.location.reload
     Object.defineProperty(window, 'location', {
       writable: true,
@@ -18,7 +25,11 @@ describe('NoProvidersAvailable', () => {
   })
 
   afterEach(() => {
-    cleanup()
+    // 恢复原始 window.location
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: originalLocation,
+    })
   })
 
   describe('错误信息展示', () => {
@@ -37,8 +48,8 @@ describe('NoProvidersAvailable', () => {
 
     it('应该显示错误图标', () => {
       render(<NoProvidersAvailable />)
-      
-      const icon = document.querySelector('.lucide-circle-alert')
+
+      const icon = screen.getByRole('img')
       expect(icon).toBeInTheDocument()
     })
   })
@@ -73,11 +84,16 @@ describe('NoProvidersAvailable', () => {
   })
 
   describe('可访问性', () => {
-    it('错误图标必须有正确的文本和尺寸', () => {
+    it('错误容器必须有 alert 角色', () => {
       render(<NoProvidersAvailable />)
-      
-      const icon = document.querySelector('.lucide-circle-alert')
-      expect(icon).toHaveClass('h-16', 'w-16')
+
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+
+    it('错误图标必须有 img 角色', () => {
+      render(<NoProvidersAvailable />)
+
+      expect(screen.getByRole('img')).toBeInTheDocument()
     })
 
     it('重新加载按钮必须可键盘访问', () => {
@@ -97,26 +113,21 @@ describe('NoProvidersAvailable', () => {
     })
   })
 
-  describe('样式和布局', () => {
-    it('错误容器必须有正确的样式类名', () => {
+  describe('引导内容渲染', () => {
+    it('应该在无 providers 状态下显示完整的引导内容', () => {
       render(<NoProvidersAvailable />)
-      
-      const container = document.querySelector('.fixed.inset-0')
-      expect(container).toBeInTheDocument()
-    })
 
-    it('内容容器必须有正确的布局类名', () => {
-      render(<NoProvidersAvailable />)
-      
-      const contentContainer = document.querySelector('.flex.max-w-md.flex-col')
-      expect(contentContainer).toBeInTheDocument()
-    })
-
-    it('图标必须有正确的颜色类名', () => {
-      render(<NoProvidersAvailable />)
-      
-      const icon = document.querySelector('.lucide-circle-alert')
-      expect(icon).toHaveClass('text-destructive')
+      // 验证标题（引导用户了解问题）
+      expect(screen.getByText('无可用模型供应商')).toBeInTheDocument()
+      // 验证描述（引导用户排查）
+      expect(screen.getByText('请检查网络连接或稍后重试')).toBeInTheDocument()
+      // 验证提示（引导用户操作）
+      expect(screen.getByText('您可以尝试刷新页面')).toBeInTheDocument()
+      // 验证操作按钮
+      expect(screen.getByRole('button', { name: '重新加载' })).toBeInTheDocument()
+      // 验证容器布局
+      expect(screen.getByRole('alert')).toHaveAttribute('data-testid', 'no-providers-container')
     })
   })
+
 })

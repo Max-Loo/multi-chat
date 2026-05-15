@@ -28,7 +28,6 @@ describe('useBoard', () => {
   const mockChat: Chat = { id: 'chat-1' };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.mocked(useSelectedChat).mockReturnValue({
       selectedChat: mockChat,
       chatModelList: mockModels,

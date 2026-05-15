@@ -1,6 +1,7 @@
 import type { ModelMessage, AssistantContent } from 'ai';
 import { StandardMessage } from '@/types/chat';
 import { ChatRoleEnum } from '@/types/chat';
+import { getCurrentContent } from '@/services/chat/chatHistoryHelper';
 
 /**
  * 构建消息列表
@@ -21,7 +22,7 @@ export function buildMessages(
 ): ModelMessage[] {
   return [
     ...historyList.map(history => {
-      const baseContent = history.content;
+      const baseContent = getCurrentContent(history.content);
 
       // system 消息的 content 必须是 string（Vercel AI SDK 限制）
       if (history.role === ChatRoleEnum.SYSTEM) {
@@ -46,15 +47,17 @@ export function buildMessages(
         ];
 
         // 当开关开启且存在非空推理内容时，添加独立的 reasoning part
+        const currentReasoning = history.reasoningContent
+          ? getCurrentContent(history.reasoningContent)
+          : '';
         if (
           transmitHistoryReasoning &&
-          history.reasoningContent &&
-          typeof history.reasoningContent === 'string' &&
-          history.reasoningContent.trim().length > 0
+          currentReasoning &&
+          currentReasoning.trim().length > 0
         ) {
           parts.push({
             type: 'reasoning' as const,
-            text: history.reasoningContent,
+            text: currentReasoning,
           });
         }
 

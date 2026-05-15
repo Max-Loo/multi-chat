@@ -1,10 +1,8 @@
-import { render, screen, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatContent from '@/pages/Chat/components/Content';
 import { resetTestState } from '@/__test__/helpers/isolation';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 
 /**
  * Mock useCurrentSelectedChat hook
@@ -15,31 +13,26 @@ vi.mock('@/hooks/useCurrentSelectedChat', () => ({
   useCurrentSelectedChat: () => mockUseCurrentSelectedChat(),
 }));
 
-vi.mock('react-i18next', () => {
-  const R = {
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
     chat: { selectChatToStart: '选择一个聊天开始对话' },
-    table: { nickname: '昵称', modelProvider: '模型提供商', modelName: '模型名称', lastUpdateTime: '最后更新时间', createTime: '创建时间' },
-    common: { remark: '备注' },
-  };
-  return globalThis.__createI18nMockReturn(R);
-});
+    table: {
+      nickname: '昵称',
+      modelProvider: '模型提供商',
+      modelName: '模型名称',
+      lastUpdateTime: '最后更新时间',
+      createTime: '创建时间',
+    },
+  }));
 
 /**
  * 渲染 ChatContent 组件的辅助函数
  */
 function renderChatContent() {
   const store = createTypeSafeTestStore();
+  const { store: _store, ...result } = renderWithProviders(<ChatContent />, { store });
 
-  return {
-    store,
-    ...render(
-      <Provider store={store}>
-        <BrowserRouter>
-          <ChatContent />
-        </BrowserRouter>
-      </Provider>
-    ),
-  };
+  return { store, ...result };
 }
 
 /**
@@ -56,10 +49,7 @@ describe('ChatContent Component', () => {
     mockUseCurrentSelectedChat.mockReset();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
-
+  
   it('应该显示占位文本 当没有选中聊天', () => {
     mockUseCurrentSelectedChat.mockReturnValue(null);
 

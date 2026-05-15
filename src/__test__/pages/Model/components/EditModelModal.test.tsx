@@ -12,10 +12,15 @@ import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers
 import { createModelSliceState, createModelProviderSliceState } from '@/__test__/helpers/mocks/testState';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
-vi.mock('react-i18next', () => {
-  const R = { model: { editModel: '编辑模型', editModelDescription: '编辑模型描述', editModelSuccess: '编辑成功', editModelFailed: '编辑失败', modelNickname: '模型昵称', apiKey: 'API 密钥', apiAddress: 'API 地址', model: '模型' }, common: { remark: '备注', submit: '提交' } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    model: {
+      editModel: '编辑模型',
+      editModelDescription: '编辑模型描述',
+      editModelSuccess: '编辑成功',
+      editModelFailed: '编辑失败',
+    },
+  }));
 
 // Mock sonner
 vi.mock('sonner', () => ({
@@ -108,7 +113,7 @@ describe('EditModelModal', () => {
   });
 
   describe('弹窗关闭', () => {
-    it('点击蒙层应该关闭弹窗', async () => {
+    it('按 Escape 键应该关闭弹窗', async () => {
       const store = createTestStore(
         { models: [mockModel] },
         { providers: mockProviders }
@@ -124,14 +129,13 @@ describe('EditModelModal', () => {
         { store }
       );
 
-      const overlay = document.querySelector('[class*="overlay"]');
-      if (overlay) {
-        fireEvent.click(overlay);
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toBeInTheDocument();
+      fireEvent.keyDown(dialog, { key: 'Escape' });
 
-        await waitFor(() => {
-          expect(mockOnModalCancel).toHaveBeenCalled();
-        });
-      }
+      await waitFor(() => {
+        expect(mockOnModalCancel).toHaveBeenCalled();
+      });
     });
 
     it('点击关闭按钮应该关闭弹窗', async () => {
@@ -150,19 +154,15 @@ describe('EditModelModal', () => {
         { store }
       );
 
-      const dialog = document.querySelector('[role="dialog"]');
-      if (dialog) {
-        const closeButton = Array.from(dialog.querySelectorAll('button')).find(btn =>
-          btn.getAttribute('aria-label') === 'close' || btn.textContent.includes('close')
-        );
-        if (closeButton) {
-          fireEvent.click(closeButton);
+      const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+      expect(dialog).toBeInTheDocument();
+      const closeButton = screen.getByText('Close');
+      expect(closeButton).toBeInTheDocument();
+      fireEvent.click(closeButton);
 
-          await waitFor(() => {
-            expect(mockOnModalCancel).toHaveBeenCalled();
-          });
-        }
-      }
+      await waitFor(() => {
+        expect(mockOnModalCancel).toHaveBeenCalled();
+      });
     });
   });
 
@@ -203,11 +203,10 @@ describe('EditModelModal', () => {
         { store }
       );
 
-      const dialog = document.querySelector('[role="dialog"]');
-      if (dialog) {
-        const title = dialog.querySelector('h2, h3');
-        expect(title).toBeInTheDocument();
-      }
+      const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+      expect(dialog).toBeInTheDocument();
+      const title = dialog.querySelector('h2, h3');
+      expect(title).toBeInTheDocument();
     });
   });
 
@@ -228,14 +227,13 @@ describe('EditModelModal', () => {
         { store }
       );
 
-      const submitButton = screen.queryByText(/submit|update/i);
-      if (submitButton) {
-        fireEvent.click(submitButton);
+      const submitButton = screen.getByTestId('submit-button');
+      expect(submitButton).toBeInTheDocument();
+      fireEvent.click(submitButton);
 
-        await waitFor(() => {
-          expect(mockOnModalCancel).toHaveBeenCalled();
-        });
-      }
+      await waitFor(() => {
+        expect(mockOnModalCancel).toHaveBeenCalled();
+      });
     });
   });
 
@@ -278,11 +276,10 @@ describe('EditModelModal', () => {
         { store }
       );
 
-      const dialog = document.querySelector('[role="dialog"]');
-      if (dialog) {
-        const title = dialog.querySelector('h2, h3');
-        expect(title).toBeInTheDocument();
-      }
+      const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+      expect(dialog).toBeInTheDocument();
+      const title = dialog.querySelector('h2, h3');
+      expect(title).toBeInTheDocument();
     });
   });
 });

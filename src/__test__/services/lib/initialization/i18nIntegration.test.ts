@@ -19,7 +19,6 @@ describe('i18n 初始化集成测试', () => {
 
   beforeEach(() => {
     manager = new InitializationManager();
-    vi.clearAllMocks();
   });
 
   describe('完整的初始化流程（i18n + 其他步骤）', () => {

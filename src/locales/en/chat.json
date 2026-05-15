@@ -33,5 +33,17 @@
   "supplier": "Supplier",
   "model": "Model",
   "nickname": "Nickname",
-  "shiftDeleteChat": "Shift+Click to quick delete"
+  "shiftDeleteChat": "Shift+Click to quick delete",
+  "copyCode": "Copy code",
+  "copied": "Copied",
+  "copyMessage": "Copy message",
+  "copySuccess": "Copied to clipboard",
+  "copyFailed": "Copy failed",
+  "editMessage": "Edit message",
+  "editConfirm": "Confirm edit",
+  "editCancel": "Cancel edit",
+  "regenerateMessage": "Regenerate",
+  "moreActions": "More actions",
+  "increaseColumns": "Increase columns",
+  "decreaseColumns": "Decrease columns"
 }

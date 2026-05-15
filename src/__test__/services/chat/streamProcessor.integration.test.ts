@@ -70,7 +70,6 @@ describe('streamProcessor', () => {
   let collectAllMetadataSpy: Mock;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     // 使用 spyOn 来 mock collectAllMetadata
     collectAllMetadataSpy = vi.spyOn(metadataCollectorModule, 'collectAllMetadata');
   });

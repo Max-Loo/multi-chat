@@ -8,8 +8,10 @@ import { useNavigateToChat } from "@/hooks/useNavigateToPage";
 import { setSelectedChatIdWithPreload } from "@/store/slices/chatSlices";
 import { setIsDrawerOpen } from "@/store/slices/chatPageSlices";
 import { useResponsive } from "@/hooks/useResponsive";
+import { useTranslation } from "react-i18next";
 
 const ChatPage: React.FC = () => {
+  const { t } = useTranslation();
   const isSidebarCollapsed = useAppSelector(
     (state) => state.chatPage.isSidebarCollapsed,
   );
@@ -69,10 +71,10 @@ const ChatPage: React.FC = () => {
       // 聊天不存在，清除 URL 中的 chatId 参数
       clearChatIdParam();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- chatMetaList 仅在函数体内使用，不在依赖数组中以消除 createNewChat 时的竞态条件
   }, [
     dispatch,
     searchParams,
-    chatMetaList,
     loading,
     initializationError,
     clearChatIdParam,
@@ -103,8 +105,8 @@ const ChatPage: React.FC = () => {
 
       {/* 非 Mobile 模式：直接显示侧边栏 */}
       {!isMobile && (
-        <div
-          data-testid="chat-sidebar"
+        <aside
+          data-testid="chat-sidebar-wrapper"
           className={`
             h-full overflow-hidden border-r border-gray-200 shrink-0
             transition-spacing duration-300 ease-in-out
@@ -112,20 +114,21 @@ const ChatPage: React.FC = () => {
             ${isSidebarCollapsed ? (isDesktop ? "-ml-56" : "-ml-48") + " -translate-x-full opacity-0" : "ml-0 translate-x-0 opacity-100"}
             ${isDesktop ? "w-56" : "w-48"}
           `}
+          aria-label={t($ => $.common.a11y.chatList)}
         >
           <Sidebar />
-        </div>
+        </aside>
       )}
 
       {/* 主内容 */}
-      <div
+      <main
         data-testid="chat-content"
         className={`
           h-full grow overflow-x-auto
         `}
       >
         <Content />
-      </div>
+      </main>
     </div>
   );
 };

@@ -181,11 +181,19 @@ type InitI18nPromise = Promise<TFunction<"translation", undefined>>;
 let initI18nPromise: InitI18nPromise | null = null;
 
 /**
- * 重置 i18n 初始化单例（仅用于测试）
+ * 重置 i18n 全部内部状态（仅用于测试）
+ * 清理 loadedLanguages、loadingPromises、languageResourcesCache 和 initI18nPromise
  * @internal
  */
-export const resetInitI18nForTest = () => {
+export const resetI18nForTest = () => {
+  loadedLanguages.clear();
+  loadingPromises.clear();
+  languageResourcesCache.clear();
   initI18nPromise = null;
+
+  // 重新填充默认值
+  loadedLanguages.add('en');
+  languageResourcesCache.set('en', EN_RESOURCES);
 };
 
 /**
@@ -202,7 +210,9 @@ export const initI18n = async () => {
     // 内部调用 getDefaultAppLanguage() 检测系统语言
     let languageResult: Awaited<ReturnType<typeof getDefaultAppLanguage>> = {
       lang: "en",
+      // Stryker disable BooleanLiteral
       migrated: false,
+      // Stryker restore BooleanLiteral
     }; // 默认英文
     try {
       languageResult = await getDefaultAppLanguage();

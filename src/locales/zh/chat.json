@@ -33,5 +33,17 @@
   "supplier": "供应商",
   "model": "模型",
   "nickname": "昵称",
-  "shiftDeleteChat": "Shift+点击快捷删除"
+  "shiftDeleteChat": "Shift+点击快捷删除",
+  "copyCode": "复制代码",
+  "copied": "已复制",
+  "copyMessage": "复制消息",
+  "copySuccess": "已复制到剪贴板",
+  "copyFailed": "复制失败",
+  "editMessage": "编辑消息",
+  "editConfirm": "确认编辑",
+  "editCancel": "取消编辑",
+  "regenerateMessage": "重新生成",
+  "moreActions": "更多操作",
+  "increaseColumns": "增加列数",
+  "decreaseColumns": "减少列数"
 }

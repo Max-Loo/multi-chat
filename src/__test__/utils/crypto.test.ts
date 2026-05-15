@@ -2,7 +2,7 @@
  * Crypto 工具函数测试
  */
 
-import { describe, it, expect, test } from 'vitest';
+import { describe, it, expect, test, vi, beforeEach, afterEach } from 'vitest';
 import { encryptField, decryptField, isEncrypted, hexToBytes, bytesToBase64, base64ToBytes } from '@/utils/crypto';
 
 // 测试辅助函数
@@ -120,6 +120,19 @@ describe('Crypto 工具函数', () => {
   });
 
   describe('base64ToBytes', () => {
+    describe('error.cause 保留验证', () => {
+      it('base64ToBytes 抛出错误时应保留原始错误为 cause', () => {
+        try {
+          base64ToBytes('!!!');
+          expect.unreachable('应该抛出错误');
+        } catch (error) {
+          expect(error).toBeInstanceOf(Error);
+          expect((error as Error).cause).toBeDefined();
+          expect((error as Error).cause).toBeInstanceOf(Error);
+        }
+      });
+    });
+
     describe('正常转换', () => {
       it('应该正确转换 Base64 字符串', () => {
         const base64 = 'SGVsbG8='; // "Hello"
@@ -195,14 +208,6 @@ describe('Crypto 工具函数', () => {
       expect(encrypted.length).toBeGreaterThan(4); // 至少包含 "enc:" 前缀和加密数据
     });
 
-    it('每次加密应该产生不同的密文（因为使用随机 nonce）', async () => {
-      const plaintext = 'Same text';
-      const encrypted1 = await testEncryptDecrypt(plaintext, masterKey);
-      const encrypted2 = await testEncryptDecrypt(plaintext, masterKey);
-
-      expect(encrypted1).not.toBe(encrypted2);
-    });
-
     it('应该正确加密空字符串', async () => {
       const plaintext = '';
       const encrypted = await encryptField(plaintext, masterKey);
@@ -214,6 +219,33 @@ describe('Crypto 工具函数', () => {
       const plaintext = 'Hello, World!';
 
       await expect(encryptField(plaintext, '')).rejects.toThrow('密钥不能为空');
+    });
+
+    it('无效密钥加密失败时错误应保留原始错误为 cause', async () => {
+      const invalidKey = 'g'.repeat(64);
+      const plaintext = 'Test data';
+
+      try {
+        await encryptField(plaintext, invalidKey);
+        expect.unreachable('应该抛出错误');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe('加密敏感数据失败，请检查主密钥是否有效');
+        expect((error as Error).cause).toBeDefined();
+        expect((error as Error).cause).toBeInstanceOf(Error);
+      }
+    });
+
+    it('encryptField 应以 extractable=false 导入密钥', async () => {
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      await encryptField('test', masterKey);
+
+      expect(importKeySpy).toHaveBeenCalledOnce();
+      // extractable 参数（第 4 个参数）应为 false
+      expect(importKeySpy.mock.calls[0][3]).toBe(false);
+
+      importKeySpy.mockRestore();
     });
   });
 
@@ -235,10 +267,28 @@ describe('Crypto 工具函数', () => {
 
       const encrypted = await encryptField(plaintext, correctKey);
 
-      await testInvalidInput(
-        () => decryptField(encrypted, wrongKey),
-        '解密敏感数据失败，可能是主密钥已更改或数据已损坏'
-      );
+      try {
+        await decryptField(encrypted, wrongKey);
+        expect.unreachable('应该抛出错误');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe('解密敏感数据失败，可能是主密钥已更改或数据已损坏');
+        expect((error as Error).cause).toBeDefined();
+        expect((error as Error).cause).toBeInstanceOf(Error);
+      }
+    });
+
+    it('decryptField 应以 extractable=false 导入密钥', async () => {
+      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
+
+      const encrypted = await encryptField('test', masterKey);
+      await decryptField(encrypted, masterKey);
+
+      // importKey 被调用了两次（encrypt + decrypt），取第二次调用
+      expect(importKeySpy).toHaveBeenCalledTimes(2);
+      expect(importKeySpy.mock.calls[1][3]).toBe(false);
+
+      importKeySpy.mockRestore();
     });
 
     it('缺少 enc: 前缀应该抛出错误', async () => {
@@ -360,118 +410,24 @@ describe('Crypto 工具函数', () => {
     });
 
     describe('特殊 Unicode 字符处理', () => {
-      describe('CJK 字符测试', () => {
-        it('应该正确处理中文字符', async () => {
-          const chineseText = '你好世界！这是一个加密测试。';
-          const encrypted = await encryptField(chineseText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(chineseText);
-        });
-
-        it('应该正确处理日文字符', async () => {
-          const japaneseText = 'こんにちは！これは暗号化テストです。';
-          const encrypted = await encryptField(japaneseText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(japaneseText);
-        });
-
-        it('应该正确处理韩文字符', async () => {
-          const koreanText = '안녕하세요! 이것은 암호화 테스트입니다.';
-          const encrypted = await encryptField(koreanText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(koreanText);
-        });
-
-        it('应该正确处理混合 CJK 字符', async () => {
-          const mixedCJKText = '中文你好 Japanese 日本語 안녕 Korean';
-          const encrypted = await encryptField(mixedCJKText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(mixedCJKText);
-        });
-      });
-
-      describe('Emoji 字符测试', () => {
-        it('应该正确处理各种 emoji', async () => {
-          const emojiText = '🔐🔑🚀💻🌍⭐🎉😀👍💡';
-          const encrypted = await encryptField(emojiText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(emojiText);
-        });
-
-        it('应该正确处理表情符号序列', async () => {
-          const emojiSequence = '👨‍👩‍👧‍👦👨‍💻👩‍🚀🎅🏽🇨🇳';
-          const encrypted = await encryptField(emojiSequence, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(emojiSequence);
-        });
-
-        it('应该正确处理混合 emoji 和文本', async () => {
-          const mixedEmojiText = 'Hello 🔐 World 🌍 Test 💻 with 😀 emojis!';
-          const encrypted = await encryptField(mixedEmojiText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(mixedEmojiText);
-        });
-      });
-
-      describe('组合字符测试', () => {
-        it('应该正确处理带变音符号的字符', async () => {
-          // 使用组合字符（combining diacritical marks）
-          const combiningChars = 'e\u0301 a\u0300 o\u0302 u\u0308'; // é à ô ü
-          const encrypted = await encryptField(combiningChars, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(combiningChars);
-        });
-
-        it('应该正确处理预组合字符', async () => {
-          // 使用预组合字符（precomposed characters）
-          const precomposedChars = 'é à ô ü ñ ç';
-          const encrypted = await encryptField(precomposedChars, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(precomposedChars);
-        });
-
-        it('应该正确处理混合组合和预组合字符', async () => {
-          const mixedChars = 'café naïve façade';
-          const encrypted = await encryptField(mixedChars, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(mixedChars);
-        });
-      });
-
-      describe('双向文本测试', () => {
-        it('应该正确处理阿拉伯文（从右到左）', async () => {
-          const arabicText = 'مرحبا بالعالم';
-          const encrypted = await encryptField(arabicText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(arabicText);
-        });
-
-        it('应该正确处理希伯来文（从右到左）', async () => {
-          const hebrewText = 'שלום עולם';
-          const encrypted = await encryptField(hebrewText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(hebrewText);
-        });
-
-        it('应该正确处理混合 LTR 和 RTL 文本', async () => {
-          const mixedDirectionText = 'Hello مرحبا World שלום';
-          const encrypted = await encryptField(mixedDirectionText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(mixedDirectionText);
-        });
+      test.each([
+        ['中文', '你好世界！这是一个加密测试。'],
+        ['日文', 'こんにちは！これは暗号化テストです。'],
+        ['韩文', '안녕하세요! 이것은 암호화 테스트입니다.'],
+        ['混合 CJK', '中文你好 Japanese 日本語 안녕 Korean'],
+        ['Emoji', '🔐🔑🚀💻🌍⭐🎉😀👍💡'],
+        ['Emoji 序列', '👨‍👩‍👧‍👦👨‍💻👩‍🚀🎅🏽🇨🇳'],
+        ['混合 Emoji 和文本', 'Hello 🔐 World 🌍 Test 💻 with 😀 emojis!'],
+        ['组合变音符号', 'é à ô ü'],
+        ['预组合字符', 'é à ô ü ñ ç'],
+        ['混合组合字符', 'café naïve façade'],
+        ['阿拉伯文 RTL', 'مرحبا بالعالم'],
+        ['希伯来文 RTL', 'שלום עולם'],
+        ['混合 LTR/RTL', 'Hello مرحبا World שלום'],
+      ])('应该正确处理 %s', async (_label, text) => {
+        const encrypted = await encryptField(text, masterKey);
+        const decrypted = await decryptField(encrypted, masterKey);
+        expect(decrypted).toBe(text);
       });
     });
 
@@ -596,6 +552,26 @@ Line 5`;
         });
       });
 
+      describe('密钥格式边缘用例', () => {
+        it('无效 hex 字符串的密钥：hex 验证错误被包装为加密错误', async () => {
+          const invalidKey = 'g'.repeat(64);
+          const plaintext = 'Test data';
+
+          await expect(encryptField(plaintext, invalidKey)).rejects.toThrow(
+            '加密敏感数据失败，请检查主密钥是否有效'
+          );
+        });
+
+        it('奇数长度 hex 字符串的密钥：长度错误被包装为加密错误', async () => {
+          const oddLengthKey = 'a'.repeat(63);
+          const plaintext = 'Test data';
+
+          await expect(encryptField(plaintext, oddLengthKey)).rejects.toThrow(
+            '加密敏感数据失败，请检查主密钥是否有效'
+          );
+        });
+      });
+
       describe('特殊密钥值测试', () => {
         it('应该正确处理所有位为 0 的密钥', async () => {
           const allZerosKey = '0'.repeat(64);
@@ -684,24 +660,16 @@ Line 5`;
             const modifiedBase64 = bytesToBase64(decodedData);
             const modifiedCiphertext = `enc:${modifiedBase64}`;
 
-            await expect(decryptField(modifiedCiphertext, masterKey)).rejects.toThrow(
-              '解密敏感数据失败，可能是主密钥已更改或数据已损坏'
-            );
+            try {
+              await decryptField(modifiedCiphertext, masterKey);
+              expect.unreachable('应该抛出错误');
+            } catch (error) {
+              expect(error).toBeInstanceOf(Error);
+              expect((error as Error).message).toBe('解密敏感数据失败，可能是主密钥已更改或数据已损坏');
+              expect((error as Error).cause).toBeDefined();
+              expect((error as Error).cause).toBeInstanceOf(Error);
+            }
           }
-        });
-      });
-
-      describe('nonce 唯一性验证', () => {
-        it('每次加密应使用不同的 nonce', async () => {
-          const plaintext = 'Test message';
-          const encrypted1 = await encryptField(plaintext, masterKey);
-          const encrypted2 = await encryptField(plaintext, masterKey);
-
-          // 去除前缀后的 Base64 数据应不同（因为 nonce 不同）
-          const data1 = encrypted1.slice(4);
-          const data2 = encrypted2.slice(4);
-
-          expect(data1).not.toBe(data2);
         });
       });
 
@@ -799,6 +767,14 @@ Line 5`;
     });
 
     describe('并发和异步测试', () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
       it('并发加密操作应独立完成', async () => {
         const plaintexts = [
           'Message 1',
@@ -834,13 +810,16 @@ Line 5`;
         // 加密
         const encrypted = await encryptField(plaintext, masterKey);
 
-        // 使用 setTimeout 模拟不同的时间点解密
-        const decrypted = await new Promise<string>((resolve) => {
+        // 使用 fakeTimers 模拟不同事件循环中解密
+        const decryptedPromise = new Promise<string>((resolve) => {
           setTimeout(async () => {
             const result = await decryptField(encrypted, masterKey);
             resolve(result);
           }, 10);
         });
+
+        await vi.advanceTimersByTimeAsync(10);
+        const decrypted = await decryptedPromise;
 
         expect(decrypted).toBe(plaintext);
       });

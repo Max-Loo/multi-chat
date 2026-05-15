@@ -42,6 +42,7 @@ function SkeletonMessage({
         isSelf ? "flex-row-reverse" : "flex-row",
         className,
       )}
+      aria-hidden="true"
     >
       {/* 头像骨架 */}
       <Skeleton variant="circle" className="w-10 h-10 shrink-0" />

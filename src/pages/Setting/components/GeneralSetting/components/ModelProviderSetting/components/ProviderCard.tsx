@@ -4,6 +4,7 @@ import { RemoteProviderData } from '@/services/modelRemote';
 import { ProviderCardHeader } from './ProviderCardHeader';
 import { ProviderCardSummary } from './ProviderCardSummary';
 import { ProviderCardDetails } from './ProviderCardDetails';
+import { handleActivationKeyDown } from '@/utils/a11y';
 
 /**
  * ProviderCard 组件的属性
@@ -27,11 +28,15 @@ export const ProviderCard = React.memo<ProviderCardProps>(
   ({ provider, isExpanded, onToggle, status }) => {
     return (
       <Card
+        data-testid="provider-card"
+        tabIndex={0}
+        aria-expanded={isExpanded}
         className="overflow-hidden transition-all hover:shadow-md cursor-pointer"
         style={{
           willChange: 'transform, opacity',
         }}
         onClick={onToggle}
+        onKeyDown={handleActivationKeyDown(onToggle)}
       >
         <div className="p-4 space-y-3">
           <ProviderCardHeader
@@ -46,7 +51,7 @@ export const ProviderCard = React.memo<ProviderCardProps>(
           />
         </div>
         {isExpanded && (
-          <div className="border-t">
+          <div data-testid="provider-card-details" className="border-t">
             <ProviderCardDetails provider={provider} />
           </div>
         )}

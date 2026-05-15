@@ -4,8 +4,8 @@
  * 测试模型列表的各种场景
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import ModelTable from '@/pages/Model/ModelTable';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
@@ -14,14 +14,22 @@ import type { Model } from '@/types/model';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
-vi.mock('react-i18next', () => {
-  const R = {
-    model: { addModel: '添加模型', searchPlaceholder: '搜索模型...', noModelData: '暂无模型数据', confirmDelete: '确认删除', confirmDeleteDescription: '确认要删除模型 {{nickname}} 吗？', deleteModelSuccess: '删除成功', deleteModelFailed: '删除失败', dataLoadFailed: '数据加载失败', operationFailed: '操作失败', fixErrorReload: '修复错误后重新加载' },
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    model: {
+      addModel: '添加模型',
+      searchPlaceholder: '搜索模型...',
+      noModelData: '暂无模型数据',
+      confirmDelete: '确认删除',
+      confirmDeleteDescription: '确认要删除模型 {{nickname}} 吗？',
+      deleteModelSuccess: '删除成功',
+      deleteModelFailed: '删除失败',
+      dataLoadFailed: '数据加载失败',
+      operationFailed: '操作失败',
+      fixErrorReload: '修复错误后重新加载',
+    },
     table: { loading: '加载中...', operation: '操作' },
-    common: { cancel: '取消', confirm: '确认' },
-  };
-  return globalThis.__createI18nMockReturn(R);
-});
+  }));
 
 /**
  * 创建测试用 Redux store
@@ -65,11 +73,7 @@ describe('ModelTable', () => {
     ];
   });
 
-  afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
-
+  
   describe('基础渲染', () => {
     it('应该渲染模型列表', () => {
       const store = createTestStore({ models: mockModels });
@@ -196,10 +200,8 @@ describe('ModelTable', () => {
 
       renderWithProviders(<ModelTable />, { store });
 
-      // 查找包含铅笔图标的编辑按钮
-      const editButtons = screen.getAllByRole('button').filter(btn =>
-        btn.querySelector('.lucide-pencil')
-      );
+      // 查找编辑按钮（通过 aria-label）
+      const editButtons = screen.getAllByRole('button', { name: '操作' });
 
       expect(editButtons.length).toBeGreaterThan(0);
       fireEvent.click(editButtons[0]);
@@ -217,10 +219,8 @@ describe('ModelTable', () => {
 
       renderWithProviders(<ModelTable />, { store });
 
-      // 查找包含垃圾桶图标的删除按钮
-      const deleteButtons = screen.getAllByRole('button').filter(btn =>
-        btn.querySelector('.lucide-trash-2')
-      );
+      // 查找删除按钮（通过 aria-label）
+      const deleteButtons = screen.getAllByRole('button', { name: '确认删除' });
 
       expect(deleteButtons.length).toBeGreaterThan(0);
       fireEvent.click(deleteButtons[0]);
@@ -235,9 +235,7 @@ describe('ModelTable', () => {
 
       renderWithProviders(<ModelTable />, { store });
 
-      const deleteButtons = screen.getAllByRole('button').filter(btn =>
-        btn.querySelector('.lucide-trash-2')
-      );
+      const deleteButtons = screen.getAllByRole('button', { name: '确认删除' });
 
       expect(deleteButtons.length).toBeGreaterThan(0);
       fireEvent.click(deleteButtons[0]);
@@ -260,9 +258,7 @@ describe('ModelTable', () => {
 
       renderWithProviders(<ModelTable />, { store });
 
-      const deleteButtons = screen.getAllByRole('button').filter(btn =>
-        btn.querySelector('.lucide-trash-2')
-      );
+      const deleteButtons = screen.getAllByRole('button', { name: '确认删除' });
 
       expect(deleteButtons.length).toBeGreaterThan(0);
       fireEvent.click(deleteButtons[0]);

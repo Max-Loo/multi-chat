@@ -205,4 +205,213 @@ describe('useMediaQuery', () => {
       expect(result2.current).toBe(false);
     });
   });
+
+  describe('query 参数变更测试', () => {
+    it('应在 query 变更时重新注册监听器', () => {
+      const mediaQueryList1 = {
+        matches: true,
+        media: '(min-width: 768px)',
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+      const mediaQueryList2 = {
+        matches: false,
+        media: '(min-width: 1024px)',
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+
+      // useState 初始化调用一次 + useEffect 调用一次 = 两次
+      mockMatchMedia
+        .mockReturnValueOnce(mediaQueryList1)
+        .mockReturnValueOnce(mediaQueryList1)
+        .mockReturnValueOnce(mediaQueryList2)
+        .mockReturnValueOnce(mediaQueryList2);
+
+      const { rerender, result } = renderHook(
+        ({ query }) => useMediaQuery(query),
+        { initialProps: { query: '(min-width: 768px)' } }
+      );
+
+      expect(result.current).toBe(true);
+
+      // 变更 query
+      rerender({ query: '(min-width: 1024px)' });
+
+      // 应在新媒体查询上注册监听器
+      expect(mediaQueryList2.addEventListener).toHaveBeenCalledWith(
+        'change',
+        expect.any(Function)
+      );
+
+      // 应清理旧媒体查询的监听器
+      expect(mediaQueryList1.removeEventListener).toHaveBeenCalledWith(
+        'change',
+        expect.any(Function)
+      );
+
+      // 验证 throttle handler 在不同 query 间是同一个引用（复用）
+      const handler1 = mediaQueryList1.addEventListener.mock.calls[0][1];
+      const handler2 = mediaQueryList2.addEventListener.mock.calls[0][1];
+      expect(handler1).toBe(handler2);
+    });
+
+    it('应在 query 变更时重新创建 matchMedia 并注册监听', () => {
+      const mediaQueryList1 = {
+        matches: false,
+        media: '(min-width: 768px)',
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+      const mediaQueryList2 = {
+        matches: true,
+        media: '(prefers-color-scheme: dark)',
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+
+      // useState 初始化调用一次 + useEffect 调用一次 = 两次
+      mockMatchMedia
+        .mockReturnValueOnce(mediaQueryList1)
+        .mockReturnValueOnce(mediaQueryList1)
+        .mockReturnValueOnce(mediaQueryList2)
+        .mockReturnValueOnce(mediaQueryList2);
+
+      const { rerender } = renderHook(
+        ({ query }) => useMediaQuery(query),
+        { initialProps: { query: '(min-width: 768px)' } }
+      );
+
+      // 第一次：注册了 query1 的监听器
+      expect(mediaQueryList1.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+      expect(mockMatchMedia).toHaveBeenCalledWith('(min-width: 768px)');
+
+      // 变更 query
+      rerender({ query: '(prefers-color-scheme: dark)' });
+
+      // 第二次：应重新调用 matchMedia 并注册新监听器
+      expect(mockMatchMedia).toHaveBeenCalledWith('(prefers-color-scheme: dark)');
+      expect(mediaQueryList2.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+      // 清理旧监听器
+      expect(mediaQueryList1.removeEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+    });
+  });
+
+  describe('卸载时清理监听器测试', () => {
+    it('应在卸载时调用 removeEventListener', () => {
+      const mediaQueryList = {
+        matches: false,
+        media: '(min-width: 768px)',
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+      mockMatchMedia.mockReturnValue(mediaQueryList);
+
+      const { unmount } = renderHook(() => useMediaQuery('(min-width: 768px)'));
+
+      expect(mediaQueryList.addEventListener).toHaveBeenCalled();
+
+      unmount();
+
+      expect(mediaQueryList.removeEventListener).toHaveBeenCalledWith(
+        'change',
+        expect.any(Function)
+      );
+    });
+  });
+
+  describe('150ms 节流 leading/trailing 行为测试', () => {
+    it('应在首次变化时立即响应（leading）', () => {
+      let changeListener: ((event: MediaQueryListEvent) => void) | null = null;
+      const mediaQueryList = {
+        matches: false,
+        media: '(min-width: 768px)',
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn((_event: string, listener: any) => {
+          changeListener = listener;
+        }),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+      mockMatchMedia.mockReturnValue(mediaQueryList);
+
+      const { result } = renderHook(() => useMediaQuery('(min-width: 768px)'));
+      expect(result.current).toBe(false);
+
+      // 第一次 change 事件应立即更新（leading）
+      act(() => {
+        changeListener!(new MediaQueryListEvent('change', { matches: true }));
+      });
+
+      expect(result.current).toBe(true);
+    });
+
+    it('应在 150ms 内的中间变化被节流丢弃', () => {
+      vi.useFakeTimers();
+
+      let changeListener: ((event: MediaQueryListEvent) => void) | null = null;
+      const mediaQueryList = {
+        matches: false,
+        media: '(min-width: 768px)',
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn((_event: string, listener: any) => {
+          changeListener = listener;
+        }),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+      mockMatchMedia.mockReturnValue(mediaQueryList);
+
+      const { result } = renderHook(() => useMediaQuery('(min-width: 768px)'));
+
+      // 第一次变化：leading，立即响应
+      act(() => {
+        changeListener!(new MediaQueryListEvent('change', { matches: true }));
+      });
+      expect(result.current).toBe(true);
+
+      // 第二次变化：在 150ms 节流间隔内，应被丢弃
+      act(() => {
+        changeListener!(new MediaQueryListEvent('change', { matches: false }));
+      });
+      expect(result.current).toBe(true); // 仍然是 true（第二次被节流）
+
+      // 第三次变化：仍在 150ms 内
+      act(() => {
+        changeListener!(new MediaQueryListEvent('change', { matches: true }));
+      });
+
+      // 等待 150ms 过去，trailing 应该触发最后一次变化
+      act(() => {
+        vi.advanceTimersByTime(150);
+      });
+      expect(result.current).toBe(true); // trailing 响应最后一次（matches: true）
+
+      vi.useRealTimers();
+    });
+  });
 });

@@ -33,5 +33,17 @@
   "supplier": "Fournisseur",
   "model": "Modèle",
   "nickname": "Surnom",
-  "shiftDeleteChat": "Shift+Clic pour suppression rapide"
+  "shiftDeleteChat": "Shift+Clic pour suppression rapide",
+  "copyCode": "Copier le code",
+  "copied": "Copié",
+  "copyMessage": "Copier le message",
+  "copySuccess": "Copié dans le presse-papiers",
+  "copyFailed": "Échec de la copie",
+  "editMessage": "Modifier le message",
+  "editConfirm": "Confirmer la modification",
+  "editCancel": "Annuler la modification",
+  "regenerateMessage": "Régénérer",
+  "moreActions": "Plus d'actions",
+  "increaseColumns": "Augmenter les colonnes",
+  "decreaseColumns": "Réduire les colonnes"
 }

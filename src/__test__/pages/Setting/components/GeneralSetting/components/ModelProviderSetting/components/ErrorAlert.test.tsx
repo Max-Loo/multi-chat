@@ -1,20 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { ErrorAlert } from '@/pages/Setting/components/GeneralSetting/components/ModelProviderSetting/components/ErrorAlert';
 
-vi.mock('react-i18next', () => {
-  const R = { setting: { modelProvider: { refreshFailedPrefix: '模型供应商加载失败：' } } };
-  return globalThis.__createI18nMockReturn(R);
-});
+vi.mock('react-i18next', () => globalThis.__mockI18n({
+  setting: { modelProvider: { refreshFailedPrefix: '模型供应商加载失败：' } },
+}));
 
 describe('ErrorAlert', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
-  afterEach(() => {
-    cleanup();
-  });
 
   describe('错误信息展示', () => {
     it('应该显示错误信息当 error 不为 null', () => {

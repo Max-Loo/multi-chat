@@ -15,6 +15,9 @@ import {
   startSendChatMessage,
   generateChatName,
   releaseCompletedBackgroundChat,
+  editAndResendMessage,
+  regenerateMessage,
+  sendMessage,
 } from "../slices/chatSlices";
 
 export const saveChatListMiddleware = createListenerMiddleware<RootState>();
@@ -24,9 +27,7 @@ const generatingTitleChatIds = new Set<string>();
 
 // 监听 sendMessage.fulfilled，检测是否需要触发自动标题生成
 saveChatListMiddleware.startListening({
-  predicate: (action, _currentState, _previousState) => {
-    return action.type === 'chatModel/sendMessage/fulfilled';
-  },
+  matcher: sendMessage.fulfilled.match,
   effect: async (action: any, listenerApi) => {
     const { chat, model } = action.meta.arg;
     const state = listenerApi.getState();
@@ -83,6 +84,13 @@ saveChatListMiddleware.startListening({
   },
 });
 
+/**
+ * 重置聊天中间件状态（仅用于测试）
+ */
+export const resetChatMiddleware = (): void => {
+  generatingTitleChatIds.clear();
+};
+
 // 保存聊天数据到存储
 saveChatListMiddleware.startListening({
   // 需要触发保存聊天记录的
@@ -94,6 +102,8 @@ saveChatListMiddleware.startListening({
     editChatName,
     deleteChat,
     generateChatName.fulfilled,
+    editAndResendMessage.fulfilled,
+    regenerateMessage.fulfilled,
   ),
   effect: async (action, listenerApi) => {
     const state = listenerApi.getState();
@@ -108,6 +118,17 @@ saveChatListMiddleware.startListening({
       // deleteChatFromStorage 会从存储加载完整数据再标记 isDeleted
       const { chat } = action.payload as { chat: Chat };
       await deleteChatFromStorage(chat.id, index);
+
+      // 防御性兜底：如果删除的是当前选中的聊天，清除 URL 中的 chatId 参数
+      const currentState = listenerApi.getState();
+      if (currentState.chat.selectedChatId === chat.id) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has("chatId")) {
+          url.searchParams.delete("chatId");
+          window.history.replaceState({}, "", url.pathname + url.search);
+        }
+      }
+
       return;
     }
 
@@ -139,6 +160,12 @@ saveChatListMiddleware.startListening({
       startSendChatMessage.rejected.match(action)
     ) {
       chatId = action.meta.arg.chat.id;
+      chatData = state.chat.activeChatData[chatId];
+    } else if (
+      editAndResendMessage.fulfilled.match(action) ||
+      regenerateMessage.fulfilled.match(action)
+    ) {
+      chatId = action.meta.arg.chatId;
       chatData = state.chat.activeChatData[chatId];
     }
 

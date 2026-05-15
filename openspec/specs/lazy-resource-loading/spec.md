@@ -26,7 +26,7 @@
 
 系统 MUST 在调用 `load(key)` 方法时动态导入资源，而非在应用启动时静态导入。
 
-系统 MUST 缓存已加载的资源，后续调用 `load(key)` 或 `get(key)` 时直接从缓存返回。
+系统 MUST 缓存已加载的资源，后续调用 `load(key)` 或 `get(key)` 时直接从缓存返回。`load()` 方法的缓存检查 SHALL 使用 `cache.has(key)` 替代 `get(key)`，语义更清晰，避免不必要的函数调用层级。
 
 系统 MUST 支持并发控制，当多个调用者同时请求同一未加载资源时，只执行一次加载操作，所有调用者共享同一个 Promise。
 
@@ -47,7 +47,11 @@
 - **WHEN** 调用 `resourceLoader.load('deepseek')` 且该资源已被加载
 - **THEN** 系统直接从缓存返回资源
 - **AND** 系统不执行动态导入操作
-- **AND** 系统立即返回（无网络延迟）
+
+#### Scenario: 缓存未命中加载资源
+- **WHEN** 调用 `resourceLoader.load('deepseek')` 且资源未缓存
+- **THEN** 系统执行动态导入
+- **AND** 加载成功后通过 `setCache()` 触发 LRU 更新
 
 #### Scenario: 并发请求同一资源
 - **WHEN** 组件 A 调用 `resourceLoader.load('deepseek')` 且资源未加载

@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { useNavigateToChat } from '@/hooks/useNavigateToPage';
 
@@ -23,10 +23,6 @@ const wrapper = ({ children }: { children: React.ReactNode }) => {
 };
 
 describe('useNavigateToChat', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('navigateToChat 测试', () => {
     it('应导航到聊天页面并传入 chatId 参数', () => {
       const { result } = renderHook(() => useNavigateToChat(), { wrapper });

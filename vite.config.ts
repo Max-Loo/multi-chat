@@ -114,11 +114,6 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@/test-helpers": path.resolve(
-        __dirname,
-        "./src/__test__/helpers/index.ts",
-      ),
-      "@/test-helpers/*": path.resolve(__dirname, "./src/__test__/helpers/*"),
       // 配置 highlight.js 别名，用于动态导入
       "/@highlight.js": path.resolve(__dirname, "./node_modules/highlight.js"),
     },
@@ -127,26 +122,20 @@ export default defineConfig(async () => ({
   // Vitest 测试配置
   test: {
     environment: "happy-dom",
+    globals: true,
     setupFiles: ["./src/__test__/setup.ts"],
     include: ["src/__test__/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist", "src/__test__/integration/**"],
 
-    // 忽略未处理的 Promise rejection（测试错误处理场景时会故意创建错误）
-    dangerouslyIgnoreUnhandledErrors: true,
-
-    // 并行执行配置
-    pool: "threads",
-    singleThread: false,
-    minThreads: 1,
-    maxThreads: 1, // 限制为单线程，确保 mock 正确工作
-    useAtomics: true, // 使用 Atomics API 提升性能
+    // 使用 forks 池避免 react-redux ESM 模块初始化竞态
+    pool: "forks",
+    maxForks: 2,
 
     // 优化依赖项预构建
     deps: {
       optimizer: {
         web: {
-          // 预构建 CommonJS/ESM 模块以解决兼容性问题
-          // react-redux: ESM 初始化时访问 React.version，需预构建确保 React 先解析
+          // 预构建 CommonJS/ESM 模块以优化依赖解析速度
           include: [
             "use-sync-external-store",
             "cookie",
@@ -173,7 +162,7 @@ export default defineConfig(async () => ({
 
     // 覆盖率配置
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reporter: ["text", "html", "json", "lcov"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: [
@@ -181,13 +170,91 @@ export default defineConfig(async () => ({
         "src/__mock__/**",
         "src/main.tsx",
         "src/__test__/setup.ts",
+        "src/@types/**",
+        "src/pages/Model/index.tsx",
+        // Tauri 兼容层（依赖系统 API，无法在 web 测试环境运行）
+        "src/utils/tauriCompat/http.ts",
+        "src/utils/tauriCompat/shell.ts",
+        "src/utils/tauriCompat/os.ts",
+        "src/utils/tauriCompat/store.ts",
+        "src/utils/tauriCompat/env.ts",
+        "src/utils/tauriCompat/__mocks__/**",
+        // shadcn/ui 自动生成的 UI 原子组件（无自定义逻辑）
+        "src/components/ui/sheet.tsx",
+        "src/components/ui/sonner.tsx",
+        "src/components/ui/skeleton.tsx",
+        "src/components/ui/progress.tsx",
+        "src/components/ui/avatar.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/dropdown-menu.tsx",
+        "src/components/ui/checkbox.tsx",
+        "src/components/ui/select.tsx",
+        "src/components/ui/table.tsx",
+        "src/components/ui/tooltip.tsx",
+        "src/components/ui/spinner.tsx",
+        "src/components/ui/dialog.tsx",
+        "src/components/ui/alert.tsx",
+        "src/components/ui/alert-dialog.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/button.tsx",
+        "src/components/ui/data-table.tsx",
+        "src/components/ui/form.tsx",
+        "src/components/ui/input.tsx",
+        "src/components/ui/label.tsx",
+        "src/components/ui/popover.tsx",
+        "src/components/ui/radio-group.tsx",
+        "src/components/ui/resizable.tsx",
+        "src/components/ui/switch.tsx",
+        "src/components/ui/textarea.tsx",
+        // Canvas 动画（依赖 Canvas API，无法在 happy-dom 中测试）
+        "src/components/AnimatedLogo/canvas-logo.ts",
+        // 第三方库薄包装（clsx + twMerge 一行组合，不含业务逻辑）
+        "src/utils/utils.ts",
+        // 纯动态 import 映射（46 个 switch case，已被上层测试完整 mock）
+        "src/utils/highlightLanguageIndex.ts",
+        // 仅用于测试的页面组件
+        "src/pages/Setting/components/ToastTest/**",
       ],
-      // 覆盖率阈值
+      // 覆盖率阈值（分模块分级，汇总模式，Istanbul provider）
       thresholds: {
-        lines: 60,
+        // 全局底线
+        lines: 70,
         functions: 60,
         branches: 60,
         statements: 60,
+        // 分模块阈值（汇总，非逐文件）
+        '**/src/hooks/**': {
+          lines: 90,
+          branches: 85,
+        },
+        '**/src/services/**': {
+          lines: 80,
+          branches: 75,
+        },
+        '**/src/store/**': {
+          lines: 80,
+          branches: 75,
+        },
+        '**/src/utils/**': {
+          lines: 80,
+          branches: 70,
+        },
+        '**/src/components/**': {
+          lines: 70,
+          branches: 55,
+        },
+        '**/src/config/**': {
+          lines: 55,
+          branches: 55,
+        },
+        '**/src/pages/**': {
+          lines: 55,
+          branches: 45,
+        },
+        '**/src/router/**': {
+          lines: 50,
+          branches: 40,
+        },
       },
       // 临时目录
       tempDirectory: "./coverage/tmp",

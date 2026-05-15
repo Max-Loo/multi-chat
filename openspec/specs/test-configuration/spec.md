@@ -80,27 +80,25 @@
 
 ### Requirement: 全局测试辅助工具导入
 
-系统 SHALL 在 `setup.ts` 中自动导入全局测试辅助工具，使其在所有测试中可用。
+系统 SHALL 在 `setup.ts` 中自动导入全局测试辅助工具，使其在所有测试中可用。测试辅助工具统一通过 `@/__test__/helpers` 路径导入，该路径通过 `@/` → `src/` 别名自然解析。
 
 #### Scenario: 导入自定义断言
-- **WHEN** `setup.ts` 导入 `@/test-helpers/assertions`
+- **WHEN** `setup.ts` 导入 `@/__test__/helpers/assertions`
 - **THEN** 系统所有测试文件可直接使用自定义断言函数
 
 #### Scenario: 扩展 Vitest matchers
 - **WHEN** `setup.ts` 调用 `expect.extend(customMatchers)`
 - **THEN** 系统所有测试可使用扩展的断言方法
 
-### Requirement: 测试辅助工具路径别名
+### Requirement: 禁止全局 dangerouslyIgnoreUnhandledErrors
 
-系统 SHALL 配置 `@/test-helpers` 路径别名，指向 `src/__test__/helpers` 目录。
+系统 SHALL NOT 在 `vite.config.ts` 中配置 `dangerouslyIgnoreUnhandledErrors: true`，除非已确认 DOM 级 `unhandledrejection` handler 无法阻止 Vitest 进程级别的 rejection 检测（技术限制）。保留此配置时 SHALL 附带注释说明技术原因。
 
-#### Scenario: 配置 vite.config.ts 别名
-- **WHEN** `vite.config.ts` 的 `resolve.alias` 包含 `@/test-helpers`
-- **THEN** 系统 `import { ... } from '@/test-helpers/mocks'` 正确解析
-
-#### Scenario: 配置 tsconfig.json 别名
-- **WHEN** `tsconfig.json` 的 `compilerOptions.paths` 包含 `@/test-helpers/*`
-- **THEN** 系统 TypeScript 提供正确的类型提示
+#### Scenario: 保留全局错误忽略时须有技术依据
+- **GIVEN** `src/__test__/setup.ts` 的 DOM 级 `unhandledrejection` handler 无法拦截 Vitest 的 Node.js process 级检测
+- **WHEN** `vite.config.ts` 保留 `dangerouslyIgnoreUnhandledErrors: true`
+- **THEN** 配置上方 SHALL 有注释解释该技术限制
+- **AND** 注释 SHALL 说明移除此配置会导致测试隔离 bug 引发级联失败
 
 ### Requirement: 改进的 setup.ts 结构
 
@@ -125,4 +123,34 @@
 
 #### Scenario: 创建统一导出文件
 - **WHEN** 测试需要使用辅助工具
-- **THEN** 系统可通过 `import { ... } from '@/test-helpers'` 导入所有工具
+- **THEN** 系统可通过 `import { ... } from '@/__test__/helpers'` 导入所有工具
+
+### Requirement: 并行执行使用 forks 池
+
+系统 SHALL 使用 `pool: "forks"` 替代 `pool: "threads"` 执行测试，消除 react-redux ESM 模块初始化竞态。
+
+#### Scenario: 单元测试使用 forks 池
+
+- **WHEN** Vitest 使用 `vite.config.ts` 中的 test 配置
+- **THEN** `pool` SHALL 为 `"forks"`
+- **THEN** `poolOptions.forks.maxForks` SHALL 为 2
+
+#### Scenario: 集成测试使用 forks 池
+
+- **WHEN** Vitest 使用 `vitest.integration.config.ts`
+- **THEN** `pool` SHALL 为 `"forks"`
+- **THEN** `poolOptions.forks.maxForks` SHALL 为 1（保持串行语义）
+
+### Requirement: 移除 threads 相关配置
+
+系统 SHALL NOT 包含以下过时的 threads 池配置项：
+- `pool: "threads"`
+- `singleThread`
+- `minThreads`
+- `maxThreads`
+- `useAtomics`
+
+#### Scenario: 配置文件不含 threads 相关字段
+
+- **WHEN** 检查 `vite.config.ts` 的 test 配置块
+- **THEN** SHALL NOT 存在 `singleThread`、`minThreads`、`maxThreads`、`useAtomics` 字段

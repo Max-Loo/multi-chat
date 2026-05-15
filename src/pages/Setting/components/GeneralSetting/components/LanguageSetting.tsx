@@ -55,7 +55,7 @@ const LanguageSetting: React.FC<LanguageSettingProps> = ({
     }
   };
 
-  return <div className={`
+  return <div data-testid="language-setting" className={`
     flex items-center justify-between w-full text-base
     ${className}
   `}>

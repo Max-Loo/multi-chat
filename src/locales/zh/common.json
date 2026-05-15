@@ -34,6 +34,20 @@
   "decryptionFailureMessage": "{{count}} 个模型的 API Key 无法解密，请导入正确的加密密钥恢复数据。",
   "decryptionFailureImport": "导入密钥",
   "decryptionFailureDismiss": "我知道了",
+  "errorIcon": "错误",
+  "a11y": {
+    "bottomNav": "底部导航",
+    "mainNav": "主导航",
+    "userMessage": "用户消息",
+    "assistantMessage": "助手消息",
+    "chatMessages": "聊天消息",
+    "clearSelection": "清除选中",
+    "modelToolbar": "模型选择工具栏",
+    "chatList": "聊天列表",
+    "modelProvider": "模型供应商",
+    "modelProviderNav": "模型供应商导航",
+    "settingsNav": "设置导航"
+  },
   "keyRecovery": {
     "title": "导入密钥",
     "description": "输入您的备份密钥以恢复加密数据",

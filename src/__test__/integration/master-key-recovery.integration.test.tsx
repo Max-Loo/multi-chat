@@ -7,13 +7,13 @@
  * - 密钥导入导出流程（导出 → 导入 → 数据恢复）
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FatalErrorScreen } from '@/components/FatalErrorScreen';
 import type { InitError } from '@/services/initialization';
 
 // Mock resetAllData
-const mockResetAllData = vi.fn().mockResolvedValue(undefined);
+const mockResetAllData = vi.fn();
 vi.mock('@/utils/resetAllData', () => ({
   resetAllData: (...args: unknown[]) => mockResetAllData(...args),
 }));
@@ -64,43 +64,30 @@ Object.defineProperty(window, 'location', {
   writable: true,
 });
 
-// Mock i18next
-vi.mock('react-i18next', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-i18next')>();
-  return {
-    ...actual,
-    useTranslation: () => ({
-      t: (fn: (k: any) => string) => {
-        // 简单模拟：从函数调用中提取 key 的最后部分
-        const mock: Record<string, string> = {
-          resetAllData: '重置所有数据并重新开始',
-          resetConfirmTitle: '确认重置所有数据',
-          resetConfirmDescription: '将清除所有已保存的模型配置和聊天记录，生成新的加密密钥。此操作不可撤销。',
-          resetConfirmAction: '确认重置',
-          cancel: '取消',
-          refreshPage: '刷新页面',
-          initializationFailed: '初始化失败',
-          initializationFailedDescription: '应用初始化过程中发生错误',
-          showErrorDetails: '显示错误详情',
-        };
-        // 尝试通过传入函数模拟
-        try {
-          const obj = {
-            common: mock,
-          };
-          return fn(obj);
-        } catch {
-          return 'mocked text';
-        }
+vi.mock('react-i18next', () =>
+  globalThis.__mockI18n({
+    common: {
+      resetAllData: '重置所有数据并重新开始',
+      refreshPage: '刷新页面',
+      initializationFailed: '初始化失败',
+      initializationFailedDescription: '应用初始化过程中发生错误',
+      showErrorDetails: '显示错误详情',
+      keyRecovery: {
+        title: 'title',
+        description: 'description',
+        securityWarning: 'securityWarning',
+        importButton: 'importButton',
+        placeholder: 'placeholder',
+        mismatchWarning: 'mismatchWarning',
+        forceImport: 'forceImport',
       },
-      i18n: { language: 'zh' },
-    }),
-  };
-});
+    },
+  }),
+);
 
 describe('主密钥恢复功能集成测试', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockResetAllData.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -115,13 +102,13 @@ describe('主密钥恢复功能集成测试', () => {
       },
     ];
 
-    test('应该显示重置按钮', () => {
+    it('应该显示重置按钮', () => {
       render(<FatalErrorScreen errors={mockErrors} />);
 
       expect(screen.getByText('重置所有数据并重新开始')).toBeInTheDocument();
     });
 
-    test('点击重置按钮应打开确认对话框', () => {
+    it('点击重置按钮应打开确认对话框', () => {
       render(<FatalErrorScreen errors={mockErrors} />);
 
       const resetButton = screen.getByText('重置所有数据并重新开始');
@@ -131,7 +118,7 @@ describe('主密钥恢复功能集成测试', () => {
       expect(screen.getByText(/将清除所有已保存的模型配置和聊天记录/)).toBeInTheDocument();
     });
 
-    test('点击取消应关闭确认对话框', () => {
+    it('点击取消应关闭确认对话框', () => {
       render(<FatalErrorScreen errors={mockErrors} />);
 
       const resetButton = screen.getByText('重置所有数据并重新开始');
@@ -144,7 +131,7 @@ describe('主密钥恢复功能集成测试', () => {
       expect(screen.queryByText('确认重置所有数据')).not.toBeInTheDocument();
     });
 
-    test('确认重置应调用 resetAllData', async () => {
+    it('确认重置应调用 resetAllData', async () => {
       render(<FatalErrorScreen errors={mockErrors} />);
 
       const resetButton = screen.getByText('重置所有数据并重新开始');
@@ -161,7 +148,7 @@ describe('主密钥恢复功能集成测试', () => {
   });
 
   describe('密钥导入导出流程', () => {
-    test('importMasterKey 应验证 hex 格式', async () => {
+    it('importMasterKey 应验证 hex 格式', async () => {
       const { importMasterKey } = await import('@/store/keyring/masterKey');
 
       // 需要 mock keyring
@@ -177,7 +164,7 @@ describe('主密钥恢复功能集成测试', () => {
       expect(keyring.setPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key', validKey);
     });
 
-    test('exportMasterKey 应返回当前密钥', async () => {
+    it('exportMasterKey 应返回当前密钥', async () => {
       const { exportMasterKey } = await import('@/store/keyring/masterKey');
       const { keyring } = await import('@/utils/tauriCompat/keyring');
 
@@ -188,7 +175,7 @@ describe('主密钥恢复功能集成测试', () => {
       expect(exported).toBe(testKey);
     });
 
-    test('导出后导入应恢复密钥', async () => {
+    it('导出后导入应恢复密钥', async () => {
       const { exportMasterKey, importMasterKey } = await import('@/store/keyring/masterKey');
       const { keyring } = await import('@/utils/tauriCompat/keyring');
 
@@ -205,7 +192,7 @@ describe('主密钥恢复功能集成测试', () => {
       expect(keyring.setPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key', exported);
     });
 
-    test('importMasterKey 后应直接刷新页面', async () => {
+    it('importMasterKey 后应直接刷新页面', async () => {
       const { importMasterKey } = await import('@/store/keyring/masterKey');
       const { keyring } = await import('@/utils/tauriCompat/keyring');
 
