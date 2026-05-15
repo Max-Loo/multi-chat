@@ -116,5 +116,10 @@
     "*.{ts,tsx,js,jsx,mjs}": [
       "oxlint --fix"
     ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
