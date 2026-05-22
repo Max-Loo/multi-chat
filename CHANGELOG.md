@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.1] - 2026-05-22
+
+### 🔧 杂项
+
+- **清理未使用 skill**：移除未使用的 `review-code` skill 及其符号链接
+- **迁移 pnpm 构建配置**：将 `pnpm.onlyBuiltDependencies` 从 `package.json` 迁移到 `pnpm-workspace.yaml` 的 `allowBuilds`
+
+---
+
 ## [0.5.0] - 2026-05-15
 
 ### ✨ 新功能
