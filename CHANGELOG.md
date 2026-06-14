@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.2] - 2026-06-14
+
+### 🔧 杂项
+
+- **OpenSpec skill/command 同步到 1.4.1**：将 `.claude` / `.opencode` / `.trae` 三套 skill 与 command 配置的 `generatedBy` 从 1.3.0 升级到 1.4.1
+  - 新增 `workspace-planning` 守卫：检测到全工作区规划且无 `allowedEditRoots` 时停止编辑并提示用户
+  - 完善 `contextFiles`（artifact ID → 文件路径数组）与 `planningHome` / `changeRoot` / `actionContext` 等 planning scope 说明
+
+---
+
 ## [0.5.1] - 2026-05-22
 
 ### 🔧 杂项
