@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.3] - 2026-07-07
+
+### 🔧 杂项
+
+- **OpenSpec skill/command 升级到 1.5.0**：将 `.claude` / `.opencode` / `.trae` 三套 skill 与 command 配置的 `generatedBy` 从 1.4.1 升级到 1.5.0
+- **统一 agent 的 skills 和 commands**：将各编辑器（`.claude` / `.opencode` / `.trae`）的 skill 和 command 收敛到 `.agents/` 单一来源，编辑器目录通过符号链接引用，消除多份重复维护
+
+---
+
 ## [0.5.2] - 2026-06-14
 
 ### 🔧 杂项
