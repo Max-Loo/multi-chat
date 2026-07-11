@@ -267,68 +267,103 @@ export default defineConfig(async () => ({
     minify: process.env.MINIFY !== "false",
     // 设置 chunk 大小警告限制为 500 KB
     chunkSizeWarningLimit: 500,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        // 手动代码分割配置
-        manualChunks: (id) => {
-          // chunk-init: 初始化 UI 组件 + initSteps 配置（~60KB gzip 目标）
-          if (
-            id.includes("config/initSteps") ||
-            id.includes("components/InitializationController") ||
-            id.includes("components/AnimatedLogo") ||
-            id.includes("components/canvas-logo") ||
-            id.includes("components/FatalErrorScreen") ||
-            id.includes("components/NoProvidersAvailable") ||
-            id.includes("components/ui/progress")
-          ) {
-            return "chunk-init";
-          }
+        // Rolldown 原生 advancedChunks 分包配置（替代 Rollup 的 manualChunks）
+        // 关键差异：Rolldown 的 name 函数返回值是"建议"而非"强制"
+        // 需要 priority + includeDependenciesRecursively 配合才能实现强制分包
+        advancedChunks: {
+          // minSize: 0 绕过默认最小体积阈值，确保小包也能独立拆分
+          minSize: 0,
+          // 阻止 group 将依赖内联到引用它的 chunk 中
+          includeDependenciesRecursively: false,
+          groups: [
+            // highlight.js 预加载语言 → core chunk（最高优先级）
+            {
+              name: "vendor-highlight-core",
+              priority: 10,
+              test: (id) => {
+                if (!id.includes("highlight.js")) return false;
+                // 兼容 Rollup（/lib/）和 Rolldown（/es/）的路径格式
+                if (
+                  id.includes("/lib/core") ||
+                  id.includes("/es/core")
+                ) {
+                  return true;
+                }
+                const langMatch =
+                  id.includes("/lib/languages/") ||
+                  id.includes("/es/languages/");
+                if (langMatch) {
+                  return preloadedLanguages.some((lang) =>
+                    id.endsWith(`/languages/${lang}.js`),
+                  );
+                }
+                return true;
+              },
+            },
+            // highlight.js 非预加载语言 → languages chunk
+            {
+              name: "vendor-highlight-languages",
+              priority: 10,
+              test: (id) => {
+                if (!id.includes("highlight.js")) return false;
+                const langMatch =
+                  id.includes("/lib/languages/") ||
+                  id.includes("/es/languages/");
+                if (!langMatch) return false;
+                return !preloadedLanguages.some((lang) =>
+                  id.endsWith(`/languages/${lang}.js`),
+                );
+              },
+            },
+            // 所有其他 vendor 分包（高优先级，先于 chunk-init 捕获 node_modules）
+            {
+              priority: 8,
+              name: (id) => {
+                if (!id.includes("node_modules")) return undefined;
+                const pkg = getPackageName(id);
+                if (!pkg) return "vendor";
 
-          // 只处理 node_modules 中的依赖
-          if (!id.includes("node_modules")) return;
+                // 精确包名匹配
+                if (pkg in packageChunkMap) {
+                  return packageChunkMap[pkg];
+                }
 
-          const pkg = getPackageName(id);
-          if (!pkg) return "vendor";
+                // scope 前缀匹配（如 @ai-sdk/deepseek → @ai-sdk）
+                if (pkg.startsWith("@")) {
+                  const scope = pkg.split("/")[0];
+                  if (scope in scopeChunkMap) {
+                    return scopeChunkMap[scope];
+                  }
+                }
 
-          // highlight.js 特殊处理：需要区分子路径
-          if (pkg === "highlight.js") {
-            if (id.includes("/lib/core")) {
-              return "vendor-highlight-core";
-            }
-            if (id.includes("/lib/languages/")) {
-              const isPreloaded = preloadedLanguages.some((lang) =>
-                id.endsWith(`/languages/${lang}.js`),
-              );
-              return isPreloaded
-                ? "vendor-highlight-core"
-                : "vendor-highlight-languages";
-            }
-            return "vendor-highlight-core";
-          }
+                // Tauri 插件特殊处理
+                if (
+                  pkg.startsWith("@tauri-apps/plugin-") ||
+                  pkg.startsWith("tauri-plugin-")
+                ) {
+                  return "vendor-tauri";
+                }
 
-          // 精确包名匹配
-          if (pkg in packageChunkMap) {
-            return packageChunkMap[pkg];
-          }
-
-          // scope 前缀匹配（如 @ai-sdk/deepseek → @ai-sdk）
-          if (pkg.startsWith("@")) {
-            const scope = pkg.split("/")[0];
-            if (scope in scopeChunkMap) {
-              return scopeChunkMap[scope];
-            }
-          }
-
-          // Tauri 插件特殊处理
-          if (
-            pkg.startsWith("@tauri-apps/plugin-") ||
-            pkg.startsWith("tauri-plugin-")
-          ) {
-            return "vendor-tauri";
-          }
-
-          // 其他所有 node_modules 依赖
-          return "vendor";
+                // 其他所有 node_modules 依赖
+                return "vendor";
+              },
+            },
+            // chunk-init: 初始化 UI 组件（低优先级，只捕获未被 vendor 匹配的 src 模块）
+            {
+              name: "chunk-init",
+              priority: 1,
+              test: (id) =>
+                id.includes("config/initSteps") ||
+                id.includes("components/InitializationController") ||
+                id.includes("components/AnimatedLogo") ||
+                id.includes("components/canvas-logo") ||
+                id.includes("components/FatalErrorScreen") ||
+                id.includes("components/NoProvidersAvailable") ||
+                id.includes("components/ui/progress"),
+            },
+          ],
         },
       },
     },
