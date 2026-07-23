@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.4] - 2026-07-23
+
+### 🔧 杂项
+
+- **新增 OpenSpec propose/update 工作流**：新增 `openspec-propose` 和 `openspec-update-change` skill 及对应 command，支持一步生成完整方案（design + specs + tasks）以及修订已有 planning artifacts
+- **同步各编辑器 opsx 配置**：向 `.claude` / `.opencode` / `.trae` / `.zcode` 四套编辑器配置同步新增的 propose、update 命令与 skill，并规范化 `.opencode/command/` 目录为 `.opencode/commands/`
+- **清理冗余配置**：移除 `.kiro/skills/software-design-philosophy` 符号链接
+
+---
+
 ## [0.5.3] - 2026-07-07
 
 ### 🔧 杂项
