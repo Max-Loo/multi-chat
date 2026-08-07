@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.5] - 2026-08-07
+
+### 🔧 杂项
+
+- **新增 .agents 平台支持**：新增 `.agents` 作为 agent 配置的统一来源，覆盖 5 个 agent 平台（`.claude` / `.opencode` / `.trae` / `.zcode` / `.agents`），新增 12 个 skill 目录（`.agents/skills/openspec-*/`）
+- **OpenSpec skills/commands 全量更新**：frontmatter 格式规范化（值加引号），store 命令列表新增 `view`，`--store` 标记为 sticky
+- **增强工作流说明**：新增 `context` 和 `operationGuidance` 字段的处理逻辑，增强 `archive` / `bulk-archive` / `sync` 工作流说明
+- **通用化工具引用**：移除对 `AskUserQuestion` 工具的硬编码引用，改为通用表述
+
+---
+
 ## [0.5.4] - 2026-07-23
 
 ### 🔧 杂项
