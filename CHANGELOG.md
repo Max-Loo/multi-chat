@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.6] - 2026-08-20
+
+### 🔧 重构
+
+- **删除冲突的 i18next 类型声明**：删除 `src/types/i18n.d.ts`（defaultNS、扁平结构与运行时不一致），保留与运行时 `addResourceBundle` 一致的生成式 `src/@types/i18next.d.ts`，消除被 `skipLibCheck` 掩盖的双 `.d.ts` 冲突（migrate-to-svelte 阶段 0 前置清理）
+
+### 🔧 杂项
+
+- **新增 ZCode skill 链接**：在 `.zcode/skills/` 下新增 `commit-draft` 和 `review-proposal` 符号链接，指向 `.agents/skills/` 单一来源
+- **OpenSpec skills/commands 升级到 CLI 1.10.0**：5 个平台目录（`.agents` / `.claude` / `.opencode` / `.trae` / `.zcode`）下 108 个文件同步更新
+  - store 命令列表新增 `schemas` 子命令支持
+  - apply/verify 工作流新增范围蔓延暂停规则与任务完成判定标准
+  - onboard 任务模板新增验证提示，Verify 章节更名为 Integration Verification
+  - expanded-profile workflow 措辞统一调整为 optional workflow
+
+---
+
 ## [0.5.5] - 2026-08-07
 
 ### 🔧 杂项
