@@ -1,0 +1,1 @@
+const t="Chat",a="Modèle",e="Paramètres",r={title:"Barre latérale",description:"Barre latérale",ariaDescription:"Contenu du tiroir"},o="Ouvrir la liste des chats",s="Nouveau chat",i={chat:t,model:a,setting:e,mobileDrawer:r,openChatList:o,createChat:s};export{t as chat,s as createChat,i as default,r as mobileDrawer,a as model,o as openChatList,e as setting};

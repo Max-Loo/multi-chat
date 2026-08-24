@@ -1,0 +1,1 @@
+import{d as e,o as t,c as o}from"./vendor-vue-Cp17Z-au.js";import"./vendor-CROlk0Rs.js";const n={"data-testid":"not-found-page",class:"p-6"},_=e({__name:"index",setup(a){return(s,c)=>(t(),o("div",n,"404 页面"))}});export{_ as default};

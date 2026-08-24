@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- 聊天气泡 -->
+  <path d="M70 5 h60 a8 8 0 0 1 8 8 v17 a8 8 0 0 1 -8 8 h-25 l-5 8 l-5 -8 h-25 a8 8 0 0 1 -8 -8 v-17 a8 8 0 0 1 8 -8" fill="#4269C4"/>
+  <!-- 气泡内的三个点 -->
+  <circle cx="85" cy="22" r="4" fill="#FFFFFF"/>
+  <circle cx="100" cy="22" r="4" fill="#FFFFFF"/>
+  <circle cx="115" cy="22" r="4" fill="#FFFFFF"/>
+
+  <!-- 机器人身体 -->
+  <rect x="65" y="95" width="70" height="50" rx="8" ry="8" fill="#FFFFFF" stroke="#333333" stroke-width="4"/>
+
+  <!-- 机器人头部 -->
+  <rect x="50" y="45" width="100" height="60" rx="10" ry="10" fill="#FFFFFF" stroke="#333333" stroke-width="4"/>
+
+  <!-- 左 LED 眼睛 (3x3 像素矩阵) -->
+  <g fill="#4269C4">
+    <rect x="60" y="58" width="5" height="5"/>
+    <rect x="67" y="58" width="5" height="5"/>
+    <rect x="74" y="58" width="5" height="5"/>
+    <rect x="60" y="65" width="5" height="5"/>
+    <rect x="67" y="65" width="5" height="5"/>
+    <rect x="74" y="65" width="5" height="5"/>
+    <rect x="60" y="72" width="5" height="5"/>
+    <rect x="67" y="72" width="5" height="5"/>
+    <rect x="74" y="72" width="5" height="5"/>
+  </g>
+
+  <!-- 右 LED 眼睛 (3x3 像素矩阵) -->
+  <g fill="#4269C4">
+    <rect x="121" y="58" width="5" height="5"/>
+    <rect x="128" y="58" width="5" height="5"/>
+    <rect x="135" y="58" width="5" height="5"/>
+    <rect x="121" y="65" width="5" height="5"/>
+    <rect x="128" y="65" width="5" height="5"/>
+    <rect x="135" y="65" width="5" height="5"/>
+    <rect x="121" y="72" width="5" height="5"/>
+    <rect x="128" y="72" width="5" height="5"/>
+    <rect x="135" y="72" width="5" height="5"/>
+  </g>
+
+  <!-- 嘴巴 (微笑曲线) -->
+  <path d="M85 92 Q100 102 115 92" fill="none" stroke="#333333" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- 左天线 -->
+  <line x1="65" y1="45" x2="50" y2="20" stroke="#333333" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="50" cy="20" r="5" fill="#4269C4"/>
+
+  <!-- 右天线 -->
+  <line x1="135" y1="45" x2="150" y2="20" stroke="#333333" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="150" cy="20" r="5" fill="#4269C4"/>
+
+  <!-- 左手臂 (打字姿态) -->
+  <path d="M65 110 Q45 130 50 155" fill="none" stroke="#333333" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="50" cy="155" r="5" fill="#333333"/>
+
+  <!-- 右手臂 (打字姿态) -->
+  <path d="M135 110 Q155 130 150 155" fill="none" stroke="#333333" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="150" cy="155" r="5" fill="#333333"/>
+</svg>

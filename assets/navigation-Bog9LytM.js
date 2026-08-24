@@ -1,0 +1,1 @@
+const n="聊天",s="模型",a="设置",t={title:"侧边栏",description:"侧边栏",ariaDescription:"抽屉内容"},o="打开聊天列表",e="新建聊天",c={chat:"聊天",model:"模型",setting:"设置",mobileDrawer:t,openChatList:o,createChat:e};export{n as chat,e as createChat,c as default,t as mobileDrawer,s as model,o as openChatList,a as setting};

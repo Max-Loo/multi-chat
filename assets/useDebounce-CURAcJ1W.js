@@ -1,0 +1,1 @@
+import{v as r,r as i}from"./vendor-vue-Cp17Z-au.js";function f(e,t){const n=typeof e=="function"?e():e.value,o=i(n);return r(e,(u,s,a)=>{const c=setTimeout(()=>{o.value=u},t);a(()=>{clearTimeout(c)})}),o}export{f as u};

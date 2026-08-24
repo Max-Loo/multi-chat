@@ -1,0 +1,1 @@
+import{A as s}from"./vendor-CROlk0Rs.js";import{r as a,p as t}from"./vendor-vue-Cp17Z-au.js";function i({hideDebounceMs:e=500}={}){const l=a(!1);let r=null;const o=()=>{l.value=!0,s(r)||clearTimeout(r),r=setTimeout(()=>{l.value=!1},e)};return{scrollbarClassname:t(()=>l.value?"scrollbar-thin":"scrollbar-none"),isScrolling:l,onScrollEvent:o}}export{i as u};

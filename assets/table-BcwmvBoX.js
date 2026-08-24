@@ -1,0 +1,1 @@
+const s="昵称",t="大模型服务商",o="模型名称",e="最近更新时间",n="创建时间",i="操作",a="暂无数据",c="加载中...",m={nickname:"昵称",modelProvider:t,modelName:o,lastUpdateTime:e,createTime:n,operation:"操作",emptyData:a,loading:c};export{n as createTime,m as default,a as emptyData,e as lastUpdateTime,c as loading,o as modelName,t as modelProvider,s as nickname,i as operation};

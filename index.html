@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/multi-chat/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Multi Chat</title>
+    <script type="text/javascript">
+// @ts-nocheck
+
+      // SPA 路由恢复脚本 - GitHub Pages 支持
+      // 当 404.html 将用户重定向到根路径时，此脚本会恢复原始路径
+      (function() {
+        var redirectPath = sessionStorage.getItem('gh-pages-redirect');
+        if (redirectPath) {
+          sessionStorage.removeItem('gh-pages-redirect');
+          // 使用 replaceState 避免在浏览器历史中留下额外的条目
+          window.history.replaceState(null, null, redirectPath);
+        }
+      })();
+
+    </script>
+    <script type="module" crossorigin src="/multi-chat/assets/main-CeboKoBT.js"></script>
+    <link rel="modulepreload" crossorigin href="/multi-chat/assets/vendor-vue-Cp17Z-au.js">
+    <link rel="modulepreload" crossorigin href="/multi-chat/assets/vendor-CROlk0Rs.js">
+    <link rel="modulepreload" crossorigin href="/multi-chat/assets/vendor-ui-utils-Qm4_4bAc.js">
+    <link rel="modulepreload" crossorigin href="/multi-chat/assets/vendor-i18n-T6WqKCYf.js">
+    <link rel="modulepreload" crossorigin href="/multi-chat/assets/vendor-tauri-BFbqMzQA.js">
+    <link rel="modulepreload" crossorigin href="/multi-chat/assets/vendor-zod-BZIHpN7e.js">
+    <link rel="modulepreload" crossorigin href="/multi-chat/assets/vendor-ai-Ct3h1Fu8.js">
+    <link rel="modulepreload" crossorigin href="/multi-chat/assets/vendor-icons-BQl1tIVb.js">
+    <link rel="modulepreload" crossorigin href="/multi-chat/assets/chunk-init-CB-My1Dd.js">
+    <link rel="stylesheet" crossorigin href="/multi-chat/assets/vendor-GZf-ufVU.css">
+    <link rel="stylesheet" crossorigin href="/multi-chat/assets/main-BKheKMHy.css">
+  </head>
+
+  <body>
+    <!-- Vue 应用挂载点：挂载前由 HTML Spinner 占位，消除白屏 -->
+    <div id="app">
+      <style>
+        .init-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid #f3f3f3;
+          border-top: 3px solid #4269C4;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;">
+        <div class="init-spinner"></div>
+      </div>
+    </div>
+  </body>
+</html>
