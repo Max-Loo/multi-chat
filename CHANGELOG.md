@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.7] - 2026-08-27
+
+### 📝 文档变更
+
+- **新增 agent 使用披露规范**：在 AGENTS.md 的「Skill 使用规范」后新增「子智能体使用规范」「MCP 使用规范」「工具使用规范」三个小节，要求执行任务后在响应中明确列举所使用的子智能体、MCP 和工具
+
+---
+
 ## [0.5.6] - 2026-08-20
 
 ### 🔧 重构
