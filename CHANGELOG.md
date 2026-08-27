@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.8] - 2026-08-27
+
+### 🔧 杂项
+
+- **OpenSpec skills/commands 升级到 CLI 1.11.0**：5 个平台目录（`.agents` / `.claude` / `.opencode` / `.trae` / `.zcode`）下 64 个自动生成的文件同步更新
+  - explore 模式新增写入前确认机制：首次执行写入类操作前需列明将变更的 artifact 或文件并征得用户确认，确认仅覆盖所述范围，扩大范围需再次确认
+  - 图表指引由 Unicode 制图字符改为纯 ASCII，避免不同终端、字体和语言环境下宽度不一致导致的排版漂移
+
+---
+
 ## [0.5.7] - 2026-08-27
 
 ### 📝 文档变更
