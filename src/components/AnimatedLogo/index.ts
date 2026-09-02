@@ -3,4 +3,5 @@
  *
  * 用于初始化界面显示品牌 Logo 动画
  */
-export { default as AnimatedLogo } from './AnimatedLogo';
+export { default as AnimatedLogo } from './AnimatedLogo.vue';
+export { default } from './AnimatedLogo.vue';

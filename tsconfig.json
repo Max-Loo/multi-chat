@@ -12,7 +12,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
 
     /* Path mapping */
     "baseUrl": ".",
@@ -32,5 +31,28 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
+  "exclude": [
+    // React 时期视图层：迁移期间保留在磁盘作为参照，不参与类型检查；
+    // 被新代码引用的框架无关 .ts（如 canvas-logo.ts）经 import 仍会被检查
+    "src/**/*.tsx",
+    "src/hooks",
+    "src/router",
+    "src/components",
+    "src/pages",
+    "src/store/slices",
+    "src/store/middleware",
+    "src/store/selectors",
+    "src/store/index.ts",
+    // React 时期测试：随组件迁移逐步删除
+    "src/__test__/components",
+    "src/__test__/hooks",
+    "src/__test__/pages",
+    "src/__test__/store",
+    "src/__test__/helpers",
+    "src/__test__/integration",
+    "src/__test__/performance",
+    "src/__test__/setup",
+    "src/__test__/ai-mock-test.test.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

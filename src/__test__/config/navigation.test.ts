@@ -1,8 +1,8 @@
 /**
- * navigation.tsx 配置完整性测试
+ * navigation.ts 配置完整性测试
  *
  * 验证 NAVIGATION_ITEMS 和 NAVIGATION_ITEM_MAP 的数据结构一致性：
- * - 字段完整性（id、i18nKey、path、icon、IconComponent、theme）
+ * - 字段完整性（id、i18nKey、path、icon、theme）
  * - ID 唯一性
  * - MAP 与数组一致性
  * - 路径格式（以 / 开头）
@@ -21,7 +21,6 @@ const REQUIRED_FIELDS: (keyof NavigationItem)[] = [
   'i18nKey',
   'path',
   'icon',
-  'IconComponent',
   'theme',
 ];
 

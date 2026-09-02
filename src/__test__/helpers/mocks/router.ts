@@ -1,149 +1,108 @@
 /**
- * React Router 测试 Mock 工厂
+ * Vue Router 测试 Mock 工厂（对应原 React Router mock）
  *
  * 提供路由结构测试所需的类型定义和辅助函数
  */
 
 import { vi } from 'vitest';
-import { createBrowserRouter } from 'react-router-dom';
-
-// 获取 createBrowserRouter 返回值的类型
-type Router = ReturnType<typeof createBrowserRouter>;
+import type { Router, RouteRecordRaw } from 'vue-router';
 
 /**
- * React Router Mock 接口
+ * Vue Router Mock 接口
  */
-export interface ReactRouterMocks {
-  /** Mock useNavigate hook */
-  useNavigate: ReturnType<typeof vi.fn>;
-  /** Mock useLocation hook */
-  useLocation: ReturnType<typeof vi.fn>;
-  /** Mock useParams hook */
-  useParams: ReturnType<typeof vi.fn>;
-  /** Mock useSearchParams hook 返回值 */
-  searchParams: URLSearchParams;
-  /** Mock setSearchParams 函数 */
-  setSearchParams: ReturnType<typeof vi.fn>;
+export interface VueRouterMocks {
+  /** Mock useRouter composable */
+  useRouter: ReturnType<typeof vi.fn>;
+  /** Mock useRoute composable */
+  useRoute: ReturnType<typeof vi.fn>;
 }
 
 /**
- * 创建 mock useSearchParams hook 返回值
- * @param searchParams 初始搜索参数
- * @param setSearchParams Mock setSearchParams 函数
- * @returns [searchParams, setSearchParams] 元组
+ * 创建 mock route 对象
+ * @param config 路由配置
+ * @returns 与 vue-router useRoute() 返回结构兼容的 mock 对象
  */
-export const createMockSearchParams = (
-  searchParams?: URLSearchParams | string,
-  setSearchParams?: ReturnType<typeof vi.fn>,
-) => {
-  const mockParams = typeof searchParams === 'string'
-    ? new URLSearchParams(searchParams)
-    : searchParams || new URLSearchParams();
-  const mockSetParams = setSearchParams || vi.fn();
-
-  return [mockParams, mockSetParams] as const;
-};
-
-/**
- * 创建嵌套路由参数 Mock
- * @param params 嵌套路由参数对象
- * @returns Mock 的嵌套路由参数
- */
-export const createNestedRouteParams = (params: Record<string, string>): Record<string, string> => {
-  return { ...params };
-};
-
-/**
- * 创建包含查询参数的 Mock Location
- * @param pathname 路径名
- * @param queryParams 查询参数对象
- * @returns Mock 的 Location 对象
- */
-export const createMockLocationWithQuery = (
-  pathname: string,
-  queryParams?: Record<string, string>
-) => {
-  const searchParams = new URLSearchParams();
-  if (queryParams) {
-    Object.entries(queryParams).forEach(([key, value]) => {
-      searchParams.set(key, value);
-    });
-  }
+export const createMockRoute = (config?: {
+  path?: string;
+  fullPath?: string;
+  params?: Record<string, string>;
+  query?: Record<string, string>;
+  hash?: string;
+  name?: string;
+}) => {
+  const {
+    path = '/',
+    fullPath,
+    params = {},
+    query = {},
+    hash = '',
+    name,
+  } = config || {};
 
   return {
-    pathname,
-    search: searchParams.toString(),
-    hash: '',
-    state: null,
-    key: 'test',
+    path,
+    fullPath: fullPath ?? path,
+    params,
+    query,
+    hash,
+    name,
+    matched: [],
+    meta: {},
+    redirectedFrom: undefined,
   };
 };
 
 /**
- * 创建带有嵌套路由参数的 React Router Mock
- * @param config Mock 配置选项
- * @returns React Router Mock 对象
+ * 创建带查询参数的 mock route 对象
+ * @param pathname 路径名
+ * @param queryParams 查询参数对象
  */
-export const createReactRouterMocksWithNestedParams = (config?: {
-  pathname?: string;
-  params?: Record<string, string>;
-  queryParams?: Record<string, string>;
-  hash?: string;
-}): ReactRouterMocks => {
-  const {
-    pathname = '/',
-    params = {},
-    queryParams,
-    hash = '',
-  } = config || {};
+export const createMockRouteWithQuery = (
+  pathname: string,
+  queryParams?: Record<string, string>,
+): ReturnType<typeof createMockRoute> =>
+  createMockRoute({ path: pathname, query: queryParams });
 
-  let mockSearchParams = new URLSearchParams();
-  if (queryParams) {
-    Object.entries(queryParams).forEach(([key, value]) => {
-      mockSearchParams.set(key, value);
-    });
-  }
-
-  const mockSetSearchParams = vi.fn();
+/**
+ * 创建 Vue Router Mock（useRouter / useRoute）
+ *
+ * 供 vi.mock('vue-router') 工厂使用：
+ *
+ * @example
+ * vi.mock('vue-router', () => {
+ *   const mocks = globalThis.__createVueRouterMocks?.({ path: '/chat' });
+ *   return { useRouter: mocks.useRouter, useRoute: mocks.useRoute };
+ * });
+ */
+export const createVueRouterMocks = (config?: Parameters<typeof createMockRoute>[0]): VueRouterMocks => {
+  const route = createMockRoute(config);
 
   return {
-    useNavigate: vi.fn(),
-    useLocation: vi.fn(() => ({
-      pathname,
-      search: mockSearchParams.toString(),
-      hash,
-      state: null,
-      key: 'test',
+    useRouter: vi.fn(() => ({
+      push: vi.fn(),
+      replace: vi.fn(),
+      back: vi.fn(),
+      go: vi.fn(),
+      currentRoute: { value: route },
     })),
-    useParams: vi.fn(() => params),
-    searchParams: mockSearchParams,
-    setSearchParams: mockSetSearchParams,
+    useRoute: vi.fn(() => route),
   };
 };
 
 // ========================================
 // 路由配置测试 Helper
-// 用于访问 router.routes 内部结构的类型安全工具
+// 用于访问 router.options.routes 内部结构的类型安全工具
 // ========================================
-
-/**
- * React 元素的类型信息（用于测试中访问组件名和 props）
- */
-export interface ReactElementLike {
-  type?: { name?: string; _payload?: unknown; _ctor?: unknown };
-  props?: Record<string, unknown>;
-}
 
 /**
  * 测试用路由节点类型，包含测试所需的全部字段
  */
 export interface TestRouteObject {
   path?: string;
-  index?: boolean;
-  element?: ReactElementLike;
+  name?: string;
+  component?: unknown;
   children?: TestRouteObject[];
-  loader?: unknown;
-  action?: unknown;
+  redirect?: unknown;
 }
 
 /**
@@ -169,16 +128,32 @@ export const hasRouteProperty = (
 
 /**
  * 获取路由器的根路由配置
- * @param routerInstance createBrowserRouter 创建的路由器实例
+ * @param routerInstance createRouter 创建的路由器实例
  */
 export function getRootRoute(routerInstance: Router): TestRouteObject {
-  return routerInstance.routes[0] as unknown as TestRouteObject;
+  return (routerInstance.options.routes as TestRouteObject[])[0];
 }
 
 /**
  * 获取路由器根路由的子路由列表
- * @param routerInstance createBrowserRouter 创建的路由器实例
+ * @param routerInstance createRouter 创建的路由器实例
  */
 export function getRootChildren(routerInstance: Router): TestRouteObject[] {
   return getRootRoute(routerInstance).children ?? [];
 }
+
+/**
+ * 将路由表中懒加载的 component 转为可读名称（供断言）
+ * @param route 路由节点
+ */
+export function getRouteComponentName(route: TestRouteObject): string | undefined {
+  const component = route.component as
+    | { name?: string }
+    | (() => Promise<unknown>)
+    | undefined;
+  if (!component) return undefined;
+  if (typeof component === 'function') return 'lazy';
+  return component.name;
+}
+
+export type { RouteRecordRaw };

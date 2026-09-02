@@ -3,7 +3,7 @@
  *
  * 测试策略：使用 vi.resetModules() 和动态导入实现测试隔离
  * - 每个测试前重置模块缓存，获得新的 toastQueue 单例
- * - 使用 vi.doMock('sonner') Mock sonner 库
+ * - 使用 vi.doMock('vue-sonner') Mock sonner 库
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -32,7 +32,7 @@ describe('ToastQueue', () => {
       promise: vi.fn(),
     };
 
-    vi.doMock('sonner', () => ({
+    vi.doMock('vue-sonner', () => ({
       toast: mockToast,
     }));
   });
@@ -381,7 +381,7 @@ describe('ToastQueue', () => {
       expect(toastQueue.getIsMobile()).toBe(false);
 
       // 重置后新消息应入队（不立即显示）
-      vi.doMock('sonner', () => ({
+      vi.doMock('vue-sonner', () => ({
         toast: {
           ...mockToast,
           success: vi.fn(() => 'new-id'),

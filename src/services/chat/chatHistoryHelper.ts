@@ -1,7 +1,15 @@
-import type { ChatSliceState } from '@/store/slices/chatSlices';
 import { getCurrentTimestamp } from '@/utils/utils';
-import type { WritableDraft } from '@reduxjs/toolkit';
 import { ChatRoleEnum } from '@/types/chat';
+import type { Chat, RunningChatEntry } from '@/types/chat';
+
+/**
+ * 聊天状态的最小结构视图（供历史编辑辅助函数直接变更）
+ * 与 Pinia chat store 的 reactive 状态结构兼容（直接可变更新）
+ */
+export interface ChatStateLike {
+  activeChatData: Record<string, Chat>;
+  runningChat: Record<string, Record<string, RunningChatEntry>>;
+}
 
 /**
  * 获取消息内容的当前版本（数组末尾）
@@ -62,7 +70,7 @@ function popContent(content: string | string[]): string | string[] {
  * @returns 位置索引，未找到返回 -1
  */
 export function findMessageIndex(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatStateLike,
   chatId: string,
   messageId: string,
 ): number {
@@ -85,7 +93,7 @@ export function findMessageIndex(
  * @returns 操作是否成功
  */
 export function commitEdit(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatStateLike,
   chatId: string,
   userMessageId: string,
   newContent: string,
@@ -135,7 +143,7 @@ export function commitEdit(
  * @returns 操作是否成功
  */
 export function rollbackEdit(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatStateLike,
   chatId: string,
   userMessageId: string,
 ): boolean {
@@ -178,7 +186,7 @@ export function rollbackEdit(
  * @returns 操作是否成功
  */
 export function commitRegenerate(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatStateLike,
   chatId: string,
   assistantMessageId: string,
   historyIndex?: number,
@@ -234,7 +242,7 @@ export function commitRegenerate(
  * @returns 操作是否成功
  */
 export function rollbackRegenerate(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatStateLike,
   chatId: string,
   assistantMessageId: string,
   historyIndex?: number,
@@ -298,7 +306,7 @@ export function rollbackRegenerate(
  * @returns 操作是否成功
  */
 export function updateHistoryContent(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatStateLike,
   chatId: string,
   modelId: string,
   messageIndex: number,

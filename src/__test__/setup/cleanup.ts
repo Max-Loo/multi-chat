@@ -5,7 +5,7 @@
  */
 
 import { vi, afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup } from '@testing-library/vue';
 
 // ========================================
 // 模块状态重置函数（首次调用时延迟加载）
@@ -24,7 +24,14 @@ function ensureResetFnsLoaded() {
   if (_loaded) return;
   // 使用 require 同步加载，避免与 vitest mock 系统冲突
   // 这些 import 在 afterEach 中首次触发，此时所有 vi.mock 已生效
-  try { _resetChatMiddleware = require('@/store/middleware/chatMiddleware').resetChatMiddleware; } catch { /* 模块不可用 */ }
+  try {
+    const { getActivePinia } = require('pinia');
+    const { useChatStore } = require('@/store/stores/chat');
+    if (getActivePinia()) {
+      const chatStore = useChatStore();
+      _resetChatMiddleware = () => chatStore.resetChatMiddleware();
+    }
+  } catch { /* 模块不可用 */ }
   try { _resetChatsStore = require('@/store/storage/chatStorage').resetChatsStore; } catch { /* 模块不可用 */ }
   try { _resetModelsStore = require('@/store/storage/modelStorage').resetModelsStore; } catch { /* 模块不可用 */ }
   try { _resetI18nForTest = require('@/services/i18n').resetI18nForTest; } catch { /* 模块不可用 */ }

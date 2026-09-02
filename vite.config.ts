@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import vue from "@vitejs/plugin-vue";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -27,21 +27,15 @@ function getPackageName(id: string): string | null {
 
 /** 包名精确匹配 → chunk 映射 */
 const packageChunkMap: Record<string, string> = {
-  // React 生态
-  react: "vendor-react",
-  "react-dom": "vendor-react",
-  scheduler: "vendor-react",
-  "loose-envify": "vendor-react",
-  // Redux 生态
-  "react-redux": "vendor-redux",
-  redux: "vendor-redux",
-  immer: "vendor-redux",
-  reselect: "vendor-redux",
+  // Vue 生态
+  vue: "vendor-vue",
+  "vue-demi": "vendor-vue",
+  // Pinia 生态
+  pinia: "vendor-pinia",
   // Router
-  "react-router": "vendor-router",
+  "vue-router": "vendor-router",
   // i18n
   i18next: "vendor-i18n",
-  "react-i18next": "vendor-i18n",
   // Zod
   zod: "vendor-zod",
   // Markdown
@@ -51,7 +45,9 @@ const packageChunkMap: Record<string, string> = {
   ai: "vendor-ai",
   "zhipu-ai-provider": "vendor-ai",
   // Icons
-  "lucide-react": "vendor-icons",
+  "@lucide/vue": "vendor-icons",
+  // UI 组件底座
+  "reka-ui": "vendor-reka-ui",
   // UI 工具
   "class-variance-authority": "vendor-ui-utils",
   clsx: "vendor-ui-utils",
@@ -61,10 +57,10 @@ const packageChunkMap: Record<string, string> = {
 /** scope 前缀 → chunk 映射（匹配 @scope/package 格式） */
 const scopeChunkMap: Record<string, string> = {
   "@ai-sdk": "vendor-ai",
-  "@radix-ui": "vendor-radix",
   "@tanstack": "vendor-tanstack",
-  "@remix-run": "vendor-router",
-  "@reduxjs": "vendor-redux",
+  "@vue": "vendor-vue",
+  "@vueuse": "vendor-vueuse",
+  "@floating-ui": "vendor-reka-ui",
 };
 
 /** highlight.js 预加载语言列表 */
@@ -91,11 +87,7 @@ export default defineConfig(async () => ({
   // GitHub Pages 部署通过 BASE_PATH 环境变量设置子路径，默认使用根路径
   base: process.env.BASE_PATH || "/",
   plugins: [
-    react({
-      babel: {
-        plugins: [["babel-plugin-react-compiler"]],
-      },
-    }),
+    vue(),
     tailwindcss(),
     visualizer({
       // open: true, // 自动打开浏览器
@@ -124,10 +116,21 @@ export default defineConfig(async () => ({
     environment: "happy-dom",
     globals: true,
     setupFiles: ["./src/__test__/setup.ts"],
-    include: ["src/__test__/**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["node_modules", "dist", "src/__test__/integration/**"],
+    include: ["src/__test__/**/*.{test,spec}.ts"],
+    exclude: [
+      "node_modules",
+      "dist",
+      "src/__test__/integration/**",
+      // React 时期视图层测试：随组件迁移逐步删除（7.1 清理后归零）
+      "src/__test__/components/**",
+      "src/__test__/hooks/**",
+      "src/__test__/pages/**",
+      "src/__test__/store/**",
+      "src/__test__/performance/**",
+      "src/__test__/helpers/**",
+    ],
 
-    // 使用 forks 池避免 react-redux ESM 模块初始化竞态
+    // 使用 forks 池避免模块初始化竞态
     pool: "forks",
     maxForks: 2,
 
@@ -136,16 +139,7 @@ export default defineConfig(async () => ({
       optimizer: {
         web: {
           // 预构建 CommonJS/ESM 模块以优化依赖解析速度
-          include: [
-            "use-sync-external-store",
-            "cookie",
-            "react",
-            "react-dom",
-            "react/jsx-runtime",
-            "react-redux",
-            "react-remove-scroll",
-            "@radix-ui/react-slot",
-          ],
+          include: ["cookie"],
         },
       },
     },

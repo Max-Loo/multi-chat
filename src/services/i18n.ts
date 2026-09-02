@@ -1,7 +1,9 @@
 import i18n, { Resource, TFunction } from "i18next";
-import { initReactI18next } from "react-i18next";
 import { getDefaultAppLanguage, getLanguageLabel } from "./global";
 import { toastQueue } from "./toast/toastQueue";
+
+// 导出 i18next 实例，供 Vue 适配层（composables/useT）监听语言变更
+export { i18n };
 
 // 英文资源"第一公民"策略（静态导入，同步打包）
 import enCommon from "../locales/en/common.json";
@@ -286,12 +288,12 @@ export const initI18n = async () => {
     }
 
     // 初始化 i18next，使用 resources 配置
-    await i18n.use(initReactI18next).init({
+    await i18n.init({
       lng: actualLang,
       fallbackLng: "en",
       resources: initialResources,
       interpolation: {
-        escapeValue: false, // react already safes from xss
+        escapeValue: false, // Vue 模板插值默认转义，无需重复转义
       },
     });
 
