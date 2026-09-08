@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.9] - 2026-09-08
+
+### 🔧 杂项
+
+- **OpenSpec skills/commands 升级到 CLI 1.12.0**：5 个平台目录（`.agents` / `.claude` / `.opencode` / `.trae` / `.zcode`）下 72 个自动生成的文件同步更新
+  - explore 模式新增 "Planning a Change" 章节：规划变更时提供聚焦式探索提问与决策引导，先查证代码与 artifacts 再向用户提问，按依赖顺序逐个解决阻塞性决策
+  - ff-change / propose 工作流新增「起草前检查相关项目」指导：起草 artifact 前先只读检查相关实现、测试、配置与文档，让范围、方案和任务基于实际代码而非假设
+  - 新增 `.pi/` 平台支持：Pi 工具的 12 个 skills 与 12 个 prompts
+
+---
+
 ## [0.5.8] - 2026-08-27
 
 ### 🔧 杂项
