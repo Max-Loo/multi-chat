@@ -8,6 +8,8 @@ import { nextTick } from 'vue';
 import { render, screen, fireEvent } from '@testing-library/vue';
 import ChatBubble from '@/components/chat/ChatBubble.vue';
 import { ChatRoleEnum } from '@/types/chat';
+import { VirtualList } from '@/components/ui-vue/vlist';
+import { MasonryGrid } from '@/components/ui-vue/masonry';
 
 describe('ChatBubble（Vue 版）', () => {
   it('用户消息渲染在右侧容器', () => {
@@ -125,5 +127,26 @@ describe('ChatBubble（Vue 版）', () => {
     fireEvent.click(copyButton);
 
     expect(onCopy).toHaveBeenCalledWith('m1');
+  });
+
+  it('VirtualList 虚拟滚动容器渲染', () => {
+    const { container } = render(VirtualList, {
+      props: { items: ['a', 'b', 'c'] },
+      slots: {
+        item: `<template #item="{ item }"><div>item-{{ item }}</div></template>`,
+      },
+    });
+    expect(container.querySelector('[data-testid="virtual-list"]')).not.toBeNull();
+  });
+
+  it('MasonryGrid 瀑布流按列数渲染', () => {
+    const { container } = render(MasonryGrid, {
+      props: { cols: 2, gap: 8 },
+      slots: { default: '<div>项目1</div><div>项目2</div>' },
+    });
+    const grid = container.querySelector('[data-testid="masonry-grid"]') as HTMLElement;
+    expect(grid).toBeVisible();
+    expect(grid.style.columnCount).toBe('2');
+    expect(grid.textContent).toContain('项目1');
   });
 });
