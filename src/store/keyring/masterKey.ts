@@ -1,10 +1,8 @@
 /**
  * 主密钥管理模块
- * 使用 Web Crypto API 生成密钥，使用 Keyring 兼容层存储密钥
- * Tauri 环境使用系统钥匙串，Web 环境使用 IndexedDB + AES-256-GCM 加密
+ * 使用 Web Crypto API 生成密钥，使用 Keyring 模块（IndexedDB + AES-256-GCM 加密）存储密钥
  */
-import { keyring } from "@/utils/tauriCompat";
-import { isTauri } from "@/utils/tauriCompat/env";
+import { keyring } from "@/utils/platform";
 import { toastQueue } from '@/services/toast';
 import { verifyMasterKey } from "@/store/keyring/keyVerification";
 
@@ -62,17 +60,9 @@ export const getMasterKey = async (): Promise<string | null> => {
   } catch (error) {
     console.error("获取主密钥时出错:", error);
 
-    // Web 环境可能因为 IndexedDB 不可用或解密失败而抛出错误
-    if (!isTauri()) {
-      throw new Error(
-        "浏览器不支持安全存储或存储空间不足",
-        { cause: error }
-      );
-    }
-
-    // Tauri 环境
+    // 可能因为 IndexedDB 不可用或解密失败而抛出错误
     throw new Error(
-      "无法访问系统安全存储，请检查钥匙串权限设置",
+      "浏览器不支持安全存储或存储空间不足",
       { cause: error }
     );
   }
@@ -88,17 +78,9 @@ export const storeMasterKey = async (key: string): Promise<void> => {
   } catch (error) {
     console.error("存储主密钥时出错:", error);
 
-    // Web 环境可能因为 IndexedDB 不可用或加密失败而抛出错误
-    if (!isTauri()) {
-      throw new Error(
-        "浏览器不支持安全存储或存储空间不足",
-        { cause: error }
-      );
-    }
-
-    // Tauri 环境
+    // 可能因为 IndexedDB 不可用或加密失败而抛出错误
     throw new Error(
-      "无法访问系统安全存储，请检查钥匙串权限设置",
+      "浏览器不支持安全存储或存储空间不足",
       { cause: error }
     );
   }
@@ -136,21 +118,15 @@ export const initializeMasterKey = async (): Promise<InitializeMasterKeyResult> 
     // 存储新密钥
     await storeMasterKey(newKey);
 
-    if (!isTauri()) {
-      console.warn(
-        "⚠️  A new master key has been generated and stored in browser secure storage (IndexedDB + encryption)."
-      );
-      console.warn(
-        "⚠️  [IMPORTANT] Old encrypted data cannot be decrypted, you need to reconfigure API keys."
-      );
-      console.warn(
-        "⚠️  Security notice: The web version has a lower security level than the desktop version, we recommend handling sensitive data in the desktop version."
-      );
-    } else {
-      console.warn(
-        "⚠️  A new master key has been generated and stored in system secure storage. Note: Old encrypted data cannot be decrypted, you need to reconfigure API keys."
-      );
-    }
+    console.warn(
+      "⚠️  A new master key has been generated and stored in browser secure storage (IndexedDB + encryption)."
+    );
+    console.warn(
+      "⚠️  [IMPORTANT] Old encrypted data cannot be decrypted, you need to reconfigure API keys."
+    );
+    console.warn(
+      "⚠️  Security notice: Web storage security is limited by the browser environment. Keep your recovery credentials safe."
+    );
 
     return { key: newKey, isNewlyGenerated: true };
   } catch (error) {
@@ -160,27 +136,20 @@ export const initializeMasterKey = async (): Promise<InitializeMasterKeyResult> 
 };
 
 /**
- * 处理安全性警告提示（Web 环境首次使用）
+ * 处理安全性警告提示（首次使用）
  * 使用 Toast 永久显示，直到用户确认
  */
 export const handleSecurityWarning = async (): Promise<void> => {
-  // 只在 Web 环境显示
-  if (isTauri()) {
-    return;
-  }
-
   // 检查用户是否已经确认过
   const dismissed = localStorage.getItem(SECURITY_WARNING_DISMISSED_KEY);
   if (dismissed === 'true') {
     return;
   }
 
-  // 使用静态导入的 toast（统一项目中的 sonner 导入方式，优化构建产物）
-
   // 显示永久性 Toast 通知
   const message =
-    'The web version has a lower security level than the desktop version. ' +
-    'We strongly recommend handling sensitive data (such as API keys) in the desktop version for better protection.';
+    'Web storage security is limited by the browser environment. ' +
+    'Keep sensitive data (such as API keys) safe and store your recovery credentials securely.';
 
   toastQueue.warning(message, {
     duration: Infinity,

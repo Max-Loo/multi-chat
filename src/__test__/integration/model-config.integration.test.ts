@@ -9,7 +9,7 @@
  * - 删除模型配置（清理加密数据）
  * - 数据完整性验证
  *
- * 测试隔离：使用真实加密逻辑和真实 modelStorage 代码路径，仅 mock 外部 API（keyring 系统密钥链、chatService、tauriCompat 存储后端）
+ * 测试隔离：使用真实加密逻辑和真实 modelStorage 代码路径，仅 mock 外部 API（keyring 系统密钥链、chatService、platform 存储后端）
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -24,12 +24,12 @@ vi.mock('@/store/keyring/masterKey', () => ({
 
 import { getMasterKey, initializeMasterKey, storeMasterKey } from '@/store/keyring/masterKey';
 
-// Mock tauriCompat 存储后端为内存 Map（避免 fake-indexeddb 测试间连接问题）
+// Mock platform 存储后端为内存 Map（避免 fake-indexeddb 测试间连接问题）
 // modelStorage 的加密/解密/保存/加载代码路径完全真实
 // 使用 vi.hoisted 确保 memoryStore 与 vi.mock 一起被提升，避免 TDZ 错误
 const memoryStore = vi.hoisted(() => new Map<string, unknown>());
 
-vi.mock('@/utils/tauriCompat', () => globalThis.__createTauriCompatModuleMock(memoryStore));
+vi.mock('@/utils/platform', () => globalThis.__createTauriCompatModuleMock(memoryStore));
 
 // 不 mock modelStorage — 使用真实代码路径（加密 → 存储 → 解密）
 import { saveModelsToJson, loadModelsFromJson, resetModelsStore } from '@/store/storage/modelStorage';

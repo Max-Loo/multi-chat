@@ -2,7 +2,7 @@
 
 本规范定义了 `@tauri-apps/plugin-os` 的 `locale()` API 在 Web 环境中的兼容层要求。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: locale() 兼容层
 

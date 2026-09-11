@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { interceptClickAToJump, getDefaultAppLanguage, getLanguageLabel, LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
-import { locale, shell } from '@/utils/tauriCompat';
+import { locale } from '@/utils/platform';
 
 describe('global.ts 模块测试', () => {
   // 保存全局事件监听器引用，用于测试后清理
@@ -21,8 +21,8 @@ describe('global.ts 模块测试', () => {
     // 默认 mock locale 返回 zh-CN
     vi.mocked(locale).mockResolvedValue('zh-CN');
 
-    // Spy shell.open
-    openSpy = vi.mocked(shell.open);
+    // Spy window.open
+    openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
     // 清除 localStorage
     localStorage.clear();
@@ -398,7 +398,7 @@ describe('global.ts 模块测试', () => {
 
         // 等待异步操作完成
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', 'noopener,noreferrer');
         });
 
         // 清理 DOM
@@ -417,7 +417,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://example.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://example.com/', '_blank', 'noopener,noreferrer');
         });
         expect(clickEvent.preventDefault).toHaveBeenCalled();
 
@@ -435,7 +435,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://www.external-site.com/path?query=value');
+          expect(openSpy).toHaveBeenCalledWith('https://www.external-site.com/path?query=value', '_blank', 'noopener,noreferrer');
         });
 
         document.body.removeChild(anchor);
@@ -566,7 +566,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', 'noopener,noreferrer');
         });
 
         document.body.removeChild(anchor);
@@ -587,7 +587,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', 'noopener,noreferrer');
         });
 
         document.body.removeChild(anchor);
@@ -604,7 +604,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', 'noopener,noreferrer');
         });
 
         document.body.removeChild(anchor);
@@ -675,7 +675,7 @@ describe('global.ts 模块测试', () => {
         document.dispatchEvent(clickEvent);
 
         await vi.waitFor(() => {
-          expect(openSpy).toHaveBeenCalledWith('https://external.com/');
+          expect(openSpy).toHaveBeenCalledWith('https://external.com/', '_blank', 'noopener,noreferrer');
         });
 
         document.body.removeChild(anchor);
@@ -712,7 +712,7 @@ describe('global.ts 模块测试', () => {
       document.dispatchEvent(clickEvent1);
 
       await vi.waitFor(() => {
-        expect(openSpy).toHaveBeenCalledWith('https://test1.com/');
+        expect(openSpy).toHaveBeenCalledWith('https://test1.com/', '_blank', 'noopener,noreferrer');
       });
 
       document.body.removeChild(anchor1);
@@ -734,7 +734,7 @@ describe('global.ts 模块测试', () => {
       document.dispatchEvent(clickEvent2);
 
       await vi.waitFor(() => {
-        expect(openSpy).toHaveBeenCalledWith('https://test2.com/');
+        expect(openSpy).toHaveBeenCalledWith('https://test2.com/', '_blank', 'noopener,noreferrer');
       });
 
       document.body.removeChild(anchor2);

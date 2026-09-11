@@ -10,9 +10,6 @@ const packageJson = JSON.parse(
   readFileSync(path.resolve(__dirname, "./package.json"), "utf-8"),
 );
 
-// //@ts-expect-error process is a nodejs global
-const host = process.env.TAURI_DEV_HOST;
-
 /**
  * 从模块路径中提取实际包名，兼容 pnpm 存储路径格式
  * @param id 模块路径
@@ -172,13 +169,11 @@ export default defineConfig(async () => ({
         "src/__test__/setup.ts",
         "src/@types/**",
         "src/pages/Model/index.tsx",
-        // Tauri 兼容层（依赖系统 API，无法在 web 测试环境运行）
-        "src/utils/tauriCompat/http.ts",
-        "src/utils/tauriCompat/shell.ts",
-        "src/utils/tauriCompat/os.ts",
-        "src/utils/tauriCompat/store.ts",
-        "src/utils/tauriCompat/env.ts",
-        "src/utils/tauriCompat/__mocks__/**",
+        // 平台层（部分模块依赖浏览器系统 API，覆盖率重校准见任务 5.3）
+        "src/utils/platform/http.ts",
+        "src/utils/platform/os.ts",
+        "src/utils/platform/store.ts",
+        "src/utils/platform/env.ts",
         // shadcn/ui 自动生成的 UI 原子组件（无自定义逻辑）
         "src/components/ui/sheet.tsx",
         "src/components/ui/sonner.tsx",
@@ -319,14 +314,6 @@ export default defineConfig(async () => ({
             }
           }
 
-          // Tauri 插件特殊处理
-          if (
-            pkg.startsWith("@tauri-apps/plugin-") ||
-            pkg.startsWith("tauri-plugin-")
-          ) {
-            return "vendor-tauri";
-          }
-
           // 其他所有 node_modules 依赖
           return "vendor";
         },
@@ -334,26 +321,10 @@ export default defineConfig(async () => ({
     },
   },
 
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
-  clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
+  // 开发服务器配置（AI 供应商代理见 proxy 配置）
   server: {
     port: 1420,
     strictPort: true,
-    host: host || false,
-    hmr: host
-      ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
-    },
     proxy: {
       // 匹配 /deepseek/xxx
       "/deepseek": {

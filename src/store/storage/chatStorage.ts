@@ -4,7 +4,7 @@
  */
 import type { Chat, ChatMeta } from "@/types/chat";
 import { chatToMeta } from "@/types/chat";
-import { createLazyStore } from "@/utils/tauriCompat";
+import { createLazyStore } from "@/utils/platform";
 import { saveToStore, loadFromStore } from "./storeUtils";
 import { getCurrentTimestamp } from "@/utils/utils";
 

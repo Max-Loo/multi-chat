@@ -19,24 +19,11 @@ vi.mock('@/store/storage/storeUtils', () => ({
   loadFromStore: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('@/utils/tauriCompat/shell', () => ({
-  shell: {
-    open: vi.fn().mockResolvedValue(undefined),
-  },
-  Command: {
-    create: vi.fn().mockReturnValue({
-      execute: vi.fn().mockResolvedValue({ stdout: '', stderr: '' }),
-      isSupported: vi.fn().mockReturnValue(true),
-    }),
-  },
-}));
-
-vi.mock('@/utils/tauriCompat/os', () => ({
+vi.mock('@/utils/platform/os', () => ({
   locale: vi.fn().mockResolvedValue('zh-CN'),
-  platform: vi.fn().mockResolvedValue('darwin'),
 }));
 
-vi.mock('@/utils/tauriCompat/http', () => ({
+vi.mock('@/utils/platform/http', () => ({
   fetch: vi.fn().mockResolvedValue({
     ok: true,
     json: vi.fn().mockResolvedValue({}),
@@ -50,27 +37,24 @@ vi.mock('@/utils/tauriCompat/http', () => ({
   ),
 }));
 
-vi.mock('@/utils/tauriCompat/store', () => ({
+vi.mock('@/utils/platform/store', () => ({
   createLazyStore: vi.fn(() => globalThis.__createMemoryStorageMock()),
 }));
 
 // Mock env 模块（必须在桶模块 mock 之前，因为 importOriginal 会触发 keyring/keyringMigration 加载 env）
-vi.mock('@/utils/tauriCompat/env', () => ({
-  isTauri: vi.fn(() => false),
+vi.mock('@/utils/platform/env', () => ({
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
   PBKDF2_ALGORITHM: 'SHA-256' as const,
   DERIVED_KEY_LENGTH: 256,
 }));
 
-// Mock @/utils/tauriCompat 桶模块
+// Mock @/utils/platform 桶模块
 // 使用 importOriginal 保留真实导出（如 keyring），仅覆盖需要 mock 的模块
-vi.mock('@/utils/tauriCompat', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils/tauriCompat')>();
+vi.mock('@/utils/platform', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/platform')>();
   return {
     ...actual,
-    Command: { create: vi.fn() },
-    shell: { open: vi.fn() },
     locale: vi.fn(),
     fetch: vi.fn(),
     getFetchFunc: vi.fn(),

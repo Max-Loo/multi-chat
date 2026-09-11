@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm web:build
+        run: pnpm build
         env:
           CI: false
           BASE_PATH: /multi-chat/

@@ -1,6 +1,6 @@
 import type { LanguageModel } from 'ai';
 import { ModelProviderKeyEnum } from '@/utils/enums';
-import { getFetchFunc } from '@/utils/tauriCompat';
+import { getFetchFunc } from '@/utils/platform';
 import { getProviderSDKLoader } from './providerLoader';
 
 /**

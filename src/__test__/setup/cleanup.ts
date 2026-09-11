@@ -34,7 +34,7 @@ function ensureResetFnsLoaded() {
     _providerLoaderReset = loader.resetForTest.bind(loader);
   } catch { /* 模块不可用 */ }
   try {
-    const { keyring } = require('@/utils/tauriCompat/keyring');
+    const { keyring } = require('@/utils/platform/keyring');
     _keyringResetState = keyring.resetState.bind(keyring);
   } catch { /* 模块不可用 */ }
   try {

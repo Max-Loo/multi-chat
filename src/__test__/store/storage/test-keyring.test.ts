@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { WebKeyringCompat } from '@/utils/tauriCompat/keyring';
+import { WebKeyringCompat } from '@/utils/platform/keyring';
 
 // fake-indexeddb/auto 已在 setup.ts 中全局导入
 

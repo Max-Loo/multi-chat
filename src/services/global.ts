@@ -1,5 +1,5 @@
 import { LOCAL_STORAGE_PREFIX, LANGUAGE_MIGRATION_MAP, SUPPORTED_LANGUAGE_SET, SUPPORTED_LANGUAGE_MAP } from '@/utils/constants';
-import { locale, shell } from '@/utils/tauriCompat';
+import { locale } from '@/utils/platform';
 
 /**
  * 语言检测结果接口
@@ -30,7 +30,7 @@ export const interceptClickAToJump = () => {
       // 判断是否是外部链接（非本地路由）
       if (url.origin !== window.location.origin) {
         event.preventDefault();
-        await shell.open(url.href);
+        window.open(url.href, '_blank', 'noopener,noreferrer');
       }
     }
   });

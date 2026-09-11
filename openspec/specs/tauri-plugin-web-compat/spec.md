@@ -2,7 +2,7 @@
 
 本规范定义了 Tauri 插件在 Web 环境中的降级和兼容层要求。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: 环境检测
 

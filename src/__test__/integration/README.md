@@ -334,7 +334,7 @@ vi.mock('@/store/storage/chatStorage', () => ({
 
 // 方式三：vi.hoisted + vi.mock（需要共享可变引用时）
 const memoryStore = vi.hoisted(() => new Map<string, unknown>());
-vi.mock('@/utils/tauriCompat', () => globalThis.__createTauriCompatModuleMock(memoryStore));
+vi.mock('@/utils/platform', () => globalThis.__createTauriCompatModuleMock(memoryStore));
 ```
 
 ### Mock 存储层

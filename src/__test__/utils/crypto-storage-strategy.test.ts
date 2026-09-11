@@ -3,14 +3,14 @@
  *
  * 测试目的：验证加密业务策略场景（批量容错、masterKey 丢失降级、混合加密状态）
  * 测试范围：不重复测试 crypto.ts 的基本加密/解密功能（由 crypto.test.ts 覆盖）
- * 测试隔离：所有外部依赖（@/utils/tauriCompat、@/store/storage/modelStorage）均被 Mock
+ * 测试隔离：所有外部依赖（@/utils/platform、@/store/storage/modelStorage）均被 Mock
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { encryptField, decryptField } from '@/utils/crypto';
 
-// Mock @/utils/tauriCompat 模块
-vi.mock('@/utils/tauriCompat', () => ({
+// Mock @/utils/platform 模块
+vi.mock('@/utils/platform', () => ({
   keyring: {
     getPassword: vi.fn(),
     setPassword: vi.fn(),
