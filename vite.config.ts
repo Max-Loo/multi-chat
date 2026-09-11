@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import vue from "@vitejs/plugin-vue";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -93,6 +94,7 @@ export default defineConfig(async () => ({
         plugins: [["babel-plugin-react-compiler"]],
       },
     }),
+    vue(),
     tailwindcss(),
     visualizer({
       // open: true, // 自动打开浏览器

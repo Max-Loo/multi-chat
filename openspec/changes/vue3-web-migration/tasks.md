@@ -20,16 +20,16 @@
 
 ## 3. 阶段 2：Vue 基座
 
-- [ ] 3.1 安装 Vue 生态依赖（`vue`、`pinia`、`vue-router`、`@vitejs/plugin-vue`、`@testing-library/vue`、`lucide-vue-next`、`vue-sonner`、`reka-ui`、`@tanstack/vue-form`、`@tanstack/vue-table`、`@virtua/vue`），接入 plugin-vue，验证最小 Vue SFC 组件在 dev/build 下编译渲染成功
-- [ ] 3.2 基于 shadcn-vue（reka-ui）生成基础组件（Button、Dialog、AlertDialog、DropdownMenu、Select、Popover、Tooltip、Switch、Checkbox、RadioGroup、Input、Textarea、Label、Table、Skeleton、Progress、Avatar、Badge、Card、Splitter、Form），验证各组件冒烟渲染测试通过
-- [ ] 3.3 创建 Vue 新入口（`main.ts` + App 壳）与 vue-router 路由表（`createWebHistory(import.meta.env.BASE_URL)`，按 `src/router/index.tsx` 一一映射路径、重定向、懒加载与 dev-only toast-test 路由），验证全部路由可达、重定向与 404 行为和迁移前一致
-- [ ] 3.4 将 Redux slices 迁移为 Pinia setup stores（chat/model/provider/page/settings 等，selectors → getters，middleware 逻辑下沉），验证框架无关 store 测试经最小适配后全部通过
-- [ ] 3.5 实现响应式 i18n 绑定组合式函数（订阅 `i18next.languageChanged`），接入既有 i18n 服务初始化与懒加载，验证语言切换集成测试：切换后界面文本即时更新、无需刷新
-- [ ] 3.6 实现主题组合式函数（明/暗/跟随系统 + localStorage 持久化）替换 next-themes，验证主题切换与刷新持久化测试通过
-- [ ] 3.7 接入 vue-sonner 并保留既有 toast 服务层适配，验证 toast 展示、排队与自动消失行为测试通过
+- [x] 3.1 安装 Vue 生态依赖（`vue`、`pinia`、`vue-router`、`@vitejs/plugin-vue`、`@testing-library/vue`、`lucide-vue-next`、`vue-sonner`、`reka-ui`、`@tanstack/vue-form`、`@tanstack/vue-table`、`@virtua/vue`），接入 plugin-vue，验证最小 Vue SFC 组件在 dev/build 下编译渲染成功
+- [x] 3.2 基于 shadcn-vue（reka-ui）生成基础组件（Button、Dialog、AlertDialog、DropdownMenu、Select、Popover、Tooltip、Switch、Checkbox、RadioGroup、Input、Textarea、Label、Table、Skeleton、Progress、Avatar、Badge、Card、Splitter、Form），验证各组件冒烟渲染测试通过
+- [x] 3.3 创建 Vue 新入口（`main.ts` + App 壳）与 vue-router 路由表（`createWebHistory(import.meta.env.BASE_URL)`，按 `src/router/index.tsx` 一一映射路径、重定向、懒加载与 dev-only toast-test 路由），验证全部路由可达、重定向与 404 行为和迁移前一致
+- [x] 3.4 将 Redux slices 迁移为 Pinia setup stores（chat/model/provider/page/settings 等，selectors → getters，middleware 逻辑下沉），验证框架无关 store 测试经最小适配后全部通过
+- [x] 3.5 实现响应式 i18n 绑定组合式函数（订阅 `i18next.languageChanged`），接入既有 i18n 服务初始化与懒加载，验证语言切换集成测试：切换后界面文本即时更新、无需刷新
+- [x] 3.6 实现主题组合式函数（明/暗/跟随系统 + localStorage 持久化）替换 next-themes，验证主题切换与刷新持久化测试通过
+- [x] 3.7 接入 vue-sonner 并保留既有 toast 服务层适配，验证 toast 展示、排队与自动消失行为测试通过
 - [ ] 3.8 以 Vue 重写初始化壳组件（InitializationController、AnimatedLogo/canvas-logo、FatalErrorScreen、NoProvidersAvailable、进度组件），对接 InitializationManager 逻辑不变，验证初始化流程集成测试通过
 - [ ] 3.9 验证 oxlint 对 `.vue` SFC 的检查效果，若覆盖不足则引入 `eslint` + `eslint-plugin-vue` 补位，验证 `pnpm lint` 通过
-- [ ] 3.10 验证 `@tanstack/vue-form` 满足 `ModelConfigForm` 需求；不满足则按 design D5 降级为基于 zod 的自研轻量表单组合式函数，并在本文件记录最终选择
+- [x] 3.10 验证 `@tanstack/vue-form` 满足 `ModelConfigForm` 需求；不满足则按 design D5 降级为基于 zod 的自研轻量表单组合式函数，并在本文件记录最终选择
 
 ## 4. 阶段 3：模块迁移（每项 = 实现重写 + 测试重写通过）
 
