@@ -33,7 +33,7 @@
 
 ## 4. 阶段 3：模块迁移（每项 = 实现重写 + 测试重写通过）
 
-- [ ] 4.1 迁移布局与通用组件（Layout、TopBar、底部导航、移动端抽屉、自适应侧栏、Skeleton 骨架屏等），重写对应组件测试
+- [x] 4.1 迁移布局与通用组件（Layout、TopBar、底部导航、移动端抽屉、自适应侧栏、Skeleton 骨架屏等），重写对应组件测试
 - [ ] 4.2 迁移聊天通用组件（消息气泡、流式内容渲染、markdown/高亮/代码块复制、虚拟滚动、瀑布流），重写对应测试并验证长对话滚动性能与迁移前相当
 - [ ] 4.3 迁移 Chat 页面（Sidebar、Panel、Detail、ModelSelect、消息操作、重新生成、自动命名 hooks 链、URL 同步），重写对应测试并验证核心聊天流程行为等价
 - [ ] 4.4 迁移 Model 页面（ModelTable、CreateModel、ModelConfigForm、ProviderGrid、ProviderDetail），重写对应测试并验证模型增删改查与远程模型获取流程等价

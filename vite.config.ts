@@ -90,6 +90,8 @@ export default defineConfig(async () => ({
   base: process.env.BASE_PATH || "/",
   plugins: [
     react({
+      // 仅处理 jsx/tsx：避免 React Compiler 对 Vue 组合式函数（use*.ts）注入 React 运行时调用
+      include: /\.[jt]sx$/,
       babel: {
         plugins: [["babel-plugin-react-compiler"]],
       },
