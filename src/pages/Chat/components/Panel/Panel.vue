@@ -7,6 +7,7 @@ import { ref, watch, defineAsyncComponent } from 'vue';
 import { useSelectedChat } from '@/composables/pages/useSelectedChat';
 import { useBoard } from '@/composables/pages/useBoard';
 import PanelHeader from './PanelHeader.vue';
+import PanelSender from './PanelSender.vue';
 
 // Splitter 异步导入：仅在用户启用可拖拽布局时加载
 const PanelSplitter = defineAsyncComponent(() => import('./PanelSplitter.vue'));
@@ -46,7 +47,9 @@ const { board, shouldUseSplitter } = useBoard(columnCount, isSplitter);
     <!-- 内容部分（占位） -->
     <div class="flex w-full grow flex-col" />
 
-    <!-- 发送框（任务 4.3 接入 Sender） -->
-    <div class="w-full p-2" />
+    <!-- 发送框 -->
+    <div class="w-full p-2">
+      <PanelSender />
+    </div>
   </div>
 </template>
