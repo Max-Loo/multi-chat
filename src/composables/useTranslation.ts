@@ -45,10 +45,11 @@ const ensureSubscription = (): void => {
 export function useTranslation(): { t: TFunction; i18n: I18nInstance } {
   ensureSubscription();
 
-  const t = ((key: string, options?: unknown) => {
+  // 透传全部参数（支持项目的类型化 selector key 形式 t(($) => $.common.xxx) 与选项对象）
+  const t = ((...args: unknown[]) => {
     // 建立响应式依赖：语言变化触发使用 t 的组件重渲染
     void activeLanguage.value;
-    return (i18next.t as (key: string, options?: unknown) => string)(key, options);
+    return (i18next.t as (...a: unknown[]) => string)(...args);
   }) as unknown as TFunction;
 
   return { t, i18n: i18next as I18nInstance };
