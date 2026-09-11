@@ -29,8 +29,8 @@ const { t } = useTranslation();
     class="w-fit max-w-[85vw] sm:max-w-md min-w-60"
     @update:open="emit('update:open', $event)"
   >
-    <template #title>{{ t('navigation.mobileDrawer.title') }}</template>
-    <template #description>{{ t('navigation.mobileDrawer.ariaDescription') }}</template>
+    <template #title>{{ t(($) => $.navigation.mobileDrawer.title) }}</template>
+    <template #description>{{ t(($) => $.navigation.mobileDrawer.ariaDescription) }}</template>
     <slot />
   </Sheet>
 </template>
