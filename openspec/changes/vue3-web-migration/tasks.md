@@ -28,7 +28,7 @@
 - [x] 3.6 实现主题组合式函数（明/暗/跟随系统 + localStorage 持久化）替换 next-themes，验证主题切换与刷新持久化测试通过
 - [x] 3.7 接入 vue-sonner 并保留既有 toast 服务层适配，验证 toast 展示、排队与自动消失行为测试通过
 - [ ] 3.8 以 Vue 重写初始化壳组件（InitializationController、AnimatedLogo/canvas-logo、FatalErrorScreen、NoProvidersAvailable、进度组件），对接 InitializationManager 逻辑不变，验证初始化流程集成测试通过
-- [ ] 3.9 验证 oxlint 对 `.vue` SFC 的检查效果，若覆盖不足则引入 `eslint` + `eslint-plugin-vue` 补位，验证 `pnpm lint` 通过
+- [x] 3.9 验证 oxlint 对 `.vue` SFC 的检查效果，若覆盖不足则引入 `eslint` + `eslint-plugin-vue` 补位，验证 `pnpm lint` 通过
 - [x] 3.10 验证 `@tanstack/vue-form` 满足 `ModelConfigForm` 需求；不满足则按 design D5 降级为基于 zod 的自研轻量表单组合式函数，并在本文件记录最终选择
 
 ## 4. 阶段 3：模块迁移（每项 = 实现重写 + 测试重写通过）
