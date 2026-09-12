@@ -11,9 +11,6 @@ import InitializationControllerVue from '@/components/InitializationController.v
 import { Toaster } from '@/components/ui-vue/sonner';
 import type { InitResult, InitStep } from '@/services/initialization';
 
-// 异步导入 initSteps，确保依赖模块正确初始化
-const initStepsModule = await import('@/config/initSteps');
-
 // 应用状态：loading → initializing → ready
 const appState = ref<'loading' | 'initializing' | 'ready'>('loading');
 // initSteps 模块
@@ -25,8 +22,10 @@ const error = ref<{ message: string; phase: 'initsteps' | 'mainapp' } | null>(nu
 // 初始化结果（用于创建主应用）
 const initResult = ref<InitResult | null>(null);
 
-onMounted(() => {
-  // 阶段 2：设置 initSteps（已通过顶层 await 加载完成）
+onMounted(async () => {
+  // 阶段 1-2：异步加载 initSteps（不能使用顶层 await，否则 async setup 组件在没有
+  // Suspense 边界的情况下不会被渲染，导致页面空白）
+  const initStepsModule = await import('@/config/initSteps');
   initSteps.value = initStepsModule.initSteps;
   appState.value = 'initializing';
 
