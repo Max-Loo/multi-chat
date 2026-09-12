@@ -117,7 +117,7 @@ describe('Pinia modelProvider store', () => {
 
     it('失败时区分 RemoteDataError 与通用错误', async () => {
       const { RemoteDataError } = await import('@/services/modelRemote');
-      mockFetchRemoteData.mockRejectedValueOnce(new RemoteDataError('远程服务不可用'));
+      mockFetchRemoteData.mockRejectedValueOnce(new RemoteDataError('远程服务不可用' as never));
 
       await store.refreshModelProvider();
 

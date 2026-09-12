@@ -1,7 +1,6 @@
 import { streamText as realStreamText, generateId as realGenerateId } from 'ai';
 import { Model } from '@/types/model';
 import { StandardMessage } from '@/types/chat';
-import { ModelProviderKeyEnum } from '@/utils/enums';
 
 /**
  * Vercel AI SDK 依赖接口（用于依赖注入和测试）
@@ -13,21 +12,6 @@ export interface AISDKDependencies {
   generateId: typeof realGenerateId;
 }
 
-/**
- * 聊天服务配置
- */
-export interface ChatServiceConfig {
-  /** API Key */
-  apiKey: string;
-  /** API 基础地址（原始 URL，会被标准化） */
-  baseURL: string;
-  /** 模型标识符 */
-  model: string;
-  /** 是否允许浏览器环境（Tauri 桌面应用需要） */
-  dangerouslyAllowBrowser?: boolean;
-  /** 供应商标识符（用于开发环境代理和 URL 标准化） */
-  providerKey: ModelProviderKeyEnum;
-}
 
 /**
  * 聊天请求参数
@@ -76,18 +60,6 @@ export class MetadataCollectionError extends Error {
   }
 }
 
-/**
- * 敏感数据配置接口
- * 用于配置敏感数据的过滤规则
- */
-export interface SensitiveDataConfig {
-  /** 请求体最大大小（字节） */
-  maxBodySize: number;
-  /** 需要过滤的敏感 HTTP 头 */
-  sensitiveHeaders: string[];
-  /** 需要过滤的敏感请求体字段 */
-  sensitiveFields: string[];
-}
 
 /**
  * 流式处理选项接口

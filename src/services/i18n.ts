@@ -383,6 +383,3 @@ export const tSafely = (key: string, fallback: string): string => {
 
   return safeFallback;
 };
-
-// TypeScript 类型导出（供其他模块导入）
-export type SafeTranslator = typeof tSafely;

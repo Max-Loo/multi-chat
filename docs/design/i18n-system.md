@@ -63,7 +63,7 @@ Toast 队列 (初始化期间提示)
 - `initI18n()`: 初始化 i18n 配置
 - `changeAppLanguage(lang)`: 切换应用语言
 - `getInitI18nPromise()`: 获取初始化 Promise
-- `tSafely(key, fallback)`: 安全地获取翻译文本（用于非 React 环境）
+- `tSafely(key, fallback)`: 安全地获取翻译文本（用于非组件环境）
 
 **关键特性**：
 - 单例模式（避免重复初始化）
@@ -293,7 +293,7 @@ npm run validate
 
 ### 安全翻译函数（tSafely）
 
-用于非 React 环境（如 Redux thunks、初始化代码）：
+用于非组件环境（如初始化步骤、Pinia store）：
 
 ```typescript
 import { tSafely } from '@/services/i18n';

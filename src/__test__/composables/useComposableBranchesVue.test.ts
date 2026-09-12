@@ -98,11 +98,10 @@ describe('useZodForm reset', () => {
 
   it('reset 应还原初始值并清空错误', async () => {
     const scope = effectScope();
-    let formRef: ReturnType<typeof useZodForm> | null = null;
+    let formRef: { values: { name: string; count: number }; errors: Record<string, string>; validateField: (name: 'name' | 'count') => boolean; handleChange: (name: 'name' | 'count', value: unknown) => void; handleSubmit: (onSubmit: (values: { name: string; count: number }) => void | Promise<void>) => Promise<boolean>; reset: () => void } | null = null;
     scope.run(() => {
       formRef = useZodForm(
         {
-          schema,
           defaultValues: () => ({ name: '初始', count: 1 }),
         },
         ref(schema),
@@ -137,10 +136,10 @@ describe('useZodForm 分支补充', () => {
 
   function createForm() {
     const scope = effectScope();
-    let formRef: ReturnType<typeof useZodForm> | null = null;
+    let formRef: { values: { name: string; count: number }; errors: Record<string, string>; validateField: (name: 'name' | 'count') => boolean; handleChange: (name: 'name' | 'count', value: unknown) => void; handleSubmit: (onSubmit: (values: { name: string; count: number }) => void | Promise<void>) => Promise<boolean>; reset: () => void } | null = null;
     scope.run(() => {
       formRef = useZodForm(
-        { schema, defaultValues: () => ({ name: '初始', count: 1 }) },
+        { defaultValues: () => ({ name: '初始', count: 1 }) },
         ref(schema),
       );
     });
@@ -211,8 +210,8 @@ describe('useResponsive 断点分支', () => {
 
 describe('useMediaQuery 作用域销毁移除监听', () => {
   it('onScopeDispose 触发 removeEventListener', () => {
-    const added: unknown[] = [];
-    const removed: unknown[] = [];
+    const added: [string, unknown][] = [];
+    const removed: [string, unknown][] = [];
     const fakeMql = {
       matches: false,
       addEventListener: (t: string, cb: unknown) => added.push([t, cb]),

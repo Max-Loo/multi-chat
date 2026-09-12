@@ -1,6 +1,4 @@
 import { computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { isNotNil } from 'es-toolkit';
 import { useChatStore } from '@/store/pinia/chat';
 
 /**
@@ -18,8 +16,3 @@ export const useCurrentSelectedChat = () => {
   return computed(() => selectedChat.value ?? null);
 };
 
-/** 供需要「记忆上次查看的聊天」判断的调用方复用 */
-export const isSelectedChatLoaded = (chat: ReturnType<typeof useCurrentSelectedChat>['value']) =>
-  isNotNil(chat);
-
-export { useRoute, useRouter };

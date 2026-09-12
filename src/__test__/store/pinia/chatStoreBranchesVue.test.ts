@@ -38,7 +38,7 @@ import { useChatStore } from '@/store/pinia/chat';
 import { useAppConfigStore } from '@/store/pinia/appConfig';
 import { useModelStore } from '@/store/pinia/model';
 import { loadChatById, loadChatIndex, saveChatAndIndex } from '@/store/storage';
-import { type Chat } from '@/types/chat';
+import { type Chat, type StandardMessage } from '@/types/chat';
 import { createUserMessage, createAssistantMessage } from '@/__test__/fixtures/chat';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 

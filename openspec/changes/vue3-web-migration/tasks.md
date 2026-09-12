@@ -59,18 +59,38 @@
 
 ## 5. 阶段 4：清理收尾
 
-- [ ] 5.1 删除 React 树与依赖：旧入口（`MainApp.tsx`、`main.tsx`）、全部 `.tsx` 组件、`src/hooks` React 版本、`@reduxjs/toolkit`/`react-redux`/`react-router-dom`/`react-i18next`/`@radix-ui/*`/`next-themes`/`sonner`/`lucide-react`/`@tanstack/react-form`/`react-table`/`react-resizable-panels`/`virtua`/`react-masonry-css`/`@testing-library/react`/`babel-plugin-react-compiler`/`@vitejs/plugin-react`，验证 `grep -ri "react" package.json src/` 无运行时残留、`pnpm install && pnpm build` 成功
-- [ ] 5.2 重写 `vite.config.ts` manualChunks 为 Vue 生态映射（vendor-vue、vendor-pinia、vendor-router、vendor-i18n、vendor-ai 等目标结构），验证构建分包符合预期、chunk-init 独立且无超限告警
-- [ ] 5.3 重写覆盖率配置中 React 专属排除项（`main.tsx` → 新入口、shadcn-vue 生成物路径等），运行 `pnpm test:coverage` 确认各分级阈值全部达标
-- [ ] 5.4 运行 `pnpm test:mutation`（stryker）全量确认配置对 Vue 代码生效，记录变异得分基线
-- [ ] 5.5 运行 `pnpm test:basic:all`（单元 + 集成）全量通过；运行 `pnpm validate`（lint + i18n 完整性检查）通过
-- [ ] 5.6 运行 `pnpm analyze:unused`（knip）清理未使用的导出与文件，验证 knip 无未跟踪死代码
-- [ ] 5.7 将 proposal 中声明的约 22 个待批量修订的既有规格清单（引用 Tauri 场景的测试约定类规格）记录到本变更目录 `followup-spec-cleanup.md`，供后续清理变更使用
+- [x] 5.1 删除 React 树与依赖：旧入口（`MainApp.tsx`、`main.tsx`）、全部 `.tsx` 组件、`src/hooks` React 版本、`@reduxjs/toolkit`/`react-redux`/`react-router-dom`/`react-i18next`/`@radix-ui/*`/`next-themes`/`sonner`/`lucide-react`/`@tanstack/react-form`/`react-table`/`react-resizable-panels`/`virtua`/`react-masonry-css`/`@testing-library/react`/`babel-plugin-react-compiler`/`@vitejs/plugin-react`，验证 `grep -ri "react" package.json src/` 无运行时残留、`pnpm install && pnpm build` 成功
+      - 说明：`initSteps.ts` 从 Redux dispatch 重接为 Pinia store 初始化（四个 store 的 `initialize*` 补齐返回值）；`chatHistoryHelper.ts` 收敛为框架中立 `ChatHistoryState`（同时修正 Pinia 版 helperState 缺失 runningChat 的隐患）；`toastQueue.ts` 切换 vue-sonner；`a11y.ts` 框架中立化；测试 setup 换 `@testing-library/vue` cleanup；被删的 Redux 版集成测试由 Vue 版 `settings-change.integration.test.ts` 承接
+      - 验证：单测 93 文件 / 1341 通过 + 3 跳过；tsc/build 通过；`grep -ri "react|@reduxjs" package.json src/` 无运行时残留；构建产物无 `__TAURI__`/react 运行时
+- [x] 5.2 重写 `vite.config.ts` manualChunks 为 Vue 生态映射（vendor-vue、vendor-pinia、vendor-router、vendor-i18n、vendor-ai 等目标结构），验证构建分包符合预期、chunk-init 独立且无超限告警
+      - 结果：vendor-vue（gzip 33KB）、vendor-pinia（1.8KB）、vendor-router（9.7KB）、vendor-i18n、vendor-ai、vendor-reka-ui 各自独立；chunk-init 独立（gzip 29KB）；无超限告警
+- [x] 5.3 重写覆盖率配置中 React 专属排除项（`main.tsx` → 新入口、shadcn-vue 生成物路径等），运行 `pnpm test:coverage` 确认各分级阈值全部达标
+      - 说明：provider 由 istanbul 切换为 v8（v8 能将插桩还原到 .vue SFC 源文件，istanbul 对 .vue 全为 0）；排除 `src/main.ts`/`App.vue`/`MainAppVue.ts`（入口装配）、`ui-vue/**`（shadcn-vue 生成物）、`AnimatedLogo/**`（canvas 依赖）；阈值键 `**/src/hooks/**` → `**/src/composables/**`；补齐 pinia store（chat/model/appConfig/modelProvider）、composables、组件（ChatButton/ThinkingSection/BottomNav/KeyRecoveryDialog/ToolsBar 等）测试
+      - 结果：全部分级阈值达标；All files：Stmts 89.12%、Branch 77.81%、Funcs 84.56%、Lines 90.48%
+      - 顺带修复：KeyRecoveryDialog `isDisabled` 非 computed 导致导入按钮恒禁用的迁移缺陷
+- [x] 5.4 运行 `pnpm test:mutation`（stryker）全量确认配置对 Vue 代码生效，记录变异得分基线
+      - 说明：mutate 清单重写为 Vue 形态（slices/tauriCompat/hooks 项替换为 store/pinia、utils/platform、composables、chatHistoryHelper、initSteps）
+      - 基线：见下方"变异得分基线"记录
+- [x] 5.5 运行 `pnpm test:basic:all`（单元 + 集成）全量通过；运行 `pnpm validate`（lint + i18n 完整性检查）通过
+- [x] 5.6 运行 `pnpm analyze:unused`（knip）清理未使用的导出与文件，验证 knip 无未跟踪死代码
+      - 清理：删除死文件（store/pinia/index.ts、ui-vue/splitter 空目录、测试 helper matchMedia/scrollMetrics/clearIndexedDB re-export/platform helpers）、移除依赖（@tanstack/vue-form 因 useZodForm 降级不再使用、@testing-library/user-event）、补声明直接导入的 @tanstack/table-core@9.2.4、删除无引用导出（isSelectedChatLoaded、hasEncryptedModels、chat/types 死接口、SafeTranslator）
+      - 豁免口径：ui-vue 生成物 barrel 与测试 helper 公共 API 面在 knip.json ignore；结果 knip 报告清零
+- [x] 5.7 将 proposal 中声明的约 22 个待批量修订的既有规格清单（引用 Tauri 场景的测试约定类规格）记录到本变更目录 `followup-spec-cleanup.md`，供后续清理变更使用
+      - 说明：清单含 A 类（测试约定类 22 个）与 B 类（其他非测试类 19 个），含各规格失效要点与清理建议
 
 ## 6. 文档与发布
 
-- [ ] 6.1 更新 `AGENTS.md`：技术栈（React → Vue 3）、架构入口、快速查找表（`tauriCompat` → `platform`）、文档索引，验证行数不超过 250 行
-- [ ] 6.2 同步更新 `README.md` 与 `README.zh-CN.md` 双语版本（移除桌面端说明、更新脚本与平台说明），验证两版本章节结构一致
-- [ ] 6.3 更新受影响的 `docs/design/` 文档（`cross-platform.md` 重写为纯 Web 平台层说明，`chat-service.md`/`i18n-system.md`/`initialization.md` 等核对框架引用），验证 `docs/README.md` 索引一致
+- [x] 6.1 更新 `AGENTS.md`：技术栈（React → Vue 3）、架构入口、快速查找表（`tauriCompat` → `platform`）、文档索引，验证行数不超过 250 行
+      - 结果：229 行，无 React/Tauri 残留
+- [x] 6.2 同步更新 `README.md` 与 `README.zh-CN.md` 双语版本（移除桌面端说明、更新脚本与平台说明），验证两版本章节结构一致
+      - 结果：两版各 378 行、47 个标题一一对应；数据安全/持久化章节改为 Web Crypto + IndexedDB 语义；FAQ 更新为 CORS 说明
+- [x] 6.3 更新受影响的 `docs/design/` 文档（`cross-platform.md` 重写为纯 Web 平台层说明，`chat-service.md`/`i18n-system.md`/`initialization.md` 等核对框架引用），验证 `docs/README.md` 索引一致
+      - 说明：`cross-platform.md` 全文重写为纯 Web 平台层文档；`i18n-system.md` 修正 2 处 React 措辞；删除 `docs/conventions/tauri-commands.md`；`docs/README.md` 索引同步
 - [ ] 6.4 触发 gh-pages 部署（手动或 tag）并对线上站点做冒烟验证（首页加载、创建聊天、发送消息、切换语言/主题），验证线上行为与本地一致
 - [ ] 6.5 核对全部增量规格的验收场景（`openspec/changes/vue3-web-migration/specs/`），确认无未满足项后运行 `openspec validate --change vue3-web-migration` 通过
+
+## 变异得分基线（任务 5.4）
+
+- **全文件变异得分：76.87%（covered 81.71%）**，killed 1600 / timeout 22 / survived 363 / no coverage 125，共 2114 个变异体
+- 分模块：config 98.68%、utils 89.89%（platform 82.14%）、services 80.40%（modelRemote 95.92%、toast 96.36%、i18n 92.70%、InitializationManager 88.24%）、store 61.55%（masterKey 97.65%、pinia chat.ts 54.17%、modelProvider 67.31%）、composables 68.18%
+- 后续改进方向（非本变更范围）：pinia/chat.ts 的流式编排与 chatHistoryHelper 的编辑/重生成数组分支（52.22%）为主要得分洼地

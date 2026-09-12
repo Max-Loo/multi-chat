@@ -5,7 +5,7 @@
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://max-loo.github.io/multi-chat/)
 [![Deploy to GitHub Pages](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml/badge.svg)](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml)
 
-A multi-model chat application built with Tauri + React + TypeScript, supporting simultaneous conversations with multiple AI models for easy comparison of responses.
+A multi-model chat web application built with Vue 3 + TypeScript, supporting simultaneous conversations with multiple AI models for easy comparison of responses.
 
 ## Features
 
@@ -34,7 +34,7 @@ A multi-model chat application built with Tauri + React + TypeScript, supporting
 
 ### 🎨 Modern UI
 
-- Modern UI design based on shadcn/ui and Radix UI component library
+- Modern UI design based on shadcn-vue (reka-ui) component library
 - **Four-level responsive layout system** that automatically adapts to different screen sizes
 - Customizable chat window layout (single-column/multi-column display)
 - Smooth animations and transitions
@@ -60,19 +60,18 @@ The app supports four levels of responsive layout that automatically adjust base
 
 - Local data storage to protect privacy
 - API keys encrypted with AES-256-GCM
-- Master key securely stored in system keychain via `tauri-plugin-keyring`
+- Master key stored in the browser using Web Crypto + IndexedDB
 - Field-level encryption for sensitive data, plaintext storage for non-sensitive data
 - Data stored in JSON format for easy backup and inspection
 
 ## Tech Stack
 
-- **Frontend Framework**: React 19 + TypeScript
-- **UI Components**: shadcn/ui + Radix UI
-- **State Management**: Redux Toolkit
-- **Routing**: React Router v7
+- **Frontend Framework**: Vue 3 (Composition API) + TypeScript
+- **UI Components**: shadcn-vue (reka-ui)
+- **State Management**: Pinia
+- **Routing**: vue-router
 - **Styling**: Tailwind CSS
-- **Internationalization**: i18next + react-i18next
-- **Desktop Framework**: Tauri 2
+- **Internationalization**: i18next + custom reactive bindings
 - **Build Tool**: Vite
 
 ## Getting Started
@@ -81,7 +80,6 @@ The app supports four levels of responsive layout that automatically adjust base
 
 - Node.js 18+
 - pnpm
-- Rust 1.70+ (for building the Tauri app)
 
 ### Install Dependencies
 
@@ -97,21 +95,15 @@ pnpm install
 ### Development Mode
 
 ```bash
-# Start Tauri desktop app development mode (starts both frontend and backend)
-pnpm tauri dev
-
-# Start web browser development mode (frontend only)
-pnpm web:dev
+# Start the development server (Vite)
+pnpm dev
 ```
 
 ### Build the Application
 
 ```bash
-# Build Tauri desktop app for production
-pnpm tauri build
-
-# Build web app for production
-pnpm web:build
+# Build for production (outputs static assets to dist/)
+pnpm build
 ```
 
 ### Deploy to GitHub Pages
@@ -135,8 +127,6 @@ pnpm deploy:gh-pages
    - **build job**: Build the web app and upload artifact
    - **deploy job**: Deploy artifact to GitHub Pages
 
-Meanwhile, the desktop build (`build-and-release.yml`) is also triggered in parallel to ensure desktop and web versions are released simultaneously.
-
 **Technical Details**:
 - Uses official GitHub Pages Actions (recommended approach)
 - Separated build and deploy into two independent jobs
@@ -146,7 +136,7 @@ Meanwhile, the desktop build (`build-and-release.yml`) is also triggered in para
 ### Other Common Commands
 
 ```bash
-# Run linting (using oxlint)
+# Run linting (oxlint for TS/JS, eslint-plugin-vue for SFC)
 pnpm lint
 
 # Update application version
@@ -205,17 +195,16 @@ pnpm test:all
 
 ```
 multi-chat/
-├── src/                        # React frontend code
+├── src/                        # Vue 3 frontend code
 │   ├── components/             # Shared components
-│   │   ├── ui/                # shadcn/ui components
-│   │   ├── FilterInput/       # Filter input component
-│   │   ├── Layout/            # Layout components
-│   │   └── Sidebar/           # Sidebar components
+│   │   ├── ui-vue/            # shadcn-vue base components
+│   │   ├── chat/              # Chat shared components
+│   │   └── ...                # Layout, Sidebar, dialogs, etc.
 │   ├── pages/                 # Page components
 │   │   ├── Chat/              # Chat page
 │   │   ├── Model/             # Model management page
 │   │   └── Setting/           # Settings page
-│   ├── hooks/                 # Custom hooks
+│   ├── composables/           # Composition functions (reusable logic)
 │   ├── config/                # Configuration files
 │   │   └── initSteps.ts       # Initialization step config
 │   ├── locales/               # i18n language files
@@ -227,21 +216,15 @@ multi-chat/
 │   │   ├── modelRemote/       # Remote model service
 │   │   ├── i18n.ts            # i18n configuration
 │   │   └── global.ts          # Global configuration
-│   ├── store/                 # Redux state management
-│   │   ├── slices/            # Redux slices
-│   │   ├── middleware/        # Middleware
-│   │   ├── storage/           # Data persistence
+│   ├── store/                 # State management
+│   │   ├── pinia/             # Pinia setup stores
+│   │   ├── storage/           # Data persistence (IndexedDB)
 │   │   └── keyring/           # Master key management
 │   ├── types/                 # TypeScript type definitions
 │   └── utils/                 # Utility functions
-│       ├── tauriCompat/       # Tauri compatibility layer
+│       ├── platform/          # Web platform layer (IndexedDB / Web Crypto / fetch / locale)
 │       ├── crypto.ts          # Crypto utilities
 │       └── ...
-├── src-tauri/                 # Rust backend code
-│   ├── src/
-│   │   ├── lib.rs             # Tauri command definitions
-│   │   └── main.rs            # Entry file
-│   └── tauri.conf.json        # Tauri configuration
 ├── public/                    # Static assets
 └── package.json               # Project dependencies and scripts
 ```
@@ -275,7 +258,7 @@ Language files are located in the `src/locales/` directory, organized by languag
     - System language (if supported)
     - Default language (English)
 2. Language preference is stored in `localStorage` with the key `multi-chat-language`
-3. Uses `i18next` and `react-i18next` for internationalization
+3. Uses `i18next` with custom reactive bindings for internationalization
 
 **Language Code Auto-Migration**:
 - On app upgrade, if language codes have changed (e.g., `zh-CN` → `zh`), the system automatically migrates to the new code
@@ -289,7 +272,7 @@ Language files are located in the `src/locales/` directory, organized by languag
 - ✅ **Smart Caching**: In-flight load requests are cached to prevent race conditions during rapid switching
 
 **Auto-Persistence**:
-- ✅ Language changes are automatically synced to localStorage via Redux Middleware
+- ✅ Language changes are automatically synced to localStorage when switching
 - ✅ Silent degradation: localStorage write failures log a warning without affecting app operation
 
 **Message Queue Mechanism**:
@@ -310,7 +293,7 @@ Language files are located in the `src/locales/` directory, organized by languag
 
 The project uses the following tools to ensure code quality:
 
-- **oxlint**: Static code analysis tool
+- **oxlint + eslint-plugin-vue**: Static code analysis tools
   ```bash
   pnpm lint
   ```
@@ -330,7 +313,7 @@ The project uses the following tools to ensure code quality:
 
 1. Add the new provider enum in `src/utils/enums.ts`
 2. Register the corresponding Provider factory function in `src/services/chat/providerLoader.ts`
-3. Add the provider option in `src/pages/Model/CreateModel/components/ModelSidebar.tsx`
+3. Add the provider option in `src/pages/Model/CreateModel/components/ModelSidebar.vue`
 
 ### Code Conventions
 
@@ -348,11 +331,10 @@ The project uses the following tools to ensure code quality:
 
 ### Data Persistence
 
-The app uses the @tauri-apps/plugin-store plugin for data persistence. Data storage locations:
+The app uses the browser's IndexedDB for data persistence (data stays local to the browser):
 
-- **Windows**: `%APPDATA%\multi-chat`
-- **macOS**: `~/Library/Application Support/multi-chat`
-- **Linux**: `~/.config/multi-chat`
+- **IndexedDB database `multi-chat-store`**: Application data (`models.json` / `chats.json` style key-value records)
+- **IndexedDB database `multi-chat-keyring`**: Encrypted master key storage
 
 #### Data Files
 
@@ -364,35 +346,32 @@ The app uses the @tauri-apps/plugin-store plugin for data persistence. Data stor
 - **Algorithm**: AES-256-GCM (authenticated encryption)
 - **Key Management**:
   - Master key generated by Web Crypto API (256-bit random key)
-  - Desktop: Stored in system secure storage (macOS Keychain / Windows DPAPI / Linux Secret Service)
-  - Web: Encrypted storage using IndexedDB (corresponding to desktop system keychain)
-  - Uses `tauri-plugin-keyring` for unified cross-platform key management
+  - Master key is encrypted with a PBKDF2-derived key and stored in IndexedDB
+  - The key seed is stored in `localStorage` (see FAQ for implications)
 - **Encryption Format**: `enc:base64(ciphertext + auth_tag + nonce)`
-- **Desktop Only**: Mobile platforms (iOS/Android) are not supported
 
 ## Recommended Development Environment
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- [VS Code](https://code.visualstudio.com/) + [Vue - Official (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [TypeScript Vue Plugin](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin)
 
 ## FAQ
 
-### Tauri Build Failure
-
-**Issue**: Error when running `pnpm tauri build`
-
-**Solution**:
-1. Ensure Rust toolchain is properly installed: `rustc --version`
-2. Ensure Tauri CLI is properly installed: `pnpm tauri --version`
-3. Try clearing the cache: `pnpm tauri build --clean`
-
 ### Web Environment Key Loss
 
-**Issue**: Unable to decrypt previous data after clearing browser data in the web environment
+**Issue**: Unable to decrypt previous data after clearing browser data
 
 **Solution**:
 - The web environment stores the key seed in `localStorage`. Clearing browser data will result in key loss
 - It is recommended to export the master key in advance from the settings page as a backup. After key loss, it can be restored by importing
-- For important sensitive data, it is recommended to use the desktop version
+
+### API Requests Blocked by CORS
+
+**Issue**: Some AI provider APIs fail with CORS errors when the app is deployed on GitHub Pages
+
+**Solution**:
+- Browser same-origin policy restricts direct requests to APIs that do not support CORS
+- In development, the Vite dev server proxies provider APIs (configured in `vite.config.ts`)
+- In production, use providers that support CORS, or deploy behind your own proxy (self-hosted reverse proxy / edge functions)
 
 ## License
 

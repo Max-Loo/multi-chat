@@ -43,7 +43,7 @@ import {
   saveChatAndIndex,
   deleteChatFromStorage,
 } from '@/store/storage';
-import { ChatRoleEnum, type Chat } from '@/types/chat';
+import { ChatRoleEnum, type Chat, type ChatMeta, type StandardMessage } from '@/types/chat';
 import { createUserMessage, createAssistantMessage } from '@/__test__/fixtures/chat';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 

@@ -1,358 +1,128 @@
-# 跨平台兼容层
+# 纯 Web 平台层
 
-本文档说明应用的跨平台兼容层，包括 Null Object 模式、环境检测和统一 API 设计。
+本文档说明应用的平台能力层（`src/utils/platform/`），所有平台能力均由 Web 标准 API 实现，无环境分叉。
 
 ## 动机
 
-应用需要同时支持 Tauri 桌面环境和 Web 浏览器环境：
-- **统一接口**：提供一致的 API，无需关心底层平台
-- **优雅降级**：Web 环境下提供降级方案
-- **零运行时错误**：避免平台不兼容导致的崩溃
+应用为纯 Web 应用（可部署到任意静态站点），平台能力全部基于浏览器标准 API：
+
+- **实现唯一**：存储、密钥、HTTP、语言检测各只有一条实现路径，不存在按运行环境选择实现的双分支
+- **标准优先**：全部使用 Web 标准 API（IndexedDB、Web Crypto、fetch、navigator.language），不依赖桌面容器
+- **API 稳定**：对外 API 形态自平台层建立以来保持稳定，调用方代码不受内部重构影响
 
 ## 架构
 
-### Null Object 模式
-
-在 Web 环境下返回空实现（Null Object），而非抛出错误：
-- 避免运行时错误
-- 允许代码继续执行
-- 提供合理的默认行为
-
-### 环境检测
-
-通过 `window.__TAURI__` 判断运行环境：
-```typescript
-export const isTauri = () => {
-  return typeof window !== 'undefined' && window.__TAURI__ !== undefined;
-};
-```
-
-### 兼容层目录
+### 目录结构
 
 ```
-src/utils/tauriCompat/
-├── index.ts         # 统一导出
-├── env.ts           # 环境检测
-├── shell.ts         # Shell 插件兼容
-├── os.ts            # OS 插件兼容
-├── http.ts          # HTTP 插件兼容
-├── store.ts         # Store 插件兼容
-└── keyring.ts       # Keyring 插件兼容
+src/utils/platform/
+├── index.ts           # 统一导出（barrel export）
+├── env.ts             # 测试环境检测与 PBKDF2 迭代参数
+├── os.ts              # 语言检测（navigator.language）
+├── http.ts            # HTTP 请求（原生 fetch）
+├── store.ts           # 键值持久化（IndexedDB）
+├── keyring.ts         # 密钥安全存储（IndexedDB + AES-256-GCM）
+├── keyringMigration.ts# keyring 数据版本迁移
+├── indexedDB.ts       # IndexedDB 初始化共享模块
+└── crypto-helpers.ts  # 加密共享模块（encrypt/decrypt/PasswordRecord）
 ```
 
-## 兼容模块
+### 统一导入
 
-### 1. Shell 插件
-
-| 功能 | Tauri 实现 | Web 降级 |
-|-----|-----------|----------|
-| 打开链接 | 原实现 | `window.open()` |
-| 执行命令 | Command.execute() | Null Object |
-
-**位置**：`src/utils/tauriCompat/shell.ts`
-
-**API**：
-```typescript
-class Command {
-  static create(program: string, args?: string[]): Command
-  isSupported(): boolean
-  execute(): Promise<ChildProcess>
-}
-
-export const shell = {
-  open(url: string): Promise<void>
-}
-```
-
-### 2. OS 插件
-
-| 功能 | Tauri 实现 | Web 降级 |
-|-----|-----------|----------|
-| 获取系统语言 | locale() | `navigator.language` |
-| 获取平台信息 | platform() | `navigator.platform` |
-
-**位置**：`src/utils/tauriCompat/os.ts`
-
-**API**：
-```typescript
-export const locale = (): Promise<string>
-export const platform = (): Promise<string>
-```
-
-### 3. HTTP 插件
-
-| 功能 | Tauri 实现 | Web 降级 |
-|-----|-----------|----------|
-| 发起请求 | Tauri fetch | 原生 Web fetch |
-
-**位置**：`src/utils/tauriCompat/http.ts`
-
-**API**：
-```typescript
-export const fetch = (input: RequestInfo, init?: RequestInit): Promise<Response>
-export const getFetchFunc = (): FetchFunc
-```
-
-**特性**：
-- 统一的 fetch 接口
-- 支持开发环境代理（Tauri 配置）
-- 自动环境检测
-
-### 4. Store 插件
-
-| 功能 | Tauri 实现 | Web 降级 |
-|-----|-----------|----------|
-| 数据持久化 | 文件系统 | IndexedDB |
-
-**位置**：`src/utils/tauriCompat/store.ts`
-
-**API**：
-```typescript
-export const createLazyStore = (filename: string): StoreCompat
-
-interface StoreCompat {
-  init(): Promise<void>
-  get<T>(key: string): Promise<T | undefined>
-  set(key: string, value: any): Promise<void>
-  delete(key: string): Promise<void>
-  save(): Promise<void>
-}
-```
-
-**特性**：
-- 延迟初始化（首次访问时才连接）
-- 统一的键值存储接口
-- 自动序列化/反序列化
-
-### 5. Keyring 插件
-
-| 功能 | Tauri 实现 | Web 降级 |
-|-----|-----------|----------|
-| 密码管理 | 系统钥匙串 | IndexedDB (加密) |
-
-**位置**：`src/utils/tauriCompat/keyring.ts`
-
-**API**：
-```typescript
-export const keyring: KeyringPublicAPI
-
-interface KeyringPublicAPI {
-  setPassword(service: string, account: string, password: string): Promise<void>
-  getPassword(service: string, account: string): Promise<string | null>
-  deletePassword(service: string, account: string): Promise<void>
-  isSupported(): boolean
-  resetState(): void
-}
-```
-
-**加密方案**（Web 环境）：
-- 使用 Web Crypto API 加密（AES-256-GCM）
-- 密钥通过 PBKDF2 从 localStorage 中的种子派生
-- 密钥派生仅依赖种子，不依赖 navigator.userAgent（V2 方式）
-- 加密数据存储在 IndexedDB
-
-**数据迁移**：
-- 位置：`src/utils/tauriCompat/keyringMigration.ts`
-- V1 → V2 迁移在应用启动时自动执行
-- 详见 `openspec/changes/archive/2026-03-18-keyring-migration-v1-to-v2/`
-
-## 统一 API 设计
-
-### 导入方式
+平台能力一律从 `@/utils/platform` 导入：
 
 ```typescript
-// 导入环境检测
-import { isTauri } from '@/utils/tauriCompat';
-
-// 导入 Shell API
-import { Command, shell } from '@/utils/tauriCompat';
-
-// 导入 OS API
-import { locale } from '@/utils/tauriCompat';
-
-// 导入 HTTP API
-import { fetch, getFetchFunc } from '@/utils/tauriCompat';
-
-// 导入 Store API
-import { createLazyStore, type StoreCompat } from '@/utils/tauriCompat';
-
-// 导入 Keyring API
-import { keyring, type KeyringPublicAPI } from '@/utils/tauriCompat';
+import {
+  locale,
+  fetch,
+  getFetchFunc,
+  createLazyStore,
+  keyring,
+  isTestEnvironment,
+  getPBKDF2Iterations,
+} from '@/utils/platform';
 ```
 
-### 使用示例
+## 平台模块
 
-```typescript
-// 环境检测
-if (isTauri()) {
-  console.log('运行在 Tauri 桌面环境');
-} else {
-  console.log('运行在 Web 浏览器环境');
-}
+### 1. 语言检测（os.ts）
 
-// 使用 Shell API
-const cmd = Command.create('ls', ['-la']);
-if (cmd.isSupported()) {
-  const output = await cmd.execute();
-  console.log(output.stdout);
-} else {
-  console.warn('命令不支持');
-}
+| API | 说明 |
+|-----|------|
+| `locale()` | 返回 `navigator.language`（BCP 47 格式，如 `zh-CN`） |
 
-// 使用 OS API
-const language = await locale();
-console.log(language); // "zh-CN" 或 "en-US"
+### 2. HTTP 请求（http.ts）
 
-// 使用 HTTP API
-const response = await fetch('https://api.example.com/data');
-const data = await response.json();
+| API | 说明 |
+|-----|------|
+| `fetch(input, init)` | 原生 `window.fetch`，签名与标准 Fetch API 一致 |
+| `getFetchFunc()` | 返回 fetch 函数实例，用于第三方库注入（如 Axios adapter） |
 
-// 使用 Store API
-const store = createLazyStore('models.json');
-await store.init();
-await store.set('models', modelList);
-await store.save();
-const models = await store.get<Model[]>('models');
+> 生产环境下对不支持 CORS 的 AI 供应商 API 直连受限（浏览器同源策略）；开发环境经 Vite 代理解决（见 `vite.config.ts` proxy 配置）。
 
-// 使用 Keyring API
-if (keyring.isSupported()) {
-  await keyring.setPassword('com.multichat.app', 'master-key', 'my-secret-key');
-  const key = await keyring.getPassword('com.multichat.app', 'master-key');
-}
-```
+### 3. 键值持久化（store.ts）
 
-## 设计原则
+`createLazyStore(name)` 返回受约束的 store 实例：
 
-### 1. Null Object 模式
+| API | 说明 |
+|-----|------|
+| `init()` | 打开 IndexedDB 连接（数据库 `multi-chat-store`，对象存储 `store`，主键 `key`） |
+| `get<T>(key)` | 读取键值，不存在返回 `null`，支持 JSON 可序列化类型 |
+| `set(key, value)` | 写入键值，写入后立即可读 |
+| `delete(key)` | 删除键值 |
+| `keys()` | 列出所有键（`string[]`） |
+| `save()` | 确保 IndexedDB 写入完成（始终返回成功 Promise） |
+| `isSupported()` | 判定浏览器是否支持 IndexedDB |
 
-Web 环境下返回空实现，而非抛出错误：
-```typescript
-// Tauri 环境
-export const shell = {
-  open: async (url: string) => {
-    await tauriShell.open(url);
-  }
-};
+### 4. 密钥安全存储（keyring.ts）
 
-// Web 环境
-export const shell = {
-  open: async (url: string) => {
-    window.open(url, '_blank');
-  }
-};
-```
+以受约束的 `keyring` 实例形式提供（`KeyringPublicAPI` 类型）：
 
-### 2. 环境检测优先
+| API | 说明 |
+|-----|------|
+| `keyring.setPassword(service, account, password)` | 加密存储密钥 |
+| `keyring.getPassword(service, account)` | 读取并解密密钥 |
+| `keyring.deletePassword(service, account)` | 删除密钥 |
+| `keyring.isSupported()` | 判定浏览器是否支持 IndexedDB + Web Crypto |
 
-在兼容层内部自动检测环境，开发者无需手动判断：
-```typescript
-export const locale = async (): Promise<string> => {
-  if (isTauri()) {
-    return await tauriLocale.locale();
-  } else {
-    return navigator.language;
-  }
-};
-```
+**加密方案**：
 
-### 3. 类型安全
+1. 首次启动生成 256-bit 随机种子，存入 `localStorage`（键 `multi-chat-keyring-seed`）
+2. 以种子为盐值，经 PBKDF2（SHA-256，10 万+迭代，256 位密钥）派生加密密钥
+3. 主密钥（256-bit，`crypto.getRandomValues` 生成）使用派生密钥 AES-256-GCM 加密（12 字节随机 IV）后存入 IndexedDB（数据库 `multi-chat-keyring`，对象存储 `keys`）
 
-提供完整的 TypeScript 类型定义：
-```typescript
-export interface StoreCompat {
-  init(): Promise<void>;
-  get<T>(key: string): Promise<T | undefined>;
-  set(key: string, value: any): Promise<void>;
-  delete(key: string): Promise<void>;
-  save(): Promise<void>;
-}
+**安全性权衡**：种子明文存于 `localStorage`、密文存于 IndexedDB，攻击者需同时获取两者才能解密；PBKDF2 高迭代次数增加暴力破解成本；派生不依赖 `navigator.userAgent` 等易变属性，保证跨浏览器版本可读。Web 端首次使用时向用户展示安全边界提示。
 
-export type KeyringCompat = {
-  setPassword(service: string, account: string, password: string): Promise<void>;
-  getPassword(service: string, account: string): Promise<string | null>;
-  deletePassword(service: string, account: string): Promise<void>;
-  isSupported(): boolean;
-};
-```
+### 5. 环境参数（env.ts）
 
-### 4. 向后兼容
+| API | 说明 |
+|-----|------|
+| `isTestEnvironment()` | 测试环境判定（结果缓存） |
+| `getPBKDF2Iterations()` | 按环境返回 PBKDF2 迭代次数（测试环境降迭代以加速） |
 
-兼容层 API 与 Tauri 原生 API 保持一致，便于未来迁移：
-```typescript
-// Tauri 原生 API
-import { open } from '@tauri-apps/plugin-shell';
-await open('https://example.com');
+## 共享模块
 
-// 兼容层 API（相同接口）
-import { shell } from '@/utils/tauriCompat';
-await shell.open('https://example.com');
-```
-
-## 实现位置
-
-- **统一导出**：`src/utils/tauriCompat/index.ts`
-- **环境检测**：`src/utils/tauriCompat/env.ts`
-- **Shell 兼容**：`src/utils/tauriCompat/shell.ts`
-- **OS 兼容**：`src/utils/tauriCompat/os.ts`
-- **HTTP 兼容**：`src/utils/tauriCompat/http.ts`
-- **Store 兼容**：`src/utils/tauriCompat/store.ts`
-- **Keyring 兼容**：`src/utils/tauriCompat/keyring.ts`
-
-## 降级策略
-
-### Shell 插件
-
-```typescript
-// Tauri 环境：使用原生 Shell
-// Web 环境：降级到 window.open() 或 Null Object
-```
-
-### OS 插件
-
-```typescript
-// Tauri 环境：使用系统 API
-// Web 环境：降级到 navigator API
-```
-
-### HTTP 插件
-
-```typescript
-// Tauri 环境：使用 Tauri fetch（支持代理）
-// Web 环境：降级到原生 fetch
-```
-
-### Store 插件
-
-```typescript
-// Tauri 环境：使用文件系统
-// Web 环境：降级到 IndexedDB
-```
-
-### Keyring 插件
-
-```typescript
-// Tauri 环境：使用系统钥匙串
-// Web 环境：降级到 IndexedDB (加密)
-```
+- **`indexedDB.ts`**：`initIndexedDB(name, version, upgrade)` 统一 IndexedDB 打开逻辑，store 与 keyring 共用但数据库互相隔离
+- **`crypto-helpers.ts`**：`encrypt` / `decrypt`（AES-256-GCM 封装）与 `PasswordRecord` 存储结构，keyring 直接复用
 
 ## 注意事项
 
-1. **环境检测**：兼容层自动检测环境，开发者无需手动判断
-2. **功能检查**：使用 `isSupported()` 检查功能是否可用
-3. **错误处理**：兼容层已处理平台差异，无需额外的 try-catch
-4. **性能考虑**：Web 环境下某些功能可能较慢（如 IndexedDB）
-5. **安全性**：Web 环境下的 Keyring 加密方案提供基本保护
+1. **功能检查**：外部不可达能力（IndexedDB、Web Crypto）使用 `isSupported()` 判断可用性
+2. **错误处理**：平台层已处理 IndexedDB 不可用、配额超限等场景，调用方按需捕获 Promise rejection
+3. **性能考虑**：IndexedDB 写入为异步操作，高频写入场景注意合并事务
+4. **安全性**：Web 环境密钥存储的安全边界见上文"加密方案"，首次使用时向用户展示提示
 
 ## 测试建议
 
-1. **双环境测试**：在 Tauri 和 Web 环境下都进行测试
-2. **降级测试**：验证 Web 环境下的降级行为
-3. **错误处理**：测试兼容层的错误处理
-4. **性能测试**：对比 Tauri 和 Web 环境的性能差异
+1. **单测**：平台层模块使用 fake-indexeddb 与内存 mock 隔离测试（见 `src/__test__/utils/platform/`）
+2. **集成**：加密 → 存储 → 解密全链路集成测试验证数据格式兼容
+3. **错误处理**：覆盖 IndexedDB 不可用与配额超限分支
 
-## 未来扩展
+## 扩展指引
 
-如需支持其他平台（如 Electron、Capacitor），只需：
-1. 在 `tauriCompat/` 下添加新的兼容模块
-2. 扩展环境检测逻辑
-3. 提供相应的降级方案
+需要新增平台能力时：
+
+1. 在 `src/utils/platform/` 下创建独立模块，仅使用浏览器标准 API
+2. 在 `index.ts` barrel export 中导出公开 API 与类型
+3. 为外部不可达能力补充 `isSupported()` 检测
+4. 遵循既有模块的中文注释与错误处理约定

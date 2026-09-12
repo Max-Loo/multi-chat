@@ -30,7 +30,7 @@
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.24",
     "@ai-sdk/moonshotai": "^2.0.10",
-    "@tanstack/vue-form": "^1.33.5",
+    "@tanstack/table-core": "9.2.4",
     "@tanstack/vue-table": "^9.2.4",
     "ai": "^6.0.116",
     "class-variance-authority": "^0.7.1",
@@ -57,7 +57,6 @@
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@tailwindcss/vite": "^4.2.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/user-event": "^14.6.1",
     "@testing-library/vue": "^8.1.0",
     "@types/crypto-js": "^4.2.2",
     "@types/markdown-it": "^14.1.2",

@@ -12,11 +12,10 @@ docs/
 │   ├── chat-service.md        # 聊天服务层架构
 │   ├── lazy-loading.md        # 按需加载机制
 │   ├── i18n-system.md         # 国际化系统
-│   └── cross-platform.md      # 跨平台兼容层
+│   └── cross-platform.md      # 纯 Web 平台层
 │
 ├── conventions/               # 项目约定（最佳实践和使用规范）
-│   ├── timestamps.md          # 时间戳工具函数约定
-│   └── tauri-commands.md      # Tauri 命令添加指南
+│   └── timestamps.md          # 时间戳工具函数约定
 │
 ├── reference/                 # 参考文档（外部教程和指南）
 │
@@ -40,7 +39,7 @@ docs/
 从 models.dev API 动态获取模型供应商数据的架构，包括缓存策略和重试机制。
 
 **关键内容**：
-- 数据流：API → 过滤层 → Redux store
+- 数据流：API → 过滤层 → Pinia store
 - 三层缓存策略（远程/本地/错误）
 - 指数退避重试算法
 - 错误处理和降级
@@ -70,17 +69,17 @@ docs/
 - 按需加载策略（英文静态，其他异步）
 - 四级语言降级策略
 - Toast 队列管理
-- Redux 自动持久化
+- 语言切换自动持久化
 - 翻译完整性检查工具
 
 ### [cross-platform.md](design/cross-platform.md)
-跨平台兼容层，支持 Tauri 桌面环境和 Web 浏览器环境。
+纯 Web 平台层，所有平台能力由 Web 标准 API 实现。
 
 **关键内容**：
-- Null Object 模式应用
-- 5 个兼容模块（Shell/OS/HTTP/Store/Keyring）
-- 环境检测和统一 API
-- Web 环境降级策略
+- 统一 API 设计与 barrel export
+- 平台模块（语言检测/HTTP/Store/Keyring/环境参数）
+- IndexedDB 与 AES-256-GCM 加密方案
+- 实现唯一，无双环境分支
 
 ## 项目约定 (docs/conventions/)
 
@@ -94,15 +93,6 @@ docs/
 - 毫秒级时间戳：性能测试、调试日志
 - 工具函数使用规范
 - 常见错误和注意事项
-
-### [tauri-commands.md](conventions/tauri-commands.md)
-Tauri 命令添加指南，说明如何在 Rust 后端定义命令并在前端调用。
-
-**关键内容**：
-- 3 步添加流程
-- 参数传递和错误处理
-- 异步命令和状态管理
-- 类型映射和测试建议
 
 ## 参考文档 (docs/reference/)
 
@@ -184,9 +174,8 @@ Tauri 命令添加指南，说明如何在 Rust 后端定义命令并在前端�
 | 聊天服务 | [chat-service.md](design/chat-service.md) |
 | 按需加载 | [lazy-loading.md](design/lazy-loading.md) |
 | 国际化 | [i18n-system.md](design/i18n-system.md) |
-| 跨平台兼容 | [cross-platform.md](design/cross-platform.md) |
+| 纯 Web 平台层 | [cross-platform.md](design/cross-platform.md) |
 | 时间戳约定 | [timestamps.md](conventions/timestamps.md) |
-| Tauri 命令 | [tauri-commands.md](conventions/tauri-commands.md) |
 
 ### 按模块查找
 
@@ -196,9 +185,9 @@ Tauri 命令添加指南，说明如何在 Rust 后端定义命令并在前端�
 | `src/services/modelRemote/` | [model-remote.md](design/model-remote.md) |
 | `src/services/chat/` | [chat-service.md](design/chat-service.md), [lazy-loading.md](design/lazy-loading.md) |
 | `src/services/i18n.ts` | [i18n-system.md](design/i18n-system.md) |
-| `src/utils/tauriCompat/` | [cross-platform.md](design/cross-platform.md) |
+| `src/utils/platform/` | [cross-platform.md](design/cross-platform.md) |
+| `src/store/pinia/` | [model-remote.md](design/model-remote.md) |
 | `src/utils/utils.ts` | [timestamps.md](conventions/timestamps.md) |
-| `src-tauri/src/lib.rs` | [tauri-commands.md](conventions/tauri-commands.md) |
 
 ## 相关资源
 

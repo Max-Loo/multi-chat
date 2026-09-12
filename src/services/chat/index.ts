@@ -125,4 +125,4 @@ export { getProvider } from '@/services/chat/providerFactory';
 export { generateChatTitleService } from '@/services/chat/titleGenerator';
 
 // 类型导出
-export type { ChatServiceConfig, ChatRequestParams, AISDKDependencies } from '@/services/chat/types';
+export type { ChatRequestParams, AISDKDependencies } from '@/services/chat/types';

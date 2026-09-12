@@ -166,18 +166,3 @@ export const isModelEncrypted = (model: Model): boolean => {
   return !!(model.apiKey && typeof model.apiKey === 'string' && isEncrypted(model.apiKey));
 };
 
-/**
- * 检查持久化存储中是否存在加密的模型数据
- * 用于判断密钥重新生成后是否有可恢复的加密数据
- */
-export const hasEncryptedModels = async (): Promise<boolean> => {
-  try {
-    const models = await loadFromStore<Model[]>(getModelsStore(), 'models', []);
-    if (models.length === 0) {
-      return false;
-    }
-    return models.some(isModelEncrypted);
-  } catch {
-    return false;
-  }
-};

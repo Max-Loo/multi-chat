@@ -9,7 +9,7 @@
 | 类别               | 处理方式                      | 示例                              |
 | ------------------ | ----------------------------- | --------------------------------- |
 | **必要信息**       | 保留                          | 项目架构、开发规范、关键约定      |
-| **可查询信息**     | 删除，提供文件引用            | Tauri 插件列表 → package.json     |
+| **可查询信息**     | 删除，提供文件引用            | 依赖清单 → package.json           |
 | **详细示例**       | 删除，保留简要说明            | API 使用示例 → 指向源文件         |
 | **重复内容**       | 合并为一段                    | HTTP 插件说明（3 段 → 1 段）     |
 | **过时数据**       | 删除                          | 测试覆盖率统计                    |
@@ -81,35 +81,34 @@
 
 ### 当前文档状态
 
-**总行数**：218 行（精简前 447 行，减少 51%）
+**总行数**：229 行（精简前 447 行）
 
 ## 项目概述
 
-Tauri + React + TypeScript 桌面应用程序，结合 Rust 后端和 React 前端。
+Vue 3 + TypeScript 纯 Web 应用程序（单页应用，可部署到任意静态站点）。
 
 **技术栈**：
 
-- 前端：React 19 + TypeScript + Vite
-- 后端：Rust + Tauri 2.0
-- 通信：前端通过 `invoke()` 调用 Rust 函数
+- 前端：Vue 3（组合式 API）+ TypeScript + Vite
+- 状态管理：Pinia（setup store）
+- 路由：vue-router
+- 国际化：i18next（自研响应式绑定）
+- UI：shadcn-vue（reka-ui）+ Tailwind CSS 4
 
 ## 架构
 
 **前端架构**：
 
-- 入口文件: `src/main.tsx`
-- 使用 React Compiler 优化
-- 国际化: i18next + react-i18next
-
-**后端架构**：
-
-- 入口: `src-tauri/src/lib.rs`
-- 命令定义: 使用 `#[tauri::command]`
-- 配置: `src-tauri/tauri.conf.json`
+- 入口文件: `src/main.ts`（`src/App.vue` 编排初始化流程）
+- 状态: `src/store/pinia/`（setup stores，持久化逻辑下沉到 action 内）
+- 组合式函数: `src/composables/`（对应可复用逻辑）
+- 平台能力: `src/utils/platform/`（IndexedDB / Web Crypto / fetch / navigator.language）
+- 国际化: i18next + `src/composables/useTranslation.ts` 响应式绑定
+- UI 基础组件: `src/components/ui-vue/`（shadcn-vue 形态）
 
 ## 开发命令
 
-`pnpm install` | `pnpm tauri dev` | `pnpm tauri build` | `pnpm lint` | `pnpm tsc` | `pnpm test`
+`pnpm install` | `pnpm dev` | `pnpm build` | `pnpm lint` | `pnpm lint:vue` | `pnpm tsc` | `pnpm test`
 
 更多命令见 `package.json`，测试规范见 `src/__test__/README.md`
 
@@ -195,14 +194,13 @@ import { Model } from "../../types/model";
 - **[聊天服务层架构](docs/design/chat-service.md)** - 模块化聊天服务层，支持流式响应和元数据收集
 - **[按需加载机制](docs/design/lazy-loading.md)** - ResourceLoader<T> 类设计，减少初始 bundle 大小约 125KB
 - **[国际化系统](docs/design/i18n-system.md)** - 按需加载、缓存验证、Toast 队列、自动持久化、翻译完整性检查
-- **[跨平台兼容层](docs/design/cross-platform.md)** - Null Object 模式、环境检测、统一 API 设计
+- **[纯 Web 平台层](docs/design/cross-platform.md)** - 统一 API 设计、Web 标准 API 实现
 
 ## 项目约定索引
 
 项目约定的详细文档已迁移到 `docs/conventions/` 目录，包含开发规范和最佳实践。
 
 - **[时间戳工具函数约定](docs/conventions/timestamps.md)** - 秒级 vs 毫秒级时间戳使用场景和工具函数使用规范
-- **[Tauri 命令添加指南](docs/conventions/tauri-commands.md)** - 在 Rust 后端定义命令并在前端调用的完整流程
 
 ## 快速查找表
 
@@ -213,7 +211,9 @@ import { Model } from "../../types/model";
 | 应用初始化配置   | `src/config/initSteps.ts`              |
 | 聊天服务       | `src/services/chat/`                   |
 | 远程模型数据获取 | `src/services/modelRemote/`            |
-| 跨平台兼容层     | `src/utils/tauriCompat/index.ts`       |
+| 平台能力层       | `src/utils/platform/index.ts`          |
+| 状态管理（Pinia）| `src/store/pinia/`                     |
+| 组合式函数       | `src/composables/`                     |
 | 主密钥管理       | `src/store/keyring/masterKey.ts`       |
 | 加密工具         | `src/utils/crypto.ts`                  |
 | 时间戳工具       | `src/utils/utils.ts`                   |
@@ -224,7 +224,6 @@ import { Model } from "../../types/model";
 
 ## 文件结构
 
-- `/src/` - React 前端代码
-- `/src-tauri/` - Rust 后端代码
+- `/src/` - Vue 3 前端代码
 - `/public/` - 静态资源
 - `/docs/` - 详细文档（design、conventions、reference）
