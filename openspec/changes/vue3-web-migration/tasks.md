@@ -30,6 +30,7 @@
 - [x] 3.8 以 Vue 重写初始化壳组件（InitializationController、AnimatedLogo/canvas-logo、FatalErrorScreen、NoProvidersAvailable、进度组件），对接 InitializationManager 逻辑不变，验证初始化流程集成测试通过
 - [x] 3.9 验证 oxlint 对 `.vue` SFC 的检查效果，若覆盖不足则引入 `eslint` + `eslint-plugin-vue` 补位，验证 `pnpm lint` 通过
 - [x] 3.10 验证 `@tanstack/vue-form` 满足 `ModelConfigForm` 需求；不满足则按 design D5 降级为基于 zod 的自研轻量表单组合式函数，并在本文件记录最终选择
+      - 最终选择：按 D5 降级为自研 `useZodForm` 组合式函数（`src/composables/useZodForm.ts`，基于 zod：值收集 + 字段级即时校验 + 提交整体校验）。原因：`@tanstack/vue-form` v1 处于 RC 阶段，render props 范式与 Vue 组合式 API 亲和度不足，无法稳定支撑 ModelConfigForm 的字段校验需求
 
 ## 4. 阶段 3：模块迁移（每项 = 实现重写 + 测试重写通过）
 
@@ -38,7 +39,9 @@
 - [x] 4.3 迁移 Chat 页面（Sidebar、Panel、Detail、ModelSelect、消息操作、重新生成、自动命名 hooks 链、URL 同步），重写对应测试并验证核心聊天流程行为等价
       - 已完成：Sidebar（ChatButton/ToolsBar/VList 列表）、Content 三级编排、Placeholder、主编排（URL chatId 重定向、抽屉、折叠）、pages hooks（useSelectedChat/useBoard/useIsSending）、Panel 编排（Header/Grid/Splitter/Sender/Detail/Title）、ModelSelect 本体（含 useBasicModelTable 组合式函数、ui-vue DataTable 通用表格、ModelProviderDisplay）、ChatBubble 接线
       - 验证：新增 9 个 Vue 测试文件（chatPageVue/chatSidebarVue/chatPanelVue/chatPanelHeaderVue/chatPanelSenderVue/chatDetailVue/chatDetailTitleVue/chatGridSplitterVue/chatPanelSkeletonVue/chatModelSelectVue）；迁移期间修复 PanelGrid Detail 导入路径、PanelSplitter 缺失 Detail 导入、Detail 缺失 useSelectedChat 导入与 Virtualizer 缺失 :data prop 四处缺陷；全量 2489 测试通过
-- [ ] 4.4 迁移 Model 页面（ModelTable、CreateModel、ModelConfigForm、ProviderGrid、ProviderDetail），重写对应测试并验证模型增删改查与远程模型获取流程等价
+- [x] 4.4 迁移 Model 页面（ModelTable、CreateModel、ModelConfigForm、ProviderGrid、ProviderDetail），重写对应测试并验证模型增删改查与远程模型获取流程等价
+      - 说明：ProviderGrid/ProviderDetail 属于 Setting 页供应商设置（GeneralSetting/ModelProviderSetting），归入 4.5 范围；本任务实际覆盖 ModelTable+EditModelModal、CreateModel+ModelHeader+ModelSidebar、ModelConfigForm、Model 页版 ModelSelect
+      - 已完成：全部组件以 Vue 重写（表单采用 useZodForm 降级方案，见 3.10 记录），新增 3 个 Vue 测试文件（modelTableVue 14 例 / modelConfigFormVue 13 例 / modelCreateVue 18 例），模型增删改查与编辑弹窗、删除确认、供应商切换流程行为等价
 - [ ] 4.5 迁移 Setting 页面（GeneralSetting、KeyManagementSetting、语言/主题设置、导出设置、ToastTest dev 路由），重写对应测试并验证设置项保存与生效流程等价
 - [ ] 4.6 将 `src/hooks/` 下全部 React hooks 迁移为组合式函数（含 redux.ts 适配为 Pinia 版本），重写对应测试
 - [ ] 4.7 迁移剩余页面与组件（NotFound、错误边界、FatalError 兜底等），重写对应测试
