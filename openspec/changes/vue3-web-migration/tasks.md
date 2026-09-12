@@ -86,7 +86,7 @@
       - 结果：两版各 378 行、47 个标题一一对应；数据安全/持久化章节改为 Web Crypto + IndexedDB 语义；FAQ 更新为 CORS 说明
 - [x] 6.3 更新受影响的 `docs/design/` 文档（`cross-platform.md` 重写为纯 Web 平台层说明，`chat-service.md`/`i18n-system.md`/`initialization.md` 等核对框架引用），验证 `docs/README.md` 索引一致
       - 说明：`cross-platform.md` 全文重写为纯 Web 平台层文档；`i18n-system.md` 修正 2 处 React 措辞；删除 `docs/conventions/tauri-commands.md`；`docs/README.md` 索引同步
-- [ ] 6.4 触发 gh-pages 部署（手动或 tag）并对线上站点做冒烟验证（首页加载、创建聊天、发送消息、切换语言/主题），验证线上行为与本地一致
+- [x] 6.4 触发 gh-pages 部署（手动或 tag）并对线上站点做冒烟验证（首页加载、创建聊天、发送消息、切换语言/主题），验证线上行为与本地一致（tag v0.6.0 部署成功；首页加载/创建聊天/语言切换即时生效均通过；发送消息需用户 API Key 未验；主题切换 UI 迁移前后均不存在，主题跟随系统；冒烟发现并修复两处线上白屏/语言切换挂起缺陷）
 - [x] 6.5 核对全部增量规格的验收场景（`openspec/changes/vue3-web-migration/specs/`），确认无未满足项后运行 `openspec validate --change vue3-web-migration` 通过
       - 核对结果：framework-vue3（源码/构建产物无 React、组合式范式、等功能基线、UI 生态映射、i18n 响应式、测试体系延续）、web-only-platform（纯 Web 运行时、Web 标准 API、环境检测收缩、脚本语义、生产网络约束）全部场景满足；平台层退役与 gh-pages delta 由阶段 1 场景承接
       - 验证：`openspec validate --changes` 通过（change/vue3-web-migration valid）；测试 mock 中的 7 处 isTauri 死字段已清理，`grep -r "isTauri|__TAURI__" src` 归零
