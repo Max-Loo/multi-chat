@@ -3,7 +3,6 @@ import { IDBFactory } from 'fake-indexeddb';
 
 // Mock @/utils/platform/env — 测试文件级别的 mock 确保 ./env 相对导入也被正确拦截
 vi.mock('@/utils/platform/env', () => ({
-  isTauri: vi.fn(() => false), // 默认返回 false（Web 环境）
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
   PBKDF2_ALGORITHM: 'SHA-256',
@@ -294,7 +293,6 @@ describe('Keyring 迁移模块测试套件', () => {
     afterEach(() => {
       // 恢复 vi.doMock 对 env 模块的覆盖，防止污染后续测试
       vi.doMock('@/utils/platform/env', () => ({
-        isTauri: vi.fn(() => false),
         isTestEnvironment: vi.fn(() => true),
         getPBKDF2Iterations: vi.fn(() => 1000),
         PBKDF2_ALGORITHM: 'SHA-256',
@@ -305,7 +303,6 @@ describe('Keyring 迁移模块测试套件', () => {
     it('应该在 Tauri 环境中跳过迁移', async () => {
       // 重新配置 mock 为 Tauri 环境
       vi.doMock('@/utils/platform/env', () => ({
-        isTauri: vi.fn(() => true),
         isTestEnvironment: vi.fn(() => true),
         getPBKDF2Iterations: vi.fn(() => 1000),
         PBKDF2_ALGORITHM: 'SHA-256',

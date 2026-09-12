@@ -23,7 +23,6 @@ import { vi } from 'vitest';
  */
 export function createTauriCompatModuleMock(storeMap?: Map<string, unknown>) {
   return {
-    isTauri: () => false,
     createLazyStore: () => globalThis.__createMemoryStorageMock(storeMap),
     locale: async () => 'en-US',
     keyring: {

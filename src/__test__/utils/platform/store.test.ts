@@ -11,9 +11,8 @@ import { IDBFactory } from 'fake-indexeddb';
 // 绕过 setup/mocks.ts 对 store 模块的全局 mock
 vi.unmock('@/utils/platform/store');
 
-// 覆盖 env 模块的 mock，控制 isTauri 返回值
+// 覆盖 env 模块的 mock，控制测试环境返回值
 vi.mock('@/utils/platform/env', () => ({
-  isTauri: vi.fn(() => false),
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
   PBKDF2_ALGORITHM: 'SHA-256' as const,
