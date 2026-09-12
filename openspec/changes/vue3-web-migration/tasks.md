@@ -42,7 +42,10 @@
 - [x] 4.4 迁移 Model 页面（ModelTable、CreateModel、ModelConfigForm、ProviderGrid、ProviderDetail），重写对应测试并验证模型增删改查与远程模型获取流程等价
       - 说明：ProviderGrid/ProviderDetail 属于 Setting 页供应商设置（GeneralSetting/ModelProviderSetting），归入 4.5 范围；本任务实际覆盖 ModelTable+EditModelModal、CreateModel+ModelHeader+ModelSidebar、ModelConfigForm、Model 页版 ModelSelect
       - 已完成：全部组件以 Vue 重写（表单采用 useZodForm 降级方案，见 3.10 记录），新增 3 个 Vue 测试文件（modelTableVue 14 例 / modelConfigFormVue 13 例 / modelCreateVue 18 例），模型增删改查与编辑弹窗、删除确认、供应商切换流程行为等价
-- [ ] 4.5 迁移 Setting 页面（GeneralSetting、KeyManagementSetting、语言/主题设置、导出设置、ToastTest dev 路由），重写对应测试并验证设置项保存与生效流程等价
+- [x] 4.5 迁移 Setting 页面（GeneralSetting、KeyManagementSetting、语言/主题设置、导出设置、ToastTest dev 路由），重写对应测试并验证设置项保存与生效流程等价
+      - 说明：React 版 Setting 页无独立主题设置组件（主题经 3.6 useTheme 组合式函数承载，见 Layout）；语言/自动命名/供应商/导出四区块均以 Vue 重写
+      - 已完成：Setting 外壳（index.vue 桌面侧边栏 + 移动端抽屉/Header）、SettingSidebar、SettingHeader、GeneralSetting 四区块（LanguageSetting/AutoNamingSetting/ChatExportSetting/ModelProviderSetting）、ModelProviderSetting 组件树（ProviderHeader/ProviderGrid/ErrorAlert/ProviderCard/Header/Summary/Details/Metadata/ModelSearch/ModelList）、KeyManagementSetting（密钥导出/复制 + ResetDataDialog）、ToastTest；新增 useDebounce/useScrollContainer 组合式函数；语言切换委托 appConfig store（middleware 逻辑已下沉）
+      - 验证：新增 6 个 Vue 测试文件（settingPageVue 9 例 / settingGeneralVue 7 例 / settingKeyManagementVue 9 例 / settingProviderVue 16 例 / settingLanguageVue 4 例 / settingToastTestVue 4 例，共 49 例）；全量 195 文件 / 2583 通过 + 4 跳过；tsc、lint、build 通过
 - [ ] 4.6 将 `src/hooks/` 下全部 React hooks 迁移为组合式函数（含 redux.ts 适配为 Pinia 版本），重写对应测试
 - [ ] 4.7 迁移剩余页面与组件（NotFound、错误边界、FatalError 兜底等），重写对应测试
 - [ ] 4.8 为迁移前无测试覆盖的组件补充冒烟级渲染测试，验证阶段 3 涉及组件均有最低行为保障
