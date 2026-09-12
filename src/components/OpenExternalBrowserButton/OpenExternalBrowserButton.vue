@@ -4,6 +4,7 @@
  */
 import { ExternalLink } from 'lucide-vue-next';
 import { Button } from '@/components/ui-vue/button';
+import { useNavigateToExternalSite } from '@/composables/useNavigateToExternalSite';
 
 const props = withDefaults(
   defineProps<{
@@ -14,10 +15,12 @@ const props = withDefaults(
   { className: '' },
 );
 
+const { navToExternalSite } = useNavigateToExternalSite();
+
 // 跳转到外部网站（纯 Web 环境直接新开标签页）
 const navToOfficialSite = () => {
   if (props.siteUrl) {
-    window.open(props.siteUrl, '_blank', 'noopener,noreferrer');
+    navToExternalSite(props.siteUrl);
   }
 };
 </script>

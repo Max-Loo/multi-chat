@@ -51,8 +51,11 @@
       - redux.ts 处理：Pinia 无需 dispatch/selector 适配层（setup store 即类型化 API），不新建对应文件；其 19 个使用方全部为 React 组件，随 5.1 删除
       - 本任务补齐：useConfirm（模块级响应式单例 + ConfirmDialog.vue，替代 React Context Provider 方案；Vue 树中 ChatButton 已内联确认流程）、useExistingModels（Pinia 版，并重构 useBasicModelTable 复用以消除重复）、useNavigateToExternalSite（供 4.7 OpenExternalBrowserButton 迁移使用）
       - 验证：新增 3 个 composables 测试文件（useConfirmVue 11 例 / useExistingModelsVue 2 例 / useNavigateToExternalSiteVue 1 例）；全量 198 文件 / 2597 通过 + 4 跳过；tsc 通过
-- [ ] 4.7 迁移剩余页面与组件（NotFound、错误边界、FatalError 兜底等），重写对应测试
-- [ ] 4.8 为迁移前无测试覆盖的组件补充冒烟级渲染测试，验证阶段 3 涉及组件均有最低行为保障
+- [x] 4.7 迁移剩余页面与组件（NotFound、错误边界、FatalError 兜底等），重写对应测试
+      - 说明：NotFound.vue 由占位补全为完整实现（404 图标/大号数字/i18n 文案/router.go(-1) 返回）；错误边界与 FatalError 兜底已在 3.8 迁移完成（App.vue 错误状态 + FatalErrorScreen.vue/NoProvidersAvailable.vue，initializationVue 集成测试覆盖）；OpenExternalBrowserButton.vue 重构为复用 useNavigateToExternalSite 组合式函数；KeyRecoveryDialog.vue 修复嵌套双 AlertDialogContent 缺陷（内容改放 ui-vue AlertDialog 默认插槽）
+      - 验证：新增 notFoundVue 测试 3 例；全量 2607 通过 + 4 跳过；tsc/lint/build 通过
+- [x] 4.8 为迁移前无测试覆盖的组件补充冒烟级渲染测试，验证阶段 3 涉及组件均有最低行为保障
+      - 说明：新增 componentsSmokeVue 冒烟测试覆盖 FilterInput（v-model/placeholder）、OpenExternalBrowserButton（条件渲染/新标签页打开）、KeyRecoveryDialog（开合渲染）共 7 例；其余阶段 3 组件均已被既有 Vue 测试直接或经上层组件间接覆盖（ChatButton/ToolsBar/Placeholder/Content 经 chatSidebarVue/chatPageVue，ProviderCardHeader/Summary/Metadata/ModelSearch 经 settingProviderVue，ResetDataDialog 经 settingKeyManagementVue，StreamingContent/ThinkingSection 经 chatVue 的 ChatBubble，EditModelModal/ModelProviderDisplay 经 modelTableVue）
 
 ## 5. 阶段 4：清理收尾
 

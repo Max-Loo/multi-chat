@@ -9,7 +9,6 @@ import { Input } from '@/components/ui-vue/input';
 import { Button } from '@/components/ui-vue/button';
 import { AlertDialog } from '@/components/ui-vue/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui-vue/alert';
-import { AlertDialogContent as RawAlertDialogContent } from 'reka-ui';
 import { importMasterKeyWithValidation } from '@/store/keyring/masterKey';
 import { toastQueue } from '@/services/toast';
 import { useTranslation } from '@/composables/useTranslation';
@@ -79,55 +78,52 @@ watch(
 </script>
 
 <template>
+  <!-- ui-vue 的 AlertDialog 自带 Portal/Overlay/Content，内容直接放默认插槽（勿再嵌套 Content） -->
   <AlertDialog :open="props.open" @update:open="(o: boolean) => { if (!o) handleClose(); }">
-    <RawAlertDialogContent
-      class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg"
-    >
-      <div class="flex flex-col gap-1.5">
-        <h2 class="text-lg font-semibold">{{ t(($) => $.common.keyRecovery.title) }}</h2>
-        <p class="text-sm text-muted-foreground">{{ t(($) => $.common.keyRecovery.description) }}</p>
-      </div>
+    <div class="flex flex-col gap-1.5">
+      <h2 class="text-lg font-semibold">{{ t(($) => $.common.keyRecovery.title) }}</h2>
+      <p class="text-sm text-muted-foreground">{{ t(($) => $.common.keyRecovery.description) }}</p>
+    </div>
 
-      <div class="space-y-3">
-        <Input
-          v-model="keyInput"
-          :disabled="state === 'importing'"
-          :placeholder="t(($) => $.common.keyRecovery.placeholder)"
-          class="font-mono text-sm"
-          @update:model-value="() => { if (state === 'error') state = 'input'; }"
-        />
+    <div class="space-y-3">
+      <Input
+        v-model="keyInput"
+        :disabled="state === 'importing'"
+        :placeholder="t(($) => $.common.keyRecovery.placeholder)"
+        class="font-mono text-sm"
+        @update:model-value="() => { if (state === 'error') state = 'input'; }"
+      />
 
-        <Alert>
-          <AlertTriangle class="h-4 w-4" />
-          <AlertDescription class="text-xs">
-            {{ t(($) => $.common.keyRecovery.securityWarning) }}
-          </AlertDescription>
-        </Alert>
+      <Alert>
+        <AlertTriangle class="h-4 w-4" />
+        <AlertDescription class="text-xs">
+          {{ t(($) => $.common.keyRecovery.securityWarning) }}
+        </AlertDescription>
+      </Alert>
 
-        <Alert v-if="state === 'mismatch'" variant="destructive">
-          <AlertTriangle class="h-4 w-4" />
-          <AlertDescription>{{ t(($) => $.common.keyRecovery.mismatchWarning) }}</AlertDescription>
-        </Alert>
+      <Alert v-if="state === 'mismatch'" variant="destructive">
+        <AlertTriangle class="h-4 w-4" />
+        <AlertDescription>{{ t(($) => $.common.keyRecovery.mismatchWarning) }}</AlertDescription>
+      </Alert>
 
-        <Alert v-if="state === 'error' && errorMessage" variant="destructive">
-          <AlertTriangle class="h-4 w-4" />
-          <AlertDescription>{{ errorMessage }}</AlertDescription>
-        </Alert>
-      </div>
+      <Alert v-if="state === 'error' && errorMessage" variant="destructive">
+        <AlertTriangle class="h-4 w-4" />
+        <AlertDescription>{{ errorMessage }}</AlertDescription>
+      </Alert>
+    </div>
 
-      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button variant="outline" :disabled="state === 'importing'" @click="handleClose">
-          {{ state === 'mismatch' ? t(($) => $.common.keyRecovery.cancel) : t(($) => $.common.cancel) }}
-        </Button>
+    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <Button variant="outline" :disabled="state === 'importing'" @click="handleClose">
+        {{ state === 'mismatch' ? t(($) => $.common.keyRecovery.cancel) : t(($) => $.common.cancel) }}
+      </Button>
 
-        <Button v-if="state === 'mismatch'" @click="handleImport(true)">
-          {{ t(($) => $.common.keyRecovery.forceImport) }}
-        </Button>
-        <Button v-else :disabled="isDisabled" @click="handleImport(false)">
-          <Loader2 v-if="state === 'importing'" class="mr-2 h-4 w-4 animate-spin" />
-          {{ state === 'importing' ? t(($) => $.common.keyRecovery.importing) : t(($) => $.common.keyRecovery.importButton) }}
-        </Button>
-      </div>
-    </RawAlertDialogContent>
+      <Button v-if="state === 'mismatch'" @click="handleImport(true)">
+        {{ t(($) => $.common.keyRecovery.forceImport) }}
+      </Button>
+      <Button v-else :disabled="isDisabled" @click="handleImport(false)">
+        <Loader2 v-if="state === 'importing'" class="mr-2 h-4 w-4 animate-spin" />
+        {{ state === 'importing' ? t(($) => $.common.keyRecovery.importing) : t(($) => $.common.keyRecovery.importButton) }}
+      </Button>
+    </div>
   </AlertDialog>
 </template>
