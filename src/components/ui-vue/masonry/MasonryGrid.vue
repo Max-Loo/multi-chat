@@ -30,7 +30,7 @@ const itemStyle = computed(() => ({
 
 <template>
   <div :class="cn('w-full', props.class)" :style="style" data-testid="masonry-grid">
-    <div v-for="slot in ($slots.default ? [$slots.default()] : [])" :key="1">
+    <div v-for="(slot, slotIdx) in ($slots.default ? [$slots.default()] : [])" :key="slotIdx">
       <!-- Vue 3 不提供直接子元素计数，由调用方保证 item 结构 -->
       <template v-for="(child, i) in slot" :key="i">
         <div :style="itemStyle">

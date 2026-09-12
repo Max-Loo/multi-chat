@@ -35,9 +35,9 @@
 
 - [x] 4.1 迁移布局与通用组件（Layout、TopBar、底部导航、移动端抽屉、自适应侧栏、Skeleton 骨架屏等），重写对应组件测试
 - [x] 4.2 迁移聊天通用组件（消息气泡、流式内容渲染、markdown/高亮/代码块复制、虚拟滚动、瀑布流），重写对应测试并验证长对话滚动性能与迁移前相当（代码块复制经 markdown.ts 全局委托零成本复用；长对话滚动性能实测归入 4.3 集成验收）
-- [ ] 4.3 迁移 Chat 页面（Sidebar、Panel、Detail、ModelSelect、消息操作、重新生成、自动命名 hooks 链、URL 同步），重写对应测试并验证核心聊天流程行为等价
-      - 已完成：Sidebar（ChatButton/ToolsBar/VList 列表）、Content 三级编排、Placeholder、Panel/ModelSelect 骨架屏、主编排（URL chatId 重定向、抽屉、折叠）、pages hooks（useSelectedChat/useBoard/useIsSending）
-      - 待完成：Panel 编排（Header/Grid/Splitter/Sender/Detail/Title）、ModelSelect 本体、ChatBubble 接线
+- [x] 4.3 迁移 Chat 页面（Sidebar、Panel、Detail、ModelSelect、消息操作、重新生成、自动命名 hooks 链、URL 同步），重写对应测试并验证核心聊天流程行为等价
+      - 已完成：Sidebar（ChatButton/ToolsBar/VList 列表）、Content 三级编排、Placeholder、主编排（URL chatId 重定向、抽屉、折叠）、pages hooks（useSelectedChat/useBoard/useIsSending）、Panel 编排（Header/Grid/Splitter/Sender/Detail/Title）、ModelSelect 本体（含 useBasicModelTable 组合式函数、ui-vue DataTable 通用表格、ModelProviderDisplay）、ChatBubble 接线
+      - 验证：新增 9 个 Vue 测试文件（chatPageVue/chatSidebarVue/chatPanelVue/chatPanelHeaderVue/chatPanelSenderVue/chatDetailVue/chatDetailTitleVue/chatGridSplitterVue/chatPanelSkeletonVue/chatModelSelectVue）；迁移期间修复 PanelGrid Detail 导入路径、PanelSplitter 缺失 Detail 导入、Detail 缺失 useSelectedChat 导入与 Virtualizer 缺失 :data prop 四处缺陷；全量 2489 测试通过
 - [ ] 4.4 迁移 Model 页面（ModelTable、CreateModel、ModelConfigForm、ProviderGrid、ProviderDetail），重写对应测试并验证模型增删改查与远程模型获取流程等价
 - [ ] 4.5 迁移 Setting 页面（GeneralSetting、KeyManagementSetting、语言/主题设置、导出设置、ToastTest dev 路由），重写对应测试并验证设置项保存与生效流程等价
 - [ ] 4.6 将 `src/hooks/` 下全部 React hooks 迁移为组合式函数（含 redux.ts 适配为 Pinia 版本），重写对应测试

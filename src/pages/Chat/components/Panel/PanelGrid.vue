@@ -4,7 +4,7 @@
  * @param board 二维数组，每行最多 columnCount 个模型
  */
 import { cn } from '@/utils/utils';
-import Detail from './Detail.vue';
+import Detail from './Detail/Detail.vue';
 
 const props = defineProps<{
   board: { modelId: string }[][];

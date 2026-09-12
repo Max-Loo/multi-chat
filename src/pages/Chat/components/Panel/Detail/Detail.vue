@@ -16,6 +16,7 @@ import { ArrowDown } from 'lucide-vue-next';
 import DetailTitle from './DetailTitle.vue';
 import { useAdaptiveScrollbar } from '@/composables/useAdaptiveScrollbar';
 import ChatBubble from '@/components/chat/ChatBubble.vue';
+import { useSelectedChat } from '@/composables/pages/useSelectedChat';
 import { useIsSending } from '@/composables/pages/useIsSending';
 import { isNotNil } from 'es-toolkit';
 import { Spinner } from '@/components/ui-vue/spinner';
@@ -363,6 +364,7 @@ const showSpinner = computed(
     <div class="w-full">
       <Virtualizer
         ref="virtualizerRef"
+        :data="displayList"
         :start-margin="startMargin"
         :scroll-ref="scrollContainerRef ?? undefined"
         @scroll="handleVirtualizerScroll"

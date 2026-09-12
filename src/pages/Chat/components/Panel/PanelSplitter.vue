@@ -4,6 +4,7 @@
  * 基于 reka-ui Splitter 的纵向分组 + 每行横向分组
  */
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui';
+import Detail from './Detail/Detail.vue';
 
 const props = defineProps<{
   board: { modelId: string }[][];
