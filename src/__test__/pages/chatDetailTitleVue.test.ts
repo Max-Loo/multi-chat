@@ -10,7 +10,7 @@ import { render, screen } from '@testing-library/vue';
 
 // Mock ProviderLogo，暴露 props 供断言
 vi.mock('@/components/ProviderLogo/ProviderLogo.vue', () => ({
-  ProviderLogo: {
+  default: {
     name: 'ProviderLogo',
     props: ['providerKey', 'providerName', 'size'],
     template: `<span data-testid="provider-logo" :data-key="providerKey" :data-name="providerName" :data-size="size" />`,

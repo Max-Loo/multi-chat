@@ -3,7 +3,7 @@
  * 密钥恢复对话框组件（Vue 版）
  * 供 FatalErrorScreen 和 Toast 恢复流程共用，行为与 React 版保持一致
  */
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { AlertTriangle, Loader2 } from 'lucide-vue-next';
 import { Input } from '@/components/ui-vue/input';
 import { Button } from '@/components/ui-vue/button';
@@ -62,7 +62,8 @@ const handleImport = async (force = false) => {
   }
 };
 
-const isDisabled = state.value === 'importing' || !keyInput.value.trim();
+// 导入中或输入为空时禁用（响应式：随 state/keyInput 变化）
+const isDisabled = computed(() => state.value === 'importing' || !keyInput.value.trim());
 
 // 对话框关闭时重置输入状态
 watch(

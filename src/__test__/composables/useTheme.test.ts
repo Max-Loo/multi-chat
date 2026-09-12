@@ -49,4 +49,37 @@ describe('useTheme', () => {
 
     expect(document.documentElement.classList.contains('dark')).toBe(false);
   });
+
+  it('resolvedTheme 应解析 system 为实际主题', () => {
+    const { setTheme, resolvedTheme } = useTheme();
+
+    setTheme('dark');
+    expect(resolvedTheme()).toBe('dark');
+
+    setTheme('system');
+    // happy-dom 默认 prefers-color-scheme: light
+    expect(resolvedTheme()).toBe('light');
+  });
+
+  it('模块初始化时应从 localStorage 恢复合法主题', async () => {
+    vi.resetModules();
+    localStorage.setItem('multi-chat-theme', 'dark');
+
+    const { useTheme: freshUseTheme } = await import('@/composables/useTheme');
+    const { theme, resolvedTheme } = freshUseTheme();
+
+    expect(theme.value).toBe('dark');
+    expect(resolvedTheme()).toBe('dark');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+  });
+
+  it('模块初始化时 localStorage 非法值应回退为 system', async () => {
+    vi.resetModules();
+    localStorage.setItem('multi-chat-theme', 'invalid-value');
+
+    const { useTheme: freshUseTheme } = await import('@/composables/useTheme');
+    const { theme } = freshUseTheme();
+
+    expect(theme.value).toBe('system');
+  });
 });

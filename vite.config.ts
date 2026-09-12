@@ -24,21 +24,18 @@ function getPackageName(id: string): string | null {
 
 /** 包名精确匹配 → chunk 映射 */
 const packageChunkMap: Record<string, string> = {
-  // React 生态
-  react: "vendor-react",
-  "react-dom": "vendor-react",
-  scheduler: "vendor-react",
-  "loose-envify": "vendor-react",
-  // Redux 生态
-  "react-redux": "vendor-redux",
-  redux: "vendor-redux",
-  immer: "vendor-redux",
-  reselect: "vendor-redux",
+  // Vue 生态
+  vue: "vendor-vue",
+  "vue-demi": "vendor-vue",
+  "@vue/devtools-api": "vendor-vue",
+  // 无头组件库
+  "reka-ui": "vendor-reka-ui",
+  // 状态管理
+  pinia: "vendor-pinia",
   // Router
-  "react-router": "vendor-router",
+  "vue-router": "vendor-router",
   // i18n
   i18next: "vendor-i18n",
-  "react-i18next": "vendor-i18n",
   // Zod
   zod: "vendor-zod",
   // Markdown
@@ -48,7 +45,7 @@ const packageChunkMap: Record<string, string> = {
   ai: "vendor-ai",
   "zhipu-ai-provider": "vendor-ai",
   // Icons
-  "lucide-react": "vendor-icons",
+  "lucide-vue-next": "vendor-icons",
   // UI 工具
   "class-variance-authority": "vendor-ui-utils",
   clsx: "vendor-ui-utils",
@@ -58,10 +55,8 @@ const packageChunkMap: Record<string, string> = {
 /** scope 前缀 → chunk 映射（匹配 @scope/package 格式） */
 const scopeChunkMap: Record<string, string> = {
   "@ai-sdk": "vendor-ai",
-  "@radix-ui": "vendor-radix",
+  "@vue": "vendor-vue",
   "@tanstack": "vendor-tanstack",
-  "@remix-run": "vendor-router",
-  "@reduxjs": "vendor-redux",
 };
 
 /** highlight.js 预加载语言列表 */
@@ -136,58 +131,34 @@ export default defineConfig(async () => ({
 
     // 覆盖率配置
     coverage: {
-      provider: "istanbul",
+      provider: "v8",
       reporter: ["text", "html", "json", "lcov"],
-      include: ["src/**/*.{ts,tsx}"],
+      include: ["src/**/*.{ts,vue}"],
       exclude: [
         "src/__test__/**",
         "src/__mock__/**",
-        "src/main.tsx",
+        "src/main.ts",
+        "src/App.vue",
+        "src/MainAppVue.ts",
         "src/__test__/setup.ts",
         "src/@types/**",
-        "src/pages/Model/index.tsx",
-        // 平台层（部分模块依赖浏览器系统 API，覆盖率重校准见任务 5.3）
+        // 平台层（部分模块依赖浏览器系统 API）
         "src/utils/platform/http.ts",
         "src/utils/platform/os.ts",
         "src/utils/platform/store.ts",
         "src/utils/platform/env.ts",
-        // shadcn/ui 自动生成的 UI 原子组件（无自定义逻辑）
-        "src/components/ui/sheet.tsx",
-        "src/components/ui/sonner.tsx",
-        "src/components/ui/skeleton.tsx",
-        "src/components/ui/progress.tsx",
-        "src/components/ui/avatar.tsx",
-        "src/components/ui/card.tsx",
-        "src/components/ui/dropdown-menu.tsx",
-        "src/components/ui/checkbox.tsx",
-        "src/components/ui/select.tsx",
-        "src/components/ui/table.tsx",
-        "src/components/ui/tooltip.tsx",
-        "src/components/ui/spinner.tsx",
-        "src/components/ui/dialog.tsx",
-        "src/components/ui/alert.tsx",
-        "src/components/ui/alert-dialog.tsx",
-        "src/components/ui/badge.tsx",
-        "src/components/ui/button.tsx",
-        "src/components/ui/data-table.tsx",
-        "src/components/ui/form.tsx",
-        "src/components/ui/input.tsx",
-        "src/components/ui/label.tsx",
-        "src/components/ui/popover.tsx",
-        "src/components/ui/radio-group.tsx",
-        "src/components/ui/resizable.tsx",
-        "src/components/ui/switch.tsx",
-        "src/components/ui/textarea.tsx",
+        // shadcn-vue 生成的 UI 原子组件（薄包装，无自定义逻辑，冒烟测试兜底）
+        "src/components/ui-vue/**",
         // Canvas 动画（依赖 Canvas API，无法在 happy-dom 中测试）
-        "src/components/AnimatedLogo/canvas-logo.ts",
+        "src/components/AnimatedLogo/**",
         // 第三方库薄包装（clsx + twMerge 一行组合，不含业务逻辑）
         "src/utils/utils.ts",
         // 纯动态 import 映射（46 个 switch case，已被上层测试完整 mock）
         "src/utils/highlightLanguageIndex.ts",
         // 仅用于测试的页面组件
-        "src/pages/Setting/components/ToastTest/**",
+        "src/pages/Setting/components/ToastTest.vue",
       ],
-      // 覆盖率阈值（分模块分级，汇总模式，Istanbul provider）
+      // 覆盖率阈值（分模块分级，汇总模式，V8 provider）
       thresholds: {
         // 全局底线
         lines: 70,
@@ -195,7 +166,7 @@ export default defineConfig(async () => ({
         branches: 60,
         statements: 60,
         // 分模块阈值（汇总，非逐文件）
-        '**/src/hooks/**': {
+        '**/src/composables/**': {
           lines: 90,
           branches: 85,
         },
@@ -248,10 +219,9 @@ export default defineConfig(async () => ({
             id.includes("config/initSteps") ||
             id.includes("components/InitializationController") ||
             id.includes("components/AnimatedLogo") ||
-            id.includes("components/canvas-logo") ||
             id.includes("components/FatalErrorScreen") ||
             id.includes("components/NoProvidersAvailable") ||
-            id.includes("components/ui/progress")
+            id.includes("components/ui-vue/progress")
           ) {
             return "chunk-init";
           }
