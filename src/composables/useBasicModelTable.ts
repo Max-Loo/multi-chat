@@ -2,7 +2,7 @@ import { computed, h, ref } from 'vue';
 import type { CellContext, ColumnDef, TableFeatures } from '@tanstack/vue-table';
 import ModelProviderDisplay from '@/pages/Model/ModelTable/components/ModelProviderDisplay.vue';
 import { useDebouncedFilter } from '@/composables/useDebouncedFilter';
-import { useModelStore } from '@/store/pinia/model';
+import { useExistingModels } from '@/composables/useExistingModels';
 import { useTranslation } from '@/composables/useTranslation';
 import type { Model } from '@/types/model';
 
@@ -11,11 +11,10 @@ import type { Model } from '@/types/model';
  * 提供表格列定义、数据过滤等功能，供 ModelSelect 与 Model 页表格复用
  */
 export const useBasicModelTable = () => {
-  const modelStore = useModelStore();
   const { t } = useTranslation();
 
   // 不包含已删除模型的模型列表
-  const models = computed(() => modelStore.models.filter((model) => !model.isDeleted));
+  const models = useExistingModels();
 
   // 本地状态：过滤文本
   const filterText = ref<string>('');

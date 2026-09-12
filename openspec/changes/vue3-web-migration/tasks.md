@@ -46,7 +46,11 @@
       - 说明：React 版 Setting 页无独立主题设置组件（主题经 3.6 useTheme 组合式函数承载，见 Layout）；语言/自动命名/供应商/导出四区块均以 Vue 重写
       - 已完成：Setting 外壳（index.vue 桌面侧边栏 + 移动端抽屉/Header）、SettingSidebar、SettingHeader、GeneralSetting 四区块（LanguageSetting/AutoNamingSetting/ChatExportSetting/ModelProviderSetting）、ModelProviderSetting 组件树（ProviderHeader/ProviderGrid/ErrorAlert/ProviderCard/Header/Summary/Details/Metadata/ModelSearch/ModelList）、KeyManagementSetting（密钥导出/复制 + ResetDataDialog）、ToastTest；新增 useDebounce/useScrollContainer 组合式函数；语言切换委托 appConfig store（middleware 逻辑已下沉）
       - 验证：新增 6 个 Vue 测试文件（settingPageVue 9 例 / settingGeneralVue 7 例 / settingKeyManagementVue 9 例 / settingProviderVue 16 例 / settingLanguageVue 4 例 / settingToastTestVue 4 例，共 49 例）；全量 195 文件 / 2583 通过 + 4 跳过；tsc、lint、build 通过
-- [ ] 4.6 将 `src/hooks/` 下全部 React hooks 迁移为组合式函数（含 redux.ts 适配为 Pinia 版本），重写对应测试
+- [x] 4.6 将 `src/hooks/` 下全部 React hooks 迁移为组合式函数（含 redux.ts 适配为 Pinia 版本），重写对应测试
+      - 说明：大部分 hooks 已在 3.x/4.x 迁移期同步落地（useResponsive/useAdaptiveScrollbar/useScrollContainer/useDebounce/useMediaQuery/useTranslation/useTheme/useResetDataDialog/useBasicModelTable/useCreateChat/useCurrentSelectedChat/useExistingChatList/useNavigateToPage/useAutoResizeTextarea，pages hooks 见 4.3）
+      - redux.ts 处理：Pinia 无需 dispatch/selector 适配层（setup store 即类型化 API），不新建对应文件；其 19 个使用方全部为 React 组件，随 5.1 删除
+      - 本任务补齐：useConfirm（模块级响应式单例 + ConfirmDialog.vue，替代 React Context Provider 方案；Vue 树中 ChatButton 已内联确认流程）、useExistingModels（Pinia 版，并重构 useBasicModelTable 复用以消除重复）、useNavigateToExternalSite（供 4.7 OpenExternalBrowserButton 迁移使用）
+      - 验证：新增 3 个 composables 测试文件（useConfirmVue 11 例 / useExistingModelsVue 2 例 / useNavigateToExternalSiteVue 1 例）；全量 198 文件 / 2597 通过 + 4 跳过；tsc 通过
 - [ ] 4.7 迁移剩余页面与组件（NotFound、错误边界、FatalError 兜底等），重写对应测试
 - [ ] 4.8 为迁移前无测试覆盖的组件补充冒烟级渲染测试，验证阶段 3 涉及组件均有最低行为保障
 
