@@ -2,7 +2,7 @@
  * 主应用工厂（Vue 版）
  *
  * 包含路由视图与初始化结果相关的副作用（静默刷新、安全警告、警告/解密失败 Toast），
- * 通过工厂函数接收初始化结果，行为与 React 版 MainApp 保持一致。
+ * 通过工厂函数接收初始化结果，行为与 迁移前 MainApp 保持一致。
  * KeyRecoveryDialog 的完整迁移属于任务 4.5（密钥管理界面），当前先接入解密失败 Toast。
  */
 import { defineAsyncComponent } from 'vue';

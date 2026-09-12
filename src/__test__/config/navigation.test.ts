@@ -1,8 +1,8 @@
 /**
- * navigation.tsx 配置完整性测试
+ * navigationVue 配置完整性测试
  *
  * 验证 NAVIGATION_ITEMS 和 NAVIGATION_ITEM_MAP 的数据结构一致性：
- * - 字段完整性（id、i18nKey、path、icon、IconComponent、theme）
+ * - 字段完整性（id、i18nKey、path、IconComponent、theme）
  * - ID 唯一性
  * - MAP 与数组一致性
  * - 路径格式（以 / 开头）
@@ -14,20 +14,19 @@ import {
   NAVIGATION_ITEMS,
   NAVIGATION_ITEM_MAP,
   type NavigationItem,
-} from '@/config/navigation';
+} from '@/config/navigationVue';
 
 const REQUIRED_FIELDS: (keyof NavigationItem)[] = [
   'id',
   'i18nKey',
   'path',
-  'icon',
   'IconComponent',
   'theme',
 ];
 
 const REQUIRED_THEME_FIELDS = ['base', 'active', 'inactive'] as const;
 
-describe('navigation 配置', () => {
+describe('navigationVue 配置', () => {
   describe('字段完整性校验', () => {
     it('每个导航项应包含所有必需字段', () => {
       for (const item of NAVIGATION_ITEMS) {

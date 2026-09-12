@@ -99,12 +99,3 @@ vi.mock('@ai-sdk/moonshotai', () => ({
 vi.mock('zhipu-ai-provider', () => ({
   createZhipu: vi.fn(() => createMockAIProvider('zhipu')),
 }));
-
-// 全局 mock Skeleton 组件，消除多个测试文件的重复定义
-vi.mock('@/components/ui/skeleton', async () => {
-  const { createElement } = await import('react');
-  return {
-    Skeleton: ({ className, variant, style }: Record<string, unknown>) =>
-      createElement('div', { 'data-testid': 'skeleton-item', className, 'data-variant': variant, style }),
-  };
-});

@@ -22,7 +22,7 @@ import {
   getCurrentContent,
   getContentAtIndex,
 } from '@/services/chat/chatHistoryHelper';
-import type { ChatSliceState } from '@/store/slices/chatSlices';
+import type { ChatHistoryState } from '@/services/chat/chatHistoryHelper';
 
 // 生成用户消息 ID 的工具函数（带前缀）
 const generateUserMessageId = createIdGenerator({ prefix: USER_MESSAGE_ID_PREFIX });
@@ -61,10 +61,12 @@ export const useChatStore = defineStore('chat', () => {
 
   /**
    * 构造 chatHistoryHelper 需要的状态适配对象
-   * helper 只读写 activeChatData，传入响应式对象的 .value 即可直接变更
+   * helper 读写 activeChatData 与 runningChat，传入响应式对象的 .value 即可直接变更
    */
-  const helperState = (): ChatSliceState =>
-    ({ activeChatData: activeChatData.value, chatMetaList: chatMetaList.value }) as unknown as ChatSliceState;
+  const helperState = (): ChatHistoryState => ({
+    activeChatData: activeChatData.value,
+    runningChat: runningChat.value,
+  });
 
   /**
    * 在 activeChatData 中定位指定聊天的模型，将消息追加到其历史记录中
@@ -353,17 +355,20 @@ export const useChatStore = defineStore('chat', () => {
 
   /**
    * 初始化聊天列表，加载索引元数据（过滤已删除聊天）
+   * @returns 过滤后的聊天元数据列表，失败时返回 undefined 并记录 initializationError
    */
-  const initializeChatList = async (): Promise<void> => {
+  const initializeChatList = async (): Promise<ChatMeta[] | undefined> => {
     loading.value = true;
     initializationError.value = null;
     try {
       const index: ChatMeta[] = await loadChatIndex();
       chatMetaList.value = index.filter((meta) => !meta.isDeleted);
       loading.value = false;
+      return chatMetaList.value;
     } catch (err) {
       loading.value = false;
       initializationError.value = err instanceof Error ? err.message : 'Failed to initialize file';
+      return undefined;
     }
   };
 

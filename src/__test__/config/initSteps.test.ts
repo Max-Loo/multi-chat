@@ -1,7 +1,7 @@
 /**
  * initSteps 配置验证测试
  *
- * 测试初始化步骤配置的结构正确性、有效性和 execute 函数逻辑
+ * 测试初始化步骤配置的结构正确性、有效性和 execute 函数逻辑（Pinia 接线版）
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -20,15 +20,43 @@ function createMockContext(existingResults?: Record<string, unknown>): Execution
   };
 }
 
-// Mock 外部依赖以隔离 execute 函数测试
-const mockDispatch = vi.fn();
-const mockGetState = vi.fn();
+// Pinia store mock（initSteps 内部通过 useXStore() 获取）
+const mockModelStore = {
+  initializeModels: vi.fn(),
+  initializationError: null as string | null,
+};
 
-vi.mock('@/store', () => ({
-  store: {
-    dispatch: (...args: unknown[]) => mockDispatch(...args),
-    getState: () => mockGetState(),
-  },
+const mockChatStore = {
+  initializeChatList: vi.fn(),
+  initializationError: null as string | null,
+};
+
+const mockAppConfigStore = {
+  initializeAppLanguage: vi.fn(),
+  initializeTransmitHistoryReasoning: vi.fn(),
+  initializeAutoNamingEnabled: vi.fn(),
+};
+
+const mockModelProviderStore = {
+  initializeModelProvider: vi.fn(),
+  loading: false,
+  error: null as string | null,
+};
+
+vi.mock('@/store/pinia/model', () => ({
+  useModelStore: () => mockModelStore,
+}));
+
+vi.mock('@/store/pinia/chat', () => ({
+  useChatStore: () => mockChatStore,
+}));
+
+vi.mock('@/store/pinia/appConfig', () => ({
+  useAppConfigStore: () => mockAppConfigStore,
+}));
+
+vi.mock('@/store/pinia/modelProvider', () => ({
+  useModelProviderStore: () => mockModelProviderStore,
 }));
 
 vi.mock('@/services/i18n', () => ({
@@ -43,35 +71,8 @@ vi.mock('@/store/keyring/masterKey', () => ({
   }),
 }));
 
-vi.mock('@/store/slices/modelSlice', () => ({
-  initializeModels: vi.fn(() => ({
-    unwrap: () => Promise.resolve({ models: [], decryptionFailureCount: 0 }),
-  })),
-}));
-
-vi.mock('@/store/slices/chatSlices', () => ({
-  initializeChatList: vi.fn(() => ({
-    unwrap: () => Promise.resolve([]),
-  })),
-  setSelectedChatIdWithPreload: vi.fn(),
-}));
-
-vi.mock('@/store/slices/appConfigSlices', () => ({
-  initializeAppLanguage: vi.fn(() => ({
-    unwrap: () => Promise.resolve('zh'),
-  })),
-  initializeTransmitHistoryReasoning: vi.fn(() => ({
-    unwrap: () => Promise.resolve(false),
-  })),
-  initializeAutoNamingEnabled: vi.fn(() => ({
-    unwrap: () => Promise.resolve(true),
-  })),
-}));
-
-vi.mock('@/store/slices/modelProviderSlice', () => ({
-  initializeModelProvider: vi.fn(() => ({
-    unwrap: () => Promise.resolve([]),
-  })),
+vi.mock('@/store/storage/chatStorage', () => ({
+  migrateOldChatStorage: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/utils/platform', () => ({
@@ -224,7 +225,10 @@ describe('initSteps 配置验证', () => {
 describe('initSteps execute 函数', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockDispatch.mockImplementation((...args: unknown[]) => args[0]);
+    mockModelStore.initializationError = null;
+    mockChatStore.initializationError = null;
+    mockModelProviderStore.error = null;
+    mockModelProviderStore.loading = false;
   });
 
   describe('keyringMigration', () => {
@@ -280,11 +284,11 @@ describe('initSteps execute 函数', () => {
   });
 
   describe('models', () => {
-    it('应该 dispatch initializeModels 并传递 decryptionFailureCount', async () => {
-      const { initializeModels } = await import('@/store/slices/modelSlice');
-      vi.mocked(initializeModels).mockReturnValueOnce({
-        unwrap: () => Promise.resolve({ models: [{ id: 'm1' }], decryptionFailureCount: 3 }),
-      } as unknown as ReturnType<typeof initializeModels>);
+    it('应该调用 modelStore.initializeModels 并传递 decryptionFailureCount', async () => {
+      mockModelStore.initializeModels.mockResolvedValueOnce({
+        models: [{ id: 'm1' }],
+        decryptionFailureCount: 3,
+      });
 
       const step = initSteps.find((s) => s.name === 'models')!;
       const context = createMockContext();
@@ -295,22 +299,46 @@ describe('initSteps execute 函数', () => {
       expect(context.getResult('models')).toEqual([{ id: 'm1' }]);
       expect(context.getResult('decryptionFailureCount')).toBe(3);
     });
+
+    it('应该在初始化失败时抛出错误', async () => {
+      mockModelStore.initializeModels.mockResolvedValueOnce(undefined);
+      mockModelStore.initializationError = '模型数据损坏';
+
+      const step = initSteps.find((s) => s.name === 'models')!;
+      const context = createMockContext();
+
+      await expect(step.execute(context)).rejects.toThrow('模型数据损坏');
+    });
   });
 
   describe('chatList', () => {
-    it('应该 dispatch initializeChatList 并设置结果', async () => {
+    it('应该调用 chatStore.initializeChatList 并设置结果', async () => {
+      mockChatStore.initializeChatList.mockResolvedValueOnce([{ id: 'chat-1' }]);
+
       const step = initSteps.find((s) => s.name === 'chatList')!;
       const context = createMockContext();
 
       const result = await step.execute(context);
 
-      expect(result).toEqual([]);
-      expect(context.getResult('chatList')).toEqual([]);
+      expect(result).toEqual([{ id: 'chat-1' }]);
+      expect(context.getResult('chatList')).toEqual([{ id: 'chat-1' }]);
+    });
+
+    it('应该在初始化失败时抛出错误', async () => {
+      mockChatStore.initializeChatList.mockResolvedValueOnce(undefined);
+      mockChatStore.initializationError = '索引加载失败';
+
+      const step = initSteps.find((s) => s.name === 'chatList')!;
+      const context = createMockContext();
+
+      await expect(step.execute(context)).rejects.toThrow('索引加载失败');
     });
   });
 
   describe('appLanguage', () => {
-    it('应该 dispatch initializeAppLanguage 并设置结果', async () => {
+    it('应该调用 appConfigStore.initializeAppLanguage 并设置结果', async () => {
+      mockAppConfigStore.initializeAppLanguage.mockResolvedValueOnce('zh');
+
       const step = initSteps.find((s) => s.name === 'appLanguage')!;
       const context = createMockContext();
 
@@ -322,80 +350,62 @@ describe('initSteps execute 函数', () => {
   });
 
   describe('transmitHistoryReasoning', () => {
-    it('应该 dispatch initializeTransmitHistoryReasoning 并设置结果', async () => {
+    it('应该调用 appConfigStore.initializeTransmitHistoryReasoning 并设置结果', async () => {
+      mockAppConfigStore.initializeTransmitHistoryReasoning.mockResolvedValueOnce(true);
+
       const step = initSteps.find((s) => s.name === 'transmitHistoryReasoning')!;
       const context = createMockContext();
 
       const result = await step.execute(context);
 
-      expect(result).toBe(false);
-      expect(context.getResult('transmitHistoryReasoning')).toBe(false);
+      expect(result).toBe(true);
+      expect(context.getResult('transmitHistoryReasoning')).toBe(true);
     });
   });
 
   describe('autoNamingEnabled', () => {
-    it('应该 dispatch initializeAutoNamingEnabled 并设置结果', async () => {
+    it('应该调用 appConfigStore.initializeAutoNamingEnabled 并设置结果', async () => {
+      mockAppConfigStore.initializeAutoNamingEnabled.mockResolvedValueOnce(false);
+
       const step = initSteps.find((s) => s.name === 'autoNamingEnabled')!;
       const context = createMockContext();
 
       const result = await step.execute(context);
 
-      expect(result).toBe(true);
-      expect(context.getResult('autoNamingEnabled')).toBe(true);
+      expect(result).toBe(false);
+      expect(context.getResult('autoNamingEnabled')).toBe(false);
     });
   });
 
   describe('modelProvider', () => {
-    it('应该 dispatch initializeModelProvider 成功并设置成功状态', async () => {
+    it('应该调用 providerStore.initializeModelProvider 并设置结果与状态', async () => {
+      mockModelProviderStore.initializeModelProvider.mockResolvedValueOnce([{ id: 'p1' }]);
+
       const step = initSteps.find((s) => s.name === 'modelProvider')!;
       const context = createMockContext();
 
       const result = await step.execute(context);
 
-      expect(result).toEqual([]);
-      const status = context.getResult<{ hasError: boolean; isNoProvidersError: boolean }>('modelProviderStatus');
-      expect(status).toEqual({ hasError: false, isNoProvidersError: false });
+      expect(result).toEqual([{ id: 'p1' }]);
+      expect(context.getResult('modelProvider')).toEqual([{ id: 'p1' }]);
+      expect(context.getResult('modelProviderStatus')).toEqual({
+        hasError: false,
+        isNoProvidersError: false,
+      });
     });
 
-    it('应该设置普通错误状态 当 dispatch 失败且有 error', async () => {
-      const { initializeModelProvider } = await import('@/store/slices/modelProviderSlice');
-      vi.mocked(initializeModelProvider).mockReturnValueOnce({
-        unwrap: () => Promise.reject(new Error('Network error')),
-      } as unknown as ReturnType<typeof initializeModelProvider>);
-
-      mockGetState.mockReturnValue({
-        modelProvider: { loading: false, error: 'Network error' },
-      });
+    it('应该在请求失败时设置无供应商状态并抛出错误', async () => {
+      mockModelProviderStore.initializeModelProvider.mockResolvedValueOnce([]);
+      mockModelProviderStore.error = '无法获取模型供应商数据，请检查网络连接';
 
       const step = initSteps.find((s) => s.name === 'modelProvider')!;
       const context = createMockContext();
 
-      await expect(step.execute(context)).rejects.toThrow('Network error');
-
-      const status = context.getResult<{ hasError: boolean; isNoProvidersError: boolean }>('modelProviderStatus');
-      expect(status).toEqual({ hasError: true, isNoProvidersError: false });
-    });
-
-    it('应该设置无供应商错误状态 当 error 为 NO_PROVIDERS_ERROR_MESSAGE', async () => {
-      const { initializeModelProvider } = await import('@/store/slices/modelProviderSlice');
-      vi.mocked(initializeModelProvider).mockReturnValueOnce({
-        unwrap: () => Promise.reject(new Error('no providers')),
-      } as unknown as ReturnType<typeof initializeModelProvider>);
-
-      mockGetState.mockReturnValue({
-        modelProvider: {
-          loading: false,
-          error: '无法获取模型供应商数据，请检查网络连接',
-        },
+      await expect(step.execute(context)).rejects.toThrow('无法获取模型供应商数据');
+      expect(context.getResult('modelProviderStatus')).toEqual({
+        hasError: true,
+        isNoProvidersError: true,
       });
-
-      const step = initSteps.find((s) => s.name === 'modelProvider')!;
-      const context = createMockContext();
-
-      await expect(step.execute(context)).rejects.toThrow('no providers');
-
-      const status = context.getResult<{ hasError: boolean; isNoProvidersError: boolean }>('modelProviderStatus');
-      expect(status).toEqual({ hasError: true, isNoProvidersError: true });
     });
   });
 });

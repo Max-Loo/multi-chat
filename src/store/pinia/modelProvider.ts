@@ -40,8 +40,9 @@ export const useModelProviderStore = defineStore('modelProvider', () => {
   /**
    * Provider 初始化
    * 应用启动时调用，优先使用缓存数据（快速路径），无缓存时才等待远程请求
+   * @returns 过滤后的供应商数据，失败时为空数组（错误信息记录在 error 中）
    */
-  const initializeModelProvider = async (): Promise<void> => {
+  const initializeModelProvider = async (): Promise<RemoteProviderData[]> => {
     loading.value = true;
     error.value = null;
 
@@ -59,7 +60,7 @@ export const useModelProviderStore = defineStore('modelProvider', () => {
       providers.value = cachedData;
       lastUpdate.value = null;
       error.value = null;
-      return;
+      return providers.value;
     } catch (cacheError) {
       // 缓存不存在或无效，继续尝试远程请求
       void cacheError;
@@ -77,6 +78,7 @@ export const useModelProviderStore = defineStore('modelProvider', () => {
       providers.value = filteredData;
       lastUpdate.value = new Date().toISOString();
       error.value = null;
+      return providers.value;
     } catch (err) {
       // 3️⃣ 远程请求失败，无缓存可用
       void err;
@@ -84,6 +86,7 @@ export const useModelProviderStore = defineStore('modelProvider', () => {
       error.value = '无法获取模型供应商数据，请检查网络连接';
       providers.value = [];
       lastUpdate.value = null;
+      return providers.value;
     }
   };
 

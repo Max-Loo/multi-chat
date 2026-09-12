@@ -6,7 +6,7 @@ export type LayoutMode = 'mobile' | 'compact' | 'compressed' | 'desktop';
 
 /**
  * 响应式布局组合式函数（Vue 版 useResponsive）
- * 断点与 React 版保持一致：mobile <768、compact 768-1023、compressed 1024-1279、desktop ≥1280
+ * 断点与 迁移前保持一致：mobile <768、compact 768-1023、compressed 1024-1279、desktop ≥1280
  */
 export function useResponsive() {
   const isMobile = useMediaQuery('(max-width: 767px)', false);

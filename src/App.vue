@@ -2,7 +2,7 @@
 /**
  * 应用根组件（Vue 版）
  * 管理加载流程：HTML Spinner → 初始化动画 → 主应用
- * 行为与 React 版 main.tsx 中的 App 组件保持一致
+ * 行为与 迁移前 main.tsx 中的 App 组件保持一致
  */
 import { ref, onMounted, defineAsyncComponent } from 'vue';
 import './main.css';
@@ -30,7 +30,7 @@ onMounted(() => {
   initSteps.value = initStepsModule.initSteps;
   appState.value = 'initializing';
 
-  // 全局外链跳转拦截（与 React 版入口行为一致）
+  // 全局外链跳转拦截（与 迁移前入口行为一致）
   interceptClickAToJump();
 });
 

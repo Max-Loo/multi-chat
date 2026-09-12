@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["eslint", "unicorn", "oxc", "typescript", "react"],
+  "plugins": ["eslint", "unicorn", "oxc", "typescript"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -8,8 +8,5 @@
   "env": {
     "builtin": true
   },
-  "ignorePatterns": ["dist", "coverage", "src-tauri"],
-  "rules": {
-    "react/react-in-jsx-scope": "off"
-  }
+  "ignorePatterns": ["dist", "coverage"]
 }

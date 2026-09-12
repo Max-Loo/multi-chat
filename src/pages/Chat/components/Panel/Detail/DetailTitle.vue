@@ -6,7 +6,7 @@
 import { computed } from 'vue';
 import { Badge } from '@/components/ui-vue/badge';
 import { Tooltip } from '@/components/ui-vue/tooltip';
-import { ProviderLogo } from '@/components/ProviderLogo/ProviderLogo.vue';
+import ProviderLogo from '@/components/ProviderLogo/ProviderLogo.vue';
 import { useModelStore } from '@/store/pinia/model';
 import { isNil } from 'es-toolkit';
 import { useTranslation } from '@/composables/useTranslation';

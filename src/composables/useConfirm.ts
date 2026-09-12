@@ -70,7 +70,7 @@ const showConfirm = (props: ConfirmOptions): void => {
 
 /**
  * 全局确认对话框组合式函数（Vue 版 useConfirm）
- * 用于替代 ant-design 的 App.useApp().modal，与 React 版 API 形态保持一致
+ * 用于替代 ant-design 的 App.useApp().modal，与 迁移前 API 形态保持一致
  *
  * @example
  * ```ts
@@ -86,7 +86,7 @@ export const useConfirm = () => {
   return {
     /** 对话框状态（供 ConfirmDialog.vue 渲染） */
     state,
-    /** modal 风格 API（与 React 版一致） */
+    /** modal 风格 API（与 迁移前一致） */
     modal: {
       confirm: (props: ConfirmOptions) => showConfirm(props),
       warning: (props: ConfirmOptions) => showConfirm({ ...props, title: props.title || '警告' }),

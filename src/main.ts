@@ -10,7 +10,7 @@ import './main.css';
 import App from './App.vue';
 import router from './router/vueRouter';
 
-// 打印应用版本号到控制台（与 React 版入口行为一致）
+// 打印应用版本号到控制台（与 迁移前入口行为一致）
 console.log(
   `%c Multi Chat %c v${__APP_VERSION__} `,
   'background:#2563eb; color:white; border-radius:3px 0 0 3px; padding:2px 5px;',

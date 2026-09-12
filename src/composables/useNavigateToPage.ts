@@ -1,6 +1,6 @@
 /**
  * 跳转到聊天页面组合式函数（Vue 版 useNavigateToChat）
- * 带 chatId 查询参数的导航，与 React 版行为一致
+ * 带 chatId 查询参数的导航，与 迁移前行为一致
  */
 import { useRouter, useRoute } from 'vue-router';
 

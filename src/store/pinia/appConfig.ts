@@ -25,9 +25,10 @@ export const useAppConfigStore = defineStore('appConfig', () => {
 
   /**
    * 初始化应用的语言（同时持久化到 localStorage，原 middleware 逻辑下沉）
+   * @returns 初始化后的语言代码
    * @throws 当语言初始化失败时抛出错误
    */
-  const initializeAppLanguage = async (): Promise<void> => {
+  const initializeAppLanguage = async (): Promise<string> => {
     try {
       const result = await getDefaultAppLanguage();
       language.value = result.lang;
@@ -38,6 +39,7 @@ export const useAppConfigStore = defineStore('appConfig', () => {
       } catch (err) {
         console.warn('[LanguagePersistence] 持久化失败:', err);
       }
+      return language.value;
     } catch (error) {
       throw new Error(
         tSafely('error.appConfig.failToInitializeLanguage', 'Failed to initialize language'),
@@ -49,12 +51,14 @@ export const useAppConfigStore = defineStore('appConfig', () => {
   /**
    * 初始化是否传输推理内容的开关状态
    * 从 localStorage 读取，默认为 false
+   * @returns 初始化后的开关值
    * @throws 当读取失败时抛出错误
    */
-  const initializeTransmitHistoryReasoning = async (): Promise<void> => {
+  const initializeTransmitHistoryReasoning = async (): Promise<boolean> => {
     try {
       const storedValue = localStorage.getItem(LOCAL_STORAGE_TRANSMIT_HISTORY_REASONING_KEY);
       transmitHistoryReasoning.value = storedValue === 'true';
+      return transmitHistoryReasoning.value;
     } catch (error) {
       throw new Error(
         tSafely('error.appConfig.failToInitializeTransmitHistoryReasoning', 'Failed to initialize transmit history reasoning'),
@@ -66,13 +70,15 @@ export const useAppConfigStore = defineStore('appConfig', () => {
   /**
    * 初始化自动命名功能开关状态
    * 从 localStorage 读取，默认为 true
+   * @returns 初始化后的开关值
    * @throws 当读取失败时抛出错误
    */
-  const initializeAutoNamingEnabled = async (): Promise<void> => {
+  const initializeAutoNamingEnabled = async (): Promise<boolean> => {
     try {
       const storedValue = localStorage.getItem(LOCAL_STORAGE_AUTO_NAMING_ENABLED_KEY);
       // 如果 localStorage 中没有值或值为 'false'，则返回 false，否则返回 true
       autoNamingEnabled.value = storedValue !== 'false';
+      return autoNamingEnabled.value;
     } catch (error) {
       throw new Error(
         tSafely('error.appConfig.failToInitializeAutoNamingEnabled', 'Failed to initialize auto naming'),

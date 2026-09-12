@@ -1,7 +1,7 @@
 /**
- * react-i18next mock 工厂函数
+ * i18n 绑定 mock 工厂函数
  *
- * 用于 vi.mock('react-i18next') 的统一 mock 创建。
+ * 用于 vi.mock('@/composables/useTranslation') 的统一 mock 创建。
  * 由于 vitest 的 hoisting 限制，vi.mock 工厂无法使用常规 import，
  * 因此此函数通过 setup.ts 注册到 globalThis.__createI18nMockReturn。
  *
@@ -15,7 +15,7 @@
  * @example
  * ```typescript
  * // 标准用法（通过 globalThis，在 vi.mock 工厂中使用）
- * vi.mock('react-i18next', () => {
+ * vi.mock('@/composables/useTranslation', () => {
  *   const R = { nav: { chat: '聊天' } };
  *   return globalThis.__createI18nMockReturn(R);
  * });
@@ -24,7 +24,7 @@
  * @example
  * ```typescript
  * // 模板插值用法
- * vi.mock('react-i18next', () => {
+ * vi.mock('@/composables/useTranslation', () => {
  *   const R = { setting: { count: '共 {{count}} 个模型' } };
  *   return globalThis.__createI18nMockReturn(R);
  * });
@@ -36,7 +36,7 @@ import { vi } from 'vitest';
 /**
  * 高频默认翻译资源（从 52 个测试文件中提取的公共键）
  *
- * 包含 3+ 个文件共享的翻译键，用于减少 vi.mock('react-i18next') 的样板代码。
+ * 包含 3+ 个文件共享的翻译键，用于减少 vi.mock('@/composables/useTranslation') 的样板代码。
  * 通过 mockI18n(keys?) 自动合并到自定义翻译中。
  */
 export const DEFAULT_I18N_RESOURCES = {
@@ -138,15 +138,15 @@ function deepMerge<T extends Record<string, unknown>>(
  * 内置高频默认翻译键（DEFAULT_I18N_RESOURCES），自动深度合并自定义键。
  *
  * @param keys 自定义翻译键（深度合并到默认键上）
- * @returns vi.mock('react-i18next') 的返回值
+ * @returns vi.mock('@/composables/useTranslation') 的返回值
  *
  * @example
  * ```typescript
  * // 使用默认翻译
- * vi.mock('react-i18next', () => globalThis.__mockI18n());
+ * vi.mock('@/composables/useTranslation', () => globalThis.__mockI18n());
  *
  * // 添加/覆盖自定义翻译
- * vi.mock('react-i18next', () => globalThis.__mockI18n({ setting: { key: '自定义' } }));
+ * vi.mock('@/composables/useTranslation', () => globalThis.__mockI18n({ setting: { key: '自定义' } }));
  * ```
  */
 export function mockI18n(keys?: Record<string, unknown>) {
@@ -157,9 +157,12 @@ export function mockI18n(keys?: Record<string, unknown>) {
 }
 
 /**
- * 创建 react-i18next mock 返回值
+ * 创建 i18n 绑定 mock 返回值
+ *
+ * 供 vi.mock('@/composables/useTranslation') 工厂使用，返回 useTranslation
+ * 组合式函数的 mock 实现（t 支持选择器函数、字符串键与模板插值三种模式）。
  * @param zhResources 翻译资源对象，类型由调用方推断
- * @returns vi.mock('react-i18next') 的返回值
+ * @returns vi.mock 工厂的返回值
  */
 export function createI18nMockReturn<T extends Record<string, unknown>>(zhResources: T) {
   return {
@@ -180,10 +183,5 @@ export function createI18nMockReturn<T extends Record<string, unknown>>(zhResour
         changeLanguage: vi.fn(),
       },
     }),
-    initReactI18next: {
-      type: '3rdParty' as const,
-      init: vi.fn(),
-    },
-    I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
   };
 }

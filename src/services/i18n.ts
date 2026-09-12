@@ -1,5 +1,4 @@
 import i18n, { Resource, TFunction } from "i18next";
-import { initReactI18next } from "react-i18next";
 import { getDefaultAppLanguage, getLanguageLabel } from "./global";
 import { toastQueue } from "./toast/toastQueue";
 
@@ -285,13 +284,13 @@ export const initI18n = async () => {
       }
     }
 
-    // 初始化 i18next，使用 resources 配置
-    await i18n.use(initReactI18next).init({
+    // 初始化 i18next，使用 resources 配置（响应式绑定由 Vue 组合式函数订阅 languageChanged 提供）
+    await i18n.init({
       lng: actualLang,
       fallbackLng: "en",
       resources: initialResources,
       interpolation: {
-        escapeValue: false, // react already safes from xss
+        escapeValue: false, // Vue 模板默认对插值转义，已防 XSS
       },
     });
 

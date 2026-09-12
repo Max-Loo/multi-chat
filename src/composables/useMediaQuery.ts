@@ -16,7 +16,7 @@ export function useMediaQuery(query: string, defaultValue = false) {
   if (typeof window !== 'undefined') {
     const mediaQuery = window.matchMedia(query);
 
-    // 节流处理器（150ms），leading/trailing 均生效，与 React 版一致
+    // 节流处理器（150ms），leading/trailing 均生效，与 迁移前一致
     const throttledHandler = throttle((event: MediaQueryListEvent) => {
       matches.value = event.matches;
     }, 150);

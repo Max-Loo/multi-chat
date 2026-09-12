@@ -24,18 +24,20 @@ export const useModelStore = defineStore('models', () => {
 
   /**
    * 初始化模型数据
-   * @throws 当初始化失败时抛出错误
+   * @returns 加载结果（含模型列表与解密失败数量），失败时返回 undefined 并记录 initializationError
    */
-  const initializeModels = async (): Promise<void> => {
+  const initializeModels = async (): Promise<Awaited<ReturnType<typeof loadModelsFromJson>> | undefined> => {
     loading.value = true;
     initializationError.value = null;
     try {
       const result = await loadModelsFromJson();
       models.value = result.models;
       loading.value = false;
+      return result;
     } catch (err) {
       loading.value = false;
       initializationError.value = err instanceof Error ? err.message : 'Failed to initialize file';
+      return undefined;
     }
   };
 

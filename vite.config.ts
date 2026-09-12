@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import vue from "@vitejs/plugin-vue";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
@@ -89,13 +88,6 @@ export default defineConfig(async () => ({
   // GitHub Pages 部署通过 BASE_PATH 环境变量设置子路径，默认使用根路径
   base: process.env.BASE_PATH || "/",
   plugins: [
-    react({
-      // 仅处理 jsx/tsx：避免 React Compiler 对 Vue 组合式函数（use*.ts）注入 React 运行时调用
-      include: /\.[jt]sx$/,
-      babel: {
-        plugins: [["babel-plugin-react-compiler"]],
-      },
-    }),
     vue(),
     tailwindcss(),
     visualizer({
@@ -125,31 +117,12 @@ export default defineConfig(async () => ({
     environment: "happy-dom",
     globals: true,
     setupFiles: ["./src/__test__/setup.ts"],
-    include: ["src/__test__/**/*.{test,spec}.{ts,tsx}"],
+    include: ["src/__test__/**/*.{test,spec}.ts"],
     exclude: ["node_modules", "dist", "src/__test__/integration/**"],
 
-    // 使用 forks 池避免 react-redux ESM 模块初始化竞态
+    // 使用 forks 池避免模块初始化竞态
     pool: "forks",
     maxForks: 2,
-
-    // 优化依赖项预构建
-    deps: {
-      optimizer: {
-        web: {
-          // 预构建 CommonJS/ESM 模块以优化依赖解析速度
-          include: [
-            "use-sync-external-store",
-            "cookie",
-            "react",
-            "react-dom",
-            "react/jsx-runtime",
-            "react-redux",
-            "react-remove-scroll",
-            "@radix-ui/react-slot",
-          ],
-        },
-      },
-    },
 
     // 测试文件匹配模式
     testTimeout: 10000, // 10 秒超时

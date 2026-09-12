@@ -8,24 +8,18 @@ import {
   rollbackRegenerate,
   updateHistoryContent,
 } from '@/services/chat/chatHistoryHelper';
-import type { ChatSliceState } from '@/store/slices/chatSlices';
+import type { ChatHistoryState } from '@/services/chat/chatHistoryHelper';
 import { ChatRoleEnum, type Chat, type StandardMessage } from '@/types/chat';
 import { createMockMessage, createUserMessage, createAssistantMessage } from '@/__test__/fixtures/chat';
 
 /**
- * 创建测试用的 ChatSliceState
+ * 创建测试用的 ChatHistoryState
  */
-function createTestState(chatData?: Partial<Record<string, Chat>>): ChatSliceState {
+function createTestState(chatData?: Record<string, Chat>): ChatHistoryState {
   return {
-    chatMetaList: [],
     activeChatData: chatData ?? {},
-    sendingChatIds: {},
-    loading: false,
-    selectedChatId: null,
-    error: null,
-    initializationError: null,
     runningChat: {},
-  } as ChatSliceState;
+  };
 }
 
 /**

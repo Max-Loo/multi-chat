@@ -44,7 +44,7 @@ export const useZodForm = <Values extends Record<string, unknown>>(
     return false;
   };
 
-  /** 更新字段值并即时校验（对应 React 版 validators.onChange） */
+  /** 更新字段值并即时校验（对应 迁移前 validators.onChange） */
   const handleChange = (name: FieldName<Values>, value: unknown) => {
     (values as Record<string, unknown>)[name] = value;
     validateField(name);
