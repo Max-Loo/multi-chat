@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.10] - 2026-09-20
+
+### 🔧 杂项
+
+- **OpenSpec skills/commands 升级到 CLI 1.13.1**：6 个平台目录（`.agents` / `.claude` / `.opencode` / `.pi` / `.trae` / `.zcode`）下 132 个自动生成的文件同步更新
+  - 各 skill description 增加触发短语（如 "opsx new"），提升 skill 自动激活的匹配率
+  - 新增项目初始化检查流程，避免在未初始化 OpenSpec 的项目中误创建 `openspec/` 目录
+
+---
+
 ## [0.5.9] - 2026-09-08
 
 ### 🔧 杂项
