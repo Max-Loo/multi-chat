@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.11] - 2026-09-21
+
+### 📝 文档变更
+
+- **精简 AGENTS.md 工作规范**：删除第 6 条工作规范「Token 预算必须遵守」，工作规范由十二条精简为十一条，后续条目重新编号
+- **更新文档统计**：同步更新「当前文档状态」章节的总行数统计（218 → 229 行）
+
+---
+
 ## [0.5.10] - 2026-09-20
 
 ### 🔧 杂项
