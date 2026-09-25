@@ -1,3 +1,7 @@
+## Purpose
+
+规定同构测试用例参数化的可验证约束：同一测试文件内仅差输入值或单个字段、断言结构相同的连续用例 MUST 使用 `it.each`/`test.each` 参数化，参数表保留原用例语义命名，确保同构逻辑只维护一处且失败定位仍可读。
+
 ## ADDED Requirements
 
 ### Requirement: crypto Unicode 往返测试参数化

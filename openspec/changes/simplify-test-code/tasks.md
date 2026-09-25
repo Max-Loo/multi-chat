@@ -43,6 +43,6 @@
 
 ## 6. 收尾
 
-- [ ] 6.1 修复 `openspec/specs/test-parameterization/spec.md` 缺失 Purpose 段落的格式问题（`openspec show "test-parameterization" --type spec` 当前报错）；验证：该命令不再报 `Spec must have a Purpose section`
-- [ ] 6.2 更新 `src/__test__/README.md`：删除 matchMedia 引用、补充 react-i18next 全局 mock 与 `vi.unmock` 例外说明、store 工厂统一用法；验证：README 中无已删除 API 的引用（`rg "matchMedia" src/__test__/README.md` 零结果）
+- [x] 6.1 修复 `openspec/specs/test-parameterization/spec.md` 缺失 Purpose 段落的格式问题（`openspec show "test-parameterization" --type spec` 当前报错）；验证：该命令不再报 `Spec must have a Purpose section`
+- [x] 6.2 更新 `src/__test__/README.md`：删除 matchMedia 引用、补充 react-i18next 全局 mock 与 `vi.unmock` 例外说明、store 工厂统一用法；验证：README 中无已删除 API 的引用（`rg "matchMedia" src/__test__/README.md` 零结果）
 - [ ] 6.3 最终验收：`pnpm test:run && pnpm test:integration:run && pnpm test:coverage` 全通过、各模块覆盖率 ≥ 1.1 基线、全变更净精简 ≥ 2,000 行（`git diff main --stat -- src/__test__` 统计）、产品代码零改动（`git diff main --stat -- 'src/**' ':!src/__test__'` 为空）

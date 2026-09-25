@@ -60,6 +60,34 @@ src/__test__/
 
 第三方组件库默认不 Mock，仅在渲染耗时、需特殊环境或行为不稳定时 Mock。
 
+### 全局 Mock 层（setup/mocks.ts）
+
+单元测试配置（`vite.config.ts`）通过 `setup.ts` 加载全局 Mock，测试文件无需重复声明：
+
+- **react-i18next**：全局提供默认翻译键 mock（`helpers/mocks/i18n.ts` 的 `DEFAULT_I18N_RESOURCES`）。
+  - 需要自定义翻译键的文件仍在文件级 `vi.mock('react-i18next', () => globalThis.__mockI18n(自定义键))` 覆盖；
+  - 依赖真实 react-i18next 渲染输出的文件，在文件顶部 `vi.unmock('react-i18next')` 并附 `// Reason:` 注释说明理由（如 `FatalErrorScreen.test.tsx`、`useBasicModelTable.test.tsx`）。
+- **注意**：集成测试配置（`vitest.integration.config.ts` → `integration/setup.ts`）**有意不加载全局 Mock**，集成测试需要 mock 时在文件级自行声明。
+- 其余全局 mock（storeUtils、tauriCompat、AI SDK、Skeleton 等）见 `src/__test__/setup/mocks.ts`。
+
+### Store 工厂统一用法
+
+测试中的 Redux store 统一使用共享工厂 `createTypeSafeTestStore`（`helpers/render/redux.tsx`），配合 `helpers/mocks/testState.ts` 的 slice state 工厂组合：
+
+```typescript
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
+import { createChatSliceState, createModelSliceState } from '@/__test__/helpers/mocks/testState';
+
+const store = createTypeSafeTestStore({
+  chat: createChatSliceState({ chatMetaList: [meta] }),
+  models: createModelSliceState({ models: [model] }),
+});
+```
+
+- 不要在测试文件内重新内联 `configureStore`（集成测试确需最小 reducer 集时除外）；
+- 单文件内高复用的构造可保留为文件内 helper（如 `chatMiddleware.test.ts` 的 `createAutoNamingStore`），内部仍应组合共享工厂；
+- 返回类型 `TestStore` 的 dispatch 支持 thunk。
+
 ### 组件测试
 
 ```typescript
