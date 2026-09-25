@@ -124,3 +124,12 @@ vi.mock('@/components/ui/skeleton', async () => {
       createElement('div', { 'data-testid': 'skeleton-item', className, 'data-variant': variant, style }),
   };
 });
+
+// ========================================
+// react-i18next 全局 Mock
+// ========================================
+// 纯默认翻译键（DEFAULT_I18N_RESOURCES），等价于此前 19+ 个文件的
+// `vi.mock('react-i18next', () => globalThis.__mockI18n())` 文件级样板。
+// 需要自定义翻译键的文件仍可在文件级重新 `vi.mock('react-i18next', () => globalThis.__mockI18n(自定义键))` 覆盖；
+// 依赖真实 react-i18next 行为的文件在文件顶部添加 `vi.unmock('react-i18next')` 恢复。
+vi.mock('react-i18next', () => globalThis.__mockI18n());

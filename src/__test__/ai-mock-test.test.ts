@@ -53,14 +53,14 @@ describe('AI SDK Mock Test', () => {
       messages: [],
     });
 
-    // 验证可以通过 await 获取元数据
+    // 验证可以通过 await 获取元数据（AI SDK 原始格式，finishReason 为同步字符串）
     const metadata = await result;
     expect(metadata.finishReason).toBeDefined();
-    expect(await metadata.finishReason).toBe('stop');
-    expect(await metadata.usage).toEqual({
+    expect(metadata.finishReason).toBe('stop');
+    expect(metadata.usage).toEqual({
       inputTokens: 10,
-      outputTokens: 5,
-      totalTokens: 15,
+      outputTokens: 20,
+      totalTokens: 30,
     });
   });
 });

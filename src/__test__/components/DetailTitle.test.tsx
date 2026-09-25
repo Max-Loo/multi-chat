@@ -3,7 +3,7 @@
  * 测试模型详情标题组件的渲染和功能
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import DetailTitle from '@/pages/Chat/components/Panel/Detail/Title';
 import { ModelProviderKeyEnum } from '@/utils/enums';
@@ -11,7 +11,6 @@ import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers
 import { createMockModel, createChatSliceState, createModelSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks';
 import { createMockPanelChatModel } from '@/__test__/helpers/mocks/panelLayout';
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * 创建测试用的 Redux store

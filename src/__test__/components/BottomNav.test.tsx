@@ -22,7 +22,6 @@ vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => globalThis.__createResponsiveMock({ isMobile: mockIsMobile.value, layoutMode: mockIsMobile.value ? 'mobile' : 'desktop', isDesktop: !mockIsMobile.value }),
 }));
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock navigation配置（使用共享 mock）
 vi.mock('@/config/navigation', async () => {

@@ -7,6 +7,67 @@
 import { vi } from 'vitest';
 
 /**
+ * AI SDK 原始格式的流式元数据类型
+ *
+ * 与 streamText 返回值 await 后的元数据形状对应（timestamp 为 Date 对象、
+ * finishReason 为同步字符串），供 metadataCollector 消费。
+ */
+export interface MockAISDKMetadata {
+  providerMetadata: Promise<Record<string, unknown>>;
+  warnings: Promise<Array<unknown>>;
+  sources: Promise<Array<unknown> | undefined>;
+  response: {
+    id: string;
+    modelId: string;
+    timestamp: Date;
+    headers?: Record<string, unknown>;
+  };
+  request: {
+    body: unknown;
+  };
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  finishReason?: string | null;
+  rawFinishReason?: string | null;
+}
+
+/**
+ * 创建 AI SDK 原始格式的流式元数据
+ *
+ * @param overrides 要覆盖的字段
+ * @returns AI SDK 原始格式元数据对象
+ */
+export const createMockAISDKMetadata = (
+  overrides: Partial<MockAISDKMetadata> = {}
+): MockAISDKMetadata => ({
+  providerMetadata: Promise.resolve({ provider: 'deepseek' }),
+  warnings: Promise.resolve([]),
+  sources: Promise.resolve(undefined),
+  response: {
+    id: 'test-id',
+    modelId: 'deepseek-chat',
+    timestamp: new Date('2024-01-01T00:00:00.000Z'), // AI SDK 返回 Date 对象
+    headers: {
+      'content-type': 'application/json',
+    },
+  },
+  request: {
+    body: '{"model":"deepseek-chat"}',
+  },
+  usage: {
+    inputTokens: 10,
+    outputTokens: 20,
+    totalTokens: 30,
+  },
+  finishReason: 'stop',
+  rawFinishReason: 'stop',
+  ...overrides,
+});
+
+/**
  * 创建模拟的 streamText 返回值
  *
  * 返回对象同时实现 AsyncIterable 和 Thenable 接口，可配合 `for await...of` 消费流，
@@ -33,7 +94,7 @@ import { vi } from 'vitest';
  *
  * // 获取元数据
  * const metadata = await mockResult;
- * expect(metadata.finishReason).resolves.toBe('stop');
+ * expect(metadata.finishReason).toBe('stop');
  * ```
  *
  * @example
@@ -69,7 +130,7 @@ export function createMockStreamResult(
     // AsyncIterable 接口
     [Symbol.asyncIterator]: mockStream,
 
-    // Thenable 接口 - 用于 await 获取元数据
+    // Thenable 接口 - 用于 await 获取元数据，resolve AI SDK 原始格式元数据
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, unicorn/no-thenable
     then: (callback: (value: any) => any, errorCallback?: (reason: any) => any) => {
       // 如果提供了 streamError，返回 rejected Promise
@@ -77,30 +138,7 @@ export function createMockStreamResult(
         return Promise.reject(options.streamError);
       }
 
-      return Promise.resolve({
-        finishReason: Promise.resolve('stop'),
-        rawFinishReason: Promise.resolve('stop'),
-        usage: Promise.resolve({
-          inputTokens: 10,
-          outputTokens: 5,
-          totalTokens: 15,
-        }),
-        response: Promise.resolve({
-          id: 'resp-123',
-          modelId: 'deepseek-chat',
-          timestamp: new Date('2024-01-01T00:00:00.000Z'),
-          headers: { 'content-type': 'application/json', 'x-request-id': 'req-123' },
-        }),
-        request: Promise.resolve({
-          body: '{"model":"deepseek-chat","messages":[]}',
-        }),
-        providerMetadata: Promise.resolve({}),
-        warnings: Promise.resolve([]),
-        sources: Promise.resolve([]),
-        // 其他可能的方法
-        toDataStreamResponse: () => new Response(),
-        toTextStreamResponse: () => new Response(),
-      }).then(callback, errorCallback);
+      return Promise.resolve(createMockAISDKMetadata()).then(callback, errorCallback);
     },
 
     // fullStream 属性 - 用于 for await...of 消费

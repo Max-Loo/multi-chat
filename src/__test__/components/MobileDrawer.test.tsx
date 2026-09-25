@@ -9,7 +9,6 @@ import { render, screen } from '@testing-library/react';
 import { MobileDrawer } from '@/components/MobileDrawer';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock shadcn/ui Sheet 组件（底层依赖 radix-ui Dialog，涉及 Portal/Overlay/FocusTrap 等 DOM 结构，
 // 在 happy-dom 中缺少 DOMPortal 支持，不 mock 会导致渲染失败，保留此 mock）

@@ -95,7 +95,6 @@ describe('editAndResendMessage thunk', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createTestStore();
   });
 
@@ -247,7 +246,6 @@ describe('regenerateMessage thunk', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     store = createTestStore();
   });
 

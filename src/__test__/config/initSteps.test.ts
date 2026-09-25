@@ -223,7 +223,6 @@ describe('initSteps 配置验证', () => {
 
 describe('initSteps execute 函数', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     mockDispatch.mockImplementation((...args: unknown[]) => args[0]);
   });
 

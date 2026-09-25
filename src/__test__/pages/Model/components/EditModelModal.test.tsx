@@ -23,12 +23,10 @@ vi.mock('react-i18next', () =>
   }));
 
 // Mock sonner
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
+vi.mock('sonner', async () => {
+  const { createSonnerMock } = await import('@/__test__/helpers/mocks/toast');
+  return createSonnerMock();
+});
 
 const mockProviders = [
   {

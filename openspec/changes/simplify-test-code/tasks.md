@@ -7,21 +7,21 @@
 
 ## 2. 批次①：helpers 死代码删除
 
-- [ ] 2.1 删除 `src/__test__/helpers/mocks/matchMedia.ts` 整文件（63 行，0 引用）；验证：`rg "createMockMatchMedia|setupMatchMediaMock" src/` 零结果
-- [ ] 2.2 删除 `src/__test__/helpers/mocks/router.ts` 中零引用导出（`createMockSearchParams`、`createNestedRouteParams`、`createMockLocationWithQuery`、`createReactRouterMocksWithNestedParams`，约 L35-171），保留被 router/ 测试使用的 `getRootRoute`/`getRootChildren`/`hasRouteProperty`；验证：`rg "createMockSearchParams|createReactRouterMocksWithNestedParams" src/` 零结果且 router/ 4 个测试仍通过
-- [ ] 2.3 删除仅自测引用的导出：`testState.ts` 的 `createRunningChatEntry`、`helpers/fixtures/model.ts` 的 `createEncryptedModel`/`createKimiModel`、`helpers/fixtures/modelProvider.ts` 的 `createZhipuProvider`、`helpers/isolation/reset.ts` 的 `useIsolatedTest`/`setTestEnv`/`verifyIsolation`，同步删除其自测用例；验证：`pnpm test:run` 通过且 helpers 自测文件无失败
-- [ ] 2.4 删除 `helpers/integration/clearIndexedDB.ts` 壳文件（改由使用方直接导入 `helpers/isolation/reset.ts`）、移除 `setup/base.ts` 中零使用的 `__createI18nMockReturn` globalThis 注册；验证：`rg "clearIndexedDB" src/__test__/helpers/integration` 零结果、`pnpm tsc` 无类型错误
-- [ ] 2.5 批次①全量回归：`pnpm tsc && pnpm test:run && pnpm test:integration:run` 全部通过，`git diff --stat` 确认净删除约 320 行且未触碰产品代码
+- [x] 2.1 删除 `src/__test__/helpers/mocks/matchMedia.ts` 整文件（63 行，0 引用）；验证：`rg "createMockMatchMedia|setupMatchMediaMock" src/` 零结果
+- [x] 2.2 删除 `src/__test__/helpers/mocks/router.ts` 中零引用导出（`createMockSearchParams`、`createNestedRouteParams`、`createMockLocationWithQuery`、`createReactRouterMocksWithNestedParams`，约 L35-171），保留被 router/ 测试使用的 `getRootRoute`/`getRootChildren`/`hasRouteProperty`；验证：`rg "createMockSearchParams|createReactRouterMocksWithNestedParams" src/` 零结果且 router/ 4 个测试仍通过
+- [x] 2.3 删除仅自测引用的导出：`testState.ts` 的 `createRunningChatEntry`、`helpers/fixtures/model.ts` 的 `createEncryptedModel`/`createKimiModel`、`helpers/fixtures/modelProvider.ts` 的 `createZhipuProvider`、`helpers/isolation/reset.ts` 的 `useIsolatedTest`/`setTestEnv`/`verifyIsolation`，同步删除其自测用例；验证：`pnpm test:run` 通过且 helpers 自测文件无失败
+- [x] 2.4 删除 `helpers/integration/clearIndexedDB.ts` 壳文件（改由使用方直接导入 `helpers/isolation/reset.ts`）、移除 `setup/base.ts` 中零使用的 `__createI18nMockReturn` globalThis 注册；验证：`rg "clearIndexedDB" src/__test__/helpers/integration` 零结果、`pnpm tsc` 无类型错误
+- [x] 2.5 批次①全量回归：`pnpm tsc && pnpm test:run && pnpm test:integration:run` 全部通过，`git diff --stat` 确认净删除约 320 行且未触碰产品代码
 
 ## 3. 批次②：mock 样板收敛与本地工厂替换
 
-- [ ] 3.1 在 `src/__test__/setup/mocks.ts` 新增 `vi.mock('react-i18next', ...)` 全局 mock（复用 `helpers/mocks/i18n.ts` 的 `__mockI18n` 工厂纯默认行为）；验证：新增后 `pnpm test:run` 运行完成，识别因全局 mock 失败的文件清单
-- [ ] 3.2 对 3.1 识别出的依赖真实 `react-i18next` 的失败文件，添加 `vi.unmock('react-i18next')` 与理由注释；验证：`pnpm test:run` 全部通过
-- [ ] 3.3 删除 19 个纯默认 i18n 样板文件的文件级 `vi.mock('react-i18next')` 声明（依赖全局 mock）；验证：`rg -l "vi.mock\('react-i18next'" src/__test__` 仅剩带自定义键的文件
-- [ ] 3.4 替换 AI SDK mock 本地重写：`services/chat/streamProcessor.integration.test.ts`（L46、L83）与 `services/chat/index.integration.test.ts`（L48、L77）删除本地 `createMockAISDKMetadata`/`createMockStreamResult`，改从 `helpers/mocks/aiSdk.ts` 导入；验证：`pnpm test:integration:run` 通过且流式行为断言不变
-- [ ] 3.5 替换 16 处内联 store 工厂（`components/ChatPanelSender.test.tsx:37`、`components/ChatPanelHeader.test.tsx:31`、`components/ModelConfigForm.test.tsx:28`、`components/ChatPanel.test.tsx:42`、`pages/Model/` 下 5 个、`integration/` 下 5 个、`performance/chat-button-render-count.test.tsx:18`、`pages/Chat/ChatPage.test.tsx:64`）为 `createTypeSafeTestStore` + slice state 工厂组合；验证：各文件测试通过且 `rg "const create\w*Store = " src/__test__` 仅剩共享层定义与文件内高复用 helper（如 `createAutoNamingStore`）
-- [ ] 3.6 收敛同构 mock 模板：`useNavigateToPage`（7 文件）、`sonner`（4 文件）、`virtua` 手写 V 组件（2 文件）改为共享工厂/globalThis 工厂单行引用；验证：各模板 mock 体在 `src/__test__` 中至多出现一次（共享定义处）
-- [ ] 3.7 清理与全局 setup 重复的样板：删除 12 个文件的手写 `vi.clearAllMocks()`、10 个文件的 `localStorage.clear()`（存储类三连清理统一用 `resetTestState()`）；验证：`rg -c "vi.clearAllMocks\(\)" src/__test__ --glob '!**/setup/**'` 仅剩语义必要处（如部分集成测试 setup）
+- [x] 3.1 在 `src/__test__/setup/mocks.ts` 新增 `vi.mock('react-i18next', ...)` 全局 mock（复用 `helpers/mocks/i18n.ts` 的 `__mockI18n` 工厂纯默认行为）；验证：新增后 `pnpm test:run` 运行完成，识别因全局 mock 失败的文件清单
+- [x] 3.2 对 3.1 识别出的依赖真实 `react-i18next` 的失败文件，添加 `vi.unmock('react-i18next')` 与理由注释；验证：`pnpm test:run` 全部通过
+- [x] 3.3 删除 19 个纯默认 i18n 样板文件的文件级 `vi.mock('react-i18next')` 声明（依赖全局 mock）；验证：`rg -l "vi.mock\('react-i18next'" src/__test__` 仅剩带自定义键的文件
+- [x] 3.4 替换 AI SDK mock 本地重写：`services/chat/streamProcessor.integration.test.ts`（L46、L83）与 `services/chat/index.integration.test.ts`（L48、L77）删除本地 `createMockAISDKMetadata`/`createMockStreamResult`，改从 `helpers/mocks/aiSdk.ts` 导入；验证：`pnpm test:integration:run` 通过且流式行为断言不变
+- [x] 3.5 替换 16 处内联 store 工厂（`components/ChatPanelSender.test.tsx:37`、`components/ChatPanelHeader.test.tsx:31`、`components/ModelConfigForm.test.tsx:28`、`components/ChatPanel.test.tsx:42`、`pages/Model/` 下 5 个、`integration/` 下 5 个、`performance/chat-button-render-count.test.tsx:18`、`pages/Chat/ChatPage.test.tsx:64`）为 `createTypeSafeTestStore` + slice state 工厂组合；验证：各文件测试通过且 `rg "const create\w*Store = " src/__test__` 仅剩共享层定义与文件内高复用 helper（如 `createAutoNamingStore`）
+- [x] 3.6 收敛同构 mock 模板：`useNavigateToPage`（7 文件）、`sonner`（4 文件）、`virtua` 手写 V 组件（2 文件）改为共享工厂/globalThis 工厂单行引用；验证：各模板 mock 体在 `src/__test__` 中至多出现一次（共享定义处）
+- [x] 3.7 清理与全局 setup 重复的样板：删除 12 个文件的手写 `vi.clearAllMocks()`、10 个文件的 `localStorage.clear()`（存储类三连清理统一用 `resetTestState()`）；验证：`rg -c "vi.clearAllMocks\(\)" src/__test__ --glob '!**/setup/**'` 仅剩语义必要处（如部分集成测试 setup）
 - [ ] 3.8 批次②全量回归：`pnpm test:run && pnpm test:integration:run && pnpm test:coverage` 通过，各模块覆盖率不低于 1.1 基线；`git diff --stat` 确认批次净精简 500 行以上
 
 ## 4. 批次③：同构用例参数化与重复用例删除

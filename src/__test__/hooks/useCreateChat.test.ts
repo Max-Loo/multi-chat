@@ -7,12 +7,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: vi.fn(() => ({
-    navigateToChat: vi.fn(),
-    clearChatIdParam: vi.fn(),
-  })),
-}));
+vi.mock('@/hooks/useNavigateToPage', async () => {
+  const { createNavigateToPageMock } = await import('@/__test__/helpers/mocks/navigateToPage');
+  return createNavigateToPageMock();
+});
 
 vi.mock('ai', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -27,9 +25,9 @@ import { generateId } from 'ai';
 import { useCreateChat } from '@/hooks/useCreateChat';
 import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState } from '@/__test__/helpers/mocks/testState';
+import { mockNavigateToChat } from '@/__test__/helpers/mocks/navigateToPage';
 
 describe('useCreateChat', () => {
-  const mockNavigateToChat = vi.fn();
 
   beforeEach(() => {
     vi.mocked(useNavigateToChat).mockReturnValue({

@@ -4,7 +4,7 @@
  * 测试模型供应商展示组件的各种场景
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import ModelProviderDisplay from '@/pages/Model/ModelTable/components/ModelProviderDisplay';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
@@ -12,7 +12,6 @@ import { createModelProviderSliceState } from '@/__test__/helpers/mocks/testStat
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * 创建测试用 Redux store

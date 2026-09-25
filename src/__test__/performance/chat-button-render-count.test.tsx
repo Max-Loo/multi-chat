@@ -31,14 +31,11 @@ vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: vi.fn(() => globalThis.__createResponsiveMock()),
 }))
 
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
-    navigateToChat: vi.fn(),
-    clearChatIdParam: vi.fn(),
-  }),
-}))
+vi.mock('@/hooks/useNavigateToPage', async () => {
+  const { createNavigateToPageMock } = await import('@/__test__/helpers/mocks/navigateToPage');
+  return createNavigateToPageMock();
+})
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 vi.mock('@/hooks/useConfirm', () => ({
   useConfirm: () => ({

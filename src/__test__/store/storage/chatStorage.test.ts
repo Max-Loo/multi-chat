@@ -49,7 +49,6 @@ describe('聊天存储', () => {
   /** 每个测试前清空 Map 存储，确保测试隔离 */
   beforeEach(() => {
     storeMap.clear();
-    vi.clearAllMocks();
   });
 
   describe('loadChatIndex', () => {

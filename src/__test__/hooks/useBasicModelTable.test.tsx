@@ -6,6 +6,10 @@ import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelSliceState, createChatSliceState } from '@/__test__/helpers/mocks/testState';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 
+// Reason: 本 hook 的列渲染断言依赖真实 react-i18next 的翻译输出（ModelProviderDisplay 等
+// 组件使用的键不在全局默认翻译键内），全局 i18n mock（setup/mocks.ts）会破坏断言，恢复真实模块
+vi.unmock('react-i18next');
+
 describe('useBasicModelTable', () => {
   afterEach(() => {
     vi.useRealTimers();

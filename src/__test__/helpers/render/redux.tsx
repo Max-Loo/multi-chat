@@ -7,7 +7,7 @@
 import { render, renderHook, type RenderOptions, type RenderHookOptions } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { configureStore, type EnhancedStore } from '@reduxjs/toolkit';
+import { configureStore, type EnhancedStore, type ThunkDispatch, type UnknownAction } from '@reduxjs/toolkit';
 import { ConfirmProvider } from '@/hooks/useConfirm';
 import type { RootState } from '@/store';
 import chatReducer from '@/store/slices/chatSlices';
@@ -30,13 +30,23 @@ import { createTestRootState } from '../mocks/testState';
  * @param options 配置选项
  * @param options.reducerOverrides 自定义 reducer 替换（可选，用于 stub 掉特定 reducer）
  */
+/**
+ * 测试 store 类型：完整 RootState 状态 + 支持 thunk 的 dispatch
+ *
+ * 单独的 EnhancedStore<RootState> 注解会把 dispatch 收窄为仅接受普通 action，
+ * 无法通过类型检查 dispatch AsyncThunkAction
+ */
+export type TestStore = EnhancedStore<RootState> & {
+  dispatch: ThunkDispatch<RootState, undefined, UnknownAction>;
+};
+
 export const createTypeSafeTestStore = (
   preloadedState?: Partial<RootState>,
   options?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reducerOverrides?: { [K in keyof RootState]?: (state: any, action: any) => RootState[K] };
   }
-): EnhancedStore<RootState> => {
+): TestStore => {
   // configureStore 的 ReducersMapObject 内部类型签名与 slice reducer 存在 PreloadedState 兼容差异，
   // 在此边界处使用类型断言确保调用方获得完整的类型安全，而非在各测试文件中使用 as any
   const reducerMap = {
@@ -53,7 +63,7 @@ export const createTypeSafeTestStore = (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reducer: reducerMap as any,
     preloadedState: preloadedState ?? createTestRootState(),
-  }) as EnhancedStore<RootState>;
+  }) as TestStore;
 };
 
 /**

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Sidebar from '@/components/Sidebar';
+import { mockNavigateToChat } from '@/__test__/helpers/mocks/navigateToPage';
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -15,16 +16,13 @@ vi.mock('@/hooks/useCurrentSelectedChat', () => ({
   useCurrentSelectedChat: () => mockSelectedChat,
 }));
 
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
-    navigateToChat: mockNavigateToChat,
-  }),
-}));
+vi.mock('@/hooks/useNavigateToPage', async () => {
+  const { createNavigateToPageMock } = await import('@/__test__/helpers/mocks/navigateToPage');
+  return createNavigateToPageMock();
+});
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 const mockNavigate = vi.fn();
-const mockNavigateToChat = vi.fn();
 let mockLocation: { pathname: string };
 let mockSelectedChat: { id: string } | null = null;
 

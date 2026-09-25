@@ -4,7 +4,7 @@
  * 覆盖移动端和桌面端两种渲染模式下的 UI 渲染和交互行为
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import Placeholder from '@/pages/Chat/components/Placeholder';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
@@ -51,10 +51,6 @@ function renderPlaceholder(isMobile = false) {
 }
 
 describe('Placeholder', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('移动端渲染', () => {
     it('应该在 isMobile: true 下渲染菜单按钮和新建聊天按钮', () => {
       renderPlaceholder(true);

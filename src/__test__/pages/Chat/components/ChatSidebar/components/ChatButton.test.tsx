@@ -8,6 +8,7 @@ import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpe
 import type { ChatMeta } from '@/types/chat';
 import type { EnhancedStore, UnknownAction } from '@reduxjs/toolkit';
 import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
+import { mockClearChatIdParam, mockNavigateToChat } from '@/__test__/helpers/mocks/navigateToPage';
 
 // Mock useResponsive
 const mockUseResponsive = vi.hoisted(() => vi.fn(() => globalThis.__createResponsiveMock()));
@@ -44,14 +45,10 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
 /**
  * Mock useNavigateToPage hook
  */
-const mockNavigateToChat = vi.fn();
-const mockClearChatIdParam = vi.fn();
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
-    navigateToChat: mockNavigateToChat,
-    clearChatIdParam: mockClearChatIdParam,
-  }),
-}));
+vi.mock('@/hooks/useNavigateToPage', async () => {
+  const { createNavigateToPageMock } = await import('@/__test__/helpers/mocks/navigateToPage');
+  return createNavigateToPageMock();
+});
 
 /**
  * Mock useConfirm hook
@@ -596,11 +593,11 @@ describe('ChatButton Component', () => {
 
       // Mock dispatch 抛出异常
       const originalDispatch = store.dispatch;
-      vi.spyOn(store, 'dispatch').mockImplementation((action: UnknownAction): UnknownAction => {
-        if (action && action.type === 'chat/deleteChat') {
+      vi.spyOn(store, 'dispatch').mockImplementation((action: unknown) => {
+        if (action && (action as UnknownAction).type === 'chat/deleteChat') {
           throw new Error('删除失败');
         }
-        return originalDispatch(action);
+        return originalDispatch(action as UnknownAction);
       });
 
       renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });
@@ -709,11 +706,11 @@ describe('ChatButton Component', () => {
 
       // Mock dispatch 抛出异常
       const originalDispatch = store.dispatch;
-      vi.spyOn(store, 'dispatch').mockImplementation((action: UnknownAction): UnknownAction => {
-        if (action && action.type === 'chat/deleteChat') {
+      vi.spyOn(store, 'dispatch').mockImplementation((action: unknown) => {
+        if (action && (action as UnknownAction).type === 'chat/deleteChat') {
           throw new Error('删除失败');
         }
-        return originalDispatch(action);
+        return originalDispatch(action as UnknownAction);
       });
 
       renderWithProviders(<ChatButton chatMeta={meta} isSelected={true} />, { store });

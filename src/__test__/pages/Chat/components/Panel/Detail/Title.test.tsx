@@ -22,7 +22,6 @@ vi.mock('@/hooks/redux', () => ({
   }),
 }));
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock ProviderLogo
 vi.mock('@/components/ProviderLogo', () => ({

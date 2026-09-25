@@ -9,6 +9,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { FatalErrorScreen } from '@/components/FatalErrorScreen';
 import type { InitError } from '@/services/initialization';
 
+// Reason: 本组件断言真实 react-i18next 渲染的翻译文本（错误提示等键不在全局默认翻译键内），
+// 全局 i18n mock（setup/mocks.ts）会破坏这些断言，恢复真实模块
+vi.unmock('react-i18next');
+
 /** 保存原始 window.location 用于测试后恢复 */
 const originalLocation = window.location;
 const mockReload = vi.fn();

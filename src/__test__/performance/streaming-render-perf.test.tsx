@@ -24,7 +24,6 @@ vi.mock('@/utils/markdown', () => ({
   generateCleanHtml: (content: string) => mockGenerateCleanHtml(content),
 }));
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // ========================================
 // 渲染追踪工具

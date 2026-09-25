@@ -5,7 +5,7 @@
  * 不 mock Detail 子组件，使用 renderWithProviders 渲染完整组件树
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import Splitter from '@/pages/Chat/components/Panel/Splitter';
 import type { ChatModel } from '@/types/chat';
@@ -15,7 +15,6 @@ import {
 } from '@/__test__/helpers/mocks/panelLayout';
 import { renderWithProviders } from '@/__test__/helpers/render/redux';
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /** 渲染 Splitter 的辅助函数 */
 function renderSplitter(board: ChatModel[][]) {

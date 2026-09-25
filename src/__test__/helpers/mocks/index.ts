@@ -10,6 +10,7 @@ export * from './router';
 export * from './chatPanel';
 export * from './chatSidebar';
 export * from './aiSdk';
+export * from './navigateToPage';
 export {
   createModelSliceState,
   createMockModel,

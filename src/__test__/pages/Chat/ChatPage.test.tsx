@@ -10,6 +10,7 @@ import ChatPage from '@/pages/Chat';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { ChatSliceState } from '@/store/slices/chatSlices';
+import { mockClearChatIdParam } from '@/__test__/helpers/mocks/navigateToPage';
 
 /**
  * Mock useResponsive hook（可变状态控制 mobile/desktop）
@@ -23,15 +24,11 @@ vi.mock('@/hooks/useResponsive', () => ({
 /**
  * Mock useNavigateToChat hook（追踪 clearChatIdParam 调用）
  */
-const mockClearChatIdParam = vi.fn();
-const mockNavigateToChat = vi.fn();
 
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
-    navigateToChat: mockNavigateToChat,
-    clearChatIdParam: mockClearChatIdParam,
-  }),
-}));
+vi.mock('@/hooks/useNavigateToPage', async () => {
+  const { createNavigateToPageMock } = await import('@/__test__/helpers/mocks/navigateToPage');
+  return createNavigateToPageMock();
+});
 
 /**
  * Mock Sidebar 和 Content 子组件，减少渲染复杂度
@@ -89,7 +86,6 @@ function renderChatPage(route = '/chat', chatOverrides?: Partial<ChatSliceState>
 
 describe('ChatPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     mockResponsive.mockReturnValue({
       layoutMode: 'desktop',
       width: 1280,

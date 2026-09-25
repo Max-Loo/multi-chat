@@ -2,7 +2,7 @@
  * chatExport.ts 单元测试
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { Chat, ChatMeta } from '@/types/chat';
 import { exportAllChats, exportDeletedChats } from '@/services/chatExport';
 
@@ -41,10 +41,6 @@ function createMockChat(overrides: Partial<Chat> = {}): Chat {
 }
 
 describe('chatExport.ts 服务测试', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('loadAllChats', () => {
     // loadAllChats 是内部函数，通过 exportAllChats 间接测试
     // 设置所有聊天为活跃状态，使过滤不影响加载逻辑的验证

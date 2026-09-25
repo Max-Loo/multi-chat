@@ -3,7 +3,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { useConfirm, ConfirmProvider } from '@/hooks/useConfirm';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <ConfirmProvider>{children}</ConfirmProvider>

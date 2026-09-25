@@ -5,6 +5,7 @@ import { resetTestState } from '@/__test__/helpers/isolation';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { EnhancedStore } from '@reduxjs/toolkit';
+import { mockNavigateToChat } from '@/__test__/helpers/mocks/navigateToPage';
 
 vi.mock('@/hooks/useResponsive', () => ({
   useResponsive: () => globalThis.__createResponsiveMock(),
@@ -20,12 +21,10 @@ vi.mock('react-i18next', () =>
 /**
  * Mock useNavigateToPage hook
  */
-const mockNavigateToChat = vi.fn();
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
-    navigateToChat: mockNavigateToChat,
-  }),
-}));
+vi.mock('@/hooks/useNavigateToPage', async () => {
+  const { createNavigateToPageMock } = await import('@/__test__/helpers/mocks/navigateToPage');
+  return createNavigateToPageMock();
+});
 
 /**
  * Mock FilterInput 组件

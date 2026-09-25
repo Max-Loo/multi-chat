@@ -5,6 +5,7 @@ import { ChatRoleEnum } from '@/types/chat';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import type { StandardMessage } from '@/types/chat';
 import { createDeepSeekModel } from '@/__test__/helpers/fixtures/model';
+import { createMockStreamResult } from '@/__test__/helpers/mocks/aiSdk';
 
 // Mock providerLoader 模块
 vi.mock('@/services/chat/providerLoader', () => ({
@@ -37,69 +38,6 @@ vi.mock('ai', async (importOriginal) => {
     generateId: mockAIGenerateId,
   };
 });
-
-// ========================================
-// Mock Helpers
-// ========================================
-
-/**
- * 创建默认的 mock metadata（AI SDK 格式）
- */
-function createMockAISDKMetadata() {
-  return {
-    providerMetadata: Promise.resolve({ provider: 'deepseek' }),
-    warnings: Promise.resolve([]),
-    sources: Promise.resolve(undefined),
-    response: {
-      id: 'test-id',
-      modelId: 'deepseek-chat',
-      timestamp: new Date('2024-01-01T00:00:00.000Z'), // AI SDK 返回 Date 对象
-      headers: {
-        'content-type': 'application/json',
-      },
-    },
-    request: {
-      body: '{"model":"deepseek-chat"}',
-    },
-    usage: {
-      inputTokens: 10,
-      outputTokens: 20,
-      totalTokens: 30,
-    },
-    finishReason: 'stop',
-    rawFinishReason: 'stop',
-  };
-}
-
-/**
- * 创建模拟流式结果
- */
-function createMockStreamResult(
-  events: Array<{ type: string; text?: string }>,
-  metadata?: ReturnType<typeof createMockAISDKMetadata>
-) {
-  const streamGen = (async function* () {
-    for (const event of events) {
-      yield event;
-    }
-  })();
-
-  // 模拟 AI SDK 的 PromiseLike 接口
-  const mockResult: {
-    // eslint-disable-next-line unicorn/no-thenable
-    then: (resolve: (value: ReturnType<typeof createMockAISDKMetadata>) => unknown) => Promise<unknown>;
-    fullStream: AsyncGenerator<{ type: string; text?: string }, void, unknown>;
-    [Symbol.asyncIterator]: () => AsyncIterator<{ type: string; text?: string }>;
-  } = {
-    // eslint-disable-next-line unicorn/no-thenable
-    then: (resolve: (value: ReturnType<typeof createMockAISDKMetadata>) => unknown) =>
-      Promise.resolve(metadata || createMockAISDKMetadata()).then(resolve),
-    fullStream: streamGen,
-    [Symbol.asyncIterator]: () => streamGen[Symbol.asyncIterator](),
-  };
-
-  return mockResult;
-}
 
 // ========================================
 // Test Setup

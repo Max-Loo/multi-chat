@@ -76,3 +76,25 @@ export function createToastSpies(target: {
   }
   return spies;
 }
+
+/**
+ * 创建 sonner 模块 mock（供 vi.mock('sonner') 工厂返回）
+ *
+ * 收敛各测试文件重复的 toast.success/error 样板。
+ *
+ * @example
+ * ```ts
+ * vi.mock('sonner', async () => {
+ *   const { createSonnerMock } = await import('@/__test__/helpers/mocks/toast');
+ *   return createSonnerMock();
+ * });
+ * ```
+ */
+export function createSonnerMock() {
+  return {
+    toast: {
+      success: vi.fn(),
+      error: vi.fn(),
+    },
+  };
+}
