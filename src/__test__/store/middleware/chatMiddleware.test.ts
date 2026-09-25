@@ -345,32 +345,16 @@ describe('chatMiddleware', () => {
       });
     });
 
-    it('应该不触发 当聊天已手动命名', async () => {
-      const chatId = 'auto-chat-002';
-      const { store: autoStore, dispatchedActions } = createAutoNamingStore(createState({ id: chatId, isManuallyNamed: true }, true));
-
-      autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
-
-      await vi.waitFor(() => {
-        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
-      });
-    });
-
-    it('应该不触发 当全局开关关闭', async () => {
-      const chatId = 'auto-chat-003';
-      const { store: autoStore, dispatchedActions } = createAutoNamingStore(createState({ id: chatId }, false));
-
-      autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
-
-      await vi.waitFor(() => {
-        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
-      });
-    });
-
-    it('应该不触发 当标题非空', async () => {
-      const chatId = 'auto-chat-004';
-      const state = createState({ id: chatId, name: '已有标题' }, true);
-      const { store: autoStore, dispatchedActions } = createAutoNamingStore(state);
+    // 不触发的条件分支（差异仅在 createState 参数）
+    it.each([
+      ['当聊天已手动命名', { isManuallyNamed: true }, true],
+      ['当全局开关关闭', {}, false],
+      ['当标题非空', { name: '已有标题' }, true],
+    ])('应该不触发 %s', async (_label, chatOverrides, autoNamingEnabled) => {
+      const chatId = `auto-chat-${_label.replace(/\s/g, '-')}`;
+      const { store: autoStore, dispatchedActions } = createAutoNamingStore(
+        createState({ id: chatId, ...chatOverrides }, autoNamingEnabled)
+      );
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
 

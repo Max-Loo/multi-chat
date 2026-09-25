@@ -502,17 +502,21 @@ describe('InitializationManager', () => {
   });
 
   describe("错误分级交叉组合", () => {
-    it("应该在非关键步骤抛出致命错误时不中断初始化", async () => {
-      const error = new Error('Fatal but not critical');
+    // critical × severity 交叉组合的分级处理：均不中断初始化，仅记录到对应分级
+    it.each([
+      ['非关键步骤抛出致命错误', false, 'fatal', 'Non-critical fatal', false],
+      ['关键步骤抛出警告', true, 'warning', 'Critical warning', true],
+    ] as const)("应该在%s时不中断初始化", async (_label, critical, severity, message, expectedSuccess) => {
+      const error = new Error(message);
       const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({
-          name: 'nonCriticalFatalStep',
-          critical: false,
+          name: `crossStep-${severity}`,
+          critical,
           execute: vi.fn().mockRejectedValue(error),
           onError: vi.fn().mockReturnValue({
-            severity: 'fatal' as const,
-            message: 'Non-critical fatal',
+            severity,
+            message,
             originalError: error,
           }),
         }),
@@ -521,38 +525,11 @@ describe('InitializationManager', () => {
 
       const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
-      // critical=false + severity=fatal：记录致命错误但不中断
-      expect(result.success).toBe(false);
-      expect(result.fatalErrors).toHaveLength(1);
-      expect(result.fatalErrors[0].message).toBe('Non-critical fatal');
-      // 后续步骤仍然执行
-      expect(result.completedSteps).toContain('step1');
-      expect(result.completedSteps).toContain('step3');
-    });
-
-    it("应该在关键步骤抛出警告时不中断初始化", async () => {
-      const error = new Error('Warning from critical step');
-      const steps: TestInitStep[] = [
-        createMockInitStep({ name: 'step1' }),
-        createMockInitStep({
-          name: 'criticalWarningStep',
-          critical: true,
-          execute: vi.fn().mockRejectedValue(error),
-          onError: vi.fn().mockReturnValue({
-            severity: 'warning' as const,
-            message: 'Critical warning',
-            originalError: error,
-          }),
-        }),
-        createMockInitStep({ name: 'step3' }),
-      ];
-
-      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
-
-      // critical=true + severity=warning：记录警告但不中断
-      expect(result.success).toBe(true);
-      expect(result.warnings).toHaveLength(1);
-      expect(result.warnings[0].message).toBe('Critical warning');
+      // critical + severity 交叉组合：记录到对应分级但不中断
+      expect(result.success).toBe(expectedSuccess);
+      const records = severity === 'fatal' ? result.fatalErrors : result.warnings;
+      expect(records).toHaveLength(1);
+      expect(records[0].message).toBe(message);
       // 后续步骤仍然执行
       expect(result.completedSteps).toContain('step1');
       expect(result.completedSteps).toContain('step3');

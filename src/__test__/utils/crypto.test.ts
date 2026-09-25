@@ -4,6 +4,7 @@
 
 import { describe, it, expect, test, vi, beforeEach, afterEach } from 'vitest';
 import { encryptField, decryptField, isEncrypted, hexToBytes, bytesToBase64, base64ToBytes } from '@/utils/crypto';
+import { expectNonExtractableKeyDerivation } from '@/__test__/helpers/cryptoAssertions';
 
 // 测试辅助函数
 /**
@@ -243,7 +244,7 @@ describe('Crypto 工具函数', () => {
 
       expect(importKeySpy).toHaveBeenCalledOnce();
       // extractable 参数（第 4 个参数）应为 false
-      expect(importKeySpy.mock.calls[0][3]).toBe(false);
+      expectNonExtractableKeyDerivation(importKeySpy, 0);
 
       importKeySpy.mockRestore();
     });
@@ -286,7 +287,7 @@ describe('Crypto 工具函数', () => {
 
       // importKey 被调用了两次（encrypt + decrypt），取第二次调用
       expect(importKeySpy).toHaveBeenCalledTimes(2);
-      expect(importKeySpy.mock.calls[1][3]).toBe(false);
+      expectNonExtractableKeyDerivation(importKeySpy, 1);
 
       importKeySpy.mockRestore();
     });
@@ -432,110 +433,24 @@ describe('Crypto 工具函数', () => {
     });
 
     describe('特殊 ASCII 字符处理', () => {
-      describe('控制字符测试', () => {
-        it('应该正确处理换行符', async () => {
-          const textWithNewlines = 'Line 1\nLine 2\nLine 3';
-          const encrypted = await encryptField(textWithNewlines, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(textWithNewlines);
-        });
-
-        it('应该正确处理制表符', async () => {
-          const textWithTabs = 'Column1\tColumn2\tColumn3';
-          const encrypted = await encryptField(textWithTabs, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(textWithTabs);
-        });
-
-        it('应该正确处理回车符', async () => {
-          const textWithCarriageReturn = 'Line1\rLine2\rLine3';
-          const encrypted = await encryptField(textWithCarriageReturn, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(textWithCarriageReturn);
-        });
-
-        it('应该正确处理混合换行符', async () => {
-          const textWithMixedLineEndings = 'Line1\r\nLine2\nLine3\rLine4';
-          const encrypted = await encryptField(textWithMixedLineEndings, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(textWithMixedLineEndings);
-        });
-      });
-
-      describe('多行文本测试', () => {
-        it('应该正确处理多行文本', async () => {
-          const multilineText = `First line
-Second line
-Third line
-Fourth line`;
-
-          const encrypted = await encryptField(multilineText, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(multilineText);
-        });
-
-        it('应该正确处理带有空行的多行文本', async () => {
-          const multilineWithBlanks = `Line 1
-
-Line 3
-
-Line 5`;
-
-          const encrypted = await encryptField(multilineWithBlanks, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(multilineWithBlanks);
-        });
-      });
-
-      describe('特殊符号测试', () => {
-        it('应该正确处理特殊符号', async () => {
-          const specialChars = '!@#$%^&*()_+-=[]{}|;\':",./<>?`~';
-          const encrypted = await encryptField(specialChars, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(specialChars);
-        });
-
-        it('应该正确处理混合特殊符号和文本', async () => {
-          const mixedSpecialChars = 'Hello! @#$%^&*() World {}[]|<>?';
-          const encrypted = await encryptField(mixedSpecialChars, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(mixedSpecialChars);
-        });
-      });
-
-      describe('零字符测试', () => {
-        it('应该正确处理包含零字符的文本', async () => {
-          // JavaScript 字符串可以包含 null 字符，虽然在显示时不可见
-          const textWithNull = 'Hello\x00World\x00Test';
-          const encrypted = await encryptField(textWithNull, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(textWithNull);
-        });
-
-        it('应该正确处理多个零字符', async () => {
-          const textWithMultipleNulls = 'A\x00\x00\x00B';
-          const encrypted = await encryptField(textWithMultipleNulls, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(textWithMultipleNulls);
-        });
-
-        it('应该正确处理只有零字符的文本', async () => {
-          const textWithOnlyNulls = '\x00\x00\x00';
-          const encrypted = await encryptField(textWithOnlyNulls, masterKey);
-          const decrypted = await decryptField(encrypted, masterKey);
-
-          expect(decrypted).toBe(textWithOnlyNulls);
-        });
+      // 11 组输入覆盖控制字符、多行文本、特殊符号、零字符的加密往返
+      test.each([
+        ['控制字符：换行符', 'Line 1\nLine 2\nLine 3'],
+        ['控制字符：制表符', 'Column1\tColumn2\tColumn3'],
+        ['控制字符：回车符', 'Line1\rLine2\rLine3'],
+        ['控制字符：混合换行符', 'Line1\r\nLine2\nLine3\rLine4'],
+        ['多行文本', 'First line\nSecond line\nThird line\nFourth line'],
+        ['带空行的多行文本', 'Line 1\n\nLine 3\n\nLine 5'],
+        ['特殊符号', '!@#$%^&*()_+-=[]{}|;\':",./<>?`~'],
+        ['混合特殊符号和文本', 'Hello! @#$%^&*() World {}[]|<>?'],
+        // JavaScript 字符串可以包含 null 字符，虽然在显示时不可见
+        ['包含零字符的文本', 'Hello\x00World\x00Test'],
+        ['多个零字符', 'A\x00\x00\x00B'],
+        ['只有零字符的文本', '\x00\x00\x00'],
+      ])('应该正确处理%s', async (_label, text) => {
+        const encrypted = await encryptField(text, masterKey);
+        const decrypted = await decryptField(encrypted, masterKey);
+        expect(decrypted).toBe(text);
       });
     });
 

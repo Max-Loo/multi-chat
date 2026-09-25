@@ -395,85 +395,20 @@ describe("i18n module", () => {
 
     describe("语言降级持久化", () => {
       describe("核心功能", () => {
-        it("应该在降级到系统语言时显示 info toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'fr',
-            migrated: false,
-            fallbackReason: 'system-lang',
-          });
-
-          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-          resetI18nForTest();
-
-          await initI18n();
-
-          expect(mockI18nInit).toHaveBeenCalled();
+        // 5 组输入覆盖语言降级/迁移的 toast 分支
+        it.each([
           // 验证 system-lang 分支触发了 toastQueue.info（杀死 line 234 变异体）
-          expect(mockToastQueue.info).toHaveBeenCalledWith(
-            expect.stringContaining('Switched to system language')
-          );
-        });
-
-        it("应该在降级到默认英语时显示 warning toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'en',
-            migrated: false,
-            fallbackReason: 'default',
-          });
-
-          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-          resetI18nForTest();
-
-          await initI18n();
-
-          expect(mockI18nInit).toHaveBeenCalled();
+          ["在降级到系统语言时显示 info toast", { lang: 'fr', migrated: false, fallbackReason: 'system-lang' }, 'info', 'Switched to system language', true],
           // 验证 default 分支触发了 toastQueue.warning（杀死 line 239 变异体）
-          expect(mockToastQueue.warning).toHaveBeenCalledWith(
-            expect.stringContaining('Language code invalid')
-          );
-        });
-
-        it("应该在语言迁移成功时显示 info toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'zh',
-            migrated: true,
-            from: 'zh-CN',
-          });
-
-          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-          resetI18nForTest();
-
-          await initI18n();
-
-          expect(mockI18nInit).toHaveBeenCalled();
+          ["在降级到默认英语时显示 warning toast", { lang: 'en', migrated: false, fallbackReason: 'default' }, 'warning', 'Language code invalid', true],
           // 验证 migrated && from 分支触发了 toastQueue.info（杀死 line 229 变异体）
-          expect(mockToastQueue.info).toHaveBeenCalledWith(
-            expect.stringContaining('Language code updated')
-          );
-        });
-
-        it("应该在语言有效缓存时不显示 toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'fr',
-            migrated: false,
-          });
-
-          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-          resetI18nForTest();
-
-          await initI18n();
-
-          expect(mockI18nInit).toHaveBeenCalled();
+          ["在语言迁移成功时显示 info toast", { lang: 'zh', migrated: true, from: 'zh-CN' }, 'info', 'Language code updated', true],
           // 没有 migrated/from、fallbackReason → 不触发任何 toast
-          expect(mockToastQueue.info).not.toHaveBeenCalled();
-          expect(mockToastQueue.warning).not.toHaveBeenCalled();
-        });
-
-        it("应该在 migrated=true 但 from 缺失时不显示迁移 toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'zh',
-            migrated: true,
-          });
+          ["在语言有效缓存时不显示 toast", { lang: 'fr', migrated: false }, undefined, undefined, false],
+          // migrated=true 但 from=undefined → 条件不满足（杀死 LogicalOperator || 变异体）
+          ["在 migrated=true 但 from 缺失时不显示迁移 toast", { lang: 'zh', migrated: true }, 'info', undefined, false],
+        ])("应该%", async (_label, mockReturn, toastMethod, message, shouldCall) => {
+          mockGetDefaultAppLanguage.mockResolvedValue(mockReturn);
 
           const { initI18n, resetI18nForTest } = await import("@/services/i18n");
           resetI18nForTest();
@@ -481,8 +416,16 @@ describe("i18n module", () => {
           await initI18n();
 
           expect(mockI18nInit).toHaveBeenCalled();
-          // migrated=true 但 from=undefined → 条件不满足（杀死 LogicalOperator || 变异体）
-          expect(mockToastQueue.info).not.toHaveBeenCalled();
+          if (shouldCall) {
+            expect(mockToastQueue[toastMethod as 'info' | 'warning']).toHaveBeenCalledWith(
+              expect.stringContaining(message!)
+            );
+          } else if (toastMethod) {
+            expect(mockToastQueue[toastMethod as 'info' | 'warning']).not.toHaveBeenCalled();
+          } else {
+            expect(mockToastQueue.info).not.toHaveBeenCalled();
+            expect(mockToastQueue.warning).not.toHaveBeenCalled();
+          }
         });
       });
 

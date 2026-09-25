@@ -26,12 +26,12 @@
 
 ## 4. 批次③：同构用例参数化与重复用例删除
 
-- [ ] 4.1 `utils/resourceLoader.test.ts:961-1059` 的 17 个连续 `isNetworkError` it 合并为 1 个 `it.each`；验证：该文件测试通过且用例数减少 16、参数表含全部 17 组输入
-- [ ] 4.2 `utils/crypto.test.ts:436-539` 的 12 个往返加密 it 合并为 `test.each`（对齐同文件 L413-431 正面样板），跨文件提取 `expectNonExtractableKeyDerivation` 共享 helper（crypto.test.ts L239-292 与 keyringMigration.test.ts L598-646 共 6 处同构断言）；验证：两文件测试通过、往返矩阵覆盖不变
-- [ ] 4.3 `utils/tauriCompat/keyringMigration.test.ts:576-668` 的 V1/V2 PBKDF2 参数 6 个 it 合并为 `it.each(['V1', 'V2'])`；验证：该文件测试通过且派生参数断言完整保留
-- [ ] 4.4 `services/modelRemoteService.test.ts`：`isRetryableError` 直接测 6 个 it（L565-593）参数化、删除与间接测重复的 404/5xx 断言（L444-463 与 L533-542 双份、L217-238/L425-442/L514-531 三份各留一份）、24 处手动 fakeTimers 开关上提到 describe 级；验证：文件测试通过、fakeTimers 开关对数下降至 describe 级 1 组
-- [ ] 4.5 `pages/Chat/components/ChatSidebar/components/ChatButton.test.tsx`：删除 3 组逐字重复 it（L165-171≈L195-201、L203-210≈L228-235、L184-191≈L217-225）、4 种响应式模式 it 参数化（L266-337）；验证：文件测试通过、`rg "下拉菜单" 该文件` 每个断言仅出现一次
-- [ ] 4.6 其余参数化与去重：`services/lib/i18n.test.ts` 语言降级 toast 5 个 it（L398-486）、`services/lib/initialization/InitializationManager.test.ts` 交叉组合 2 个 it（L505-560）与重复 fakeTimers 对（L324/L831）、`store/middleware/chatMiddleware.test.ts` 自动命名不触发 3 个 it（L348-394）、`keyring.test.ts` isSupported 双重覆盖（L686-704≈L711-737）；验证：各文件测试通过
+- [x] 4.1 `utils/resourceLoader.test.ts:961-1059` 的 17 个连续 `isNetworkError` it 合并为 1 个 `it.each`；验证：该文件测试通过且用例数减少 16、参数表含全部 17 组输入
+- [x] 4.2 `utils/crypto.test.ts:436-539` 的 12 个往返加密 it 合并为 `test.each`（对齐同文件 L413-431 正面样板），跨文件提取 `expectNonExtractableKeyDerivation` 共享 helper（crypto.test.ts L239-292 与 keyringMigration.test.ts L598-646 共 6 处同构断言）；验证：两文件测试通过、往返矩阵覆盖不变
+- [x] 4.3 `utils/tauriCompat/keyringMigration.test.ts:576-668` 的 V1/V2 PBKDF2 参数 6 个 it 合并为 `it.each(['V1', 'V2'])`；验证：该文件测试通过且派生参数断言完整保留
+- [x] 4.4 `services/modelRemoteService.test.ts`：`isRetryableError` 直接测 6 个 it（L565-593）参数化、删除与间接测重复的 404/5xx 断言（L444-463 与 L533-542 双份、L217-238/L425-442/L514-531 三份各留一份）、24 处手动 fakeTimers 开关上提到 describe 级；验证：文件测试通过、fakeTimers 开关对数下降至 describe 级 1 组
+- [x] 4.5 `pages/Chat/components/ChatSidebar/components/ChatButton.test.tsx`：删除 3 组逐字重复 it（L165-171≈L195-201、L203-210≈L228-235、L184-191≈L217-225）、4 种响应式模式 it 参数化（L266-337）；验证：文件测试通过、`rg "下拉菜单" 该文件` 每个断言仅出现一次
+- [x] 4.6 其余参数化与去重：`services/lib/i18n.test.ts` 语言降级 toast 5 个 it（L398-486）、`services/lib/initialization/InitializationManager.test.ts` 交叉组合 2 个 it（L505-560）与重复 fakeTimers 对（L324/L831）、`store/middleware/chatMiddleware.test.ts` 自动命名不触发 3 个 it（L348-394）、`keyring.test.ts` isSupported 双重覆盖（L686-704≈L711-737）；验证：各文件测试通过
 - [ ] 4.7 批次③全量回归：`pnpm test:run && pnpm test:integration:run && pnpm test:coverage` 通过，各模块覆盖率不低于基线（下降则按 design D3 恢复误删用例）；`git diff --stat` 确认批次净精简 700 行以上
 
 ## 5. 批次④：chatSlices.test.ts 结构化重构

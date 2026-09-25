@@ -188,37 +188,11 @@ describe('ChatButton Component', () => {
     });
   });
 
-  describe('重命名功能', () => {
-    it('应该渲染下拉菜单按钮', () => {
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      expect(menuButton).toBeInTheDocument();
-    });
-
-    it('下拉菜单按钮应该有正确的图标', () => {
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      expect(menuButton.querySelector('svg')).toBeInTheDocument();
-    });
-  });
-
   describe('删除功能', () => {
     it('应该有删除功能的钩子（通过 mockModalWarning 验证）', () => {
       expect(mockModalWarning).toBeDefined();
     });
 
-    it('下拉菜单按钮点击时不应该触发导航', () => {
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      fireEvent.click(menuButton);
-      expect(mockNavigateToChat).not.toHaveBeenCalled();
-    });
   });
 
   describe('组件结构和样式', () => {
@@ -260,76 +234,28 @@ describe('ChatButton Component', () => {
   });
 
   describe('响应式布局模式', () => {
-    it('桌面模式（desktop）：data-variant 为 default', () => {
+    // 4 种响应式模式下的 data-variant 映射
+    it.each([
+      ['桌面模式（desktop）', 'desktop', 1280, 800, 'default'],
+      ['紧凑模式（compact）', 'compact', 800, 600, 'compact'],
+      ['压缩模式（compressed）', 'compressed', 1100, 700, 'compact'],
+      ['移动模式（mobile）', 'mobile', 390, 844, 'default'],
+    ])('%s：data-variant 为 %s', (_label, layoutMode, width, height, variant) => {
       mockUseResponsive.mockReturnValue({
-        layoutMode: 'desktop',
-        width: 1280,
-        height: 800,
-        isMobile: false,
-        isCompact: false,
-        isCompressed: false,
-        isDesktop: true,
+        layoutMode,
+        width,
+        height,
+        isMobile: layoutMode === 'mobile',
+        isCompact: layoutMode === 'compact',
+        isCompressed: layoutMode === 'compressed',
+        isDesktop: layoutMode === 'desktop',
       });
 
       const chat = createMockChat({ name: '测试聊天' });
       renderChatButton(chat);
 
       const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
-      expect(buttonDiv).toHaveAttribute('data-variant', 'default');
-    });
-
-    it('紧凑模式（compact）：data-variant 为 compact', () => {
-      mockUseResponsive.mockReturnValue({
-        layoutMode: 'compact',
-        width: 800,
-        height: 600,
-        isMobile: false,
-        isCompact: true,
-        isCompressed: false,
-        isDesktop: false,
-      });
-
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
-      expect(buttonDiv).toHaveAttribute('data-variant', 'compact');
-    });
-
-    it('压缩模式（compressed）：data-variant 为 compact', () => {
-      mockUseResponsive.mockReturnValue({
-        layoutMode: 'compressed',
-        width: 1100,
-        height: 700,
-        isMobile: false,
-        isCompact: false,
-        isCompressed: true,
-        isDesktop: false,
-      });
-
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
-      expect(buttonDiv).toHaveAttribute('data-variant', 'compact');
-    });
-
-    it('移动模式（mobile）：data-variant 为 default（与 desktop 相同）', () => {
-      mockUseResponsive.mockReturnValue({
-        layoutMode: 'mobile',
-        width: 390,
-        height: 844,
-        isMobile: true,
-        isCompact: false,
-        isCompressed: false,
-        isDesktop: false,
-      });
-
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
-      expect(buttonDiv).toHaveAttribute('data-variant', 'default');
+      expect(buttonDiv).toHaveAttribute('data-variant', variant);
     });
 
     it('所有模式下重命名和删除功能都正常工作', () => {
