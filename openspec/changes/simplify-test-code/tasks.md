@@ -36,9 +36,9 @@
 
 ## 5. 批次④：chatSlices.test.ts 结构化重构
 
-- [ ] 5.1 提取公共构造（不改用例）：`seedChatWithModel(modelId, chatOverrides)` helper 消除「createMockChat + createMockModel + dispatch(createChat)」逐字重复（约 50 处）、`createTestStore` 参数化为 `createTestStore(appConfigOverrides)` 吸收 L1047-1053 与 L1648-1654 两处内联 reducer；验证：该文件测试全部通过、行数下降且无 it 增删
-- [ ] 5.2 按覆盖守恒判定删除重复用例（约 35-45 个）：sendMessage.fulfilled 三重覆盖（L788-809/L2260-2278/L2511-2525）、appendHistoryToModel 双重（L2237-2258≈L2490-2509）、startSendChatMessage 跳过双重（L1176-1204≈L1601-1641）、setSelectedChatIdWithPreload 四组 describe 重复断言、editChatName 5 组保留覆盖最全者、generateChatName.fulfilled 双重（L565-603≈L1872-1930）；变异标记用例无法确认时保留；验证：该文件测试通过、删除清单在提交说明中逐条列出
-- [ ] 5.3 归并 describe 与参数化：sendMessage 相关 18 组归并为 1 组、setSelectedChatIdWithPreload 11 组归并为 1 组、editChatName 截断 4 组 7 个 it 参数化为 1 个 `it.each`（L680-697/L1313-1326/L2199-2221/L2903-2932）、startSendChatMessage 跳过 3 it 与 chatData falsy 2 it 参数化；验证：该文件测试通过、describe 分组数明显下降（83 → 约 50）
+- [x] 5.1 提取公共构造（不改用例）：`seedChatWithModel(modelId, chatOverrides)` helper 消除「createMockChat + createMockModel + dispatch(createChat)」逐字重复（约 50 处）、`createTestStore` 参数化为 `createTestStore(appConfigOverrides)` 吸收 L1047-1053 与 L1648-1654 两处内联 reducer；验证：该文件测试全部通过、行数下降且无 it 增删
+- [x] 5.2 按覆盖守恒判定删除重复用例（约 35-45 个）：sendMessage.fulfilled 三重覆盖（L788-809/L2260-2278/L2511-2525）、appendHistoryToModel 双重（L2237-2258≈L2490-2509）、startSendChatMessage 跳过双重（L1176-1204≈L1601-1641）、setSelectedChatIdWithPreload 四组 describe 重复断言、editChatName 5 组保留覆盖最全者、generateChatName.fulfilled 双重（L565-603≈L1872-1930）；变异标记用例无法确认时保留；验证：该文件测试通过、删除清单在提交说明中逐条列出
+- [x] 5.3 归并 describe 与参数化：sendMessage 相关 18 组归并为 1 组、setSelectedChatIdWithPreload 11 组归并为 1 组、editChatName 截断 4 组 7 个 it 参数化为 1 个 `it.each`（L680-697/L1313-1326/L2199-2221/L2903-2932）、startSendChatMessage 跳过 3 it 与 chatData falsy 2 it 参数化；验证：该文件测试通过、describe 分组数明显下降（83 → 约 50）
 - [ ] 5.4 批次④全量回归：`pnpm test:run` 通过（用例数较 5.1 前减少数与删除清单一致）、store/ 模块覆盖率不低于基线、文件行数 ≤ 2,600；`git diff --stat` 确认批次净精简 600 行以上
 
 ## 6. 收尾

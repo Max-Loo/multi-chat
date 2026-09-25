@@ -96,14 +96,41 @@ describe('chatSlices', () => {
   let store: any;
 
   // 创建测试用的 Redux store
-  const createTestStore = () => {
+  const createTestStore = (appConfigOverrides?: { transmitHistoryReasoning?: boolean; autoNamingEnabled?: boolean }) => {
     return configureStore({
       reducer: {
         chat: chatReducer,
         models: modelReducer,
-        appConfig: (state = { transmitHistoryReasoning: false, language: '', autoNamingEnabled: true }) => state,
+        appConfig: (state = {
+          transmitHistoryReasoning: false,
+          language: '',
+          autoNamingEnabled: true,
+          ...appConfigOverrides,
+        }) => state,
       },
     });
+  };
+
+  /**
+   * 构造挂载指定模型的聊天对象对（不 dispatch，是否播种 createChat 由调用方决定）
+   *
+   * 消除「createMockChat(chatModelList) + createMockModel({ id })」的逐字重复；
+   * 「chat 不存在」类用例仅构造不播种，播种时显式调用 store.dispatch(createChat({ chat }))
+   *
+   * @param modelId 聊天挂载的模型 ID（同步写入 model.id 与 chatModelList[0].modelId）
+   * @param chatOverrides 聊天字段覆盖（可覆盖 chatModelList 等任意字段）
+   * @returns 构造的 chat 与 model 对象
+   */
+  const seedChatWithModel = (
+    modelId: string,
+    chatOverrides?: Parameters<typeof createMockChat>[0]
+  ) => {
+    const model = createMockModel({ id: modelId });
+    const chat = createMockChat({
+      chatModelList: [{ modelId, chatHistoryList: [] }],
+      ...chatOverrides,
+    });
+    return { chat, model };
   };
 
   beforeEach(() => {
@@ -170,12 +197,9 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('sendMessage async thunk actions', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('应该在 pending 时初始化 runningChat 状态', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-1' });
+      const { chat, model } = seedChatWithModel('model-1');
       const message = 'Hello';
       const arg = { chat, model, message, historyList: [] };
 
@@ -189,10 +213,7 @@ describe('chatSlices', () => {
     });
 
     it('应该在 fulfilled 时清理 runningChat 并回写 activeChatData', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-1' });
+      const { chat, model } = seedChatWithModel('model-1');
       const message = 'Hello';
       const arg = { chat, model, message, historyList: [] };
       const responseMessage = createMockMessage();
@@ -219,10 +240,7 @@ describe('chatSlices', () => {
     });
 
     it('应该在 rejected 时设置错误信息', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-1' });
+      const { chat, model } = seedChatWithModel('model-1');
       const arg = { chat, model, message: 'test', historyList: [] };
       const error = new Error('Network error');
 
@@ -237,9 +255,8 @@ describe('chatSlices', () => {
       expect(state.runningChat[chat.id]?.[model.id]?.isSending).toBe(false);
       expect(state.runningChat[chat.id]?.[model.id]?.errorMessage).toContain('Network error');
     });
-  });
 
-  describe('startSendChatMessage rejected reducer', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('应该在 rejected 时将所有运行中的历史记录回写到 activeChatData', () => {
       const chat = createMockChat({
         chatModelList: [
@@ -274,7 +291,6 @@ describe('chatSlices', () => {
       expect(state.activeChatData[chat.id].chatModelList?.[1].chatHistoryList).toHaveLength(1);
       expect(state.activeChatData[chat.id].chatModelList?.[1].chatHistoryList?.[0]).toEqual(history2);
     });
-  });
 
   describe('错误状态清理', () => {
     it('应该清除操作错误信息', () => {
@@ -308,10 +324,7 @@ describe('chatSlices', () => {
   describe('pushChatHistory', () => {
     // 保留测试：验证内部 reducer 逻辑
     it('应该向聊天历史记录添加消息', () => {
-      const model = createMockModel({ id: 'model-1' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-1');
       const message = createMockMessage();
 
       // createChat 会同时写入 chatMetaList 和 activeChatData
@@ -327,10 +340,7 @@ describe('chatSlices', () => {
     });
 
     it('应该在聊天不存在于 activeChatData 时不添加消息', () => {
-      const model = createMockModel({ id: 'model-1' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-1');
       const message = createMockMessage();
 
       // 不创建聊天，直接尝试添加消息（activeChatData 中不存在该聊天）
@@ -345,10 +355,7 @@ describe('chatSlices', () => {
 
   describe('pushRunningChatHistory', () => {
     it('应该更新运行中的聊天历史记录', () => {
-      const model = createMockModel({ id: 'model-1' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-1');
       const message = createMockMessage({ content: 'Running message' });
 
       // 先初始化 runningChat（通过 dispatch pending action）
@@ -425,11 +432,14 @@ describe('chatSlices', () => {
       const state = store.getState().chat;
       // 验证 activeChatData 中的更新
       expect(state.activeChatData[chat.id].name).toBe('Generated Title');
+      // updatedAt 同步更新
+      expect(state.activeChatData[chat.id].updatedAt).toEqual(expect.any(Number));
       // isManuallyNamed 保持 undefined，允许手动覆盖
       expect(state.activeChatData[chat.id].isManuallyNamed).toBeUndefined();
       // 验证 chatMetaList 中的更新
       const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
       expect(meta.name).toBe('Generated Title');
+      expect(meta.updatedAt).toEqual(expect.any(Number));
     });
 
     it('应该在失败时不更新聊天名称', () => {
@@ -455,7 +465,7 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('setSelectedChatIdWithPreload - 预加载机制', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('应该在新聊天（无模型）时跳过预加载', async () => {
       const chat = createMockChat({
         chatModelList: [], // 新聊天，没有模型
@@ -483,15 +493,10 @@ describe('chatSlices', () => {
       // 验证 preloadProviders 未被调用（聊天不存在）
       expect(mockPreloadProviders).not.toHaveBeenCalled();
     });
-  });
 
-
-  describe('sendMessage.pending re-entry', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('应该在重复 dispatch pending 时重置 isSending 和 errorMessage', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-1' });
+      const { chat, model } = seedChatWithModel('model-1');
       const arg = { chat, model, message: 'Hello', historyList: [] };
 
       // 第一次 dispatch pending
@@ -510,41 +515,6 @@ describe('chatSlices', () => {
       // history 保留（rejected 不清空 history，初始为 null）
       expect(entry.history).toBeNull();
     });
-  });
-
-  describe('sendMessage.fulfilled appendHistoryToModel 失败', () => {
-    it('应该在 activeChatData 不存在时跳过清理 runningChat', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-1' });
-      const arg = { chat, model, message: 'Hello', historyList: [] };
-      const responseMessage = createMockMessage();
-
-      // 创建聊天
-      store.dispatch(createChat({ chat }));
-
-      // 初始化 runningChat
-      store.dispatch(sendMessage.pending('req-append-fail', arg));
-
-      // 设置运行中的历史记录
-      store.dispatch(pushRunningChatHistory({ chat, model, message: responseMessage }));
-
-      // 从 activeChatData 中移除聊天（模拟 appendHistoryToModel 失败）
-      store.dispatch(clearActiveChatData(chat.id));
-
-      // Dispatch fulfilled — appendHistoryToModel 应返回 false
-      store.dispatch(sendMessage.fulfilled(undefined, 'req-append-fail', arg));
-
-      const state = store.getState().chat;
-      // runningChat 不应被清理（保留错误现场）
-      expect(state.runningChat[chat.id][model.id]).toEqual(expect.objectContaining({
-        isSending: false,
-        history: expect.anything(),
-      }));
-      expect(state.runningChat[chat.id][model.id].isSending).toBe(false);
-    });
-  });
 
   describe('generateChatName.fulfilled 边界分支', () => {
     it('应该在 payload 为 null 时 state 完全不变', () => {
@@ -602,7 +572,7 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('setSelectedChatIdWithPreload.fulfilled 前一个聊天清理', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('应该在 previousChatId 存在且未发送时清理 activeChatData', async () => {
       const chatA = createMockChat({ id: 'chat-a' });
       const chatB = createMockChat({ id: 'chat-b' });
@@ -674,28 +644,72 @@ describe('chatSlices', () => {
       expect(state.selectedChatId).toBe('chat-b');
       expect(state.activeChatData['chat-b']).toEqual(chatB);
     });
-  });
 
-  describe('editChatName 超长名称截断', () => {
-    it('应该在名称超过 20 个字符时截断为前 20 个字符', () => {
-      const chat = createMockChat({ name: 'Short' });
-      store.dispatch(createChat({ chat }));
-
-      const longName = '这是一段非常非常非常非常长的聊天名称应该被截断';
-      store.dispatch(editChatName({ id: chat.id, name: longName }));
+    // chatId 为 truthy 且 chatData 为 falsy（null/0）时不应写入 activeChatData
+    it.each([null, 0])('chatData 为 %s 时不应写入 activeChatData', (falsyData) => {
+      store.dispatch(setSelectedChatIdWithPreload.fulfilled(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { chatId: 'chat-falsy', chatData: falsyData as any },
+        'sel-falsy',
+        'chat-falsy',
+      ));
 
       const state = store.getState().chat;
-      // 截断为前 20 个字符
-      expect(state.activeChatData[chat.id].name).toBe(longName.slice(0, 20));
-      expect(state.activeChatData[chat.id].name!.length).toBe(20);
-
-      // chatMetaList 也应截断
-      const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
-      expect(meta.name).toBe(longName.slice(0, 20));
-      // 标记为手动命名
-      expect(meta.isManuallyNamed).toBe(true);
+      expect(state.activeChatData['chat-falsy']).toBeUndefined();
     });
-  });
+
+    // 跳过发送的三种输入：isDeleted / isEnable=false / model 未注册
+    it.each([
+      ['model isDeleted=true', { isDeleted: true, isEnable: true }, true],
+      ['model isEnable=false', { isDeleted: false, isEnable: false }, true],
+      ['model 不存在', undefined, false],
+    ])('%s 时不应调用 streamChatCompletion', async (_label, modelOverrides, registerModel) => {
+      const model = modelOverrides
+        ? createMockModel({ id: 'model-skip', ...modelOverrides })
+        : createMockModel({ id: 'model-absent' });
+      const chat = createMockChat({
+        chatModelList: [{ modelId: model.id, chatHistoryList: [] }],
+      });
+
+      if (registerModel) {
+        store.dispatch(createModel({ model }));
+      }
+      store.dispatch(createChat({ chat }));
+
+      (streamChatCompletion as any).mockReturnValue(
+        (async function* () { })()
+      );
+
+      await store.dispatch(startSendChatMessage({ chat, message: 'hello' }));
+
+      expect(streamChatCompletion).not.toHaveBeenCalled();
+      const state = store.getState().chat;
+      expect(state.runningChat[chat.id]).toBeUndefined();
+      expect(state.sendingChatIds[chat.id]).toBeUndefined();
+    });
+
+    // name 长度边界三侧：>20 截断、=20 恰好不截断、<20 保持原样
+    it.each([
+      ['超过 20 个字符时截断为前 20 个字符', 'a'.repeat(25), 'a'.repeat(20)],
+      ['恰好 20 字符时不应截断', '一二三四五六七八九十abcdefghij', '一二三四五六七八九十abcdefghij'],
+      ['不足 20 字符时保持原样', 'short', 'short'],
+    ])('editChatName %s', (_label, inputName, expectedName) => {
+      const chat = createMockChat({ name: 'Original' });
+      store.dispatch(createChat({ chat }));
+
+      store.dispatch(editChatName({ id: chat.id, name: inputName }));
+
+      const state = store.getState().chat;
+      // activeChatData 与 chatMetaList 同步截断/保留
+      expect(state.activeChatData[chat.id].name).toBe(expectedName);
+      expect(state.activeChatData[chat.id].name!.length).toBe(expectedName.length);
+      expect(state.activeChatData[chat.id].isManuallyNamed).toBe(true);
+      expect(state.activeChatData[chat.id].updatedAt).toEqual(expect.any(Number));
+      const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
+      expect(meta.name).toBe(expectedName);
+      expect(meta.isManuallyNamed).toBe(true);
+      expect(meta.updatedAt).toEqual(expect.any(Number));
+    });
 
   describe('deleteChat 正在发送时跳过', () => {
     it('应该在聊天正在发送时跳过删除', () => {
@@ -760,12 +774,9 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('sendMessage.rejected 无 error 对象', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('应该在 error 为 undefined 时使用默认空字符串', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-1' });
+      const { chat, model } = seedChatWithModel('model-1');
       const arg = { chat, model, message: 'test', historyList: [] };
 
       store.dispatch(sendMessage.pending('req-no-error', arg));
@@ -782,32 +793,8 @@ describe('chatSlices', () => {
       expect(state.runningChat[chat.id][model.id].isSending).toBe(false);
       expect(state.runningChat[chat.id][model.id].errorMessage).toBe('');
     });
-  });
 
-  describe('sendMessage.fulfilled activeChat 不存在时跳过 updatedAt 更新', () => {
-    it('应该在 activeChat 不存在时不更新 updatedAt', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-1' });
-      const arg = { chat, model, message: 'Hello', historyList: [] };
-
-      store.dispatch(createChat({ chat }));
-      store.dispatch(sendMessage.pending('req-no-active-update', arg));
-      // 从 activeChatData 中移除（模拟已清理）
-      store.dispatch(clearActiveChatData(chat.id));
-      // 此时 activeChatData 中不存在该聊天
-      store.dispatch(sendMessage.fulfilled(undefined, 'req-no-active-update', arg));
-
-      const state = store.getState().chat;
-      // runningChat 保留（appendHistoryToModel 失败）
-      expect(state.runningChat[chat.id][model.id]).toEqual(expect.objectContaining({
-        isSending: false,
-      }));
-    });
-  });
-
-  describe('appendHistoryToModel 边界路径', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('应该在 modelId 不匹配时跳过追加', () => {
       const chat = createMockChat({
         chatModelList: [{ modelId: 'model-1', chatHistoryList: [] }],
@@ -822,7 +809,6 @@ describe('chatSlices', () => {
       // 不应有任何历史记录被追加
       expect(state.activeChatData[chat.id].chatModelList[0].chatHistoryList).toHaveLength(0);
     });
-  });
 
   // 聊天列表过滤测试已被删除：集成测试已覆盖软删除和过滤逻辑
 
@@ -886,12 +872,9 @@ describe('chatSlices', () => {
 
   // ==================== Task 2: NoCoverage — setSelectedChatIdWithPreload 预加载 ====================
 
-  describe('setSelectedChatIdWithPreload - 预加载 SDK', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('chatModelList 非空且 model 存在时，应该调用 preloadProviders 并传入正确的 providerKey', async () => {
-      const model = createMockModel({ id: 'model-preload' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-preload', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-preload');
 
       store.dispatch(createModel({ model }));
       store.dispatch(createChat({ chat }));
@@ -927,10 +910,7 @@ describe('chatSlices', () => {
     });
 
     it('预加载抛出异常时，返回值不受影响', async () => {
-      const model = createMockModel({ id: 'model-throw' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-throw', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-throw');
 
       store.dispatch(createModel({ model }));
       store.dispatch(createChat({ chat }));
@@ -998,10 +978,7 @@ describe('chatSlices', () => {
 
     // #105 杀死 catch 块变异：预加载失败应记录 console.warn
     it('预加载失败时应记录 console.warn', async () => {
-      const model = createMockModel({ id: 'model-warn-catch' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-warn-catch', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-warn-catch');
       store.dispatch(createModel({ model }));
       store.dispatch(createChat({ chat }));
 
@@ -1020,7 +997,6 @@ describe('chatSlices', () => {
 
       warnSpy.mockRestore();
     });
-  });
 
   // ==================== Task 3: NoCoverage — generateChatName / startSendChatMessage / setChatMetaList ====================
 
@@ -1044,13 +1020,7 @@ describe('chatSlices', () => {
     });
 
     it('autoNamingEnabled 为 false 时应返回 null', async () => {
-      const storeNoAutoName = configureStore({
-        reducer: {
-          chat: chatReducer,
-          models: modelReducer,
-          appConfig: (state = { transmitHistoryReasoning: false, language: '', autoNamingEnabled: false }) => state,
-        },
-      });
+      const storeNoAutoName = createTestStore({ autoNamingEnabled: false });
 
       const chat = createMockChat();
       storeNoAutoName.dispatch(createChat({ chat }));
@@ -1065,7 +1035,7 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('startSendChatMessage - NoCoverage 路径', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('chatModelList 非空且有匹配 model 时，应该执行发送', async () => {
       const model = createMockModel({ id: 'model-send', isEnable: true, isDeleted: false });
       const chat = createMockChat({
@@ -1100,7 +1070,6 @@ describe('chatSlices', () => {
       // 变异：chatModelList = ["Stryker was here"]，匹配 trapModel，触发 sendMessage → runningChat 创建
       expect(state.runningChat[chat.id]).toBeUndefined();
     });
-  });
 
   describe('setChatMetaList', () => {
     it('应该将 chatMetaList 设置为 payload 的内容', () => {
@@ -1129,7 +1098,7 @@ describe('chatSlices', () => {
 
   // ==================== Task 4: ConditionalExpression — 异步 thunk 条件反向路径 ====================
 
-  describe('setSelectedChatIdWithPreload - 条件分支反向路径', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('chatId 为 null 时应返回 { chatId: null }', async () => {
       const result = await store.dispatch(setSelectedChatIdWithPreload(null));
 
@@ -1156,75 +1125,13 @@ describe('chatSlices', () => {
       expect(store.getState().chat.activeChatData['unknown-chat-id']).toBeUndefined();
     });
 
-    it('chatModelList 长度为 1 时应执行预加载', async () => {
-      const model = createMockModel({ id: 'model-boundary' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-boundary', chatHistoryList: [] }],
-      });
-
-      store.dispatch(createModel({ model }));
-      store.dispatch(createChat({ chat }));
-
-      await store.dispatch(setSelectedChatIdWithPreload(chat.id));
-
-      expect(mockPreloadProviders).toHaveBeenCalledTimes(1);
-      expect(mockPreloadProviders).toHaveBeenCalledWith([model.providerKey]);
-    });
-  });
-
-  describe('startSendChatMessage - 条件分支反向路径', () => {
-    it('model isDeleted 为 true 时应跳过发送', async () => {
-      const model = createMockModel({ id: 'model-deleted', isDeleted: true, isEnable: true });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-deleted', chatHistoryList: [] }],
-      });
-
-      store.dispatch(createModel({ model }));
-      store.dispatch(createChat({ chat }));
-
-      await store.dispatch(startSendChatMessage({ chat, message: 'hello' }));
-
-      const state = store.getState().chat;
-      expect(state.runningChat[chat.id]).toBeUndefined();
-    });
-
-    it('model isEnable 为 false 时应跳过发送', async () => {
-      const model = createMockModel({ id: 'model-disabled', isEnable: false, isDeleted: false });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-disabled', chatHistoryList: [] }],
-      });
-
-      store.dispatch(createModel({ model }));
-      store.dispatch(createChat({ chat }));
-
-      await store.dispatch(startSendChatMessage({ chat, message: 'hello' }));
-
-      const state = store.getState().chat;
-      expect(state.runningChat[chat.id]).toBeUndefined();
-    });
-
-    it('model 不存在时应跳过发送', async () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'non-existent-model-id', chatHistoryList: [] }],
-      });
-
-      store.dispatch(createChat({ chat }));
-
-      await store.dispatch(startSendChatMessage({ chat, message: 'hello' }));
-
-      const state = store.getState().chat;
-      expect(state.runningChat[chat.id]).toBeUndefined();
-    });
-  });
+  // ==================== sendMessage / startSendChatMessage ====================
 
   // ==================== Task 5: ConditionalExpression — reducer 内部条件反向路径 ====================
 
-  describe('appendHistoryToModel - 条件反向路径', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('message 为 null 时应跳过追加并保留 runningChat', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-null-msg', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-null-msg' });
+      const { chat, model } = seedChatWithModel('model-null-msg');
       const arg = { chat, model, message: 'test', historyList: [] };
 
       store.dispatch(createChat({ chat }));
@@ -1289,7 +1196,6 @@ describe('chatSlices', () => {
         isSending: false,
       }));
     });
-  });
 
   describe('updateMetaInList - metaIdx 为 -1', () => {
     it('chatId 不在 chatMetaList 中时不应更新任何条目', () => {
@@ -1306,23 +1212,6 @@ describe('chatSlices', () => {
 
       const state = store.getState().chat;
       expect(state.chatMetaList).toEqual(stateBefore.chatMetaList);
-    });
-  });
-
-  describe('editChatName - 边界条件', () => {
-    it('name 恰好 20 字符时不应截断', () => {
-      const chat = createMockChat({ name: 'Original' });
-      store.dispatch(createChat({ chat }));
-
-      const name20 = 'a'.repeat(20);
-      store.dispatch(editChatName({ id: chat.id, name: name20 }));
-
-      const state = store.getState().chat;
-      expect(state.activeChatData[chat.id].name).toBe(name20);
-      expect(state.activeChatData[chat.id].name!.length).toBe(20);
-
-      const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
-      expect(meta.name).toBe(name20);
     });
   });
 
@@ -1376,12 +1265,9 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('散布变异体 - sendMessage.fulfilled updatedAt 和 chatMetaList 同步', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('fulfilled 时应同步更新 activeChatData.updatedAt 和 chatMetaList 条目', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-scatter', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-scatter' });
+      const { chat, model } = seedChatWithModel('model-scatter');
       const arg = { chat, model, message: 'Hello', historyList: [] };
       const responseMessage = createMockMessage({ content: 'Response' });
 
@@ -1397,9 +1283,8 @@ describe('chatSlices', () => {
       const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
       expect(meta.updatedAt).toEqual(expect.any(Number));
     });
-  });
 
-  describe('散布变异体 - sendMessage.rejected console.error', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('rejected 时应调用 console.error 并包含关键字段', () => {
       const chat = createMockChat({
         id: 'chat-reject-log',
@@ -1427,7 +1312,6 @@ describe('chatSlices', () => {
 
       errorSpy.mockRestore();
     });
-  });
 
   describe('散布变异体 - clearError 预设错误场景', () => {
     it('应该在 error 有值时正确清除', () => {
@@ -1447,10 +1331,7 @@ describe('chatSlices', () => {
 
   describe('散布变异体 - pushRunningChatHistory 条件表达式', () => {
     it('应该精确覆盖 history 字段而非合并', () => {
-      const model = createMockModel({ id: 'model-push-overwrite' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-push-overwrite', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-push-overwrite');
       const message1 = createMockMessage({ content: 'First' });
       const message2 = createMockMessage({ content: 'Second' });
 
@@ -1517,7 +1398,7 @@ describe('chatSlices', () => {
 
   // ==================== Task 7: appendHistoryToModel 精确断言 ====================
 
-  describe('appendHistoryToModel - 精确断言', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('modelId 不匹配时 chatModelList 所有条目不变', () => {
       const chat = createMockChat({
         chatModelList: [{ modelId: 'model-exist', chatHistoryList: [] }],
@@ -1537,10 +1418,7 @@ describe('chatSlices', () => {
     });
 
     it('成功追加时 chatHistoryList 最后一条应精确匹配被追加的 message', () => {
-      const model = createMockModel({ id: 'model-append-ok' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-append-ok', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-append-ok');
       const message = createMockMessage({
         id: 'msg-append-test',
         role: 'assistant' as any,
@@ -1557,31 +1435,10 @@ describe('chatSlices', () => {
       expect(historyList[0]).toEqual(message);
       expect(historyList[0].content).toBe('Appended content');
     });
-  });
 
   // ==================== Task 6: editChatName 精确断言 ====================
 
   describe('editChatName - 精确断言', () => {
-    it('name 恰好 20 字符时 name 值精确匹配且 isManuallyNamed 为 true', () => {
-      const chat = createMockChat({ name: 'Original' });
-      store.dispatch(createChat({ chat }));
-
-      const name20 = '一二三四五六七八九十abcdefghij'; // 恰好 20 字符
-      store.dispatch(editChatName({ id: chat.id, name: name20 }));
-
-      const state = store.getState().chat;
-      // chatMetaList 逐字段验证
-      const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
-      expect(meta.name).toBe(name20);
-      expect(meta.name!.length).toBe(20);
-      expect(meta.isManuallyNamed).toBe(true);
-      expect(meta.updatedAt).toEqual(expect.any(Number));
-
-      // activeChatData 逐字段验证
-      expect(state.activeChatData[chat.id].name).toBe(name20);
-      expect(state.activeChatData[chat.id].isManuallyNamed).toBe(true);
-      expect(state.activeChatData[chat.id].updatedAt).toEqual(expect.any(Number));
-    });
 
     it('更新后 activeChatData 的 updatedAt 应为数字且 name 同步更新', () => {
       const chat = createMockChat({ name: 'Before' });
@@ -1597,66 +1454,15 @@ describe('chatSlices', () => {
 
   // ==================== Task 5: startSendChatMessage 条件覆盖 ====================
 
-  describe('startSendChatMessage - 条件分支增强验证', () => {
-    it('model isDeleted=true 时不应调用 streamChatCompletion', async () => {
-      const model = createMockModel({ id: 'model-del-cond', isDeleted: true, isEnable: true });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-del-cond', chatHistoryList: [] }],
-      });
-
-      store.dispatch(createModel({ model }));
-      store.dispatch(createChat({ chat }));
-
-      (streamChatCompletion as any).mockReturnValue(
-        (async function* () { })()
-      );
-
-      await store.dispatch(startSendChatMessage({ chat, message: 'hello' }));
-
-      // streamChatCompletion 不应被调用（isDeleted 跳过）
-      expect(streamChatCompletion).not.toHaveBeenCalled();
-      const state = store.getState().chat;
-      expect(state.runningChat[chat.id]).toBeUndefined();
-      expect(state.sendingChatIds[chat.id]).toBeUndefined();
-    });
-
-    it('model isEnable=false 时不应调用 streamChatCompletion', async () => {
-      const model = createMockModel({ id: 'model-dis-cond', isEnable: false, isDeleted: false });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-dis-cond', chatHistoryList: [] }],
-      });
-
-      store.dispatch(createModel({ model }));
-      store.dispatch(createChat({ chat }));
-
-      (streamChatCompletion as any).mockReturnValue(
-        (async function* () { })()
-      );
-
-      await store.dispatch(startSendChatMessage({ chat, message: 'hello' }));
-
-      expect(streamChatCompletion).not.toHaveBeenCalled();
-      const state = store.getState().chat;
-      expect(state.runningChat[chat.id]).toBeUndefined();
-    });
-  });
+  // ==================== sendMessage / startSendChatMessage ====================
 
   // ==================== Task 4: sendMessage thunk 体验证 ====================
 
-  describe('sendMessage - thunk 体验证', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('应该将 transmitHistoryReasoning 从 state 正确传入 streamChatCompletion', async () => {
-      const transmitStore = configureStore({
-        reducer: {
-          chat: chatReducer,
-          models: modelReducer,
-          appConfig: (state = { transmitHistoryReasoning: true, language: '', autoNamingEnabled: true }) => state,
-        },
-      });
+      const transmitStore = createTestStore({ transmitHistoryReasoning: true });
 
-      const model = createMockModel({ id: 'model-thunk-1' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-thunk-1', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-thunk-1');
 
       transmitStore.dispatch(createModel({ model }));
       transmitStore.dispatch(createChat({ chat }));
@@ -1680,10 +1486,7 @@ describe('chatSlices', () => {
     });
 
     it('应该将 signal 传入 streamChatCompletion 的 options 参数', async () => {
-      const model = createMockModel({ id: 'model-thunk-signal' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-thunk-signal', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-thunk-signal');
 
       store.dispatch(createModel({ model }));
       store.dispatch(createChat({ chat }));
@@ -1704,7 +1507,6 @@ describe('chatSlices', () => {
       expect(callArgs[1]).toHaveProperty('signal');
       expect(callArgs[1].signal).toBeInstanceOf(AbortSignal);
     });
-  });
 
   // ==================== Task 3: clearActiveChatData 精确断言 ====================
 
@@ -1754,7 +1556,7 @@ describe('chatSlices', () => {
 
   // ==================== Task 2: setSelectedChatIdWithPreload.fulfilled 精确断言 ====================
 
-  describe('setSelectedChatIdWithPreload.fulfilled - 精确断言', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('fulfilled 时应该逐字段验证 activeChatData 写入', () => {
       const chatA = createMockChat({ id: 'chat-ful-a', name: 'Chat A', isDeleted: false });
       const chatB = createMockChat({ id: 'chat-ful-b', name: 'Chat B', isDeleted: false });
@@ -1830,18 +1632,6 @@ describe('chatSlices', () => {
       expect(state.selectedChatId).toBe('chat-no-data');
     });
 
-    it('chatId 为 null 时 selectedChatId 为 null 且 activeChatData 无新增', () => {
-      store.dispatch(setSelectedChatIdWithPreload.fulfilled(
-        { chatId: null },
-        'sel-null-id',
-        null,
-      ));
-
-      const state = store.getState().chat;
-      expect(state.selectedChatId).toBeNull();
-      expect(Object.keys(state.activeChatData)).toHaveLength(0);
-    });
-
     it('chatId 与 previousChatId 相同时不应该触发清理', () => {
       const chat = createMockChat({ id: 'chat-same-id', name: 'Same Chat' });
       store.dispatch(createChat({ chat }));
@@ -1865,7 +1655,6 @@ describe('chatSlices', () => {
       expect(state.activeChatData['chat-same-id']).toEqual(chat);
       expect(state.selectedChatId).toBe('chat-same-id');
     });
-  });
 
   // ==================== Task 1: updateMetaInList 精确断言 ====================
 
@@ -1930,10 +1719,7 @@ describe('chatSlices', () => {
 
   describe('精确断言验证', () => {
     it('sendMessage.fulfilled 应正确设置 activeChatData 的完整字段', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-precise', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-precise' });
+      const { chat, model } = seedChatWithModel('model-precise');
       const arg = { chat, model, message: 'Hello', historyList: [] };
       const responseMessage = createMockMessage();
 
@@ -1949,24 +1735,6 @@ describe('chatSlices', () => {
       }]);
       expect(state.activeChatData[chat.id].updatedAt).toEqual(expect.any(Number));
       expect(state.runningChat[chat.id]?.[model.id]).toBeUndefined();
-    });
-
-    it('generateChatName.fulfilled 应正确设置 updatedAt', () => {
-      const chat = createMockChat({ name: undefined });
-      store.dispatch(createChat({ chat }));
-
-      store.dispatch(generateChatName.fulfilled(
-        { chatId: chat.id, name: 'Generated Title' },
-        'gen-precise-ts',
-        { chat, model: createMockModel(), historyList: [] },
-      ));
-
-      const state = store.getState().chat;
-      expect(state.activeChatData[chat.id].updatedAt).toEqual(expect.any(Number));
-
-      const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
-      expect(meta.updatedAt).toEqual(expect.any(Number));
-      expect(meta.name).toBe('Generated Title');
     });
 
     it('startSendChatMessage.rejected 应清理 sendingChatIds', () => {
@@ -2009,7 +1777,7 @@ describe('chatSlices', () => {
 
   // ==================== Phase 2 补充：杀死剩余存活变异体 ====================
 
-  describe('sendMessage thunk - 消息对象精确断言', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('应该 dispatch pushChatHistory 且 message 包含正确的 role/content/modelKey', async () => {
       const model = createMockModel({ id: 'model-msg-obj', modelKey: 'test-model-key' });
       const chat = createMockChat({
@@ -2048,10 +1816,7 @@ describe('chatSlices', () => {
     });
 
     it('signal.aborted 时应该 break 循环且不 dispatch pushRunningChatHistory', async () => {
-      const model = createMockModel({ id: 'model-abort' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-abort', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-abort');
 
       store.dispatch(createModel({ model }));
       store.dispatch(createChat({ chat }));
@@ -2079,10 +1844,7 @@ describe('chatSlices', () => {
     });
 
     it('for-await 循环应该 dispatch pushRunningChatHistory 每个元素', async () => {
-      const model = createMockModel({ id: 'model-stream-elems' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-stream-elems', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-stream-elems');
 
       store.dispatch(createModel({ model }));
       store.dispatch(createChat({ chat }));
@@ -2107,9 +1869,8 @@ describe('chatSlices', () => {
       // fulfilled 后 runningChat 被清理，但最终 history 应被回写
       expect(state.runningChat[chat.id]?.[model.id]).toBeUndefined();
     });
-  });
 
-  describe('setSelectedChatIdWithPreload - 分支精确覆盖', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('chatId 为 null 时不应设置 activeChatData', async () => {
       const chat = createMockChat();
       store.dispatch(createChat({ chat }));
@@ -2125,46 +1886,6 @@ describe('chatSlices', () => {
       // ObjectLiteral {} 变异：确保返回值结构正确
       expect(Object.keys(state.activeChatData)).toHaveLength(1);
     });
-
-    it('chatData 存在时应该写入 activeChatData', async () => {
-      const chat = createMockChat({ id: 'chat-has-data', name: 'Has Data' });
-      store.dispatch(createChat({ chat }));
-
-      store.dispatch(setSelectedChatIdWithPreload.fulfilled(
-        { chatId: 'chat-has-data', chatData: chat },
-        'sel-has-data',
-        'chat-has-data',
-      ));
-
-      const state = store.getState().chat;
-      expect(state.activeChatData['chat-has-data']).toEqual(chat);
-    });
-
-    it('chatId && chatData 条件 false 时不应写入 activeChatData', async () => {
-      store.dispatch(setSelectedChatIdWithPreload.fulfilled(
-        { chatId: 'some-id' },
-        'sel-no-chatdata',
-        'some-id',
-      ));
-
-      const state = store.getState().chat;
-      expect(state.activeChatData['some-id']).toBeUndefined();
-    });
-
-    it('chatModelList 非空且 chatModelList.length > 0 时应进入预加载', async () => {
-      const model = createMockModel({ id: 'model-len-gt-0' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-len-gt-0', chatHistoryList: [] }],
-      });
-
-      store.dispatch(createModel({ model }));
-      store.dispatch(createChat({ chat }));
-
-      await store.dispatch(setSelectedChatIdWithPreload(chat.id));
-
-      expect(mockPreloadProviders).toHaveBeenCalledTimes(1);
-    });
-  });
 
   describe('updateMetaInList - 条件变异精确覆盖', () => {
     it('findIndex 找到匹配时应该合并更新', () => {
@@ -2195,50 +1916,9 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('editChatName - 条件精确覆盖', () => {
-    it('name > 20 字符时应该截断', () => {
-      const chat = createMockChat({ name: 'Original' });
-      store.dispatch(createChat({ chat }));
-
-      const longName = 'a'.repeat(25);
-      store.dispatch(editChatName({ id: chat.id, name: longName }));
-
-      const state = store.getState().chat;
-      // name.length > 20 → true，进入截断分支
-      expect(state.activeChatData[chat.id].name).toBe('a'.repeat(20));
-      expect(state.activeChatData[chat.id].name!.length).toBe(20);
-    });
-
-    it('name <= 20 字符时不应截断', () => {
-      const chat = createMockChat({ name: 'Original' });
-      store.dispatch(createChat({ chat }));
-
-      const shortName = 'short';
-      store.dispatch(editChatName({ id: chat.id, name: shortName }));
-
-      const state = store.getState().chat;
-      expect(state.activeChatData[chat.id].name).toBe('short');
-    });
-
-    it('更新 chatMetaList 时 isManuallyNamed 应为 true', () => {
-      const chat = createMockChat({ name: 'Test' });
-      store.dispatch(createChat({ chat }));
-
-      store.dispatch(editChatName({ id: chat.id, name: 'New Name' }));
-
-      const state = store.getState().chat;
-      const meta = state.chatMetaList.find((m: any) => m.id === chat.id);
-      expect(meta.isManuallyNamed).toBe(true);
-      expect(meta.updatedAt).toEqual(expect.any(Number));
-    });
-  });
-
-  describe('sendMessage.fulfilled - 精确覆盖回写和清理', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('appendHistoryToModel 成功时应该清理 runningChat', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-ful-clean', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-ful-clean' });
+      const { chat, model } = seedChatWithModel('model-ful-clean');
       const arg = { chat, model, message: 'Hello', historyList: [] };
       const responseMessage = createMockMessage({ content: 'Response' });
 
@@ -2257,26 +1937,7 @@ describe('chatSlices', () => {
       expect(meta.updatedAt).toEqual(expect.any(Number));
     });
 
-    it('activeChat 不存在时不应更新 updatedAt', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-no-active', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-no-active' });
-      const arg = { chat, model, message: 'Hello', historyList: [] };
-
-      // 不创建 chat → activeChatData 为空
-      store.dispatch(sendMessage.pending('req-no-active', arg));
-      store.dispatch(sendMessage.fulfilled(undefined, 'req-no-active', arg));
-
-      const state = store.getState().chat;
-      // appendHistoryToModel 失败 → runningChat 保留
-      expect(state.runningChat[chat.id][model.id]).toEqual(expect.objectContaining({
-        isSending: false,
-      }));
-    });
-  });
-
-  describe('startSendChatMessage.fulfilled - sendingChatIds 清理', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('fulfilled 时应该从 sendingChatIds 中删除 chatId', async () => {
       const model = createMockModel({ id: 'model-send-ful', isEnable: true, isDeleted: false });
       const chat = createMockChat({
@@ -2295,14 +1956,10 @@ describe('chatSlices', () => {
       const state = store.getState().chat;
       expect(state.sendingChatIds[chat.id]).toBeUndefined();
     });
-  });
 
-  describe('sendMessage.rejected - OptionalChaining 精确覆盖', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('runningChat[chat.id] 不存在时 rejected 应正确处理 OptionalChaining', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-opt-chain', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-opt-chain' });
+      const { chat, model } = seedChatWithModel('model-opt-chain');
       const arg = { chat, model, message: 'test', historyList: [] };
 
       // 先 dispatch pending 以初始化 runningChat 结构
@@ -2320,10 +1977,7 @@ describe('chatSlices', () => {
     });
 
     it('action.error 为 undefined 时应该正常处理', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-no-err', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-no-err' });
+      const { chat, model } = seedChatWithModel('model-no-err');
       const arg = { chat, model, message: 'test', historyList: [] };
 
       store.dispatch(sendMessage.pending('req-no-err-obj', arg));
@@ -2343,14 +1997,10 @@ describe('chatSlices', () => {
 
       errorSpy.mockRestore();
     });
-  });
 
   describe('pushRunningChatHistory - 条件精确覆盖', () => {
     it('应该直接赋值 history 而非合并', () => {
-      const model = createMockModel({ id: 'model-push-cond' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-push-cond', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-push-cond');
 
       store.dispatch(createChat({ chat }));
 
@@ -2381,12 +2031,9 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('appendHistoryToModel - 返回值变异覆盖', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('成功追加后 sendMessage.fulfilled 应清理 runningChat', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-return-true', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-return-true' });
+      const { chat, model } = seedChatWithModel('model-return-true');
       const arg = { chat, model, message: 'Hello', historyList: [] };
       const responseMessage = createMockMessage({ content: 'Data' });
 
@@ -2401,7 +2048,6 @@ describe('chatSlices', () => {
       // 数据被追加到 chatHistoryList
       expect(state.activeChatData[chat.id].chatModelList[0].chatHistoryList).toHaveLength(1);
     });
-  });
 
   // ==================== Phase 2 第三轮：精确杀死剩余变异体 ====================
 
@@ -2445,7 +2091,7 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('setSelectedChatIdWithPreload.fulfilled - chatId && chatData 条件精确覆盖', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('chatId 为 truthy 但 chatData 为 undefined 时不应写入 activeChatData', () => {
       const chatA = createMockChat({ id: 'sel-3-a' });
       store.dispatch(createChat({ chat: chatA }));
@@ -2484,14 +2130,10 @@ describe('chatSlices', () => {
       expect(state.activeChatData['sel-3-data']).toEqual(chat);
       expect(state.activeChatData['sel-3-data'].name).toBe('WithData');
     });
-  });
 
-  describe('sendMessage.fulfilled - activeChat 条件精确覆盖', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('activeChat 存在时应该更新 updatedAt 和 chatMetaList', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-ful-3', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-ful-3' });
+      const { chat, model } = seedChatWithModel('model-ful-3');
       const arg = { chat, model, message: 'Hello', historyList: [] };
       const responseMessage = createMockMessage({ content: 'Response' });
 
@@ -2509,10 +2151,7 @@ describe('chatSlices', () => {
     });
 
     it('activeChat 不存在时 updatedAt 不应被更新', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-ful-no', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-ful-no' });
+      const { chat, model } = seedChatWithModel('model-ful-no');
       const arg = { chat, model, message: 'Hello', historyList: [] };
 
       // 不创建 chat
@@ -2523,14 +2162,10 @@ describe('chatSlices', () => {
       // activeChatData 不存在 → 无 updatedAt 更新
       expect(state.activeChatData[chat.id]).toBeUndefined();
     });
-  });
 
-  describe('sendMessage thunk - signal.aborted 和 for-await 精确覆盖', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('signal.aborted 时应在 yield 后 break 且不 dispatch pushRunningChatHistory', async () => {
-      const model = createMockModel({ id: 'model-signal-abort' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-signal-abort', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-signal-abort');
 
       store.dispatch(createModel({ model }));
       store.dispatch(createChat({ chat }));
@@ -2569,7 +2204,6 @@ describe('chatSlices', () => {
       expect(historyList![0].role).toBe('user');
       expect(historyList![0].content).toBe('test');
     });
-  });
 
   describe('createChat - updatedAt undefined 时初始化', () => {
     it('应该设置 updatedAt 为当前时间戳', () => {
@@ -2585,12 +2219,9 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('appendHistoryToModel - BooleanLiteral return false→true', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('chat 不存在时 sendMessage.fulfilled 应保留 runningChat', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-ret-f', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-ret-f' });
+      const { chat, model } = seedChatWithModel('model-ret-f');
       const arg = { chat, model, message: 'test', historyList: [] };
       const responseMessage = createMockMessage({ content: 'Data' });
 
@@ -2607,9 +2238,8 @@ describe('chatSlices', () => {
         history: responseMessage,
       }));
     });
-  });
 
-  describe('startSendChatMessage - 条件和对象精确覆盖', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('条件为 true 时应 dispatch sendMessage', async () => {
       const model = createMockModel({ id: 'model-cond-true', isEnable: true, isDeleted: false });
       const chat = createMockChat({
@@ -2629,14 +2259,10 @@ describe('chatSlices', () => {
       // 条件为 true → sendMessage 被执行 → runningChat 创建并清理
       expect(state.sendingChatIds[chat.id]).toBeUndefined();
     });
-  });
 
   describe('pushRunningChatHistory - 条件精确覆盖', () => {
     it('runningChat 结构已初始化时应直接赋值', () => {
-      const model = createMockModel({ id: 'model-push-3' });
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-push-3', chatHistoryList: [] }],
-      });
+      const { chat, model } = seedChatWithModel('model-push-3');
       const msg = createMockMessage({ content: 'Running' });
 
       store.dispatch(createChat({ chat }));
@@ -2652,12 +2278,9 @@ describe('chatSlices', () => {
     });
   });
 
-  describe('sendMessage.rejected - OptionalChaining 精确覆盖', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('action.error 存在时应该解构 message 和 stack', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-err-destr', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-err-destr' });
+      const { chat, model } = seedChatWithModel('model-err-destr');
       const arg = { chat, model, message: 'test', historyList: [] };
 
       store.dispatch(createChat({ chat }));
@@ -2677,12 +2300,11 @@ describe('chatSlices', () => {
 
       errorSpy.mockRestore();
     });
-  });
 
   // ==================== Phase 2 补充：杀死第二轮变异测试存活变异体 ====================
 
   // L17 ObjectLiteral: generateUserMessageId({ prefix }) 前缀验证
-  describe('sendMessage - 用户消息 ID 前缀', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('pushChatHistory 中用户消息 id 应包含 USER_MESSAGE_ID_PREFIX', async () => {
       const model = createMockModel({ id: 'model-id-prefix', modelKey: 'test-key' });
       const chat = createMockChat({
@@ -2709,7 +2331,6 @@ describe('chatSlices', () => {
       // 变异 {prefix: ...} → {} → ID 不含前缀
       expect(userMsg.id).toMatch(/^user_msg_/);
     });
-  });
 
   // L66 ObjectLiteral: initializeChatList Error 构造函数 cause 验证
   describe('initializeChatList - Error cause 验证', () => {
@@ -2737,16 +2358,15 @@ describe('chatSlices', () => {
   });
 
   // L148 BlockStatement: setSelectedChatIdWithPreload chatId 为 falsy 时的 return
-  describe('setSelectedChatIdWithPreload - chatId falsy 路径', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('chatId 为空字符串时应返回 { chatId: null }', async () => {
       const result = await store.dispatch(setSelectedChatIdWithPreload(''));
 
       expect(result.payload).toEqual({ chatId: null });
     });
-  });
 
   // L160 ConditionalExpression: setSelectedChatIdWithPreload loaded 为 falsy
-  describe('setSelectedChatIdWithPreload - loaded 条件分支', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('loaded 为 null 时应返回仅 chatId 并 console.warn', async () => {
       (loadChatById as any).mockResolvedValue(null);
 
@@ -2773,10 +2393,9 @@ describe('chatSlices', () => {
         chatData: chatFromStorage,
       });
     });
-  });
 
   // L171 ConditionalExpression + BlockStatement: chatModelList.length === 0 早期返回
-  describe('setSelectedChatIdWithPreload - chatModelList 长度条件', () => {
+  // ==================== setSelectedChatIdWithPreload ====================
     it('chatModelList 有 2 个模型时应预加载 2 个 providerKey', async () => {
       const model1 = createMockModel({ id: 'model-cml-1', providerKey: 'PROV_1' as any });
       const model2 = createMockModel({ id: 'model-cml-2', providerKey: 'PROV_2' as any });
@@ -2815,10 +2434,9 @@ describe('chatSlices', () => {
         chatId: 'chat-empty-cml',
       }));
     });
-  });
 
   // L272 ConditionalExpression: startSendChatMessage models.find 条件
-  describe('startSendChatMessage - models.find 精确匹配', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('多 model 场景下应按 modelId 精确匹配，非第一个', async () => {
       const modelA = createMockModel({ id: 'model-a', isEnable: true, isDeleted: false, modelKey: 'keyA' });
       const modelB = createMockModel({ id: 'model-b', isEnable: true, isDeleted: false, modelKey: 'keyB' });
@@ -2872,10 +2490,9 @@ describe('chatSlices', () => {
       expect(state.sendingChatIds[chat.id]).toBeUndefined();
       expect(streamChatCompletion).toHaveBeenCalledTimes(2);
     });
-  });
 
   // L280 ObjectLiteral: startSendChatMessage { signal } 传递
-  describe('startSendChatMessage - signal 传递验证', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('sendMessage 调用时应收到 signal 选项', async () => {
       const model = createMockModel({ id: 'model-sig-opt', isEnable: true, isDeleted: false });
       const chat = createMockChat({
@@ -2896,7 +2513,6 @@ describe('chatSlices', () => {
       expect(lastCall?.[1]).toHaveProperty('signal');
       expect(lastCall?.[1].signal).toBeInstanceOf(AbortSignal);
     });
-  });
 
   // L409 EqualityOperator + ConditionalExpression: editChatName name.length > 20 边界
   describe('editChatName - 边界值精确验证', () => {
@@ -2933,12 +2549,9 @@ describe('chatSlices', () => {
   });
 
   // L527 ConditionalExpression: sendMessage.pending isNil 分支
-  describe('sendMessage.pending - isNil 分支精确覆盖', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('首次 pending 时应创建完整结构 { isSending: true, history: null, errorMessage: "" }', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-first-pend', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-first-pend' });
+      const { chat, model } = seedChatWithModel('model-first-pend');
       const arg = { chat, model, message: 'test', historyList: [] };
 
       store.dispatch(sendMessage.pending('req-first', arg));
@@ -2954,10 +2567,7 @@ describe('chatSlices', () => {
     });
 
     it('重复 pending 时已有 runningChat[chat.id] 应只重置子字段', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-re-pend', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-re-pend' });
+      const { chat, model } = seedChatWithModel('model-re-pend');
       const arg = { chat, model, message: 'test', historyList: [] };
 
       // 第一次 pending
@@ -2973,15 +2583,11 @@ describe('chatSlices', () => {
       expect(state.runningChat[chat.id][model.id].errorMessage).toBe('');
       expect(state.runningChat[chat.id][model.id].history).not.toBeNull();
     });
-  });
 
   // L552 ConditionalExpression + BlockStatement + ObjectLiteral: sendMessage.fulfilled activeChat 更新
-  describe('sendMessage.fulfilled - activeChat updatedAt 精确验证', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('activeChat 存在时 updatedAt 应被更新且 chatMetaList 精确同步', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-act-upd', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-act-upd' });
+      const { chat, model } = seedChatWithModel('model-act-upd');
       const arg = { chat, model, message: 'Hello', historyList: [] };
       const responseMessage = createMockMessage({ content: 'Resp' });
 
@@ -3004,10 +2610,7 @@ describe('chatSlices', () => {
     });
 
     it('activeChat 存在时 chatMetaList 的 updatedAt 应与 activeChatData 的完全相同', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-sync-ts', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-sync-ts' });
+      const { chat, model } = seedChatWithModel('model-sync-ts');
       const arg = { chat, model, message: 'Hello', historyList: [] };
 
       store.dispatch(createChat({ chat }));
@@ -3023,40 +2626,14 @@ describe('chatSlices', () => {
       // 两者必须是同一个值（变异 updateMetaInList 内合并对象可能改变值）
       expect(meta.updatedAt).toBe(activeTs);
     });
-  });
 
   // L592 LogicalOperator: chatId && chatData
-  describe('setSelectedChatIdWithPreload.fulfilled - chatId && chatData 精确覆盖', () => {
-    it('chatId 为 truthy 且 chatData 为 null 时不写入 activeChatData', () => {
-      store.dispatch(setSelectedChatIdWithPreload.fulfilled(
-        { chatId: 'chat-null-data', chatData: null as any },
-        'sel-null-data',
-        'chat-null-data',
-      ));
-
-      const state = store.getState().chat;
-      expect(state.activeChatData['chat-null-data']).toBeUndefined();
-    });
-
-    it('chatId 为 truthy 且 chatData 为 0 时不写入 activeChatData', () => {
-      store.dispatch(setSelectedChatIdWithPreload.fulfilled(
-        { chatId: 'chat-zero-data', chatData: 0 as any },
-        'sel-zero-data',
-        'chat-zero-data',
-      ));
-
-      const state = store.getState().chat;
-      expect(state.activeChatData['chat-zero-data']).toBeUndefined();
-    });
-  });
+  // ==================== setSelectedChatIdWithPreload ====================
 
   // L610 + L622 OptionalChaining: sendMessage.rejected
-  describe('sendMessage.rejected - OptionalChaining 精确覆盖', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('runningChat[chat.id] 存在但 [model.id] 不存在时应安全处理', () => {
-      const chat = createMockChat({
-        chatModelList: [{ modelId: 'model-opt-rc', chatHistoryList: [] }],
-      });
-      const model = createMockModel({ id: 'model-opt-rc' });
+      const { chat, model } = seedChatWithModel('model-opt-rc');
       const otherModel = createMockModel({ id: 'other-model' });
       const arg = { chat, model, message: 'test', historyList: [] };
       const otherArg = { chat, model: otherModel, message: 'test', historyList: [] };
@@ -3108,10 +2685,9 @@ describe('chatSlices', () => {
 
       errorSpy.mockRestore();
     });
-  });
 
   // L318 BooleanLiteral: return false → return true（modelId 不匹配时）
-  describe('appendHistoryToModel - return false 变异覆盖', () => {
+  // ==================== sendMessage / startSendChatMessage ====================
     it('modelId 不匹配时 sendMessage.fulfilled 不应清理 runningChat', () => {
       // 构造场景：chat 有 model-a 但 runningChat 中的 model 是 model-b
       const chat = createMockChat({
@@ -3141,7 +2717,6 @@ describe('chatSlices', () => {
         history: responseMsg,
       }));
     });
-  });
 
   // L335/L336 updateMetaInList findIndex 精确匹配变异
   describe('updateMetaInList - findIndex 精确匹配验证', () => {
