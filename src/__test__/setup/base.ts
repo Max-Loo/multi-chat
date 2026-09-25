@@ -7,7 +7,7 @@
 import { expect } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import 'fake-indexeddb/auto';
-import { createI18nMockReturn, mockI18n } from '@/__test__/helpers/mocks/i18n';
+import { mockI18n } from '@/__test__/helpers/mocks/i18n';
 import { createMemoryStorageMock } from '@/__test__/helpers/mocks/storage';
 import { createResponsiveMock } from '@/__test__/helpers/mocks/responsive';
 import { createTauriCompatModuleMock } from '@/__test__/helpers/mocks/tauriCompat';
@@ -38,10 +38,6 @@ globalThis.ResizeObserver = class ResizeObserver {
 // ========================================
 // 将 mock 工厂函数注册到 globalThis，供测试文件中的 vi.mock 工厂使用
 // vi.mock 的工厂函数存在 hoisting 限制，无法使用常规 import
-
-// eslint-disable-next-line no-var
-var __i18nMock: typeof createI18nMockReturn = createI18nMockReturn;
-globalThis.__createI18nMockReturn = __i18nMock;
 
 // eslint-disable-next-line no-var
 var __mockI18nFn: typeof mockI18n = mockI18n;

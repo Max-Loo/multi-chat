@@ -19,7 +19,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, waitFor } from '@testing-library/react';
 import { getTestStore, resetStore } from '@/__test__/helpers/integration/resetStore';
-import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
+import { clearIndexedDB } from '@/__test__/helpers/isolation/reset';
 import type { AppDispatch } from '@/store';
 import {
   startSendChatMessage,

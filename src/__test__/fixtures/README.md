@@ -32,9 +32,8 @@ Fixtures 是测试数据的工厂函数，用于创建标准的测试数据对�
 
 - `createDeepSeekProvider(overrides?)` - 创建 DeepSeek 供应商数据
 - `createKimiProvider(overrides?)` - 创建 Kimi (Moonshot AI) 供应商数据
-- `createZhipuProvider(overrides?)` - 创建 ZhipuAI 供应商数据
 - `createMockRemoteProvider(overrides?)` - 创建通用供应商数据
-- `createMockRemoteProviders(providers?)` - 批量创建供应商数据
+- `createMockRemoteProviders(providers?)` - 批量创建供应商数据（默认含 ZhipuAI 数据）
 
 **特性**：使用 Zod schema 验证数据结构，确保生成的数据符合 `RemoteProviderData` 类型。
 
@@ -47,8 +46,6 @@ Fixtures 是测试数据的工厂函数，用于创建标准的测试数据对�
 - `createMockModel(overrides?)` - 创建通用模型数据
 - `createMockModels(count, overrides?)` - 批量创建模型数据
 - `createDeepSeekModel(overrides?)` - 创建 DeepSeek 模型
-- `createKimiModel(overrides?)` - 创建 Kimi 模型
-- `createEncryptedModel(overrides?)` - 创建已加密 API Key 的模型
 
 ### 3. Chat Fixtures (`chat.ts`)
 

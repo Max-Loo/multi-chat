@@ -84,7 +84,7 @@ pnpm test:all
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, waitFor } from '@testing-library/react';
 import { getTestStore, resetStore } from '@/__test__/helpers/integration/resetStore';
-import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
+import { clearIndexedDB } from '@/__test__/helpers/isolation/reset';
 
 // Mock 外部依赖（模块级，会被 Vitest 提升到文件顶部）
 vi.mock('@/services/chat', async () => {
@@ -135,7 +135,7 @@ describe('功能名称集成测试', () => {
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, waitFor } from '@testing-library/react';
 import { getTestStore, resetStore } from '@/__test__/helpers/integration/resetStore';
-import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
+import { clearIndexedDB } from '@/__test__/helpers/isolation/reset';
 import { createChat, startSendChatMessage, setSelectedChatId } from '@/store/slices/chatSlices';
 import { createModel as createModelAction } from '@/store/slices/modelSlice';
 import { createDeepSeekModel } from '@/__test__/helpers/fixtures/model';
@@ -372,12 +372,12 @@ resetStore();
 cleanupStore();
 ```
 
-### clearIndexedDB.ts
+### clearIndexedDB（helpers/isolation/reset.ts）
 
 IndexedDB 清理工具：
 
 ```typescript
-import { clearIndexedDB } from '@/__test__/helpers/integration/clearIndexedDB';
+import { clearIndexedDB } from '@/__test__/helpers/isolation/reset';
 
 // 清理所有数据库
 await clearIndexedDB();

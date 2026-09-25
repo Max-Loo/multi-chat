@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockModel, createMockModels, createDeepSeekModel, createKimiModel, createEncryptedModel } from './model';
+import { createMockModel, createMockModels, createDeepSeekModel } from './model';
 
 describe('createMockModel', () => {
   it('应该创建包含所有必需字段的 Model', () => {
@@ -82,22 +82,5 @@ describe('createDeepSeekModel', () => {
 
     expect(model.providerName).toBe('DeepSeek');
     expect(model.modelName).toBe('deepseek-chat');
-  });
-});
-
-describe('createKimiModel', () => {
-  it('应该创建 Kimi 模型', () => {
-    const model = createKimiModel();
-
-    expect(model.providerName).toBe('Kimi');
-    expect(model.modelName).toBe('moonshot-v1-8k');
-  });
-});
-
-describe('createEncryptedModel', () => {
-  it('应该创建带加密 API Key 的模型', () => {
-    const model = createEncryptedModel();
-
-    expect(model.apiKey).toMatch(/^enc:/);
   });
 });

@@ -82,7 +82,7 @@ export const createKimiProvider = (overrides?: Partial<RemoteProviderData>): Rem
  * 创建 ZhipuAI 供应商数据
  * @param overrides 要覆盖的字段
  */
-export const createZhipuProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData =>
+const createZhipuProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData =>
   createMockRemoteProvider({
     providerKey: ModelProviderKeyEnum.ZHIPUAI,
     providerName: 'ZhipuAI',

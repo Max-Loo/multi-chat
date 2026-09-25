@@ -3,7 +3,7 @@
  *
  * 用于 vi.mock('react-i18next') 的统一 mock 创建。
  * 由于 vitest 的 hoisting 限制，vi.mock 工厂无法使用常规 import，
- * 因此此函数通过 setup.ts 注册到 globalThis.__createI18nMockReturn。
+ * 因此 mockI18n 通过 setup.ts 注册到 globalThis.__mockI18n。
  *
  * 支持三种 t() 调用模式：
  * - 选择器函数：t((r) => r.common.title) → 从 R 中解析
@@ -14,20 +14,11 @@
  *
  * @example
  * ```typescript
- * // 标准用法（通过 globalThis，在 vi.mock 工厂中使用）
- * vi.mock('react-i18next', () => {
- *   const R = { nav: { chat: '聊天' } };
- *   return globalThis.__createI18nMockReturn(R);
- * });
- * ```
+ * // 通过 globalThis 在 vi.mock 工厂中使用（自动合并默认翻译键）
+ * vi.mock('react-i18next', () => globalThis.__mockI18n());
  *
- * @example
- * ```typescript
- * // 模板插值用法
- * vi.mock('react-i18next', () => {
- *   const R = { setting: { count: '共 {{count}} 个模型' } };
- *   return globalThis.__createI18nMockReturn(R);
- * });
+ * // 添加/覆盖自定义翻译键（含模板插值）
+ * vi.mock('react-i18next', () => globalThis.__mockI18n({ setting: { count: '共 {{count}} 个模型' } }));
  * ```
  */
 
@@ -134,7 +125,6 @@ function deepMerge<T extends Record<string, unknown>>(
 /**
  * 创建带默认翻译键的 i18n mock 返回值
  *
- * 替代 vi.mock 工厂中的 `const R = {...}; return globalThis.__createI18nMockReturn(R)` 模式。
  * 内置高频默认翻译键（DEFAULT_I18N_RESOURCES），自动深度合并自定义键。
  *
  * @param keys 自定义翻译键（深度合并到默认键上）

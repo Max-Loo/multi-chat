@@ -2,8 +2,8 @@
 
 ## 1. 基线存档（前置）
 
-- [ ] 1.1 运行 `pnpm test:coverage` 并将 `coverage/coverage-summary.json` 复制为基线副本（如 `coverage/coverage-baseline.json`），记录 9 个模块的 lines/branches 数字；验证：基线文件存在且含各模块数据
-- [ ] 1.2 记录基线通过数（单元 169 文件 2,391 用例、集成 9 文件 93 用例）到变更目录备注；验证：数字与 `pnpm test:run` / `pnpm test:integration:run` 输出一致
+- [x] 1.1 运行 `pnpm test:coverage` 并将 `coverage/coverage-summary.json` 复制为基线副本（如 `coverage/coverage-baseline.json`），记录 9 个模块的 lines/branches 数字；验证：基线文件存在且含各模块数据
+- [x] 1.2 记录基线通过数（单元 169 文件 2,391 用例、集成 9 文件 93 用例）到变更目录备注；验证：数字与 `pnpm test:run` / `pnpm test:integration:run` 输出一致
 
 ## 2. 批次①：helpers 死代码删除
 
