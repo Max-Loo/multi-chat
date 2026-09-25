@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { resetTestState, useIsolatedTest, setTestEnv, verifyIsolation, clearIndexedDB } from './reset';
+import { resetTestState, clearIndexedDB } from './reset';
 
 /**
  * 临时替换 indexedDB.databases 方法
@@ -65,45 +65,6 @@ describe('resetTestState', () => {
   });
 });
 
-describe('useIsolatedTest', () => {
-  it('应该不抛错地配置 beforeEach 和 afterEach 钩子', () => {
-    const beforeSpy = vi.fn();
-    const afterSpy = vi.fn();
-
-    expect(() => useIsolatedTest({
-      onBeforeEach: beforeSpy,
-      onAfterEach: afterSpy,
-    })).not.toThrow();
-  });
-});
-
-describe('setTestEnv', () => {
-  it('应该设置环境变量', () => {
-    setTestEnv('TEST_VAR', 'test-value');
-
-    expect(import.meta.env.TEST_VAR).toBe('test-value');
-  });
-});
-
-describe('verifyIsolation', () => {
-  it('localStorage 为空时应该返回 true', async () => {
-    localStorage.clear();
-
-    const result = await verifyIsolation();
-
-    expect(result).toBe(true);
-  });
-
-  it('localStorage 不为空时应该返回 false', async () => {
-    localStorage.setItem('leak', 'data');
-
-    const result = await verifyIsolation();
-
-    expect(result).toBe(false);
-    localStorage.clear();
-  });
-});
-
 describe('clearIndexedDB', () => {
   it('应该不抛错', async () => {
     await expect(clearIndexedDB()).resolves.not.toThrow();
@@ -122,27 +83,5 @@ describe('clearIndexedDB', () => {
         await expect(clearIndexedDB()).resolves.not.toThrow();
       },
     );
-  });
-});
-
-describe('verifyIsolation IndexedDB 检查', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  it('IndexedDB 为空时应该返回 true', async () => {
-    // 先清理 IndexedDB 确保干净状态
-    await clearIndexedDB();
-
-    const result = await verifyIsolation();
-
-    expect(result).toBe(true);
-  });
-
-  it('indexedDB.databases() 不可用时应跳过 IndexedDB 检查', async () => {
-    await withMockedDatabases(undefined, async () => {
-      const result = await verifyIsolation();
-      expect(result).toBe(true);
-    });
   });
 });

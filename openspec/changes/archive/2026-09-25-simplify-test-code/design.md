@@ -8,7 +8,7 @@
 
 **Goals:**
 
-- 净精简 2,500 行以上，同时保持测试全通过、各模块覆盖率不低于基线
+- 精简冗余的同时保持测试全通过、各模块覆盖率不低于基线（行数量级为调研期估算；实施实测净精简 1,327 行——调研快照中的部分冗余已在此前迭代清理，按下方风险预案「不强行凑数」执行，验收以覆盖守恒与样板消除为准）
 - 消除「同一 mock 体 / 同一工厂函数复制到多个文件」的模式，使新增测试只能走共享入口
 - `chatSlices.test.ts` 从 3,189 行降至 2,600 行以下且用例按 thunk 可导航
 
@@ -17,7 +17,7 @@
 - 不修改任何产品代码（`src/` 中 `__test__` 之外零改动）
 - 不放松 `vite.config.ts` 覆盖率阈值，不调整 `vitest.integration.config.ts` 与 Stryker 配置
 - 不合并 helpers 层并存的 `createTestStore` / `createTypeSafeTestStore` 两个入口名（13+28 文件各自稳定使用，改名收益低扰动大，留待后续）
-- 不清理全部 250+ 主 specs 中的空壳 spec（仅修复与本变更直接相关的 `test-parameterization` 缺 Purpose 问题）
+- 不清理全部 250+ 主 specs 中的空壳 spec（仅修复与本变更直接相关的 `test-parameterization` 缺 Purpose 问题）；但被本变更删除/替换 API 直接牵连的 5 个 capability 经 delta 修正（见 D8），不属于本条豁免范围
 - 不以 Stryker 变异分数作为本次验收指标（全量变异运行耗时过长，以 Istanbul 行/分支覆盖率守护）
 
 ## Decisions
@@ -62,7 +62,15 @@
 
 ### D7：覆盖率基线以 json-summary 存档并机械对比
 
-批次 ① 前运行 `pnpm test:coverage`（vitest 配置已含 json reporter），保存 `coverage/coverage-summary.json` 为基线副本；每批完成后重新生成并按模块对比 `lines`/`branches` 百分比，任何模块下降即阻塞该批合入。对比脚本可用一次性 node 脚本或人工比对 9 个模块数字（模块数量少，人工比对即可，不引入持久化工具）。
+`vite.config.ts` 当前 reporter 为 `["text", "html", "json", "lcov"]`，其中 `json` 只产出逐文件 `coverage-final.json` 明细、不含模块汇总，需先追加 `"json-summary"`（产出 `coverage/coverage-summary.json`，不动阈值，符合 Non-Goals「不放松阈值」）。批次 ① 前运行 `pnpm test:coverage`，保存 `coverage/coverage-summary.json` 为基线副本；每批完成后重新生成并按模块对比 `lines`/`branches` 百分比，任何模块下降即阻塞该批合入。对比脚本可用一次性 node 脚本或人工比对分模块数字（模块数量少，人工比对即可，不引入持久化工具）。
+
+### D8：被删/被替 API 牵连的主 specs 经 delta 修正，不直改主 specs 文件
+
+本变更删除的导出（`useIsolatedTest`/`setTestEnv`/`verifyIsolation`/`createRunningChatEntry`/`createMockMatchMedia`）与替换的机制（`__createI18nMockReturn` → `__mockI18n` 全局默认 mock；setup 三层 → 四层）使 5 个主 spec 与实现矛盾（verify 阶段全仓扫描确认）。处理：在变更目录 `specs/` 下补充 delta——`test-environment-isolation`（REMOVED ×3）、`test-store-consolidation`（REMOVED ×2）、`unified-mock-helpers`（REMOVED ×1）、`i18n-mock-unification`（MODIFIED ×2）、`test-setup-layers`（MODIFIED ×3），归档 sync 时一并应用到主 specs。
+
+- 理由：proposal 原声明「不修改任何既有 capability」在 API 删除后不再成立；OpenSpec 纪律要求 capability 变更经 delta 声明，且 delta 集中在变更目录内、可随变更整体评审与回滚。
+- 替代方案：直改主 specs 文件——否决，绕过 delta 评审链路且丢失「变更 → spec」的对应记录；留待后续 spec 清理变更——否决，矛盾由本变更直接造成，随本变更消除。
+- 备注：上述三份主 spec 历史遗留 delta 头（主 spec 内出现 `## ADDED/MODIFIED Requirements`），其 requirements 对 openspec 解析器不可见，archive 会拒绝应用 delta。已做仅限结构的修复（补标题/Purpose/`## Requirements` 节头，requirements 内容零改动，见任务 7.5），使 delta 可在归档时正常应用。
 
 ## Risks / Trade-offs
 
@@ -71,8 +79,10 @@
 - [`it.each` 合并后失败用例定位变难（一个参数化用例失败只报参数行）] → 参数表用例名列保留原用例语义（如 `V1: 100000 次迭代`）；接受此权衡，换取维护时同构逻辑只改一处。
 - [chatSlices 重构搬移 describe 时丢失 beforeEach 上下文（该文件仅 1 个顶层 beforeEach，83 组 describe 依赖它）] → 归并仅在顶层 beforeEach 作用域内移动分组，不引入新的嵌套 beforeEach；每步全文件跑测。
 - [删除 helpers 导出可能破坏未检索到的动态引用（字符串路径导入等）] → 删除前除 rg 外追加 `pnpm tsc` 验证类型层引用；本仓库测试无字符串动态导入 helpers 的先例。
-- [净精简量不达标（估算 2,500-3,200 行，实际可能缩水）] → 每批统计 `git diff --stat` 行数；若批次 ③④ 完成后净精简低于 2,000 行，评估剩余次级热点（如 `i18n.test.ts` 43 处内联动态导入收敛）后再收尾，不强行凑数。
+- [净精简量不达标（估算 2,500-3,200 行，实际可能缩水）] → 每批统计 `git diff --stat` 行数；若批次 ③④ 完成后净精简低于 2,000 行，评估剩余次级热点（如 `i18n.test.ts` 43 处内联动态导入收敛）后再收尾，不强行凑数。【实施结果】该风险已发生：实测净精简 1,327 行；评估指定次级热点（`i18n.test.ts` 动态导入收敛约 -80 行）后确认无法补齐缺口，按预案收尾，tasks.md 各批次行数指标已按实测修订。
 
 ## Migration Plan
 
 无部署迁移（纯测试代码变更）。回滚策略：四批各自独立提交（`test: 删除 helpers 死代码` / `test: mock 样板收敛` / `test: 参数化与去重` / `test: chatSlices 重构`），任一批回归失败 `git revert` 该批即可，批次间无前向依赖破坏（② 依赖 ① 删除的文件不再被引用，③④ 依赖 ② 的共享工厂，revert 需按逆序）。
+
+【实施结果】分批独立提交未按原案执行：四个批次按序实施并逐批全量回归（回归记录见 tasks.md 2.5/3.9/4.7/5.4），但批次未各自成 commit，全部实现以单一评审分支的工作区变更形式存在（净精简统计见任务 6.3）。因此逐批 `git revert` 粒度不可用，回滚单位为整个变更；各批次净删行数已按实施时逐批 diff 统计回填 tasks.md（3.9、4.7）。

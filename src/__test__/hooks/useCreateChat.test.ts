@@ -7,12 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: vi.fn(() => ({
-    navigateToChat: vi.fn(),
-    clearChatIdParam: vi.fn(),
-  })),
-}));
+vi.mock('@/hooks/useNavigateToPage', () => globalThis.__createNavigateToPageModuleMock());
 
 vi.mock('ai', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;

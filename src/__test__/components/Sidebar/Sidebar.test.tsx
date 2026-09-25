@@ -2,6 +2,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Sidebar from '@/components/Sidebar';
 
+// vi.hoisted 保证 mock 变量在 vi.mock 工厂执行前初始化
+const { mockNavigateToChat } = vi.hoisted(() => ({ mockNavigateToChat: vi.fn() }));
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -15,16 +18,11 @@ vi.mock('@/hooks/useCurrentSelectedChat', () => ({
   useCurrentSelectedChat: () => mockSelectedChat,
 }));
 
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
-    navigateToChat: mockNavigateToChat,
-  }),
-}));
+vi.mock('@/hooks/useNavigateToPage', () =>
+  globalThis.__createNavigateToPageModuleMock({ navigateToChat: mockNavigateToChat }));
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 const mockNavigate = vi.fn();
-const mockNavigateToChat = vi.fn();
 let mockLocation: { pathname: string };
 let mockSelectedChat: { id: string } | null = null;
 

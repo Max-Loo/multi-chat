@@ -15,12 +15,9 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import type { EnhancedStore } from '@reduxjs/toolkit';
 import { BottomNav } from '@/components/BottomNav';
-import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
-import { createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
+import { createMobileChatPageStore } from '@/__test__/helpers/render/redux';
 import type { RootState } from '@/store';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock useResponsive 为移动端模式（底部导航栏才显示）
 vi.mock('@/hooks/useResponsive', () => ({
@@ -32,16 +29,6 @@ vi.mock('@/config/navigation', async () => {
   const { createNavigationItemsMock } = await import('@/__test__/helpers/mocks/navigation');
   return { NAVIGATION_ITEMS: createNavigationItemsMock() };
 });
-
-/**
- * 创建测试用 Redux Store
- */
-function createBottomNavTestStore(): EnhancedStore<RootState> {
-  return createTypeSafeTestStore({
-    appConfig: createAppConfigSliceState({ language: 'zh' }),
-    chatPage: createChatPageSliceState({ isShowChatPage: true }),
-  });
-}
 
 /**
  * 渲染带路由和 Redux 的 BottomNav
@@ -63,7 +50,7 @@ describe('底部导航栏集成测试', () => {
   let store: EnhancedStore<RootState>;
 
   beforeEach(() => {
-    store = createBottomNavTestStore();
+    store = createMobileChatPageStore();
   });
 
   

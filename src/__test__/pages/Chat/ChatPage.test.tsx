@@ -22,16 +22,18 @@ vi.mock('@/hooks/useResponsive', () => ({
 
 /**
  * Mock useNavigateToChat hook（追踪 clearChatIdParam 调用）
+ * vi.hoisted 保证 mock 变量在 vi.mock 工厂执行前初始化
  */
-const mockClearChatIdParam = vi.fn();
-const mockNavigateToChat = vi.fn();
+const { mockClearChatIdParam, mockNavigateToChat } = vi.hoisted(() => ({
+  mockClearChatIdParam: vi.fn(),
+  mockNavigateToChat: vi.fn(),
+}));
 
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
+vi.mock('@/hooks/useNavigateToPage', () =>
+  globalThis.__createNavigateToPageModuleMock({
     navigateToChat: mockNavigateToChat,
     clearChatIdParam: mockClearChatIdParam,
-  }),
-}));
+  }));
 
 /**
  * Mock Sidebar 和 Content 子组件，减少渲染复杂度
@@ -89,7 +91,6 @@ function renderChatPage(route = '/chat', chatOverrides?: Partial<ChatSliceState>
 
 describe('ChatPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     mockResponsive.mockReturnValue({
       layoutMode: 'desktop',
       width: 1280,

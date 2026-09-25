@@ -140,3 +140,16 @@ export function createVirtuaMock(config?: Partial<VirtuaMockConfig>): VirtuaMock
     getRenderedRange: () => ({ ...state }),
   }
 }
+
+/**
+ * 创建纯展示的 virtua 组件 mock
+ *
+ * 供只需挂载子项、不模拟虚拟化行为的测试使用：Virtualizer/VList
+ * 均为透传 props 并渲染 children 的简单容器。
+ */
+export function createSimpleVirtuaMock() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Reason: 测试 mock 需要透传任意 props
+  const V = ({ children, ...props }: any) => <div {...props}>{children}</div>;
+  return { Virtualizer: V, VList: V };
+}

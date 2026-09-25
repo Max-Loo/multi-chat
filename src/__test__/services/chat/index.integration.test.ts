@@ -5,6 +5,10 @@ import { ChatRoleEnum } from '@/types/chat';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 import type { StandardMessage } from '@/types/chat';
 import { createDeepSeekModel } from '@/__test__/helpers/fixtures/model';
+import {
+  createMockAISDKMetadata,
+  createMockStreamResult,
+} from '@/__test__/helpers/mocks/aiSdk';
 
 // Mock providerLoader 模块
 vi.mock('@/services/chat/providerLoader', () => ({
@@ -43,62 +47,33 @@ vi.mock('ai', async (importOriginal) => {
 // ========================================
 
 /**
- * 创建默认的 mock metadata（AI SDK 格式）
+ * 本文件的 AI SDK 元数据默认值（原本地工厂经共享工厂 overrides 表达）
+ *
+ * 断言依赖 usage 10/20/30（如 finalMessage.usage.inputTokens === 10），
+ * 必须显式注入到 createMockStreamResult，不能依赖共享 mock 的默认结构。
  */
-function createMockAISDKMetadata() {
-  return {
-    providerMetadata: Promise.resolve({ provider: 'deepseek' }),
-    warnings: Promise.resolve([]),
-    sources: Promise.resolve(undefined),
-    response: {
-      id: 'test-id',
-      modelId: 'deepseek-chat',
-      timestamp: new Date('2024-01-01T00:00:00.000Z'), // AI SDK 返回 Date 对象
-      headers: {
-        'content-type': 'application/json',
-      },
+const defaultAISDKMetadata = createMockAISDKMetadata({
+  providerMetadata: Promise.resolve({ provider: 'deepseek' }),
+  response: {
+    id: 'test-id',
+    modelId: 'deepseek-chat',
+    timestamp: new Date('2024-01-01T00:00:00.000Z'), // AI SDK 返回 Date 对象
+    headers: {
+      'content-type': 'application/json',
     },
-    request: {
-      body: '{"model":"deepseek-chat"}',
-    },
-    usage: {
-      inputTokens: 10,
-      outputTokens: 20,
-      totalTokens: 30,
-    },
-    finishReason: 'stop',
-    rawFinishReason: 'stop',
-  };
-}
+  },
+  request: {
+    body: '{"model":"deepseek-chat"}',
+  },
+});
 
 /**
- * 创建模拟流式结果
+ * 创建模拟流式结果（注入本文件默认元数据）
  */
-function createMockStreamResult(
-  events: Array<{ type: string; text?: string }>,
-  metadata?: ReturnType<typeof createMockAISDKMetadata>
+function createMockStreamResultWithMetadata(
+  events: Array<{ type: string; text?: string }>
 ) {
-  const streamGen = (async function* () {
-    for (const event of events) {
-      yield event;
-    }
-  })();
-
-  // 模拟 AI SDK 的 PromiseLike 接口
-  const mockResult: {
-    // eslint-disable-next-line unicorn/no-thenable
-    then: (resolve: (value: ReturnType<typeof createMockAISDKMetadata>) => unknown) => Promise<unknown>;
-    fullStream: AsyncGenerator<{ type: string; text?: string }, void, unknown>;
-    [Symbol.asyncIterator]: () => AsyncIterator<{ type: string; text?: string }>;
-  } = {
-    // eslint-disable-next-line unicorn/no-thenable
-    then: (resolve: (value: ReturnType<typeof createMockAISDKMetadata>) => unknown) =>
-      Promise.resolve(metadata || createMockAISDKMetadata()).then(resolve),
-    fullStream: streamGen,
-    [Symbol.asyncIterator]: () => streamGen[Symbol.asyncIterator](),
-  };
-
-  return mockResult;
+  return createMockStreamResult(events, { metadata: defaultAISDKMetadata });
 }
 
 // ========================================
@@ -141,7 +116,7 @@ describe('index - streamChatCompletion', () => {
         { type: 'text-delta', text: 'Hello' },
         { type: 'text-delta', text: ' World' },
       ];
-      mockStreamText.mockReturnValue(createMockStreamResult(events));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
 
       // Act
       const messages: StandardMessage[] = [];
@@ -166,7 +141,7 @@ describe('index - streamChatCompletion', () => {
       };
 
       const events = [{ type: 'text-delta', text: 'Hi' }];
-      mockStreamText.mockReturnValue(createMockStreamResult(events));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
       mockGenerateId.mockReturnValueOnce('id-1').mockReturnValueOnce('id-2');
 
       // Act
@@ -198,7 +173,7 @@ describe('index - streamChatCompletion', () => {
       };
 
       const events = [{ type: 'text-delta', text: 'Hi' }];
-      mockStreamText.mockReturnValue(createMockStreamResult(events));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
 
       const beforeTime = Math.floor(Date.now() / 1000);
 
@@ -226,7 +201,7 @@ describe('index - streamChatCompletion', () => {
       };
 
       const events = [{ type: 'text-delta', text: 'Hi' }];
-      mockStreamText.mockReturnValue(createMockStreamResult(events));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
 
       // Act
       const messages: StandardMessage[] = [];
@@ -262,7 +237,7 @@ describe('index - streamChatCompletion', () => {
       };
 
       const events = [{ type: 'text-delta', text: 'Hi' }];
-      mockStreamText.mockReturnValue(createMockStreamResult(events));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
 
       // Act
       const messages: StandardMessage[] = [];
@@ -294,7 +269,7 @@ describe('index - streamChatCompletion', () => {
         { type: 'text-delta', text: 'Hello' },
         { type: 'text-delta', text: ' World' },
       ];
-      mockStreamText.mockReturnValue(createMockStreamResult(streamEvents));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(streamEvents));
 
       // Act
       const messages: StandardMessage[] = [];
@@ -323,7 +298,7 @@ describe('index - streamChatCompletion', () => {
       };
 
       const events = [{ type: 'text-delta', text: 'Hi' }];
-      mockStreamText.mockReturnValue(createMockStreamResult(events));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
 
       // Act
       const messages: StandardMessage[] = [];
@@ -394,7 +369,7 @@ describe('index - streamChatCompletion', () => {
       const abortController = new AbortController();
 
       const events = [{ type: 'text-delta', text: 'Hi' }];
-      mockStreamText.mockReturnValue(createMockStreamResult(events));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
 
       // Act
       abortController.abort();
@@ -431,7 +406,7 @@ describe('index - streamChatCompletion', () => {
         { type: 'text-delta', text: 'Hello' },
         { type: 'reasoning-delta', text: 'Thinking...' },
       ];
-      mockStreamText.mockReturnValue(createMockStreamResult(events));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
 
       // Act
       const messages: StandardMessage[] = [];
@@ -469,7 +444,7 @@ describe('index - streamChatCompletion', () => {
       };
 
       const events = [{ type: 'text-delta', text: 'Response' }];
-      mockStreamText.mockReturnValue(createMockStreamResult(events));
+      mockStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
 
       // Act
       const messages: StandardMessage[] = [];
@@ -502,7 +477,7 @@ describe('index - streamChatCompletion', () => {
       };
 
       const events = [{ type: 'text-delta', text: 'Hi' }];
-      mockAIStreamText.mockReturnValue(createMockStreamResult(events));
+      mockAIStreamText.mockReturnValue(createMockStreamResultWithMetadata(events));
 
       // Act — 不传 dependencies，触发 defaultAISDKDependencies 路径
       const messages: StandardMessage[] = [];

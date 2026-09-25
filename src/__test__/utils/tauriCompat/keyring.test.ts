@@ -665,38 +665,12 @@ describe('Keyring 兼容层测试套件', () => {
     });
 
     describe('keyring.isSupported', () => {
+      // Web 环境三分支（true / 无 IndexedDB / 无 Crypto）由下方「变异测试补强 - isSupported」覆盖，此处仅保留 Tauri 分支
       it('Tauri 环境应该返回 true', async () => {
         vi.mocked(isTauri).mockReturnValue(true);
 
         const module = await import('@/utils/tauriCompat/keyring');
         expect(module.keyring.isSupported()).toBe(true);
-      });
-
-      it('Web 环境（支持 IndexedDB + Crypto）应该返回 true', async () => {
-        vi.mocked(isTauri).mockReturnValue(false);
-        const indexedDB = new IDBFactory();
-        vi.stubGlobal('indexedDB', indexedDB);
-
-        const module = await import('@/utils/tauriCompat/keyring');
-        expect(module.keyring.isSupported()).toBe(true);
-
-        vi.unstubAllGlobals();
-      });
-
-      it('Web 环境（不支持 IndexedDB 或 Crypto）应该返回 false', async () => {
-        vi.mocked(isTauri).mockReturnValue(false);
-
-        // 移除 IndexedDB 支持
-        vi.stubGlobal('indexedDB', undefined);
-
-        const module = await import('@/utils/tauriCompat/keyring');
-        const result = module.keyring.isSupported();
-
-        // 恢复
-        vi.unstubAllGlobals();
-
-        // 结果应该是 false（因为 IndexedDB 不可用）
-        expect(result).toBe(false);
       });
     });
   });

@@ -228,6 +228,11 @@ container.querySelector('svg.animate-spin')      // → screen.getByRole('status
 - Mock 外部 API 请求，使用真实 Redux store 和存储层
 - 详细规范：`src/__test__/integration/README.md`
 
+**react-i18next 全局 Mock**：纯默认 i18n mock 已提升到 `setup/i18n.ts`（对全部单元与集成测试生效），测试文件**无需**再声明 `vi.mock('react-i18next')`。
+
+- 需要自定义翻译键时，在文件级覆盖：`vi.mock('react-i18next', () => globalThis.__mockI18n({ 自定义键 }))`
+- 依赖真实 react-i18next 行为的文件（如 i18n 初始化本身），用 `vi.unmock('react-i18next')` 恢复，并附 Mock 注释说明理由（现有示例：`useBasicModelTable.test.tsx`、`FatalErrorScreen.test.tsx`）
+
 ### 测试运行命令
 
 ```bash
@@ -259,6 +264,25 @@ import { resetTestState } from '@/__test__/helpers/isolation';
 ```
 
 ## Mock 工厂使用指南
+
+### Redux Store 工厂（统一用法）
+
+测试中创建 Redux store **统一使用** `createTypeSafeTestStore` + slice state 工厂组合，不再内联 `configureStore` 或手写 reducer 映射：
+
+```typescript
+import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
+import { createChatSliceState, createAppConfigSliceState } from '@/__test__/helpers/mocks/testState';
+
+// preloadedState 为 Partial<RootState>，每个 slice 用状态工厂保证字段完整
+const store = createTypeSafeTestStore({
+  chat: createChatSliceState({ selectedChatId: 'chat-1' }),
+  appConfig: createAppConfigSliceState({ language: 'zh' }),
+});
+```
+
+- 文件内多处复用时，可保留一行薄委托 helper（如 `const createStore = (o?) => createTypeSafeTestStore({ chat: createChatSliceState(o) })`）
+- 移动端聊天页场景直接用共享工厂 `createMobileChatPageStore()`（预置中文 + `isShowChatPage: true`）
+- 需要替换 reducer 时用第二参 `options.reducerOverrides`
 
 ### Tauri Mock
 

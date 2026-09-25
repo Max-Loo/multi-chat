@@ -4,7 +4,7 @@
  * 提供测试状态重置和环境隔离功能
  */
 
-import { vi, beforeEach, afterEach } from 'vitest';
+import { vi } from 'vitest';
 
 /**
  * 重置测试状态选项
@@ -103,84 +103,4 @@ export const resetTestState = async (options: ResetOptions = {}): Promise<void> 
   if (config.resetIndexedDB) {
     await clearIndexedDB();
   }
-};
-
-/**
- * 使用隔离测试钩子
- * 自动配置 beforeEach 和 afterEach 清理
- * @param options 配置选项
- */
-export const useIsolatedTest = (options?: {
-  /** beforeEach 回调 */
-  onBeforeEach?: () => void | Promise<void>;
-  /** afterEach 回调 */
-  onAfterEach?: () => void | Promise<void>;
-  /** 重置选项 */
-  resetOptions?: ResetOptions;
-}): void => {
-  const { onBeforeEach, onAfterEach, resetOptions } = options ?? {};
-
-  beforeEach(async () => {
-    await resetTestState(resetOptions);
-    await onBeforeEach?.();
-  });
-
-  afterEach(async () => {
-    await resetTestState(resetOptions);
-    await onAfterEach?.();
-  });
-};
-
-/**
- * 设置测试环境变量
- * @param key 环境变量名
- * @param value 环境变量值
- */
-export const setTestEnv = (key: string, value: string): void => {
-  vi.stubEnv(key, value);
-};
-
-/**
- * 检查 IndexedDB 中是否存在未清理的数据库
- * @returns 是否存在未清理的数据库
- */
-const hasUncleanedDatabases = async (): Promise<boolean> => {
-  if (typeof indexedDB === 'undefined') {
-    return false;
-  }
-
-  try {
-    if (typeof indexedDB.databases === 'function') {
-      const databases = await indexedDB.databases();
-      return databases.some((db) => typeof db.name === 'string' && db.name.length > 0);
-    }
-
-    // indexedDB.databases() 不可用时无法可靠检查，跳过 IndexedDB 检查
-    return false;
-  } catch {
-    // indexedDB.databases() 抛出异常时跳过检查
-    return false;
-  }
-};
-
-/**
- * 验证测试隔离
- * 检测是否有状态泄漏，覆盖 localStorage 和 IndexedDB 两个维度
- * @returns 是否通过隔离验证
- */
-export const verifyIsolation = async (): Promise<boolean> => {
-  // 检查 localStorage 是否为空
-  if (typeof localStorage !== 'undefined' && localStorage.length > 0) {
-    console.warn('[verifyIsolation] localStorage 未清空，可能存在状态泄漏');
-    return false;
-  }
-
-  // 检查 IndexedDB 是否为空
-  const hasUncleanedDB = await hasUncleanedDatabases();
-  if (hasUncleanedDB) {
-    console.warn('[verifyIsolation] IndexedDB 中存在未清理的数据库，可能存在状态泄漏');
-    return false;
-  }
-
-  return true;
 };

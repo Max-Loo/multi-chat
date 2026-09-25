@@ -18,14 +18,11 @@ vi.mock('react-i18next', () =>
   }));
 
 /**
- * Mock useNavigateToPage hook
+ * Mock useNavigateToPage hook（vi.hoisted 保证 mock 变量在 vi.mock 工厂执行前初始化）
  */
-const mockNavigateToChat = vi.fn();
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
-    navigateToChat: mockNavigateToChat,
-  }),
-}));
+const { mockNavigateToChat } = vi.hoisted(() => ({ mockNavigateToChat: vi.fn() }));
+vi.mock('@/hooks/useNavigateToPage', () =>
+  globalThis.__createNavigateToPageModuleMock({ navigateToChat: mockNavigateToChat }));
 
 /**
  * Mock FilterInput 组件

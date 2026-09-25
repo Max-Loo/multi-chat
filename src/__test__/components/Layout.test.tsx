@@ -9,7 +9,6 @@ import { screen } from '@testing-library/react';
 import Layout from '@/components/Layout';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 /**
  * Mock useResponsive hook，支持切换 isMobile 返回值

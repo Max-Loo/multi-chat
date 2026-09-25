@@ -6,6 +6,10 @@ import { renderHookWithProviders } from '@/__test__/helpers/render/redux';
 import { createModelSliceState, createChatSliceState } from '@/__test__/helpers/mocks/testState';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 
+// Mock 说明：表格列定义直接消费 t() 的选择器函数与真实翻译键，
+// 依赖真实 react-i18next 的 i18next 实例初始化，故从全局 i18n mock 中排除
+vi.unmock('react-i18next');
+
 describe('useBasicModelTable', () => {
   afterEach(() => {
     vi.useRealTimers();

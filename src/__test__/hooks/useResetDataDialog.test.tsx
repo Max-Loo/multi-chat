@@ -2,8 +2,6 @@ import { render, renderHook, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useResetDataDialog } from '@/hooks/useResetDataDialog';
 
-// Mock react-i18next 提供对话框文本
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock resetAllData 避免真实重置操作
 const mockResetAllData = vi.fn();

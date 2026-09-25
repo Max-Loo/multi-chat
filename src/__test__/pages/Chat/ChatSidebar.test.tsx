@@ -18,12 +18,7 @@ vi.mock('@/hooks/useAdaptiveScrollbar', () => ({ useAdaptiveScrollbar: () => glo
 /**
  * Mock virtua 虚拟滚动组件，在测试环境中渲染为普通 div
  */
-vi.mock('virtua', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // Reason: 测试 mock 需要透传任意 props
-  VList: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  Virtualizer: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-}));
+vi.mock('virtua', () => globalThis.__createSimpleVirtuaMock());
 
 vi.mock('react-i18next', () =>
   globalThis.__mockI18n({
@@ -52,11 +47,7 @@ vi.mock('@/hooks/useConfirm', () => ({
 /**
  * Mock useNavigateToPage hook because it wraps navigation logic that's tested separately
  */
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
-    navigateToChat: vi.fn(),
-  }),
-}));
+vi.mock('@/hooks/useNavigateToPage', () => globalThis.__createNavigateToPageModuleMock());
 
 /**
  * 创建测试用的初始状态

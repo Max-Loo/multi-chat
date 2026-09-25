@@ -951,6 +951,15 @@ describe('ResourceLoader', () => {
     }
   }
 
+  /**
+   * 为错误对象附加 code 属性（isNetworkError L2 层检测依据）
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const assignErrorCode = (error: Error, code: string): any => {
+    (error as any).code = code;
+    return error;
+  };
+
   describe('isNetworkError 四层 fallback 检测', () => {
     let testableLoader: TestableResourceLoader;
 
@@ -958,104 +967,46 @@ describe('ResourceLoader', () => {
       testableLoader = new TestableResourceLoader();
     });
 
-    it('L1: TypeError 实例返回 true（即使 message 不含网络关键词）', () => {
-      // message 不含任何网络关键词，仅通过 instanceof 判断
-      const error = new TypeError('x is not a function');
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L2: error.code 匹配 ERR_NETWORK 返回 true', () => {
-      const error = new Error('test');
-      (error as any).code = 'ERR_NETWORK';
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L2: error.code 匹配 ECONNREFUSED 返回 true', () => {
-      const error = new Error('test');
-      (error as any).code = 'ECONNREFUSED';
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L2: error.code 匹配 ETIMEDOUT 返回 true', () => {
-      const error = new Error('test');
-      (error as any).code = 'ETIMEDOUT';
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L2: error.code 匹配 ENOTFOUND 返回 true', () => {
-      const error = new Error('test');
-      (error as any).code = 'ENOTFOUND';
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L2: error.code 匹配 ECONNRESET 返回 true', () => {
-      const error = new Error('test');
-      (error as any).code = 'ECONNRESET';
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L2: error.code 匹配 EAI_AGAIN 返回 true', () => {
-      const error = new Error('test');
-      (error as any).code = 'EAI_AGAIN';
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L2: error.code 不匹配已知码（ENOENT）返回 false', () => {
-      const error = new Error('test');
-      (error as any).code = 'ENOENT';
-      expect(testableLoader.testIsNetworkError(error)).toBe(false);
-    });
-
-    it('L2: error.code 不匹配已知码（RANDOM_ERROR）返回 false', () => {
-      const error = new Error('test');
-      (error as any).code = 'RANDOM_ERROR';
-      expect(testableLoader.testIsNetworkError(error)).toBe(false);
-    });
-
-    it('L3: ChunkLoadError（无 code 属性）返回 true', () => {
-      const error = new Error('Loading chunk 3 failed');
-      error.name = 'ChunkLoadError';
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L4: message 包含 "fetch" 返回 true', () => {
-      const error = new Error('Failed to fetch data');
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L4: message 包含 "network" 返回 true', () => {
-      const error = new Error('network error occurred');
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L4: message 包含 "timeout" 返回 true', () => {
-      const error = new Error('Request timeout');
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L4: message 包含 "connection" 返回 true', () => {
-      const error = new Error('connection refused');
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L4: message 包含 "econnrefused" 返回 true', () => {
-      const error = new Error('econnrefused error');
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L4: message 包含 "etimedout" 返回 true', () => {
-      const error = new Error('etimedout error');
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('L4: message 包含 "enotfound" 返回 true', () => {
-      const error = new Error('enotfound error');
-      expect(testableLoader.testIsNetworkError(error)).toBe(true);
-    });
-
-    it('非网络错误返回 false', () => {
-      const error = new Error('Something completely unrelated');
-      expect(testableLoader.testIsNetworkError(error)).toBe(false);
+    // 17 组同构输入参数化：[用例名, 错误构造, 期望结果]
+    it.each([
+      ['L1: TypeError 实例返回 true（即使 message 不含网络关键词）',
+        () => new TypeError('x is not a function'), true],
+      ['L2: error.code 匹配 ERR_NETWORK 返回 true',
+        () => assignErrorCode(new Error('test'), 'ERR_NETWORK'), true],
+      ['L2: error.code 匹配 ECONNREFUSED 返回 true',
+        () => assignErrorCode(new Error('test'), 'ECONNREFUSED'), true],
+      ['L2: error.code 匹配 ETIMEDOUT 返回 true',
+        () => assignErrorCode(new Error('test'), 'ETIMEDOUT'), true],
+      ['L2: error.code 匹配 ENOTFOUND 返回 true',
+        () => assignErrorCode(new Error('test'), 'ENOTFOUND'), true],
+      ['L2: error.code 匹配 ECONNRESET 返回 true',
+        () => assignErrorCode(new Error('test'), 'ECONNRESET'), true],
+      ['L2: error.code 匹配 EAI_AGAIN 返回 true',
+        () => assignErrorCode(new Error('test'), 'EAI_AGAIN'), true],
+      ['L2: error.code 不匹配已知码（ENOENT）返回 false',
+        () => assignErrorCode(new Error('test'), 'ENOENT'), false],
+      ['L2: error.code 不匹配已知码（RANDOM_ERROR）返回 false',
+        () => assignErrorCode(new Error('test'), 'RANDOM_ERROR'), false],
+      ['L3: ChunkLoadError（无 code 属性）返回 true',
+        () => { const e = new Error('Loading chunk 3 failed'); e.name = 'ChunkLoadError'; return e; }, true],
+      ['L4: message 包含 "fetch" 返回 true',
+        () => new Error('Failed to fetch data'), true],
+      ['L4: message 包含 "network" 返回 true',
+        () => new Error('network error occurred'), true],
+      ['L4: message 包含 "timeout" 返回 true',
+        () => new Error('Request timeout'), true],
+      ['L4: message 包含 "connection" 返回 true',
+        () => new Error('connection refused'), true],
+      ['L4: message 包含 "econnrefused" 返回 true',
+        () => new Error('econnrefused error'), true],
+      ['L4: message 包含 "etimedout" 返回 true',
+        () => new Error('etimedout error'), true],
+      ['L4: message 包含 "enotfound" 返回 true',
+        () => new Error('enotfound error'), true],
+      ['非网络错误返回 false',
+        () => new Error('Something completely unrelated'), false],
+    ])('%s', (_name, createError, expected) => {
+      expect(testableLoader.testIsNetworkError(createError())).toBe(expected);
     });
   });
 });

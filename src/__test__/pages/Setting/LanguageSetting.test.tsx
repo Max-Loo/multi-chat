@@ -45,15 +45,8 @@ vi.mock("@/services/i18n", () => ({
   getInitI18nPromise: vi.fn(),
 }))
 
-// Mock sonner toast - 在 factory 内部创建
-vi.mock("sonner", () => ({
-  toast: {
-    error: vi.fn(),
-    warning: vi.fn(),
-    info: vi.fn(),
-    success: vi.fn(),
-  },
-}))
+// Mock sonner toast（共享工厂）
+vi.mock("sonner", () => globalThis.__createSonnerToastModuleMock())
 
 vi.mock('react-i18next', () => globalThis.__mockI18n({ common: { language: '语言' } }));
 

@@ -11,12 +11,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import type { EnhancedStore } from '@reduxjs/toolkit';
 import Layout from '@/components/Layout';
-import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
-import { createTestRootState, createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
+import { createMobileChatPageStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import type { RootState } from '@/store';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // 响应式状态 mock（通过 globalThis.__createResponsiveMock 创建可变对象）
 const mockResponsive = vi.hoisted(() => globalThis.__createResponsiveMock());
@@ -39,16 +36,6 @@ function setResponsiveMode(mode: 'desktop' | 'compact' | 'compressed' | 'mobile'
 }
 
 /**
- * 创建测试用 Redux Store
- */
-function createLayoutTestStore(): EnhancedStore<RootState> {
-  return createTypeSafeTestStore(createTestRootState({
-    appConfig: createAppConfigSliceState({ language: 'zh' }),
-    chatPage: createChatPageSliceState({ isShowChatPage: true }),
-  }));
-}
-
-/**
  * 渲染 Layout 组件
  */
 function renderLayout(store: EnhancedStore<RootState>) {
@@ -59,7 +46,7 @@ describe('响应式布局模式切换集成测试', () => {
   let store: EnhancedStore<RootState>;
 
   beforeEach(() => {
-    store = createLayoutTestStore();
+    store = createMobileChatPageStore();
     setResponsiveMode('desktop');
   });
 

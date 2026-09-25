@@ -7,7 +7,7 @@
 import { render, renderHook, type RenderOptions, type RenderHookOptions } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import { configureStore, type EnhancedStore } from '@reduxjs/toolkit';
+import { configureStore, type EnhancedStore, type ThunkDispatch, type UnknownAction } from '@reduxjs/toolkit';
 import { ConfirmProvider } from '@/hooks/useConfirm';
 import type { RootState } from '@/store';
 import chatReducer from '@/store/slices/chatSlices';
@@ -17,7 +17,7 @@ import appConfigReducer from '@/store/slices/appConfigSlices';
 import modelProviderReducer from '@/store/slices/modelProviderSlice';
 import settingPageReducer from '@/store/slices/settingPageSlices';
 import modelPageReducer from '@/store/slices/modelPageSlices';
-import { createTestRootState } from '../mocks/testState';
+import { createTestRootState, createAppConfigSliceState, createChatPageSliceState } from '../mocks/testState';
 
 /**
  * 创建类型安全的测试 Redux store
@@ -36,7 +36,11 @@ export const createTypeSafeTestStore = (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reducerOverrides?: { [K in keyof RootState]?: (state: any, action: any) => RootState[K] };
   }
-): EnhancedStore<RootState> => {
+// dispatch 标注为 ThunkDispatch：configureStore 默认挂载 thunk middleware，
+// 使调用方可直接 dispatch AsyncThunkAction（如 store.dispatch(initializeModels())）
+): EnhancedStore<RootState> & {
+  dispatch: ThunkDispatch<RootState, undefined, UnknownAction>;
+} => {
   // configureStore 的 ReducersMapObject 内部类型签名与 slice reducer 存在 PreloadedState 兼容差异，
   // 在此边界处使用类型断言确保调用方获得完整的类型安全，而非在各测试文件中使用 as any
   const reducerMap = {
@@ -60,6 +64,23 @@ export const createTypeSafeTestStore = (
  * @deprecated 使用 createTypeSafeTestStore 替代
  */
 export const createTestStore = createTypeSafeTestStore;
+
+/**
+ * 创建移动端聊天页测试 store
+ *
+ * 预置中文语言与聊天页可见状态（drawer-state、responsive-layout-switching、
+ * bottom-nav 三个集成测试的同构工厂收敛入口）。
+ *
+ * @param overrides 要覆盖的其余 slice 状态
+ */
+export const createMobileChatPageStore = (
+  overrides?: Partial<RootState>
+): EnhancedStore<RootState> =>
+  createTypeSafeTestStore({
+    appConfig: createAppConfigSliceState({ language: 'zh' }),
+    chatPage: createChatPageSliceState({ isShowChatPage: true }),
+    ...overrides,
+  });
 
 /**
  * 渲染选项

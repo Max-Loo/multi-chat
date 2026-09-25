@@ -345,46 +345,19 @@ describe('chatMiddleware', () => {
       });
     });
 
-    it('应该不触发 当聊天已手动命名', async () => {
-      const chatId = 'auto-chat-002';
-      const { store: autoStore, dispatchedActions } = createAutoNamingStore(createState({ id: chatId, isManuallyNamed: true }, true));
-
-      autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
-
-      await vi.waitFor(() => {
-        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
-      });
-    });
-
-    it('应该不触发 当全局开关关闭', async () => {
-      const chatId = 'auto-chat-003';
-      const { store: autoStore, dispatchedActions } = createAutoNamingStore(createState({ id: chatId }, false));
-
-      autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
-
-      await vi.waitFor(() => {
-        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
-      });
-    });
-
-    it('应该不触发 当标题非空', async () => {
-      const chatId = 'auto-chat-004';
-      const state = createState({ id: chatId, name: '已有标题' }, true);
-      const { store: autoStore, dispatchedActions } = createAutoNamingStore(state);
-
-      autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
-
-      await vi.waitFor(() => {
-        expect(countGenerateNamePending(dispatchedActions)).toBe(0);
-      });
-    });
-
-    it('应该不触发 当对话历史长度不等于 2', async () => {
-      const chatId = 'auto-chat-005';
-      const state = createState({ id: chatId }, true);
-      // 初始 chatHistoryList 为 0 条，push 后为 1 条（不等于 2）
-      state.chat.activeChatData[chatId]!.chatModelList![0]!.chatHistoryList = [];
-      const { store: autoStore, dispatchedActions } = createAutoNamingStore(state);
+    // 4 组「不触发」前置条件参数化：[场景, chatId, 状态构造]
+    it.each([
+      ['当聊天已手动命名', 'auto-chat-002', () => createState({ id: 'auto-chat-002', isManuallyNamed: true }, true)],
+      ['当全局开关关闭', 'auto-chat-003', () => createState({ id: 'auto-chat-003' }, false)],
+      ['当标题非空', 'auto-chat-004', () => createState({ id: 'auto-chat-004', name: '已有标题' }, true)],
+      ['当对话历史长度不等于 2', 'auto-chat-005', () => {
+        const state = createState({ id: 'auto-chat-005' }, true);
+        // 初始 chatHistoryList 为 0 条，push 后为 1 条（不等于 2）
+        state.chat.activeChatData['auto-chat-005']!.chatModelList![0]!.chatHistoryList = [];
+        return state;
+      }],
+    ])('应该不触发 %s', async (_name, chatId, buildState) => {
+      const { store: autoStore, dispatchedActions } = createAutoNamingStore(buildState());
 
       autoStore.dispatch(createFulfilledAction(chatId, 'model-auto'));
 

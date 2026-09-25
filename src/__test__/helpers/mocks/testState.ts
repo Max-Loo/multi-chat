@@ -13,7 +13,6 @@ import type { SettingPageSliceState } from '@/store/slices/settingPageSlices';
 import type { ModelPageSliceState } from '@/store/slices/modelPageSlices';
 import type { ModelSliceState } from '@/store/slices/modelSlice';
 import type { RootState } from '@/store';
-import type { StandardMessage } from '@/types/chat';
 // 从统一来源重导出 createMockModel
 export { createMockModel } from '@/__test__/helpers/fixtures/model';
 
@@ -43,27 +42,6 @@ export const createChatSliceState = (overrides?: Partial<ChatSliceState>): ChatS
   initializationError: null,
   runningChat: {},
   ...overrides,
-});
-
-/**
- * 创建 runningChat 嵌套状态的辅助函数
- * @param chatId 聊天 ID
- * @param modelId 模型 ID
- * @param overrides 覆盖 isSending、history 等字段
- * @returns runningChat 的单条嵌套结构
- */
-export const createRunningChatEntry = (
-  chatId: string,
-  modelId: string,
-  overrides?: { isSending?: boolean; history?: StandardMessage | null; errorMessage?: string }
-): ChatSliceState['runningChat'] => ({
-  [chatId]: {
-    [modelId]: {
-      isSending: false,
-      history: null,
-      ...overrides,
-    },
-  },
 });
 
 /**

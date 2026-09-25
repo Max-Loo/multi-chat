@@ -16,8 +16,7 @@ import type { EnhancedStore } from '@reduxjs/toolkit';
 // 被测试的页面组件
 import ChatPage from '@/pages/Chat';
 
-import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
-import { createTestRootState, createAppConfigSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
+import { createMobileChatPageStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import type { RootState } from '@/store';
 import { toggleDrawer as chatToggleDrawer, setIsDrawerOpen as chatSetIsDrawerOpen } from '@/store/slices/chatPageSlices';
 
@@ -43,16 +42,6 @@ function flushRadixTimers() {
 }
 
 /**
- * 创建测试用 Redux Store
- */
-function createDrawerTestStore(): EnhancedStore<RootState> {
-  return createTypeSafeTestStore(createTestRootState({
-    appConfig: createAppConfigSliceState({ language: 'zh' }),
-    chatPage: createChatPageSliceState({ isShowChatPage: true }),
-  }));
-}
-
-/**
  * 渲染带 ResponsiveProvider 的聊天页面
  */
 function renderChatPage(store: EnhancedStore<RootState>) {
@@ -64,7 +53,7 @@ describe('抽屉打开/关闭集成测试', () => {
   let consoleSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    store = createDrawerTestStore();
+    store = createMobileChatPageStore();
     consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 

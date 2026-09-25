@@ -1,3 +1,9 @@
+# test-parameterization Specification
+
+## Purpose
+
+规定测试代码中同构用例的参数化要求：连续多个仅相差输入值的测试用例 MUST 合并为 `it.each`/`test.each` 参数化形式，参数表用例名 MUST 保留原用例语义以便失败定位，确保参数化不降低覆盖与可读性。
+
 ## ADDED Requirements
 
 ### Requirement: crypto Unicode 往返测试参数化

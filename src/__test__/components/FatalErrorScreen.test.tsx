@@ -9,6 +9,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { FatalErrorScreen } from '@/components/FatalErrorScreen';
 import type { InitError } from '@/services/initialization';
 
+// Mock 说明：组件渲染依赖真实 react-i18next 的 i18next 实例（含语言回退逻辑），
+// 全局 mock 的静态翻译对象无法覆盖其初始化路径，故从全局 i18n mock 中排除
+vi.unmock('react-i18next');
+
 /** 保存原始 window.location 用于测试后恢复 */
 const originalLocation = window.location;
 const mockReload = vi.fn();

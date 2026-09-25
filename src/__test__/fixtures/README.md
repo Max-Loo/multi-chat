@@ -24,7 +24,7 @@ Fixtures 是测试数据的工厂函数，用于创建标准的测试数据对�
 
 ## 可用的 Fixtures
 
-### 1. ModelProvider Fixtures (`modelProvider.ts`)
+### 1. ModelProvider Fixtures（`helpers/fixtures/modelProvider.ts`）
 
 供应商数据的工厂函数，用于创建模型供应商测试数据。
 
@@ -32,13 +32,13 @@ Fixtures 是测试数据的工厂函数，用于创建标准的测试数据对�
 
 - `createDeepSeekProvider(overrides?)` - 创建 DeepSeek 供应商数据
 - `createKimiProvider(overrides?)` - 创建 Kimi (Moonshot AI) 供应商数据
-- `createZhipuProvider(overrides?)` - 创建 ZhipuAI 供应商数据
 - `createMockRemoteProvider(overrides?)` - 创建通用供应商数据
 - `createMockRemoteProviders(providers?)` - 批量创建供应商数据
+- `createMockApiResponse(overrides?)` / `createDeepSeekApiResponse(overrides?)` / `createKimiApiResponse(overrides?)` / `createOpenAIApiResponse(overrides?)` - 创建 models.dev API 响应数据
 
 **特性**：使用 Zod schema 验证数据结构，确保生成的数据符合 `RemoteProviderData` 类型。
 
-### 2. Model Fixtures (`models.ts`)
+### 2. Model Fixtures（`helpers/fixtures/model.ts`）
 
 模型数据的工厂函数，用于创建 AI 模型测试数据。
 
@@ -47,8 +47,6 @@ Fixtures 是测试数据的工厂函数，用于创建标准的测试数据对�
 - `createMockModel(overrides?)` - 创建通用模型数据
 - `createMockModels(count, overrides?)` - 批量创建模型数据
 - `createDeepSeekModel(overrides?)` - 创建 DeepSeek 模型
-- `createKimiModel(overrides?)` - 创建 Kimi 模型
-- `createEncryptedModel(overrides?)` - 创建已加密 API Key 的模型
 
 ### 3. Chat Fixtures (`chat.ts`)
 
@@ -91,20 +89,16 @@ ChatPanel 相关数据的工厂函数（与 `chat.ts` 功能类似，但更专�
 
 **可用函数**：
 
-- `createUserMessage(overrides?)` - 创建用户消息
-- `createAssistantMessage(overrides?)` - 创建助手消息
-- `createToolMessage(overrides?)` - 创建工具消息
-- `createStreamingMessages(chunkCount, baseMessage?)` - 创建流式消息序列
-- `createConversationHistory(rounds)` - 创建多轮对话历史
+- `createMockPanelMessage(overrides?)` - 创建面板场景消息
 
-**注意**：此 Fixtures 与 `chat.ts` 有部分重复，推荐优先使用 `chat.ts`。
+**注意**：消息类 Fixture 推荐优先使用 `chat.ts`（`createUserMessage` / `createAssistantMessage`）。
 
 ## 快速入门
 
 ### 基本用法
 
 ```typescript
-import { createMockModel } from '@/__test__/fixtures/models';
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { createUserMessage } from '@/__test__/fixtures/chat';
 import { createTestRootState } from '@/__test__/helpers/mocks';
 
@@ -122,7 +116,7 @@ const state = createTestRootState();
 ### 覆盖属性
 
 ```typescript
-import { createMockModel } from '@/__test__/fixtures/models';
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
 
 // 自定义特定字段
 const customModel = createMockModel({
@@ -136,7 +130,7 @@ const customModel = createMockModel({
 ### 批量创建
 
 ```typescript
-import { createMockModels } from '@/__test__/fixtures/models';
+import { createMockModels } from '@/__test__/helpers/fixtures/model';
 
 // 创建 5 个模型，每个都有不同的 ID
 const models = createMockModels(5);
@@ -150,7 +144,7 @@ const models = createMockModels(5, (index) => ({
 ### 创建特定类型的数据
 
 ```typescript
-import { createDeepSeekProvider } from '@/__test__/fixtures/modelProvider';
+import { createDeepSeekProvider } from '@/__test__/helpers/fixtures/modelProvider';
 import { createUserMessage } from '@/__test__/fixtures/chat';
 import { createTestRootState } from '@/__test__/helpers/mocks';
 
@@ -176,7 +170,7 @@ const state = createTestRootState({
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { createMockModel, createMockModels } from '@/__test__/fixtures';
+import { createMockModel, createMockModels } from '@/__test__/helpers/fixtures/model';
 import { modelSlice } from '@/store/slices/modelSlice';
 
 describe('modelSlice', () => {
@@ -206,7 +200,7 @@ describe('modelSlice', () => {
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { createMockMessage, createUserMessage, createAssistantMessage } from '@/__test__/fixtures';
+import { createMockMessage, createUserMessage, createAssistantMessage } from '@/__test__/fixtures/chat';
 import { render, screen } from '@testing-library/react';
 import ChatPanel from '@/components/ChatPanel';
 
@@ -237,7 +231,7 @@ describe('ChatPanel 集成测试', () => {
 
 ```typescript
 import { rest } from 'msw';
-import { createDeepSeekProvider, createKimiProvider } from '@/__test__/fixtures';
+import { createDeepSeekProvider, createKimiProvider } from '@/__test__/helpers/fixtures';
 
 export const modelsDevHandlers = [
   rest.get('https://models.dev/api.json', (req, res, ctx) => {
@@ -319,7 +313,7 @@ const assistantMsg = createMockMessage({ role: 'assistant', content: 'Hi there' 
 ```typescript
 // ✅ modelProvider.ts 中的所有 Fixtures 都有 Zod 验证
 // 如果数据结构不正确，会抛出 FixtureValidationError
-import { createDeepSeekProvider } from '@/__test__/fixtures/modelProvider';
+import { createDeepSeekProvider } from '@/__test__/helpers/fixtures/modelProvider';
 
 try {
   const provider = createDeepSeekProvider({
@@ -369,7 +363,7 @@ const provider = createDeepSeekProvider({
 import { createMockModel } from '../../../fixtures/models';
 
 // ✅ 正确：使用 @/ 别名
-import { createMockModel } from '@/__test__/fixtures/models';
+import { createMockModel } from '@/__test__/helpers/fixtures/model';
 ```
 
 **解决方案**：始终使用 `@/` 别名导入，避免使用相对路径。

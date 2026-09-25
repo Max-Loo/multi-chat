@@ -19,13 +19,8 @@ import { asTestType } from '@/__test__/helpers/testing-utils';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { createMockMessage } from '@/__test__/fixtures/chat';
 
-vi.mock('virtua', () => {
-  // oxlint-disable-next-line consistent-function-scoping — Vitest vi.mock 工厂函数会被提升，必须内联定义
-  const V = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-  return { Virtualizer: V, VList: V };
-});
+vi.mock('virtua', () => globalThis.__createSimpleVirtuaMock());
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 describe('ChatPanelContentDetail', () => {
   /**

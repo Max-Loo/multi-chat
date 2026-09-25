@@ -79,10 +79,10 @@ export const createKimiProvider = (overrides?: Partial<RemoteProviderData>): Rem
   });
 
 /**
- * 创建 ZhipuAI 供应商数据
+ * 创建 ZhipuAI 供应商数据（仅供 createMockRemoteProviders 默认列表内部使用，不对外导出）
  * @param overrides 要覆盖的字段
  */
-export const createZhipuProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData =>
+const createZhipuProvider = (overrides?: Partial<RemoteProviderData>): RemoteProviderData =>
   createMockRemoteProvider({
     providerKey: ModelProviderKeyEnum.ZHIPUAI,
     providerName: 'ZhipuAI',

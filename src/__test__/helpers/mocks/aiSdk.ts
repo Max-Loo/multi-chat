@@ -7,6 +7,71 @@
 import { vi } from 'vitest';
 
 /**
+ * AI SDK 原始格式的流式元数据
+ *
+ * 对应 streamText 返回值 await 后的形状：timestamp 是 Date 对象、
+ * usage/finishReason 为直接值（区别于 metadataCollector 转换后的
+ * StandardMessageRawResponse——其 timestamp 是 string）。
+ */
+export type MockAISDKMetadata = {
+  providerMetadata: Promise<Record<string, unknown>>;
+  warnings: Promise<Array<unknown>>;
+  sources: Promise<Array<unknown> | undefined>;
+  response: {
+    id: string;
+    modelId: string;
+    timestamp: Date;
+    headers?: Record<string, unknown>;
+  };
+  request: {
+    body: unknown;
+  };
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  finishReason?: string | null;
+  rawFinishReason?: string | null;
+};
+
+/**
+ * 创建 AI SDK 原始格式的 mock 流式元数据
+ *
+ * 供 createMockStreamResult 的 metadata 注入参数使用，替换默认的
+ * Promise 化字段结构。默认 usage 为 10/20/30（与真实模型返回量级一致）。
+ *
+ * @param overrides 要覆盖的字段（浅合并）
+ * @returns MockAISDKMetadata 对象
+ */
+export function createMockAISDKMetadata(
+  overrides: Partial<MockAISDKMetadata> = {},
+): MockAISDKMetadata {
+  return {
+    providerMetadata: Promise.resolve({}),
+    warnings: Promise.resolve([]),
+    sources: Promise.resolve(undefined),
+    response: {
+      id: 'test-id',
+      modelId: 'deepseek-chat',
+      timestamp: new Date('2024-01-01T00:00:00.000Z'), // AI SDK 返回 Date 对象
+      headers: {},
+    },
+    request: {
+      body: '{}',
+    },
+    usage: {
+      inputTokens: 10,
+      outputTokens: 20,
+      totalTokens: 30,
+    },
+    finishReason: 'stop',
+    rawFinishReason: 'stop',
+    ...overrides,
+  };
+}
+
+/**
  * 创建模拟的 streamText 返回值
  *
  * 返回对象同时实现 AsyncIterable 和 Thenable 接口，可配合 `for await...of` 消费流，
@@ -15,6 +80,8 @@ import { vi } from 'vitest';
  * @param streamItems - 流式事件数组，如 `[{ type: 'text-delta', text: 'Hello' }]`
  * @param options - 可选配置
  * @param options.streamError - 在流中抛出的错误，传入后 `await result` 会 reject
+ * @param options.metadata - 注入 AI SDK 原始格式的元数据（见 createMockAISDKMetadata），
+ *                          传入后 `await result` resolve 该对象而非默认的 Promise 化字段结构
  * @returns 模拟的 streamText 返回对象
  *
  * @example
@@ -48,8 +115,12 @@ import { vi } from 'vitest';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createMockStreamResult(
   streamItems: any[] = [],
-  options?: { streamError?: Error }
-) {
+  options?: { streamError?: Error; metadata?: MockAISDKMetadata }
+// Reason: Vercel AI SDK StreamTextResult 包含 30+ 必填属性，mock 只需实现
+// then/fullStream/asyncIterator，精确类型不真实，调用方（如 processStreamEvents）
+// 需要可直接传入，故返回 any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
   // 创建异步生成器（模拟 fullStream）
   async function* mockStream() {
     // 先产生一些输出，避免 SDK 抛出 "No output generated" 错误
@@ -75,6 +146,11 @@ export function createMockStreamResult(
       // 如果提供了 streamError，返回 rejected Promise
       if (options?.streamError) {
         return Promise.reject(options.streamError);
+      }
+
+      // 如果注入了 AI SDK 原始格式元数据，直接返回该对象
+      if (options?.metadata) {
+        return Promise.resolve(options.metadata).then(callback, errorCallback);
       }
 
       return Promise.resolve({

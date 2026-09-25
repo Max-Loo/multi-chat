@@ -395,85 +395,25 @@ describe("i18n module", () => {
 
     describe("语言降级持久化", () => {
       describe("核心功能", () => {
-        it("应该在降级到系统语言时显示 info toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'fr',
-            migrated: false,
-            fallbackReason: 'system-lang',
-          });
-
-          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-          resetI18nForTest();
-
-          await initI18n();
-
-          expect(mockI18nInit).toHaveBeenCalled();
-          // 验证 system-lang 分支触发了 toastQueue.info（杀死 line 234 变异体）
-          expect(mockToastQueue.info).toHaveBeenCalledWith(
-            expect.stringContaining('Switched to system language')
-          );
-        });
-
-        it("应该在降级到默认英语时显示 warning toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'en',
-            migrated: false,
-            fallbackReason: 'default',
-          });
-
-          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-          resetI18nForTest();
-
-          await initI18n();
-
-          expect(mockI18nInit).toHaveBeenCalled();
-          // 验证 default 分支触发了 toastQueue.warning（杀死 line 239 变异体）
-          expect(mockToastQueue.warning).toHaveBeenCalledWith(
-            expect.stringContaining('Language code invalid')
-          );
-        });
-
-        it("应该在语言迁移成功时显示 info toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'zh',
-            migrated: true,
-            from: 'zh-CN',
-          });
-
-          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-          resetI18nForTest();
-
-          await initI18n();
-
-          expect(mockI18nInit).toHaveBeenCalled();
-          // 验证 migrated && from 分支触发了 toastQueue.info（杀死 line 229 变异体）
-          expect(mockToastQueue.info).toHaveBeenCalledWith(
-            expect.stringContaining('Language code updated')
-          );
-        });
-
-        it("应该在语言有效缓存时不显示 toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'fr',
-            migrated: false,
-          });
-
-          const { initI18n, resetI18nForTest } = await import("@/services/i18n");
-          resetI18nForTest();
-
-          await initI18n();
-
-          expect(mockI18nInit).toHaveBeenCalled();
+        // 5 组降级场景参数化：[场景名, getDefaultAppLanguage 返回值, 期望 toast 级别, 期望消息片段]
+        it.each([
+          // 杀死 line 234 变异体（system-lang 分支）
+          ["应该在降级到系统语言时显示 info toast",
+            { lang: "fr", migrated: false, fallbackReason: "system-lang" }, "info", "Switched to system language"],
+          // 杀死 line 239 变异体（default 分支）
+          ["应该在降级到默认英语时显示 warning toast",
+            { lang: "en", migrated: false, fallbackReason: "default" }, "warning", "Language code invalid"],
+          // 杀死 line 229 变异体（migrated && from 分支）
+          ["应该在语言迁移成功时显示 info toast",
+            { lang: "zh", migrated: true, from: "zh-CN" }, "info", "Language code updated"],
           // 没有 migrated/from、fallbackReason → 不触发任何 toast
-          expect(mockToastQueue.info).not.toHaveBeenCalled();
-          expect(mockToastQueue.warning).not.toHaveBeenCalled();
-        });
-
-        it("应该在 migrated=true 但 from 缺失时不显示迁移 toast", async () => {
-          mockGetDefaultAppLanguage.mockResolvedValue({
-            lang: 'zh',
-            migrated: true,
-          });
+          ["应该在语言有效缓存时不显示 toast",
+            { lang: "fr", migrated: false }, null, null],
+          // migrated=true 但 from=undefined → 条件不满足（杀死 LogicalOperator || 变异体）
+          ["应该在 migrated=true 但 from 缺失时不显示迁移 toast",
+            { lang: "zh", migrated: true }, null, null],
+        ] as const)("%s", async (_name, mockReturn, toastMethod: "info" | "warning" | null, message) => {
+          mockGetDefaultAppLanguage.mockResolvedValue(mockReturn);
 
           const { initI18n, resetI18nForTest } = await import("@/services/i18n");
           resetI18nForTest();
@@ -481,8 +421,14 @@ describe("i18n module", () => {
           await initI18n();
 
           expect(mockI18nInit).toHaveBeenCalled();
-          // migrated=true 但 from=undefined → 条件不满足（杀死 LogicalOperator || 变异体）
-          expect(mockToastQueue.info).not.toHaveBeenCalled();
+          if (toastMethod) {
+            expect(mockToastQueue[toastMethod]).toHaveBeenCalledWith(
+              expect.stringContaining(message as string)
+            );
+          } else {
+            expect(mockToastQueue.info).not.toHaveBeenCalled();
+            expect(mockToastQueue.warning).not.toHaveBeenCalled();
+          }
         });
       });
 

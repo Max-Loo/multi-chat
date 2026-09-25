@@ -7,6 +7,7 @@
 
 import { vi } from 'vitest';
 import { createMockStreamResult, createMockAIProvider } from '@/__test__/helpers/mocks/aiSdk';
+import './i18n';
 
 // ========================================
 // 全局 Mock 配置

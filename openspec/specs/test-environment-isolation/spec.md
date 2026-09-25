@@ -44,22 +44,6 @@
 
 ---
 
-### Requirement: 隔离钩子函数
-
-系统 SHALL 提供 `useIsolatedTest()` 函数，自动配置异步的 `beforeEach` 和 `afterEach` 清理钩子，确保异步重置完成后才进入测试。自定义回调 SHALL 支持 `() => void | Promise<void>` 类型。
-
-#### Scenario: 自动配置清理钩子
-
-- **WHEN** 调用 `useIsolatedTest()`
-- **THEN** 系统自动在每个测试前后 `await` 执行状态重置
-
-#### Scenario: 自定义清理逻辑
-
-- **WHEN** 调用 `useIsolatedTest({ onAfterEach: customCleanup })`
-- **THEN** 系统 `afterEach` 执行默认清理后 `await` 执行 `customCleanup`
-
----
-
 ### Requirement: IndexedDB 隔离
 
 系统 SHALL 为每个测试提供独立的 IndexedDB 实例，防止数据污染。
@@ -73,49 +57,6 @@
 
 - **WHEN** 调用 `resetTestState()`
 - **THEN** 系统 IndexedDB 数据被清空
-
----
-
-### Requirement: 环境变量隔离
-
-系统 SHALL 支持测试级环境变量隔离，防止环境变量污染。
-
-#### Scenario: 设置测试环境变量
-
-- **WHEN** 调用 `setTestEnv('API_KEY', 'test-key')`
-- **THEN** 系统 `import.meta.env.API_KEY` 返回 `'test-key'`
-- **AND** 其他测试不受影响
-
-#### Scenario: 重置环境变量
-
-- **WHEN** 测试结束
-- **THEN** 系统环境变量恢复原值
-
----
-
-### Requirement: 隔离验证工具
-
-系统 SHALL 提供异步的 `verifyIsolation()` 函数，返回 `Promise<boolean>`，用于验证测试是否正确隔离，覆盖 localStorage 和 IndexedDB 两个维度。
-
-#### Scenario: 检测 localStorage 泄漏
-
-- **WHEN** 调用 `await verifyIsolation()` 时 `localStorage.length > 0`
-- **THEN** 系统返回 `false` 并输出警告
-
-#### Scenario: 检测 IndexedDB 泄漏
-
-- **WHEN** 调用 `await verifyIsolation()` 时 IndexedDB 中存在未清理的数据库
-- **THEN** 系统返回 `false` 并输出警告
-
-#### Scenario: IndexedDB 检查的 fallback 策略
-
-- **WHEN** 调用 `await verifyIsolation()` 且 `indexedDB.databases()` 不可用或抛出异常
-- **THEN** 系统跳过 IndexedDB 检查（仅检查 localStorage），不抛出异常
-
-#### Scenario: 隔离验证通过
-
-- **WHEN** 调用 `await verifyIsolation()` 时 localStorage 为空且 IndexedDB 为空
-- **THEN** 系统返回 `true` 且无警告输出
 
 ---
 

@@ -62,28 +62,3 @@ export const createDeepSeekModel = (overrides?: Partial<Model>): Model =>
     apiAddress: 'https://api.deepseek.com/v1',
     ...overrides,
   });
-
-/**
- * 创建 Kimi 模型
- * @param overrides 要覆盖的字段
- */
-export const createKimiModel = (overrides?: Partial<Model>): Model =>
-  createMockModel({
-    providerName: 'Kimi',
-    providerKey: ModelProviderKeyEnum.MOONSHOTAI,
-    nickname: 'Kimi',
-    modelName: 'moonshot-v1-8k',
-    modelKey: 'moonshot-v1-8k',
-    apiAddress: 'https://api.moonshot.cn/v1',
-    ...overrides,
-  });
-
-/**
- * 创建已加密 API Key 的模型
- * @param overrides 要覆盖的字段
- */
-export const createEncryptedModel = (overrides?: Partial<Model>): Model =>
-  createMockModel({
-    apiKey: 'enc:encrypted-api-key-data',
-    ...overrides,
-  });

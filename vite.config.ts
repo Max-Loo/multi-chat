@@ -163,7 +163,8 @@ export default defineConfig(async () => ({
     // 覆盖率配置
     coverage: {
       provider: "istanbul",
-      reporter: ["text", "html", "json", "lcov"],
+      // json-summary 产出 coverage-summary.json 模块汇总（json 仅逐文件明细）
+      reporter: ["text", "html", "json", "json-summary", "lcov"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/__test__/**",

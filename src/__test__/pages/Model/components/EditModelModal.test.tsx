@@ -22,13 +22,8 @@ vi.mock('react-i18next', () =>
     },
   }));
 
-// Mock sonner
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
+// Mock sonner（共享工厂）
+vi.mock('sonner', () => globalThis.__createSonnerToastModuleMock());
 
 const mockProviders = [
   {

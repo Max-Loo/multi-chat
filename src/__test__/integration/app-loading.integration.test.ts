@@ -12,9 +12,9 @@
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { configureStore } from '@reduxjs/toolkit';
 import { Model } from '@/types/model';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
+import { createTypeSafeTestStore } from '@/__test__/helpers/render/redux';
 
 // Mock storage 模块
 vi.mock('@/store/storage/modelStorage', () => ({
@@ -28,17 +28,15 @@ vi.mock('@/store/storage/chatStorage', () => ({
 }));
 
 import { loadModelsFromJson } from '@/store/storage/modelStorage';
-import modelReducer, { initializeModels } from '@/store/slices/modelSlice';
+import { initializeModels } from '@/store/slices/modelSlice';
 
 /**
  * 创建测试用的 Redux store
+ *
+ * 本文件只验证模型初始化流程，共享 store 的其余 slice 不被访问
  */
 function createTestStore() {
-  return configureStore({
-    reducer: {
-      models: modelReducer,
-    },
-  });
+  return createTypeSafeTestStore();
 }
 
 describe('应用加载集成测试', () => {

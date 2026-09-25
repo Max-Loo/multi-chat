@@ -12,6 +12,7 @@ vi.mock('@/utils/tauriCompat/env', () => ({
 
 // 静态导入帮助 Stryker 变异测试的覆盖分析正确归因测试到源文件
 import '@/utils/tauriCompat/keyringMigration';
+import { expectNonExtractableKeyDerivation } from '@/__test__/helpers/testing-utils';
 
 /**
  * Keyring 迁移模块测试套件
@@ -573,15 +574,21 @@ describe('Keyring 迁移模块测试套件', () => {
     });
   });
 
-  describe('变异测试补强 - PBKDF2 参数传递', () => {
-    it('deriveKey iterations 等于 getPBKDF2Iterations()', async () => {
-      const { deriveEncryptionKeyV2 } = await import('@/utils/tauriCompat/keyringMigration');
+  describe('变异测试补强 - PBKDF2 参数传递（V1/V2 参数化）', () => {
+    // V1/V2 仅差被测派生函数，经 it.each 消除同构副本
+    const getDeriveFn = async (version: 'V1' | 'V2') => {
+      const mod = await import('@/utils/tauriCompat/keyringMigration');
+      return version === 'V1' ? mod.deriveEncryptionKeyV1 : mod.deriveEncryptionKeyV2;
+    };
+
+    it.each(['V1', 'V2'] as const)('%s deriveKey iterations 等于 getPBKDF2Iterations()', async (version) => {
+      const derive = await getDeriveFn(version);
       const { getPBKDF2Iterations } = await import('@/utils/tauriCompat/env');
 
       const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       const deriveKeySpy = vi.spyOn(crypto.subtle, 'deriveKey');
 
-      await deriveEncryptionKeyV2(seed);
+      await derive(seed);
 
       expect(deriveKeySpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -595,75 +602,26 @@ describe('Keyring 迁移模块测试套件', () => {
       );
     });
 
-    it('importKey extractable 为 false', async () => {
-      const { deriveEncryptionKeyV2 } = await import('@/utils/tauriCompat/keyringMigration');
+    it.each(['V1', 'V2'] as const)('%s importKey extractable 为 false', async (version) => {
+      const derive = await getDeriveFn(version);
 
       const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
 
-      await deriveEncryptionKeyV2(seed);
+      await derive(seed);
 
-      const call = importKeySpy.mock.calls[0];
-      expect(call[3]).toBe(false);
+      expectNonExtractableKeyDerivation(importKeySpy);
     });
 
-    it('deriveKey extractable 为 false', async () => {
-      const { deriveEncryptionKeyV2 } = await import('@/utils/tauriCompat/keyringMigration');
+    it.each(['V1', 'V2'] as const)('%s deriveKey extractable 为 false', async (version) => {
+      const derive = await getDeriveFn(version);
 
       const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       const deriveKeySpy = vi.spyOn(crypto.subtle, 'deriveKey');
 
-      await deriveEncryptionKeyV2(seed);
+      await derive(seed);
 
-      const call = deriveKeySpy.mock.calls[0];
-      expect(call[3]).toBe(false);
-    });
-  });
-
-  describe('变异测试补强 - deriveEncryptionKeyV1 PBKDF2 参数', () => {
-    it('V1 importKey extractable 为 false', async () => {
-      const { deriveEncryptionKeyV1 } = await import('@/utils/tauriCompat/keyringMigration');
-
-      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
-      const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
-
-      await deriveEncryptionKeyV1(seed);
-
-      const call = importKeySpy.mock.calls[0];
-      expect(call[3]).toBe(false);
-    });
-
-    it('V1 deriveKey extractable 为 false', async () => {
-      const { deriveEncryptionKeyV1 } = await import('@/utils/tauriCompat/keyringMigration');
-
-      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
-      const deriveKeySpy = vi.spyOn(crypto.subtle, 'deriveKey');
-
-      await deriveEncryptionKeyV1(seed);
-
-      const call = deriveKeySpy.mock.calls[0];
-      expect(call[3]).toBe(false);
-    });
-
-    it('V1 deriveKey iterations 等于 getPBKDF2Iterations()', async () => {
-      const { deriveEncryptionKeyV1 } = await import('@/utils/tauriCompat/keyringMigration');
-      const { getPBKDF2Iterations } = await import('@/utils/tauriCompat/env');
-
-      const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
-      const deriveKeySpy = vi.spyOn(crypto.subtle, 'deriveKey');
-
-      await deriveEncryptionKeyV1(seed);
-
-      expect(deriveKeySpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'PBKDF2',
-          iterations: getPBKDF2Iterations(),
-        }),
-        expect.any(Object),
-        expect.objectContaining({ name: 'AES-GCM', length: 256 }),
-        false,
-        ['encrypt', 'decrypt']
-      );
+      expectNonExtractableKeyDerivation(deriveKeySpy);
     });
   });
 

@@ -59,8 +59,8 @@
 
 #### Scenario: AI SDK mock 去重
 
-- **WHEN** `streamProcessor.integration.test.ts` 与 `index.integration.test.ts` 本地重写了 `createMockStreamResult` 与 `createMockAISDKMetadata`
-- **THEN** 本地定义删除，改从 `helpers/mocks/aiSdk.ts` 导入，流式行为断言不变
+- **WHEN** `streamProcessor.integration.test.ts` 与 `index.integration.test.ts` 本地重写了 `createMockStreamResult` 与 `createMockAISDKMetadata`，而共享层 `helpers/mocks/aiSdk.ts` 尚无 metadata 工厂、`createMockStreamResult` 也不支持 metadata 注入
+- **THEN** 先将 `createMockAISDKMetadata(overrides?)` 上移到 `helpers/mocks/aiSdk.ts` 并为 `createMockStreamResult` 增加注入参数，再删除本地定义改用共享实现；各文件原默认值经 overrides 表达，流式行为断言不变
 
 ### Requirement: 超大测试文件必须结构化重构
 

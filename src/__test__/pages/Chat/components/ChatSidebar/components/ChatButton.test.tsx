@@ -6,7 +6,8 @@ import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 import { createTypeSafeTestStore, renderWithProviders } from '@/__test__/helpers/render/redux';
 import { createChatSliceState, createChatPageSliceState } from '@/__test__/helpers/mocks/testState';
 import type { ChatMeta } from '@/types/chat';
-import type { EnhancedStore, UnknownAction } from '@reduxjs/toolkit';
+import type { EnhancedStore, ThunkAction, UnknownAction } from '@reduxjs/toolkit';
+import type { RootState } from '@/store';
 import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
 
 // Mock useResponsive
@@ -42,16 +43,17 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
 }));
 
 /**
- * Mock useNavigateToPage hook
+ * Mock useNavigateToPage hook（vi.hoisted 保证 mock 变量在 vi.mock 工厂执行前初始化）
  */
-const mockNavigateToChat = vi.fn();
-const mockClearChatIdParam = vi.fn();
-vi.mock('@/hooks/useNavigateToPage', () => ({
-  useNavigateToChat: () => ({
+const { mockNavigateToChat, mockClearChatIdParam } = vi.hoisted(() => ({
+  mockNavigateToChat: vi.fn(),
+  mockClearChatIdParam: vi.fn(),
+}));
+vi.mock('@/hooks/useNavigateToPage', () =>
+  globalThis.__createNavigateToPageModuleMock({
     navigateToChat: mockNavigateToChat,
     clearChatIdParam: mockClearChatIdParam,
-  }),
-}));
+  }));
 
 /**
  * Mock useConfirm hook
@@ -192,14 +194,6 @@ describe('ChatButton Component', () => {
   });
 
   describe('重命名功能', () => {
-    it('应该渲染下拉菜单按钮', () => {
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      expect(menuButton).toBeInTheDocument();
-    });
-
     it('下拉菜单按钮应该有正确的图标', () => {
       const chat = createMockChat({ name: '测试聊天' });
       renderChatButton(chat);
@@ -212,25 +206,6 @@ describe('ChatButton Component', () => {
   describe('删除功能', () => {
     it('应该有删除功能的钩子（通过 mockModalWarning 验证）', () => {
       expect(mockModalWarning).toBeDefined();
-    });
-
-    it('下拉菜单按钮点击时不应该触发导航', () => {
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      fireEvent.click(menuButton);
-      expect(mockNavigateToChat).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('组件结构和样式', () => {
-    it('下拉菜单按钮应该有正确的图标', () => {
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const menuButton = screen.getByRole('button', { name: '更多操作' });
-      expect(menuButton.querySelector('svg')).toBeInTheDocument();
     });
   });
 
@@ -263,76 +238,37 @@ describe('ChatButton Component', () => {
   });
 
   describe('响应式布局模式', () => {
-    it('桌面模式（desktop）：data-variant 为 default', () => {
+    // 各布局模式的视口尺寸
+    const RESPONSIVE_MODES = {
+      desktop: { width: 1280, height: 800 },
+      compact: { width: 800, height: 600 },
+      compressed: { width: 1100, height: 700 },
+      mobile: { width: 390, height: 844 },
+    } as const;
+
+    // 4 种响应式模式的 data-variant 断言参数化
+    it.each([
+      ['桌面模式（desktop）', 'desktop', 'default'],
+      ['紧凑模式（compact）', 'compact', 'compact'],
+      ['压缩模式（compressed）', 'compressed', 'compact'],
+      ['移动模式（mobile）', 'mobile', 'default'],
+    ] as const)('%s：data-variant 为 %s', (_label, layoutMode, expectedVariant) => {
+      const { width, height } = RESPONSIVE_MODES[layoutMode];
       mockUseResponsive.mockReturnValue({
-        layoutMode: 'desktop',
-        width: 1280,
-        height: 800,
-        isMobile: false,
-        isCompact: false,
-        isCompressed: false,
-        isDesktop: true,
+        layoutMode,
+        width,
+        height,
+        isMobile: layoutMode === 'mobile',
+        isCompact: layoutMode === 'compact',
+        isCompressed: layoutMode === 'compressed',
+        isDesktop: layoutMode === 'desktop',
       });
 
       const chat = createMockChat({ name: '测试聊天' });
       renderChatButton(chat);
 
       const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
-      expect(buttonDiv).toHaveAttribute('data-variant', 'default');
-    });
-
-    it('紧凑模式（compact）：data-variant 为 compact', () => {
-      mockUseResponsive.mockReturnValue({
-        layoutMode: 'compact',
-        width: 800,
-        height: 600,
-        isMobile: false,
-        isCompact: true,
-        isCompressed: false,
-        isDesktop: false,
-      });
-
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
-      expect(buttonDiv).toHaveAttribute('data-variant', 'compact');
-    });
-
-    it('压缩模式（compressed）：data-variant 为 compact', () => {
-      mockUseResponsive.mockReturnValue({
-        layoutMode: 'compressed',
-        width: 1100,
-        height: 700,
-        isMobile: false,
-        isCompact: false,
-        isCompressed: true,
-        isDesktop: false,
-      });
-
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
-      expect(buttonDiv).toHaveAttribute('data-variant', 'compact');
-    });
-
-    it('移动模式（mobile）：data-variant 为 default（与 desktop 相同）', () => {
-      mockUseResponsive.mockReturnValue({
-        layoutMode: 'mobile',
-        width: 390,
-        height: 844,
-        isMobile: true,
-        isCompact: false,
-        isCompressed: false,
-        isDesktop: false,
-      });
-
-      const chat = createMockChat({ name: '测试聊天' });
-      renderChatButton(chat);
-
-      const buttonDiv = screen.getByTestId(`chat-button-${chat.id}`);
-      expect(buttonDiv).toHaveAttribute('data-variant', 'default');
+      expect(buttonDiv).toHaveAttribute('data-variant', expectedVariant);
     });
 
     it('所有模式下重命名和删除功能都正常工作', () => {
@@ -596,8 +532,8 @@ describe('ChatButton Component', () => {
 
       // Mock dispatch 抛出异常
       const originalDispatch = store.dispatch;
-      vi.spyOn(store, 'dispatch').mockImplementation((action: UnknownAction): UnknownAction => {
-        if (action && action.type === 'chat/deleteChat') {
+      vi.spyOn(store, 'dispatch').mockImplementation((action: UnknownAction | ThunkAction<unknown, RootState, undefined, UnknownAction>): unknown => {
+        if (action && 'type' in action && action.type === 'chat/deleteChat') {
           throw new Error('删除失败');
         }
         return originalDispatch(action);
@@ -709,8 +645,8 @@ describe('ChatButton Component', () => {
 
       // Mock dispatch 抛出异常
       const originalDispatch = store.dispatch;
-      vi.spyOn(store, 'dispatch').mockImplementation((action: UnknownAction): UnknownAction => {
-        if (action && action.type === 'chat/deleteChat') {
+      vi.spyOn(store, 'dispatch').mockImplementation((action: UnknownAction | ThunkAction<unknown, RootState, undefined, UnknownAction>): unknown => {
+        if (action && 'type' in action && action.type === 'chat/deleteChat') {
           throw new Error('删除失败');
         }
         return originalDispatch(action);

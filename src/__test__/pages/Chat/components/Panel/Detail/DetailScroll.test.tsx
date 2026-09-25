@@ -52,7 +52,6 @@ vi.mock('virtua', async () => {
   return { Virtualizer: MockVirtualizer, VList: MockVList };
 });
 
-vi.mock('react-i18next', () => globalThis.__mockI18n());
 
 // Mock 消息操作相关模块
 vi.mock('@/store/slices/chatSlices', () => ({

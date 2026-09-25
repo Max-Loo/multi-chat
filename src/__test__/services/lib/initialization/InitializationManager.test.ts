@@ -20,6 +20,11 @@ describe('InitializationManager', () => {
     manager = new InitializationManager();
   });
 
+  // 文件级假定时器：所有用例均为 mock 即时完成的纯逻辑，无需真实定时器；
+  // 原「完整流程测试」「多依赖 inDegree 精确性」两个 describe 的重复成对开关收敛至此（design D6）
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
   describe('实例化', () => {
     it('应该成功创建 InitializationManager 实例', () => {
       expect(manager).toBeInstanceOf(InitializationManager);
@@ -321,8 +326,6 @@ describe('InitializationManager', () => {
   });
 
   describe('完整流程测试', () => {
-    beforeEach(() => { vi.useFakeTimers(); });
-    afterEach(() => { vi.useRealTimers(); });
     it('应该成功执行所有步骤', async () => {
       const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
@@ -502,17 +505,21 @@ describe('InitializationManager', () => {
   });
 
   describe("错误分级交叉组合", () => {
-    it("应该在非关键步骤抛出致命错误时不中断初始化", async () => {
-      const error = new Error('Fatal but not critical');
+    // critical × severity 交叉组合参数化：[场景, critical, severity, 期望最终成功]
+    it.each([
+      ["应该在非关键步骤抛出致命错误时不中断初始化", false, "fatal", false],
+      ["应该在关键步骤抛出警告时不中断初始化", true, "warning", true],
+    ] as const)("%s", async (_name, critical, severity, expectedSuccess) => {
+      const error = new Error(`${severity} from step`);
       const steps: TestInitStep[] = [
         createMockInitStep({ name: 'step1' }),
         createMockInitStep({
-          name: 'nonCriticalFatalStep',
-          critical: false,
+          name: 'crossStep',
+          critical,
           execute: vi.fn().mockRejectedValue(error),
           onError: vi.fn().mockReturnValue({
-            severity: 'fatal' as const,
-            message: 'Non-critical fatal',
+            severity,
+            message: error.message,
             originalError: error,
           }),
         }),
@@ -521,38 +528,11 @@ describe('InitializationManager', () => {
 
       const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
 
-      // critical=false + severity=fatal：记录致命错误但不中断
-      expect(result.success).toBe(false);
-      expect(result.fatalErrors).toHaveLength(1);
-      expect(result.fatalErrors[0].message).toBe('Non-critical fatal');
-      // 后续步骤仍然执行
-      expect(result.completedSteps).toContain('step1');
-      expect(result.completedSteps).toContain('step3');
-    });
-
-    it("应该在关键步骤抛出警告时不中断初始化", async () => {
-      const error = new Error('Warning from critical step');
-      const steps: TestInitStep[] = [
-        createMockInitStep({ name: 'step1' }),
-        createMockInitStep({
-          name: 'criticalWarningStep',
-          critical: true,
-          execute: vi.fn().mockRejectedValue(error),
-          onError: vi.fn().mockReturnValue({
-            severity: 'warning' as const,
-            message: 'Critical warning',
-            originalError: error,
-          }),
-        }),
-        createMockInitStep({ name: 'step3' }),
-      ];
-
-      const result = await manager.runInitialization({ steps: steps as unknown as InitStep[] });
-
-      // critical=true + severity=warning：记录警告但不中断
-      expect(result.success).toBe(true);
-      expect(result.warnings).toHaveLength(1);
-      expect(result.warnings[0].message).toBe('Critical warning');
+      // 记录对应分级错误但不中断（critical=false+fatal 或 critical=true+warning）
+      expect(result.success).toBe(expectedSuccess);
+      const bucket = severity === 'fatal' ? result.fatalErrors : result.warnings;
+      expect(bucket).toHaveLength(1);
+      expect(bucket[0].message).toBe(error.message);
       // 后续步骤仍然执行
       expect(result.completedSteps).toContain('step1');
       expect(result.completedSteps).toContain('step3');
@@ -828,8 +808,6 @@ describe('InitializationManager', () => {
   });
 
   describe("多依赖 inDegree 精确性", () => {
-    beforeEach(() => { vi.useFakeTimers(); });
-    afterEach(() => { vi.useRealTimers(); });
 
     it("应该在所有依赖完成后才执行多依赖步骤", async () => {
       // 使用异步延迟确保执行顺序可观察

@@ -51,7 +51,6 @@ describe('ChatExportSetting', () => {
   let mockRevokeObjectURL: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     // Mock URL.createObjectURL/URL.revokeObjectURL because file download uses Blob URLs
     mockCreateObjectURL = vi.fn(() => 'blob:test-url');
     mockRevokeObjectURL = vi.fn();

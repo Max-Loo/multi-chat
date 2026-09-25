@@ -27,10 +27,6 @@ const createFakeIDBRequest = () => {
 // 保存原始 indexedDB 引用
 const originalIndexedDB = globalThis.indexedDB;
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
 describe('initIndexedDB', () => {
   let fakeRequest: ReturnType<typeof createFakeIDBRequest>;
 

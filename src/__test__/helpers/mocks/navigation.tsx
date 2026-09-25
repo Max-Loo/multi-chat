@@ -5,6 +5,28 @@
  * 消除 BottomNav.test.tsx 和 bottom-nav.integration.test.tsx 中的重复定义。
  */
 
+import { vi } from 'vitest';
+
+/**
+ * 创建 useNavigateToPage 模块 mock
+ *
+ * 同构 mock 模板收敛入口（7 个测试文件共用）：默认提供可断言的
+ * navigateToChat / clearChatIdParam vi.fn()，需要文件级断言接线时经
+ * vi.hoisted 创建变量后通过 overrides 注入。
+ *
+ * @param overrides 覆盖返回的 mock 函数
+ */
+export const createNavigateToPageModuleMock = (overrides?: {
+  navigateToChat?: ReturnType<typeof vi.fn>;
+  clearChatIdParam?: ReturnType<typeof vi.fn>;
+}) => {
+  const navigateToChat = overrides?.navigateToChat ?? vi.fn();
+  const clearChatIdParam = overrides?.clearChatIdParam ?? vi.fn();
+  return {
+    useNavigateToChat: vi.fn(() => ({ navigateToChat, clearChatIdParam })),
+  };
+};
+
 /**
  * 创建导航配置 mock 数据
  * @returns mock 的 NAVIGATION_ITEMS 数组

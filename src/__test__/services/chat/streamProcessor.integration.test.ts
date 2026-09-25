@@ -5,6 +5,7 @@ import { StandardMessage } from '@/types/chat';
 import * as metadataCollectorModule from '@/services/chat/metadataCollector';
 import type { StandardMessageRawResponse } from '@/types/chat';
 import { asTestType } from '@/__test__/helpers/testing-utils';
+import { createMockStreamResult } from '@/__test__/helpers/mocks/aiSdk';
 
 // 创建默认的 mock metadata（移到外部作用域）
 // 注意：这里返回的是转换后的 StandardMessageRawResponse 格式（timestamp 是 string）
@@ -19,53 +20,6 @@ const createDefaultMetadata = (): StandardMessageRawResponse => ({
   streamStats: { textDeltaCount: 0, reasoningDeltaCount: 0, duration: 0 },
 });
 
-// 创建 AI SDK 原始格式的 metadata（用于 mock StreamResult 的 then 方法）
-// 注意：这是 AI SDK 返回的格式，timestamp 是 Date 对象
-type MockAISDKMetadata = {
-  providerMetadata: Promise<Record<string, unknown>>;
-  warnings: Promise<Array<unknown>>;
-  sources: Promise<Array<unknown> | undefined>;
-  response: {
-    id: string;
-    modelId: string;
-    timestamp: Date;
-    headers?: Record<string, unknown>;
-  };
-  request: {
-    body: unknown;
-  };
-  usage?: {
-    inputTokens?: number;
-    outputTokens?: number;
-    totalTokens?: number;
-  };
-  finishReason?: string | null;
-  rawFinishReason?: string | null;
-};
-
-const createMockAISDKMetadata = (overrides: Partial<MockAISDKMetadata> = {}): MockAISDKMetadata => ({
-  providerMetadata: Promise.resolve({}),
-  warnings: Promise.resolve([]),
-  sources: Promise.resolve(undefined),
-  response: {
-    id: 'test-id',
-    modelId: 'deepseek-chat',
-    timestamp: new Date('2024-01-01T00:00:00.000Z'), // AI SDK 返回 Date 对象
-    headers: {},
-  },
-  request: {
-    body: '{}',
-  },
-  usage: {
-    inputTokens: 10,
-    outputTokens: 20,
-    totalTokens: 30,
-  },
-  finishReason: 'stop',
-  rawFinishReason: 'stop',
-  ...overrides,
-});
-
 describe('streamProcessor', () => {
   let collectAllMetadataSpy: Mock;
 
@@ -77,37 +31,6 @@ describe('streamProcessor', () => {
   afterEach(() => {
     collectAllMetadataSpy.mockRestore();
   });
-
-  // 创建 mock StreamResult - 正确实现 PromiseLike 和 AsyncIterable
-  // aiSDKMetadata 参数是可选的，用于指定 AI SDK 原始格式的 metadata
-  function createMockStreamResult(
-    events: Array<{ type: string; text?: string }>,
-    _metadata?: StandardMessageRawResponse,
-    aiSDKMetadata?: MockAISDKMetadata
-  ) {
-    const streamGen = (async function* () {
-      for (const event of events) {
-        yield event;
-      }
-    })();
-
-    // 模拟 AI SDK 的 PromiseLike 接口
-    // then 方法返回 AI SDK 原始格式（timestamp 是 Date 对象）
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: Vercel AI SDK StreamTextResult 包含 30+ 必填属性，测试 mock 只需实现 then/fullStream/asyncIterator
-    const mockResult = {
-      // eslint-disable-next-line unicorn/no-thenable
-      then: (resolve: (value: MockAISDKMetadata) => unknown) =>
-        // 如果提供了 aiSDKMetadata，使用它；否则使用默认值
-        Promise.resolve(aiSDKMetadata ?? createMockAISDKMetadata()).then(resolve),
-      fullStream: streamGen,
-      [Symbol.asyncIterator]: () => streamGen[Symbol.asyncIterator](),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // Reason: AI SDK StreamTextResult 包含 30+ 必填属性，mock 只需实现 then/fullStream/asyncIterator
-    } as any;
-
-    return mockResult;
-  }
 
   const defaultOptions = {
     conversationId: 'test-conversation',
@@ -126,7 +49,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -163,7 +86,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -190,7 +113,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -214,7 +137,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -239,7 +162,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -265,7 +188,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -288,7 +211,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
 
       for await (const _ of processStreamEvents(mockResult, defaultOptions)) {
         // 消费所有消息
@@ -304,7 +227,7 @@ describe('streamProcessor', () => {
 
       collectAllMetadataSpy.mockRejectedValue(new Error('Metadata collection failed'));
 
-      const mockResult = createMockStreamResult(events, createDefaultMetadata());
+      const mockResult = createMockStreamResult(events);
 
       let errorThrown = false;
       try {
@@ -336,7 +259,7 @@ describe('streamProcessor', () => {
 
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -375,7 +298,7 @@ describe('streamProcessor', () => {
         .mockReturnValueOnce(120)  // event 5: 120-0=120 >= 100 → yield
         .mockReturnValueOnce(200); // streamEndTime
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, {
@@ -408,7 +331,7 @@ describe('streamProcessor', () => {
         .mockReturnValueOnce(50)   // event 1: 50-0=50 < 1000 → no yield, hasPendingUpdate=true
         .mockReturnValueOnce(100); // streamEndTime
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, {
@@ -437,7 +360,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -460,7 +383,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -477,7 +400,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -497,7 +420,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
@@ -517,7 +440,7 @@ describe('streamProcessor', () => {
       const mockMetadata = createDefaultMetadata();
       collectAllMetadataSpy.mockResolvedValue(mockMetadata);
 
-      const mockResult = createMockStreamResult(events, mockMetadata);
+      const mockResult = createMockStreamResult(events);
       const messages: StandardMessage[] = [];
 
       for await (const message of processStreamEvents(mockResult, defaultOptions)) {
