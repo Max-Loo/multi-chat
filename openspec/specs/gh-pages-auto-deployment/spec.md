@@ -1,6 +1,6 @@
 # Purpose
 
-本 capability 定义了 GitHub Pages 自动部署的规范。确保 Web 版本与桌面应用版本同步发布。
+本 capability 定义了 GitHub Pages 自动部署的规范。Web 构建是项目唯一的构建与发布产物。
 
 ## Requirements
 

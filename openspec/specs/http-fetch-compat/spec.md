@@ -1,6 +1,10 @@
 # HTTP Fetch 跨平台兼容层 - 规范
 
-## ADDED Requirements
+## Purpose
+
+为应用的 HTTP 请求定义统一的 fetch 行为要求：统一使用浏览器原生 Web Fetch，提供统一的模块导出与完整类型定义，并规范环境检测与错误处理行为。
+
+## Requirements
 
 ### Requirement: 环境检测
 
@@ -10,6 +14,10 @@
 
 - **WHEN** 应用在开发模式下运行（通过 `import.meta.env.DEV` 判断）
 - **THEN** 系统识别为开发环境
+
+### Requirement: 运行平台检测
+
+系统 SHALL 能够检测当前应用的运行平台容器（Tauri 桌面或 Web 浏览器）。
 
 #### Scenario: 检测生产环境 Tauri 平台
 

@@ -1,10 +1,10 @@
 # Keyring 插件 Web 兼容层规范
 
-本规范定义了 `@tauri-plugin-keyring-api` 插件在 Web 环境中的降级和兼容层要求。
+本规范定义了密钥存储服务的要求。
 
 ## Purpose
 
-为 Keyring 插件提供 Web 环境的兼容层，使用 IndexedDB + AES-256-GCM 加密实现安全的密钥存储功能，确保应用在 Tauri 和 Web 环境中均能正常运行。
+为应用提供统一的密钥存储服务，使用 IndexedDB + AES-256-GCM 加密实现安全的密钥存储功能。
 
 ## Requirements
 

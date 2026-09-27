@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { interceptClickAToJump, getDefaultAppLanguage, getLanguageLabel, LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
-import { locale, shell } from '@/utils/tauriCompat';
+import { locale, shell } from '@/platform';
 
 describe('global.ts 模块测试', () => {
   // 保存全局事件监听器引用，用于测试后清理

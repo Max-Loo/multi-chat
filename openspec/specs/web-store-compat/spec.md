@@ -1,10 +1,10 @@
 # Store 插件 Web 兼容层规范
 
-本规范定义了 `@tauri-apps/plugin-store` 插件在 Web 环境中的降级和兼容层要求。
+本规范定义了键值持久化服务的要求。
 
 ## Purpose
 
-为 Store 插件提供 Web 环境的兼容层，使用 IndexedDB 实现数据持久化功能，确保应用在 Tauri 和 Web 环境中均能正常运行。
+为应用提供统一的键值持久化服务，使用 IndexedDB 实现数据持久化功能。
 
 ## Requirements
 
