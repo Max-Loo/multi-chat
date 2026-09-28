@@ -8,46 +8,27 @@
 
 ## Requirements
 
-### Requirement: Store 插件兼容层
-
-系统 SHALL 为 `@tauri-apps/plugin-store` 提供统一的兼容层 API，在 Tauri 和 Web 环境中均可用。
-
-#### Scenario: Tauri 环境使用原生实现
-- **GIVEN** 应用运行在 Tauri 桌面环境
-- **WHEN** 调用兼容层 Store API（如 `Store.get()`、`Store.set()`、`Store.save()`）
-- **THEN** 系统调用 `@tauri-apps/plugin-store` 的原生实现
-- **AND** 返回实际的文件存储结果
-
-#### Scenario: Web 环境使用 IndexedDB 实现
-- **GIVEN** 应用运行在 Web 浏览器环境
-- **WHEN** 调用兼容层 Store API（如 `Store.get()`、`Store.set()`、`Store.save()`）
-- **THEN** 系统使用 IndexedDB 实现数据持久化
-- **AND** 不抛出运行时错误
-- **AND** 返回类型与 Tauri 环境保持一致
-
-#### Scenario: API 一致性
-- **WHEN** 使用兼容层 Store API
-- **THEN** 函数签名和行为与 `@tauri-apps/plugin-store` 的原生 API 保持一致
-- **AND** 调用者无需修改代码即可在不同环境中运行
-
 ### Requirement: IndexedDB 数据存储
 
 在 Web 环境中，系统 SHALL 使用 IndexedDB 提供键值存储功能，确保数据持久化和性能。
 
 #### Scenario: 创建 IndexedDB 数据库
+
 - **WHEN** 应用在 Web 环境中首次访问 Store
 - **THEN** 系统 SHALL 创建名为 `multi-chat-store` 的 IndexedDB 数据库
 - **AND** 创建 `store` 对象存储（Object Store）
 - **AND** 使用 `key` 字段作为主键
 
 #### Scenario: 读取键值
+
 - **GIVEN** IndexedDB 数据库已创建
 - **WHEN** 调用 `Store.get(key)` 方法
 - **THEN** 系统 SHALL 从 IndexedDB 中读取对应键的值
-- **AND** 返回值的类型与 Tauri 端保持一致（支持字符串、对象、数组等 JSON 可序列化类型）
+- **AND** 返回值保持写入时的原始 JSON 可序列化类型（字符串、对象、数组等）
 - **AND** 如果键不存在，返回 `null`
 
 #### Scenario: 写入键值
+
 - **GIVEN** IndexedDB 数据库已创建
 - **WHEN** 调用 `Store.set(key, value)` 方法
 - **THEN** 系统 SHALL 将键值对写入 IndexedDB
@@ -55,19 +36,21 @@
 - **AND** 数据在写入后立即可读（同事务内）
 
 #### Scenario: 删除键值
+
 - **GIVEN** IndexedDB 数据库中存在键 `myKey`
 - **WHEN** 调用 `Store.delete(key)` 方法
 - **THEN** 系统 SHALL 从 IndexedDB 中删除该键
 - **AND** 后续读取该键返回 `null`
 
 #### Scenario: 保存持久化
+
 - **GIVEN** IndexedDB 数据库已创建
 - **WHEN** 调用 `Store.save()` 方法
 - **THEN** 系统 SHALL 确保所有未提交的写入操作完成
-- **AND** 在 Tauri 环境中，此方法保存到文件；在 Web 环境中，此方法为空操作（IndexedDB 自动持久化）
-- **AND** 方法始终返回成功的 Promise
+- **AND** 此方法为确认性空操作（IndexedDB 自动持久化），始终返回成功的 Promise
 
 #### Scenario: 列出所有键
+
 - **GIVEN** IndexedDB 数据库中存在多个键
 - **WHEN** 调用 `Store.keys()` 方法
 - **THEN** 系统 SHALL 返回所有键的数组
@@ -75,19 +58,22 @@
 
 ### Requirement: 数据类型兼容性
 
-兼容层 SHALL 确保 Web 端和 Tauri 端的数据类型兼容性，支持所有常用数据类型的序列化和反序列化。
+持久化服务 SHALL 确保所有常用 JSON 可序列化数据类型的正确序列化和反序列化，读写往返后数据不变。
 
 #### Scenario: 对象存储
+
 - **WHEN** 存储复杂对象（如包含嵌套属性的对象）
 - **THEN** 系统 SHALL 正确序列化和反序列化对象
 - **AND** 对象结构在读写后保持不变
 
 #### Scenario: 数组存储
+
 - **WHEN** 存储数组（如模型列表）
 - **THEN** 系统 SHALL 正确序列化和反序列化数组
 - **AND** 数组元素顺序和内容保持不变
 
 #### Scenario: 布尔和数字类型
+
 - **WHEN** 存储布尔值或数字
 - **THEN** 系统 SHALL 保持数据类型不变
 - **AND** 读取时返回原始类型（不转换为字符串）
@@ -116,6 +102,7 @@
 系统 SHALL 提供健壮的错误处理机制，确保 IndexedDB 访问失败时的优雅降级。
 
 #### Scenario: IndexedDB 不可用
+
 - **GIVEN** 用户的浏览器不支持 IndexedDB（如隐私模式）
 - **WHEN** 尝试访问 Store
 - **THEN** 系统 SHALL 抛出友好的错误提示
@@ -123,51 +110,19 @@
 - **AND** 应用 SHALL 显示用户友好的错误界面
 
 #### Scenario: 存储配额超限
+
 - **GIVEN** 用户的浏览器存储空间不足
 - **WHEN** 尝试写入大量数据
 - **THEN** 系统 SHALL 捕获 `QuotaExceededError` 异常
-- **AND** 显示错误提示"浏览器存储空间不足，请清理数据或使用桌面版"
+- **AND** 显示错误提示"浏览器存储空间不足，请清理数据或导出备份"
 - **AND** 应用 SHALL 优雅降级，不崩溃
 
 #### Scenario: 事务失败处理
+
 - **WHEN** IndexedDB 事务失败（如数据库版本冲突）
 - **THEN** 系统 SHALL 记录错误日志
 - **AND** 返回包含错误信息的 Promise rejection
 - **AND** 调用者可以通过 catch 捕获错误
-
-### Requirement: 功能可用性标记
-
-兼容层 SHALL 提供 `isSupported()` 方法，让调用者能够判断 Store 功能是否可用。
-
-#### Scenario: Tauri 环境 Store 可用
-- **GIVEN** 应用运行在 Tauri 桌面环境
-- **WHEN** 调用 Store 兼容层的 `isSupported()` 方法
-- **THEN** 方法返回 `true`
-- **AND** 表示功能完全可用
-
-#### Scenario: Web 环境 Store 可用
-- **GIVEN** 应用运行在 Web 浏览器环境
-- **AND** 浏览器支持 IndexedDB
-- **WHEN** 调用 Store 兼容层的 `isSupported()` 方法
-- **THEN** 方法返回 `true`
-- **AND** 表示功能可用（使用 IndexedDB）
-
-#### Scenario: Web 环境 Store 不可用
-- **GIVEN** 应用运行在 Web 浏览器环境
-- **AND** 浏览器不支持 IndexedDB（如隐私模式或旧版浏览器）
-- **WHEN** 调用 Store 兼容层的 `isSupported()` 方法
-- **THEN** 方法返回 `false`
-- **AND** 表示 Store 功能不可用
-
-### Requirement: 数据迁移
-
-系统 SHALL 支持从 Tauri 端迁移数据到 Web 端（如果需要）。
-
-#### Scenario: 手动数据导入导出
-- **WHEN** 用户需要从桌面版迁移数据到 Web 版
-- **THEN** 系统 SHALL 提供数据导出功能（导出为 JSON 文件）
-- **AND** 系统 SHALL 提供数据导入功能（从 JSON 文件导入到 IndexedDB）
-- **AND** 导入导出功能在两种环境中均可使用
 
 ### Requirement: 浏览器兼容性
 
@@ -193,28 +148,68 @@
 
 ### Requirement: Web Store 使用共享的 initIndexedDB
 
-WebStoreCompat 的 IndexedDB 初始化 SHALL 使用从共享模块导入的 `initIndexedDB` 函数，而非本地定义的版本。
+Web Store 的 IndexedDB 初始化 SHALL 使用从共享模块导入的 `initIndexedDB` 函数，而非本地定义的版本。
 
 #### Scenario: Store 功能不变
-- **WHEN** 通过 WebStoreCompat 进行 get/set/delete/keys 操作
-- **THEN** 行为与重构前完全一致，数据格式不变
+
+- **WHEN** 通过 Web Store 实现进行 get/set/delete/keys 操作
+- **THEN** 行为与迁移前完全一致，数据格式不变
 
 #### Scenario: 公开 API 不变
-- **WHEN** 上层代码通过 `@/utils/tauriCompat` 导入 store 相关 API
+
+- **WHEN** 上层代码通过 `@/platform` 导入 store 相关 API
 - **THEN** 所有导出的函数签名和类型保持不变
 
 ### Requirement: 模块化设计
 
-Store 兼容层 SHALL 遵循项目的模块化设计原则。
+持久化服务 SHALL 遵循项目的模块化设计原则。
 
 #### Scenario: 文件组织
-- **WHEN** 实现 Store 兼容层
-- **THEN** 系统 SHALL 在 `src/utils/tauriCompat/store.ts` 中创建独立模块
-- **AND** 模块仅负责 Store 插件的兼容逻辑
-- **AND** 在 `src/utils/tauriCompat/index.ts` 中导出 Store API
+
+- **WHEN** 实现持久化服务
+- **THEN** 系统 SHALL 在平台层独立模块（`src/platform/store.ts`）中创建
+- **AND** 模块仅负责键值持久化的逻辑
+- **AND** 在平台层 barrel 入口（`src/platform/index.ts`）中导出 Store API
 
 #### Scenario: 类型定义
-- **WHEN** 定义 Store 兼容层类型
-- **THEN** 系统 SHALL 复用 `@tauri-apps/plugin-store` 的官方类型定义
-- **AND** 不创建重复的类型声明
+
+- **WHEN** 定义持久化服务类型
+- **THEN** 系统 SHALL 自持类型定义（不再依赖 `@tauri-apps/plugin-store` 官方类型）
 - **AND** 提供完整的 TypeScript 类型提示
+
+### Requirement: 键值持久化服务
+
+系统 SHALL 提供统一的键值持久化服务 API（`get`/`set`/`delete`/`keys`/`save`），仅在 Web 浏览器环境中以 IndexedDB 实现。
+
+#### Scenario: Web 环境使用 IndexedDB 实现
+
+- **GIVEN** 应用运行在 Web 浏览器环境
+- **WHEN** 调用持久化服务 API（如 `get()`、`set()`、`save()`）
+- **THEN** 系统使用 IndexedDB 实现数据持久化
+- **AND** 不抛出运行时错误
+
+#### Scenario: API 一致性
+
+- **WHEN** 使用持久化服务 API
+- **THEN** 函数签名和行为与迁移前的公开 API 保持一致
+- **AND** 调用者无需修改代码
+
+### Requirement: 浏览器能力可用性标记
+
+持久化服务 SHALL 提供 `isSupported()` 方法，让调用者能够判断 Store 功能在当前浏览器中是否可用。
+
+#### Scenario: 浏览器支持 IndexedDB 时可用
+
+- **GIVEN** 应用运行在 Web 浏览器环境
+- **AND** 浏览器支持 IndexedDB
+- **WHEN** 调用持久化服务的 `isSupported()` 方法
+- **THEN** 方法返回 `true`
+- **AND** 表示功能可用（使用 IndexedDB）
+
+#### Scenario: 浏览器不支持 IndexedDB 时不可用
+
+- **GIVEN** 应用运行在 Web 浏览器环境
+- **AND** 浏览器不支持 IndexedDB（如隐私模式或旧版浏览器）
+- **WHEN** 调用持久化服务的 `isSupported()` 方法
+- **THEN** 方法返回 `false`
+- **AND** 表示 Store 功能不可用

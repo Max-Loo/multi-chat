@@ -21,15 +21,18 @@
 - **THEN** 系统执行部署流程（无需 tag）
 
 ### Requirement: Web 应用构建
-部署流程 SHALL 执行完整的 Web 应用构建，生成可用于 GitHub Pages 的静态资源。
+
+部署流程 SHALL 执行完整的 Web 应用构建，生成可用于 GitHub Pages 的静态资源；Web 构建是项目唯一的构建产物（桌面应用构建已随 Tauri 移除而删除）。
 
 #### Scenario: 成功构建 Web 应用
-- **WHEN** workflow 的 build job 执行 `pnpm web:build` 命令
+
+- **WHEN** workflow 的 build job 执行 `pnpm build` 命令（原 `pnpm web:build` 随 Tauri 移除收敛为主构建脚本）
 - **THEN** 系统构建应用生成静态资源
 - **THEN** 构建产物输出到 `dist/` 目录
 - **THEN** 构建使用正确的 base 路径 `/multi-chat/`
 
 #### Scenario: 构建失败时中止部署
+
 - **WHEN** 构建过程中出现错误（如类型错误、依赖缺失）
 - **THEN** build job 立即终止并返回失败状态
 - **THEN** deploy job 不会执行（因为 deploy job 依赖 build job）
@@ -90,20 +93,6 @@ workflow SHALL 具有部署到 GitHub Pages 的必要权限。
 - **WHEN** `pnpm-lock.yaml` 文件发生变化
 - **THEN** 系统重新安装所有依赖
 - **THEN** 系统更新缓存键以反映新的依赖状态
-
-### Requirement: 版本同步
-Web 版本部署 SHALL 与桌面应用构建并行触发，确保版本同步。
-
-#### Scenario: Tag 推送时并行触发
-- **WHEN** 开发者推送 version tag
-- **THEN** `build-and-release.yml` workflow 触发（构建桌面应用）
-- **THEN** `deploy-to-gh-pages.yml` workflow 同时触发（部署 Web 版本）
-- **THEN** 两个 workflows 并行执行，互不阻塞
-
-#### Scenario: 两者版本号一致
-- **WHEN** tag `v1.0.0` 触发部署
-- **THEN** 桌面应用版本为 `v1.0.0`
-- **THEN** Web 版本对应的版本号也为 `v1.0.0`
 
 ### Requirement: 构建环境配置
 workflow SHALL 使用与项目兼容的 Node.js 和 pnpm 版本。

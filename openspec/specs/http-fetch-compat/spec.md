@@ -8,26 +8,17 @@
 
 ### Requirement: 环境检测
 
-系统 SHALL 能够准确检测当前应用的运行环境，包括开发/生产模式和 Tauri/Web 平台。
+系统 SHALL 能够准确检测当前应用的运行环境（开发/生产模式），SHALL NOT 依赖桌面容器标识（如 `window.__TAURI__`）进行环境分支。
 
 #### Scenario: 检测开发环境
 
 - **WHEN** 应用在开发模式下运行（通过 `import.meta.env.DEV` 判断）
 - **THEN** 系统识别为开发环境
 
-### Requirement: 运行平台检测
+#### Scenario: 检测生产环境
 
-系统 SHALL 能够检测当前应用的运行平台容器（Tauri 桌面或 Web 浏览器）。
-
-#### Scenario: 检测生产环境 Tauri 平台
-
-- **WHEN** 应用在生产模式下运行且 `window.__TAURI__` 对象存在
-- **THEN** 系统识别为生产 Tauri 环境
-
-#### Scenario: 检测生产环境 Web 平台
-
-- **WHEN** 应用在生产模式下运行且 `window.__TAURI__` 对象不存在
-- **THEN** 系统识别为生产 Web 环境
+- **WHEN** 应用在生产模式下运行（`import.meta.env.DEV` 为假）
+- **THEN** 系统识别为生产环境
 
 ### Requirement: 统一 Fetch API
 
@@ -47,39 +38,6 @@
 
 - **WHEN** 调用 `fetch(url, options)` 并传入完整配置选项（headers、mode、credentials 等）
 - **THEN** 系统将配置选项传递给底层 fetch 实现，并返回响应对象
-
-### Requirement: 开发环境自动使用 Web Fetch
-
-系统 SHALL 在开发环境中始终使用原生 Web `fetch` API，无论是否在 Tauri 容器中运行。
-
-#### Scenario: 开发环境发起请求
-
-- **WHEN** 应用运行在开发模式（`import.meta.env.DEV === true`）
-- **THEN** 系统使用原生 `window.fetch` 发起 HTTP 请求
-- **AND** 不尝试加载或调用 `@tauri-apps/plugin-http`
-
-### Requirement: 生产环境 Web 平台使用 Web Fetch
-
-系统 SHALL 在生产环境的 Web 浏览器中运行时，使用原生 Web `fetch` API。
-
-#### Scenario: 生产 Web 环境发起请求
-
-- **WHEN** 应用运行在生产模式且 `window.__TAURI__` 不存在（Web 浏览器环境）
-- **THEN** 系统使用原生 `window.fetch` 发起 HTTP 请求
-- **AND** 不尝试加载或调用 `@tauri-apps/plugin-http`
-
-### Requirement: 生产环境 Tauri 平台使用 Tauri Fetch
-
-系统 SHALL 在生产环境的 Tauri 桌面应用中运行时，使用 `@tauri-apps/plugin-http` 的 `tauriFetch`。
-
-#### Scenario: 生产 Tauri 环境发起请求
-
-- **WHEN** 应用运行在生产模式且 `window.__TAURI__` 存在（Tauri 桌面环境）
-- **THEN** 系统使用顶层 await 动态导入 `@tauri-apps/plugin-http` 的 `fetch` 函数
-- **AND** 模块加载时会等待导入完成（约 10-50ms 一次性延迟）
-- **AND** 如果导入失败，降级到 Web fetch 并记录警告日志
-- **AND** 导入成功后，后续请求使用 Tauri fetch 发起 HTTP 请求
-- **AND** 利用 Tauri 的系统代理、证书管理等原生能力
 
 ### Requirement: 类型安全
 
@@ -108,11 +66,11 @@
 
 ### Requirement: 兼容层导出
 
-系统 SHALL 在 `@/utils/tauriCompat` 模块中导出 fetch 函数，便于统一导入使用。
+系统 SHALL 在统一的平台层模块中导出 fetch 函数，便于统一导入使用。
 
 #### Scenario: 从兼容层导入 fetch
 
-- **WHEN** 开发者使用 `import { fetch } from '@/utils/tauriCompat'`
+- **WHEN** 开发者使用 `import { fetch } from '@/platform'`
 - **THEN** 系统导出符合本规范所有要求的 fetch 函数
 
 ### Requirement: getFetchFunc 方法
@@ -127,16 +85,15 @@
 
 #### Scenario: 使用 getFetchFunc 注入第三方库
 
-- **WHEN** 开发者需要为第三方库（如 Axios）注入 fetch 函数
-- **THEN** 可使用 `const axiosInstance = axios.create({ adapter: getFetchFunc() })` 等方式注入
-- **AND** 注入的 fetch 函数会自动根据环境选择正确的实现
+- **WHEN** 开发者需要为第三方库注入 fetch 函数
+- **THEN** 可通过 `getFetchFunc()` 获取并注入
+- **AND** 注入的 fetch 函数为原生 Web Fetch
 
 #### Scenario: 使用 getFetchFunc 封装自定义请求方法
 
 - **WHEN** 开发者需要封装自定义的请求方法
 - **THEN** 可使用 `const fetchFunc = getFetchFunc()` 获取 fetch 函数
 - **AND** 在自定义方法中调用 `fetchFunc(url, options)` 发起请求
-- **AND** 封装的方法自动获得跨平台兼容能力
 
 ### Requirement: RequestInfo 类型定义
 
@@ -175,3 +132,13 @@
 - **WHEN** 开发者操作请求或响应头
 - **THEN** Headers 类型为原生 `Headers` 对象
 - **AND** 支持所有标准 Headers 方法（get、set、has 等）
+
+### Requirement: 恒用原生 Web Fetch
+
+系统 SHALL 在所有环境（开发与生产）统一使用浏览器原生 `window.fetch` 发起 HTTP 请求，SHALL NOT 加载或引用任何桌面运行时 HTTP 插件。
+
+#### Scenario: 任意环境发起请求
+
+- **WHEN** 应用在开发或生产环境发起 HTTP 请求
+- **THEN** 请求经原生 `window.fetch` 发出
+- **AND** 模块加载不引入 `@tauri-apps/plugin-http` 等桌面 HTTP 依赖

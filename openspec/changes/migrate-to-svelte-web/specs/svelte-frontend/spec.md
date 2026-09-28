@@ -2,28 +2,28 @@
 
 ## Purpose
 
-定义前端框架由 React 迁移至 Vue 3（组合式 API）后必须满足的架构与兼容性要求，确保迁移不改变用户可见行为、URL 路由结构与既有 Web 用户数据的可用性。
+定义前端框架由 React 迁移至 Svelte 5（runes 模式）后必须满足的架构与兼容性要求，确保迁移不改变用户可见行为、URL 路由结构与既有 Web 用户数据的可用性。
 
 ## ADDED Requirements
 
-### Requirement: Vue 3 组合式 API 技术栈
+### Requirement: Svelte 5 runes 技术栈
 
-系统前端 SHALL 基于 Vue 3 组合式 API（`<script setup>` 单文件组件与组合式函数）实现，SHALL NOT 保留任何 React 运行时依赖。
+系统前端 SHALL 基于 Svelte 5（runes 模式）实现——`.svelte` 单文件组件与 `.svelte.ts` 响应式模块，SHALL NOT 保留任何 React 运行时依赖或 React Compiler 补偿优化层。
 
 #### Scenario: 依赖清单与产物无 React 运行时
 
 - **WHEN** 检查迁移后的 package.json 依赖与生产构建产物
-- **THEN** 不存在 react、react-dom、react-redux、react-router-dom、react-i18next 等 React 生态依赖
-- **AND** 页面由 Vue 运行时渲染
+- **THEN** 不存在 react、react-dom、react-redux、react-router-dom、react-i18next、babel-plugin-react-compiler 等 React 生态依赖
+- **AND** 页面由 Svelte 编译产物渲染，产物中不包含 React 运行时代码
 
-#### Scenario: 组件与状态逻辑以组合式 API 编写
+#### Scenario: 组件与状态逻辑以 runes 编写
 
 - **WHEN** 开发者新增或修改组件与跨组件状态逻辑
-- **THEN** 使用 `<script setup>` 单文件组件与组合式函数（composables）实现
+- **THEN** 使用 `.svelte` 单文件组件与 `.svelte.ts` 响应式模块（`$state` / `$derived` / `$effect`）实现
 
 ### Requirement: URL 路由结构兼容
 
-迁移后应用 SHALL 保持既有 URL 路由结构与重定向行为不变，并保持子路径部署（GitHub Pages）支持。
+迁移后应用 SHALL 保持既有 URL 路由结构与重定向行为不变（路径式路由，非 hash 路由），并保持子路径部署（GitHub Pages）支持与刷新可直达。
 
 #### Scenario: 根路径重定向
 
@@ -68,13 +68,13 @@
 
 #### Scenario: 用户设置保留
 
-- **GIVEN** 用户在迁移前设置过界面语言与其他应用设置
+- **GIVEN** 用户在迁移前设置过界面语言、主题与其他应用设置
 - **WHEN** 迁移后的应用启动
-- **THEN** 界面语言与应用设置与迁移前一致，无需重新设置
+- **THEN** 界面语言、主题与应用设置与迁移前一致，无需重新设置
 
 ### Requirement: 状态持久化时机等价
 
-状态管理迁移后，应用状态变化触发持久化的时机 SHALL 与迁移前保持一致：聊天会话数据变更即保存、模型列表变更即保存、默认语言变更即保存。
+状态管理由 Redux 迁移至 Svelte 响应式模块后，应用状态变化触发持久化的时机 SHALL 与迁移前保持一致：聊天会话数据变更即保存、模型列表变更即保存、默认语言变更即保存。
 
 #### Scenario: 会话变更即时持久化
 
@@ -102,7 +102,7 @@
 
 ### Requirement: UI 交互行为等价
 
-UI 组件库替换后，用户可见的交互行为 SHALL 保持一致，包括：模态对话框的打开/关闭与焦点管理、下拉与表单控件的键盘可达性、Toast 队列的展示与去重、虚拟滚动列表的滚动行为，以及亮/暗主题切换。
+UI 组件库替换后，用户可见的交互行为 SHALL 保持一致，包括：模态对话框的打开/关闭与焦点管理、下拉与表单控件的键盘可达性、Toast 队列的展示与去重、虚拟滚动列表的滚动行为、可调分割面板的拖拽行为，以及亮/暗主题切换。
 
 #### Scenario: 主题切换保持
 
@@ -130,14 +130,14 @@ UI 组件库替换后，用户可见的交互行为 SHALL 保持一致，包括�
 
 ### Requirement: 测试栈迁移与回归保障
 
-UI 层测试 SHALL 迁移至 Vue 测试栈（Vue Test Utils）并延续项目既有测试约定（测试用户可见行为、仅 mock 系统边界）；框架无关层（服务、工具、存储）的既有测试 SHALL 保留并在适配导入路径后通过。
+UI 层测试 SHALL 迁移至 Svelte 测试栈（@testing-library/svelte）并延续项目既有测试约定（测试用户可见行为、仅 mock 系统边界）；框架无关层（服务、平台层、存储、工具）的既有测试 SHALL 保留并在适配导入路径后通过。
 
 #### Scenario: 框架无关测试保留通过
 
 - **WHEN** 迁移完成后运行完整测试套件
-- **THEN** 服务层与工具层既有测试在适配导入路径后全部通过
+- **THEN** 服务层、平台层与工具层既有测试在适配导入路径后全部通过
 
 #### Scenario: UI 层关键行为有等价覆盖
 
 - **WHEN** 迁移后的组件与页面发生行为回归
-- **THEN** 存在对应的 Vue 测试栈用例能够捕获该回归
+- **THEN** 存在对应的 Svelte 测试栈用例能够捕获该回归
