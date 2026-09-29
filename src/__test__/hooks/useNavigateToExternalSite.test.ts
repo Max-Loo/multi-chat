@@ -4,7 +4,7 @@ import { renderHook } from '@testing-library/react';
 
 import { useNavigateToExternalSite } from '@/hooks/useNavigateToExternalSite';
 
-import * as tauriCompat from '@/utils/tauriCompat';
+import * as webRuntime from '@/utils/webRuntime';
 
 
 
@@ -16,7 +16,7 @@ describe('useNavigateToExternalSite', () => {
 
   beforeEach(() => {
 
-    shellOpenSpy = vi.spyOn(tauriCompat.shell, 'open').mockResolvedValue(undefined);
+    shellOpenSpy = vi.spyOn(webRuntime.shell, 'open').mockResolvedValue(undefined);
 
   });
 
@@ -96,69 +96,19 @@ describe('useNavigateToExternalSite', () => {
 
 
 
-  describe('Tauri 兼容层测试', () => {
+  describe('webRuntime 集成测试', () => {
 
-    it('应正确调用 tauriCompat.shell.open', () => {
-
-      const { result } = renderHook(() => useNavigateToExternalSite());
-
-
-
-      result.current.navToExternalSite('https://tauri-app.com');
-
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://tauri-app.com');
-
-    });
-
-
-
-    it('应在 Tauri 环境下使用 shell.open', () => {
-
-      vi.stubGlobal('__TAURI__', {
-
-        __scope: { platform: 'darwin' },
-
-      });
-
-
+    it('应正确调用 webRuntime.shell.open', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 
 
 
-      result.current.navToExternalSite('https://tauri-app.com');
+      result.current.navToExternalSite('https://example-external.com');
 
 
 
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://tauri-app.com');
-
-
-
-      vi.unstubAllGlobals();
-
-    });
-
-
-
-    it('应在 Web 环境下使用 shell.open（兼容层内部调用 window.open）', () => {
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 第三方库类型定义不完整
-      delete (window as any).__TAURI__;
-
-
-
-      const { result } = renderHook(() => useNavigateToExternalSite());
-
-
-
-      result.current.navToExternalSite('https://web-app.com');
-
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://web-app.com');
+      expect(shellOpenSpy).toHaveBeenCalledWith('https://example-external.com');
 
     });
 

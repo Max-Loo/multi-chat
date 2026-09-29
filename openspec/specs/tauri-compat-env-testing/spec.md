@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Tauri Compat 环境检测测试规范
+
+## Purpose
+
+定义 tauriCompat 环境检测模块（env.ts）的单元测试要求，确保环境检测函数行为正确且测试相互隔离。
+
+## Requirements
 
 ### Requirement: isTauri 环境检测测试
 

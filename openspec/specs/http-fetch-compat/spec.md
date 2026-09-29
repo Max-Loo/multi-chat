@@ -1,6 +1,10 @@
 # HTTP Fetch 跨平台兼容层 - 规范
 
-## ADDED Requirements
+## Purpose
+
+定义应用 HTTP 请求的统一 fetch 封装要求，确保请求 API 与标准 Web Fetch 兼容且可注入第三方库。
+
+## Requirements
 
 ### Requirement: 环境检测
 

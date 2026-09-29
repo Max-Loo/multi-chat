@@ -3,7 +3,7 @@
  * 测试模型数据的加密存储和加载功能
  *
  * 使用真实实现：
- * - fake-indexeddb 模拟 Tauri store
+ * - fake-indexeddb 模拟 IndexedDB
  * - 真实的 Web Crypto API 加密/解密
  * - 真实的 masterKey 管理（IndexedDB + AES-256-GCM）
  */
@@ -23,7 +23,7 @@ vi.mock('@/store/storage/storeUtils', () => ({
   }),
 }));
 
-vi.mock('@/utils/tauriCompat/store', () => ({
+vi.mock('@/utils/webRuntime/store', () => ({
   createLazyStore: vi.fn(() => globalThis.__createMemoryStorageMock(storeMap)),
 }));
 
@@ -36,7 +36,7 @@ import {
 } from '@/store/storage/modelStorage';
 import { storeMasterKey, getMasterKey } from '@/store/keyring/masterKey';
 import * as masterKeyModule from '@/store/keyring/masterKey';
-import { WebKeyringCompat } from '@/utils/tauriCompat/keyring';
+import { WebKeyringCompat } from '@/utils/webRuntime/keyring';
 import { createMockModel } from '@/__test__/helpers/fixtures/model';
 import { asTestType } from '@/__test__/helpers/testing-utils';
 

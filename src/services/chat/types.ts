@@ -23,7 +23,7 @@ export interface ChatServiceConfig {
   baseURL: string;
   /** 模型标识符 */
   model: string;
-  /** 是否允许浏览器环境（Tauri 桌面应用需要） */
+  /** 是否允许浏览器环境（浏览器直连供应商 API 时需要） */
   dangerouslyAllowBrowser?: boolean;
   /** 供应商标识符（用于开发环境代理和 URL 标准化） */
   providerKey: ModelProviderKeyEnum;

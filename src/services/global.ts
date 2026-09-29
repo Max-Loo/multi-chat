@@ -1,5 +1,5 @@
 import { LOCAL_STORAGE_PREFIX, LANGUAGE_MIGRATION_MAP, SUPPORTED_LANGUAGE_SET, SUPPORTED_LANGUAGE_MAP } from '@/utils/constants';
-import { locale, shell } from '@/utils/tauriCompat';
+import { locale, shell } from '@/utils/webRuntime';
 
 /**
  * 语言检测结果接口
@@ -91,7 +91,7 @@ export const getDefaultAppLanguage = async (): Promise<LanguageResult> => {
       }
     }
 
-    // 第二优先级：通过 tauri 取系统的值
+    // 第二优先级：通过浏览器获取系统语言
     const systemLocale = await locale()
 
     if (systemLocale) {

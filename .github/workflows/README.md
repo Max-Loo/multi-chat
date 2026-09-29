@@ -36,7 +36,7 @@
 - Personal Access Token 有安全风险，请妥善保管
 - 建议设置合理的过期时间，定期更新
 - 如果 Token 过期，需要重新生成并更新 Repository Secret
-- 使用 PAT 创建的 tag 将会正确触发 `build-and-release.yml` workflow
+- 使用 PAT 创建的 tag 将会正确触发 `deploy-to-gh-pages.yml` workflow
 
 ## 工作流程
 

@@ -1,8 +1,10 @@
 # Tauri 插件 Web 兼容层规范
 
-本规范定义了 Tauri 插件在 Web 环境中的降级和兼容层要求。
+## Purpose
 
-## ADDED Requirements
+定义 Tauri 插件（Shell、OS、HTTP、Store、Keyring）的跨环境兼容层要求，确保应用在 Tauri 桌面与 Web 浏览器环境中均能正常运行。
+
+## Requirements
 
 ### Requirement: 环境检测
 
