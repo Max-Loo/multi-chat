@@ -14,8 +14,8 @@
 - [x] 2.5 收敛 `webRuntime/store.ts`、`keyring.ts`、`keyringMigration.ts`、`crypto-helpers.ts`、`indexedDB.ts`：删除各 Tauri 分支与 `@tauri-plugin-keyring-api` 引用，Web 实现成为唯一路径；跑 keyring/crypto/storage 相关全部测试（`src/__test__` 对应用例）通过
 - [x] 2.6 删除 `src-tauri/` 目录与 Tauri 配置（`tauri.conf.json`、capabilities 等）；从 `package.json` 移除 `@tauri-apps/*`、`@tauri-apps/cli`、`tauri-plugin-keyring-api` 依赖，删除 `tauri`/`web:dev`/`web:build:tauri` 脚本并将 `dev`/`build` 指向 Vite 命令；验证 `pnpm install && pnpm dev && pnpm build` 成功
 - [x] 2.7 清理代码中残留的 Tauri 引用：全局搜索 `__TAURI__`、`@tauri-apps`、`isTauri`、`tauriCompat` 确认无匹配；`pnpm validate && pnpm test:basic:all` 全绿
-- [ ] 2.8 更新文档：AGENTS.md（项目概述、架构、快速查找表中的 Tauri 描述改为纯 Web 运行时）、README.md 与 README.zh-CN.md（双语同步，标注 BREAKING：桌面版停止发布、CORS 约束说明）、`docs/design/cross-platform.md` 等相关 docs；验证 `pnpm lint:i18n` 通过
-- [ ] 2.9 用 `BASE_PATH=/multi-chat/ pnpm build && gh-pages` 流程在预发验证 gh-pages 部署可用（或验证 deploy 脚本 dry-run），确认子路径构建产物正确
+- [x] 2.8 更新文档：AGENTS.md（项目概述、架构、快速查找表中的 Tauri 描述改为纯 Web 运行时）、README.md 与 README.zh-CN.md（双语同步，标注 BREAKING：桌面版停止发布、CORS 约束说明）、`docs/design/cross-platform.md` 等相关 docs；验证 `pnpm lint:i18n` 通过
+- [x] 2.9 用 `BASE_PATH=/multi-chat/ pnpm build && gh-pages` 流程在预发验证 gh-pages 部署可用（或验证 deploy 脚本 dry-run），确认子路径构建产物正确
 - [ ] 2.10 合并 Phase 1 分支至 main 并发布版本（`v0.6.0`），发布说明包含 BREAKING 声明与桌面用户迁移指引
 
 ## 3. Phase 2：Vue 3 工程基建
