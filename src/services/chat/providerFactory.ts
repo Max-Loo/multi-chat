@@ -1,6 +1,5 @@
 import type { LanguageModel } from 'ai';
 import { ModelProviderKeyEnum } from '@/utils/enums';
-import { getFetchFunc } from '@/utils/tauriCompat';
 import { getProviderSDKLoader } from './providerLoader';
 
 /**
@@ -27,14 +26,12 @@ export async function getProvider(
   apiKey: string,
   baseURL: string
 ): Promise<(modelId: string) => LanguageModel> {
-  const fetch = getFetchFunc();
-  
   try {
     // 动态加载供应商 SDK
     const loader = getProviderSDKLoader();
     const createProvider = await loader.loadProvider(providerKey);
-    
-    // 创建并返回 provider
+
+    // 创建并返回 provider（fetch 使用浏览器原生实现）
     return createProvider({ apiKey, baseURL, fetch });
   } catch (error) {
     const err = error as Error;

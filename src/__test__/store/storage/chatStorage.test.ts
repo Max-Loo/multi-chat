@@ -20,7 +20,7 @@ vi.mock('@/store/storage/storeUtils', () => ({
   }),
 }));
 
-vi.mock('@/utils/tauriCompat', () => ({
+vi.mock('@/utils/webStore', () => ({
   createLazyStore: vi.fn(() => ({
     init: vi.fn().mockResolvedValue(undefined),
     get: vi.fn((key: string) => Promise.resolve(storeMap.get(key) ?? null)),

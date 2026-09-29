@@ -1,6 +1,5 @@
-import { fetch } from "@/utils/tauriCompat/http";
-import { createLazyStore } from "@/utils/tauriCompat";
-import type { StoreCompat } from "@/utils/tauriCompat";
+import { createLazyStore } from "@/utils/webStore";
+import type { StoreCompat } from "@/utils/webStore";
 import {
   REMOTE_MODEL_NETWORK_CONFIG,
   REMOTE_MODEL_CACHE_CONFIG,

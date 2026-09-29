@@ -4,13 +4,13 @@
  * 包含 Polyfill、jest-dom 扩展、环境标识和 globalThis mock 工厂注册
  */
 
-import { expect } from 'vitest';
+import { expect, vi } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import 'fake-indexeddb/auto';
 import { createI18nMockReturn, mockI18n } from '@/__test__/helpers/mocks/i18n';
 import { createMemoryStorageMock } from '@/__test__/helpers/mocks/storage';
 import { createResponsiveMock } from '@/__test__/helpers/mocks/responsive';
-import { createTauriCompatModuleMock } from '@/__test__/helpers/mocks/tauriCompat';
+import { createWebCompatModuleMock } from '@/__test__/helpers/mocks/webCompat';
 import { createToastQueueModuleMock } from '@/__test__/helpers/mocks/toast';
 import { createScrollbarMock } from '@/__test__/helpers/mocks/scrollbar';
 import { createMarkdownItMock } from '@/__test__/helpers/mocks/markdown';
@@ -32,6 +32,10 @@ globalThis.ResizeObserver = class ResizeObserver {
 
 // 设置全局测试环境标识，用于优化加密性能
 (globalThis as Record<string, unknown>).__VITEST__ = true;
+
+// 全局 stub window.open（防止测试中真实打开新窗口，替代原 shell.open 全局 mock）
+// 使用直接赋值而非 vi.spyOn，避免被 afterEach 的 restoreAllMocks 还原
+window.open = vi.fn(() => null);
 
 // ========================================
 // globalThis Mock 工厂注册
@@ -56,8 +60,8 @@ var __responsiveMock = createResponsiveMock;
 globalThis.__createResponsiveMock = __responsiveMock;
 
 // eslint-disable-next-line no-var
-var __tauriCompatModuleMock = createTauriCompatModuleMock;
-globalThis.__createTauriCompatModuleMock = __tauriCompatModuleMock;
+var __webCompatModuleMock = createWebCompatModuleMock;
+globalThis.__createWebCompatModuleMock = __webCompatModuleMock;
 
 // eslint-disable-next-line no-var
 var __toastModuleMock = createToastQueueModuleMock;

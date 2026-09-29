@@ -19,63 +19,29 @@ vi.mock('@/store/storage/storeUtils', () => ({
   loadFromStore: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('@/utils/tauriCompat/shell', () => ({
-  shell: {
-    open: vi.fn().mockResolvedValue(undefined),
-  },
-  Command: {
-    create: vi.fn().mockReturnValue({
-      execute: vi.fn().mockResolvedValue({ stdout: '', stderr: '' }),
-      isSupported: vi.fn().mockReturnValue(true),
-    }),
-  },
-}));
+// ========================================
+// Web 存储模块全局 Mock
+// ========================================
 
-vi.mock('@/utils/tauriCompat/os', () => ({
-  locale: vi.fn().mockResolvedValue('zh-CN'),
-  platform: vi.fn().mockResolvedValue('darwin'),
-}));
+// Mock 全局 fetch（防止单元测试触发真实网络请求）
+globalThis.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  json: vi.fn().mockResolvedValue({}),
+  text: vi.fn().mockResolvedValue(''),
+});
 
-vi.mock('@/utils/tauriCompat/http', () => ({
-  fetch: vi.fn().mockResolvedValue({
-    ok: true,
-    json: vi.fn().mockResolvedValue({}),
-    text: vi.fn().mockResolvedValue(''),
-  }),
-  getFetchFunc: vi.fn().mockReturnValue(
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({}),
-    })
-  ),
-}));
-
-vi.mock('@/utils/tauriCompat/store', () => ({
+// Mock @/utils/webStore/store（IndexedDB 键值存储 → 内存 Map 存储）
+vi.mock('@/utils/webStore/store', () => ({
   createLazyStore: vi.fn(() => globalThis.__createMemoryStorageMock()),
 }));
 
-// Mock env 模块（必须在桶模块 mock 之前，因为 importOriginal 会触发 keyring/keyringMigration 加载 env）
-vi.mock('@/utils/tauriCompat/env', () => ({
-  isTauri: vi.fn(() => false),
+// Mock @/utils/webCommon/env（必须在 keyring 模块加载前生效，降低 PBKDF2 迭代次数）
+vi.mock('@/utils/webCommon/env', () => ({
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
   PBKDF2_ALGORITHM: 'SHA-256' as const,
   DERIVED_KEY_LENGTH: 256,
 }));
-
-// Mock @/utils/tauriCompat 桶模块
-// 使用 importOriginal 保留真实导出（如 keyring），仅覆盖需要 mock 的模块
-vi.mock('@/utils/tauriCompat', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils/tauriCompat')>();
-  return {
-    ...actual,
-    Command: { create: vi.fn() },
-    shell: { open: vi.fn() },
-    locale: vi.fn(),
-    fetch: vi.fn(),
-    getFetchFunc: vi.fn(),
-  };
-});
 
 // ========================================
 // Vercel AI SDK 全局 Mock

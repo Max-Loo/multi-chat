@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createLazyStore } from '@/utils/tauriCompat';
-import { initFakeIndexedDB, cleanupFakeIndexedDB } from '@/__test__/utils/tauriCompat/idb-helpers';
-import type { StoreCompat } from '@/utils/tauriCompat';
+import { createLazyStore } from '@/utils/webStore';
+import { initFakeIndexedDB, cleanupFakeIndexedDB } from '@/__test__/helpers/idb-helpers';
+import type { StoreCompat } from '@/utils/webStore';
 
 /**
  * Store 工具函数测试套件

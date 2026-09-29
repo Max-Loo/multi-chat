@@ -1,5 +1,4 @@
 import { LOCAL_STORAGE_PREFIX, LANGUAGE_MIGRATION_MAP, SUPPORTED_LANGUAGE_SET, SUPPORTED_LANGUAGE_MAP } from '@/utils/constants';
-import { locale, shell } from '@/utils/tauriCompat';
 
 /**
  * 语言检测结果接口
@@ -30,7 +29,7 @@ export const interceptClickAToJump = () => {
       // 判断是否是外部链接（非本地路由）
       if (url.origin !== window.location.origin) {
         event.preventDefault();
-        await shell.open(url.href);
+        window.open(url.href, '_blank', 'noopener,noreferrer');
       }
     }
   });
@@ -91,8 +90,8 @@ export const getDefaultAppLanguage = async (): Promise<LanguageResult> => {
       }
     }
 
-    // 第二优先级：通过 tauri 取系统的值
-    const systemLocale = await locale()
+    // 第二优先级：读取浏览器的语言设置
+    const systemLocale = navigator.language
 
     if (systemLocale) {
       const systemLang = systemLocale.split('-')[0]
@@ -116,7 +115,7 @@ export const getDefaultAppLanguage = async (): Promise<LanguageResult> => {
     // 任何异常都降级到系统语言或英文
     console.warn(`Error getting default app language: ${error}`)
     try {
-      const systemLocale = await locale()
+      const systemLocale = navigator.language
       if (systemLocale) {
         const systemLang = systemLocale.split('-')[0]
         if (SUPPORTED_LANGUAGE_SET.has(systemLang)) {
