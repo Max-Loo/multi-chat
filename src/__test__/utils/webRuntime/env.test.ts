@@ -1,5 +1,5 @@
 /**
- * tauriCompat/env.ts 单元测试
+ * webRuntime/env.ts 单元测试
  *
  * 通过 vi.importActual 绕过全局 mock，直接测试真实逻辑。
  * 使用 beforeEach/afterEach 进行环境隔离，确保测试间无污染。
@@ -7,14 +7,14 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 
-let envModule: typeof import('@/utils/tauriCompat/env');
+let envModule: typeof import('@/utils/webRuntime/env');
 
 beforeAll(async () => {
   // 通过 vi.importActual 导入真实模块，绕过 setup/mocks.ts 中的全局 mock
-  envModule = await vi.importActual<typeof import('@/utils/tauriCompat/env')>('@/utils/tauriCompat/env');
+  envModule = await vi.importActual<typeof import('@/utils/webRuntime/env')>('@/utils/webRuntime/env');
 });
 
-describe('tauriCompat/env', () => {
+describe('webRuntime/env', () => {
   // 保存原始全局变量，用于 afterEach 恢复
   let originalTAURI: unknown;
   let originalVitest: unknown;
@@ -123,7 +123,7 @@ describe('tauriCompat/env', () => {
         delete process.env.VITEST;
         // 重置模块缓存并重新加载，使 _isTestEnv 在加载时计算为 false
         vi.resetModules();
-        const freshModule = await vi.importActual<typeof import('@/utils/tauriCompat/env')>('@/utils/tauriCompat/env');
+        const freshModule = await vi.importActual<typeof import('@/utils/webRuntime/env')>('@/utils/webRuntime/env');
         expect(freshModule.getPBKDF2Iterations()).toBe(100000);
       } finally {
         (globalThis as Record<string, unknown>).vitest = savedVitest;

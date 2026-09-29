@@ -16,8 +16,8 @@ import {
   RemoteDataError,
   RemoteDataErrorType,
 } from '@/services/modelRemote';
-import { fetch } from '@/utils/tauriCompat/http';
-import { createLazyStore } from '@/utils/tauriCompat/store';
+import { fetch } from '@/utils/webRuntime/http';
+import { createLazyStore } from '@/utils/webRuntime/store';
 import { ALLOWED_REMOTE_MODEL_PROVIDERS, REMOTE_MODEL_NETWORK_CONFIG, REMOTE_MODEL_CACHE_CONFIG } from '@/services/modelRemote/config';
 import {
   createDeepSeekApiResponse,
@@ -28,11 +28,11 @@ import {
 
 const API_URL = 'https://models.dev/api.json';
 
-// Mock tauriCompat/http for system boundary (network requests)
-vi.mock('@/utils/tauriCompat/http');
+// Mock webRuntime/http for system boundary (network requests)
+vi.mock('@/utils/webRuntime/http');
 
-// Mock tauriCompat/store for system boundary (file system storage)
-vi.mock('@/utils/tauriCompat/store');
+// Mock webRuntime/store for system boundary (file system storage)
+vi.mock('@/utils/webRuntime/store');
 
 // Mock constants to control test environment
 vi.mock('@/services/modelRemote/config', async () => {

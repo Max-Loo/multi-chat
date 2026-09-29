@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { keyring } from '@/utils/tauriCompat/keyring';
-import * as tauriEnv from '@/utils/tauriCompat/env';
+import { keyring } from '@/utils/webRuntime/keyring';
+import * as tauriEnv from '@/utils/webRuntime/env';
 import { toastQueue } from '@/services/toast';
 import { createToastSpies } from '@/__test__/helpers/mocks/toast';
 import {

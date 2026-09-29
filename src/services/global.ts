@@ -1,5 +1,5 @@
 import { LOCAL_STORAGE_PREFIX, LANGUAGE_MIGRATION_MAP, SUPPORTED_LANGUAGE_SET, SUPPORTED_LANGUAGE_MAP } from '@/utils/constants';
-import { locale, shell } from '@/utils/tauriCompat';
+import { locale, shell } from '@/utils/webRuntime';
 
 /**
  * 语言检测结果接口

@@ -1,5 +1,5 @@
 /**
- * tauriCompat/store.ts 变异测试
+ * webRuntime/store.ts 变异测试
  *
  * vi.unmock 绕过 setup/mocks.ts 的全局 mock，静态 import 获取真实模块
  * 测试覆盖真实的 WebStoreCompat（IndexedDB 实现）
@@ -9,10 +9,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 
 // 绕过 setup/mocks.ts 对 store 模块的全局 mock
-vi.unmock('@/utils/tauriCompat/store');
+vi.unmock('@/utils/webRuntime/store');
 
 // 覆盖 env 模块的 mock，控制 isTauri 返回值
-vi.mock('@/utils/tauriCompat/env', () => ({
+vi.mock('@/utils/webRuntime/env', () => ({
   isTauri: vi.fn(() => false),
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
@@ -32,10 +32,10 @@ vi.mock('@tauri-apps/plugin-store', () => ({
   })),
 }));
 
-import { createLazyStore } from '@/utils/tauriCompat/store';
-import type { StoreCompat } from '@/utils/tauriCompat/store';
+import { createLazyStore } from '@/utils/webRuntime/store';
+import type { StoreCompat } from '@/utils/webRuntime/store';
 
-describe('tauriCompat/store', () => {
+describe('webRuntime/store', () => {
   let store: StoreCompat;
 
   beforeEach(() => {

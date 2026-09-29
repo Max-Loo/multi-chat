@@ -173,12 +173,12 @@ export default defineConfig(async () => ({
         "src/@types/**",
         "src/pages/Model/index.tsx",
         // Tauri 兼容层（依赖系统 API，无法在 web 测试环境运行）
-        "src/utils/tauriCompat/http.ts",
-        "src/utils/tauriCompat/shell.ts",
-        "src/utils/tauriCompat/os.ts",
-        "src/utils/tauriCompat/store.ts",
-        "src/utils/tauriCompat/env.ts",
-        "src/utils/tauriCompat/__mocks__/**",
+        "src/utils/webRuntime/http.ts",
+        "src/utils/webRuntime/shell.ts",
+        "src/utils/webRuntime/os.ts",
+        "src/utils/webRuntime/store.ts",
+        "src/utils/webRuntime/env.ts",
+        "src/utils/webRuntime/__mocks__/**",
         // shadcn/ui 自动生成的 UI 原子组件（无自定义逻辑）
         "src/components/ui/sheet.tsx",
         "src/components/ui/sonner.tsx",

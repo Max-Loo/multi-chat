@@ -3,8 +3,8 @@
  * 使用 Web Crypto API 生成密钥，使用 Keyring 兼容层存储密钥
  * Tauri 环境使用系统钥匙串，Web 环境使用 IndexedDB + AES-256-GCM 加密
  */
-import { keyring } from "@/utils/tauriCompat";
-import { isTauri } from "@/utils/tauriCompat/env";
+import { keyring } from "@/utils/webRuntime";
+import { isTauri } from "@/utils/webRuntime/env";
 import { toastQueue } from '@/services/toast';
 import { verifyMasterKey } from "@/store/keyring/keyVerification";
 

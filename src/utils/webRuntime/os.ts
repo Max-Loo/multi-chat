@@ -17,7 +17,7 @@ import { isTauri } from './env';
  *
  * @example
  * ```typescript
- * import { locale } from '@/utils/tauriCompat';
+ * import { locale } from '@/utils/webRuntime';
  *
  * const language = await locale();
  * console.log(language); // "zh-CN" 或 "en-US" 等

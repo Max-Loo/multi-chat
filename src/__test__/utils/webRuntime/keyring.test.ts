@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import * as keyringApi from 'tauri-plugin-keyring-api';
-import { isTauri } from '@/utils/tauriCompat/env';
+import { isTauri } from '@/utils/webRuntime/env';
 
 // Mock tauri-plugin-keyring-api
 vi.mock('tauri-plugin-keyring-api', () => ({
@@ -10,8 +10,8 @@ vi.mock('tauri-plugin-keyring-api', () => ({
   deletePassword: vi.fn(),
 }));
 
-// Mock @/utils/tauriCompat/env
-vi.mock('@/utils/tauriCompat/env', () => ({
+// Mock @/utils/webRuntime/env
+vi.mock('@/utils/webRuntime/env', () => ({
   isTauri: vi.fn(() => true), // 默认返回 true（Tauri 环境）
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
@@ -22,7 +22,7 @@ vi.mock('@/utils/tauriCompat/env', () => ({
 /**
  * Keyring 兼容层单元测试套件
  *
- * 测试 src/utils/tauriCompat/keyring.ts 模块的功能
+ * 测试 src/utils/webRuntime/keyring.ts 模块的功能
  * 覆盖 Tauri 和 Web 两种环境的密钥存储、加密/解密、错误处理等核心逻辑
  */
 describe('Keyring 兼容层测试套件', () => {
@@ -73,7 +73,7 @@ describe('Keyring 兼容层测试套件', () => {
 
     describe('keyring.setPassword', () => {
       it('应该调用 Tauri API 并传递正确的参数', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.multichat.test';
         const user = 'test-user';
         const password = 'test-password';
@@ -87,7 +87,7 @@ describe('Keyring 兼容层测试套件', () => {
       });
 
       it('应该传递 service、user、password 参数', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.example.app';
         const user = 'alice';
         const password = 'secret123';
@@ -104,7 +104,7 @@ describe('Keyring 兼容层测试套件', () => {
       });
 
       it('应该传播 Tauri API 的异常', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const error = new Error('Keychain access denied');
 
         vi.mocked(keyringApi.setPassword).mockRejectedValue(error);
@@ -117,7 +117,7 @@ describe('Keyring 兼容层测试套件', () => {
 
     describe('keyring.getPassword', () => {
       it('应该调用 Tauri API 并传递正确的参数', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.multichat.test';
         const user = 'test-user';
         const expectedPassword = 'stored-password';
@@ -132,7 +132,7 @@ describe('Keyring 兼容层测试套件', () => {
       });
 
       it('应该返回密码字符串（当密钥存在）', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.example.app';
         const user = 'alice';
         const storedPassword = 'my-secret-password';
@@ -146,7 +146,7 @@ describe('Keyring 兼容层测试套件', () => {
       });
 
       it('应该返回 null（当密钥不存在）', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.example.app';
         const user = 'nonexistent-user';
 
@@ -158,7 +158,7 @@ describe('Keyring 兼容层测试套件', () => {
       });
 
       it('应该传播 Tauri API 的异常', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const error = new Error('Keychain read failed');
 
         vi.mocked(keyringApi.getPassword).mockRejectedValue(error);
@@ -171,7 +171,7 @@ describe('Keyring 兼容层测试套件', () => {
 
     describe('keyring.deletePassword', () => {
       it('应该调用 Tauri API 并传递正确的参数', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.multichat.test';
         const user = 'test-user';
 
@@ -184,7 +184,7 @@ describe('Keyring 兼容层测试套件', () => {
       });
 
       it('应该成功删除（不抛出异常）', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.example.app';
         const user = 'alice';
 
@@ -195,7 +195,7 @@ describe('Keyring 兼容层测试套件', () => {
       });
 
       it('应该传播 Tauri API 的异常', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const error = new Error('Keychain delete failed');
 
         vi.mocked(keyringApi.deletePassword).mockRejectedValue(error);
@@ -208,7 +208,7 @@ describe('Keyring 兼容层测试套件', () => {
 
     describe('keyring.isSupported', () => {
       it('应该返回 true（Tauri 环境始终支持）', async () => {
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
 
         expect(keyring.isSupported()).toBe(true);
       });
@@ -278,7 +278,7 @@ describe('Keyring 兼容层测试套件', () => {
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
         // 使用相同的种子存储和读取密码
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.test.service';
         const user = 'test-user';
         const password = 'test-password';
@@ -294,7 +294,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.test.service';
         const user = 'test-user';
         const password = 'sensitive-password';
@@ -330,7 +330,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
 
         // 两次加密相同的密码
         await keyring.setPassword('service1', 'user1', 'password');
@@ -372,7 +372,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.test.service';
         const user = 'test-user';
         const originalPassword = 'my-secret-password';
@@ -391,7 +391,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const testCases = [
           { service: 'com.test.app1', user: 'user1', password: '' },
           { service: 'com.test.app2', user: 'user2', password: 'short' },
@@ -410,7 +410,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.test.unicode';
         const user = 'test-user';
         const passwords = [
@@ -433,7 +433,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.test.service';
         const user = 'test-user';
         const password = 'test-password';
@@ -471,7 +471,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.test.service';
         const user = 'test-user';
         const originalPassword = 'my-secret-password';
@@ -489,7 +489,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
 
         const result = await keyring.getPassword('nonexistent.service', 'nonexistent-user');
 
@@ -500,7 +500,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.test.service';
         const user = 'test-user';
         const password = 'test-password';
@@ -520,7 +520,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.test.lifecycle';
         const user = 'test-user';
         const password = 'lifecycle-test-password';
@@ -542,7 +542,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const service = 'com.test.update';
         const user = 'test-user';
         const oldPassword = 'old-password';
@@ -562,7 +562,7 @@ describe('Keyring 兼容层测试套件', () => {
         const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const credentials = [
           { service: 'com.service1', user: 'user1', password: 'password1' },
           { service: 'com.service1', user: 'user2', password: 'password2' },
@@ -588,7 +588,7 @@ describe('Keyring 兼容层测试套件', () => {
     describe('API 一致性', () => {
       it('Tauri 和 Web 环境应该提供相同的 keyring 接口', async () => {
         // 导入模块
-        const module = await import('@/utils/tauriCompat/keyring');
+        const module = await import('@/utils/webRuntime/keyring');
 
         // 验证 keyring 实例存在且包含所有方法
         expect(module.keyring).toBeDefined();
@@ -600,7 +600,7 @@ describe('Keyring 兼容层测试套件', () => {
       });
 
       it('keyring 方法的签名应该一致', async () => {
-        const module = await import('@/utils/tauriCompat/keyring');
+        const module = await import('@/utils/webRuntime/keyring');
 
         // setPassword: (service: string, user: string, password: string) => Promise<void>
         expect(module.keyring.setPassword.length).toBe(3);
@@ -624,7 +624,7 @@ describe('Keyring 兼容层测试套件', () => {
         vi.mocked(keyringApi.setPassword).mockResolvedValue(undefined);
         vi.mocked(keyringApi.deletePassword).mockResolvedValue(undefined);
 
-        const tauriModule = await import('@/utils/tauriCompat/keyring');
+        const tauriModule = await import('@/utils/webRuntime/keyring');
         const tauriResult = await tauriModule.keyring.getPassword('service', 'user');
         expect(typeof tauriResult === 'string' || tauriResult === null).toBe(true);
 
@@ -640,7 +640,7 @@ describe('Keyring 兼容层测试套件', () => {
         localStorage.setItem('multi-chat-keyring-seed', seed);
 
         // 重新加载模块
-        const webModule = await import('@/utils/tauriCompat/keyring');
+        const webModule = await import('@/utils/webRuntime/keyring');
         await webModule.keyring.setPassword('service', 'user', 'web-password');
         const webResult = await webModule.keyring.getPassword('service', 'user');
         expect(typeof webResult === 'string' || webResult === null).toBe(true);
@@ -655,7 +655,7 @@ describe('Keyring 兼容层测试套件', () => {
         const tauriError = new Error('Tauri error');
         vi.mocked(keyringApi.setPassword).mockRejectedValue(tauriError);
 
-        const tauriModule = await import('@/utils/tauriCompat/keyring');
+        const tauriModule = await import('@/utils/webRuntime/keyring');
         await expect(tauriModule.keyring.setPassword('service', 'user', 'password'))
           .rejects.toThrow('Tauri error');
 
@@ -668,7 +668,7 @@ describe('Keyring 兼容层测试套件', () => {
       it('Tauri 环境应该返回 true', async () => {
         vi.mocked(isTauri).mockReturnValue(true);
 
-        const module = await import('@/utils/tauriCompat/keyring');
+        const module = await import('@/utils/webRuntime/keyring');
         expect(module.keyring.isSupported()).toBe(true);
       });
 
@@ -677,7 +677,7 @@ describe('Keyring 兼容层测试套件', () => {
         const indexedDB = new IDBFactory();
         vi.stubGlobal('indexedDB', indexedDB);
 
-        const module = await import('@/utils/tauriCompat/keyring');
+        const module = await import('@/utils/webRuntime/keyring');
         expect(module.keyring.isSupported()).toBe(true);
 
         vi.unstubAllGlobals();
@@ -689,7 +689,7 @@ describe('Keyring 兼容层测试套件', () => {
         // 移除 IndexedDB 支持
         vi.stubGlobal('indexedDB', undefined);
 
-        const module = await import('@/utils/tauriCompat/keyring');
+        const module = await import('@/utils/webRuntime/keyring');
         const result = module.keyring.isSupported();
 
         // 恢复
@@ -713,7 +713,7 @@ describe('Keyring 兼容层测试套件', () => {
       const fakeDB = new IDBFactory();
       vi.stubGlobal('indexedDB', fakeDB);
 
-      const module = await import('@/utils/tauriCompat/keyring');
+      const module = await import('@/utils/webRuntime/keyring');
       expect(module.keyring.isSupported()).toBe(true);
     });
 
@@ -721,7 +721,7 @@ describe('Keyring 兼容层测试套件', () => {
       vi.mocked(isTauri).mockReturnValue(false);
       vi.stubGlobal('indexedDB', undefined);
 
-      const module = await import('@/utils/tauriCompat/keyring');
+      const module = await import('@/utils/webRuntime/keyring');
       expect(module.keyring.isSupported()).toBe(false);
     });
 
@@ -731,7 +731,7 @@ describe('Keyring 兼容层测试套件', () => {
       vi.stubGlobal('indexedDB', fakeDB);
       vi.stubGlobal('crypto', { subtle: undefined });
 
-      const module = await import('@/utils/tauriCompat/keyring');
+      const module = await import('@/utils/webRuntime/keyring');
       expect(module.keyring.isSupported()).toBe(false);
     });
   });
@@ -749,7 +749,7 @@ describe('Keyring 兼容层测试套件', () => {
       const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       localStorage.setItem('multi-chat-keyring-seed', seed);
 
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/webRuntime/keyring');
 
       await keyring.setPassword('service', 'user', 'password');
 
@@ -769,7 +769,7 @@ describe('Keyring 兼容层测试套件', () => {
       const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       localStorage.setItem('multi-chat-keyring-seed', seed);
 
-      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const { WebKeyringCompat } = await import('@/utils/webRuntime/keyring');
       const compat = new WebKeyringCompat();
       await compat.init();
 
@@ -790,7 +790,7 @@ describe('Keyring 兼容层测试套件', () => {
     it('Tauri 环境 resetState 不抛错', async () => {
       vi.mocked(isTauri).mockReturnValue(true);
 
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/webRuntime/keyring');
       expect(() => keyring.resetState()).not.toThrow();
     });
   });
@@ -806,7 +806,7 @@ describe('Keyring 兼容层测试套件', () => {
       vi.stubGlobal('indexedDB', fakeDB);
       localStorage.clear();
 
-      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const { WebKeyringCompat } = await import('@/utils/webRuntime/keyring');
       const compat = new WebKeyringCompat();
       const resetSpy = vi.spyOn(compat, 'resetState');
 
@@ -829,7 +829,7 @@ describe('Keyring 兼容层测试套件', () => {
       const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       localStorage.setItem('multi-chat-keyring-seed', seed);
 
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/webRuntime/keyring');
 
       await keyring.setPassword('service', 'user', 'password');
       keyring.resetState();
@@ -843,7 +843,7 @@ describe('Keyring 兼容层测试套件', () => {
     it('Tauri 环境 keyring.resetState 为空操作不抛错', async () => {
       vi.mocked(isTauri).mockReturnValue(true);
 
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/webRuntime/keyring');
       expect(() => keyring.resetState()).not.toThrow();
     });
   });
@@ -861,7 +861,7 @@ describe('Keyring 兼容层测试套件', () => {
       const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       localStorage.setItem('multi-chat-keyring-seed', seed);
 
-      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const { WebKeyringCompat } = await import('@/utils/webRuntime/keyring');
       const compat = new WebKeyringCompat();
 
       const importKeySpy = vi.spyOn(crypto.subtle, 'importKey');
@@ -885,7 +885,7 @@ describe('Keyring 兼容层测试套件', () => {
       const seed1 = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       localStorage.setItem('multi-chat-keyring-seed', seed1);
 
-      const { WebKeyringCompat } = await import('@/utils/tauriCompat/keyring');
+      const { WebKeyringCompat } = await import('@/utils/webRuntime/keyring');
       const compat = new WebKeyringCompat();
 
       await compat.init();
@@ -915,7 +915,7 @@ describe('Keyring 兼容层测试套件', () => {
       const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       localStorage.setItem('multi-chat-keyring-seed', seed);
 
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/webRuntime/keyring');
 
       const beforeTime = Date.now();
       await keyring.setPassword('ts-service', 'ts-user', 'password');
@@ -957,7 +957,7 @@ describe('Keyring 兼容层测试套件', () => {
       const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
       localStorage.setItem('multi-chat-keyring-seed', seed);
 
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/webRuntime/keyring');
 
       // 不调用 init，直接调用 getPassword - 应自动初始化
       const result = await keyring.getPassword('service', 'user');
@@ -984,7 +984,7 @@ describe('Keyring 兼容层测试套件', () => {
         const originalEncrypt = crypto.subtle.encrypt;
         vi.spyOn(crypto.subtle, 'encrypt').mockRejectedValue(new Error('Crypto error'));
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
 
         await expect(keyring.setPassword('service', 'user', 'password'))
           .rejects.toThrow('密码加密或存储失败');
@@ -1007,7 +1007,7 @@ describe('Keyring 兼容层测试套件', () => {
         const originalError = new Error('Original crypto error');
         vi.spyOn(crypto.subtle, 'encrypt').mockRejectedValue(originalError);
 
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
 
         try {
           await keyring.setPassword('service', 'user', 'password');
@@ -1048,7 +1048,7 @@ describe('Keyring 兼容层测试套件', () => {
         vi.stubGlobal('indexedDB', indexedDB);
 
         // 注：由于模块在导入时创建实例，此测试主要验证函数返回类型
-        const { keyring } = await import('@/utils/tauriCompat/keyring');
+        const { keyring } = await import('@/utils/webRuntime/keyring');
         const result = keyring.isSupported();
         expect(typeof result).toBe('boolean');
 

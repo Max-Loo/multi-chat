@@ -1,5 +1,5 @@
 /**
- * tauriCompat/http.ts 跨平台 fetch 测试
+ * webRuntime/http.ts 跨平台 fetch 测试
  *
  * 覆盖 createFetch() 三路环境分支、降级路径、实例一致性和请求委托
  * 使用 vi.stubEnv + vi.resetModules + 动态 import 模式
@@ -14,14 +14,14 @@ const { mockIsTauri, mockTauriFetch } = vi.hoisted(() => ({
 }));
 
 // 移除 setup.ts 对 http 模块的全局 mock，使动态 import 获取真实模块
-vi.unmock('@/utils/tauriCompat/http');
+vi.unmock('@/utils/webRuntime/http');
 
 // 覆盖 env 模块的 mock，使用可控的 mockIsTauri
-vi.mock('@/utils/tauriCompat/env', () => ({
+vi.mock('@/utils/webRuntime/env', () => ({
   isTauri: mockIsTauri,
 }));
 
-describe('tauriCompat/http', () => {
+describe('webRuntime/http', () => {
   beforeEach(() => {
     mockIsTauri.mockReturnValue(false);
     mockTauriFetch.mockReset();
@@ -45,7 +45,7 @@ describe('tauriCompat/http', () => {
       }));
 
       vi.resetModules();
-      const http = await import('@/utils/tauriCompat/http');
+      const http = await import('@/utils/webRuntime/http');
 
       // DEV 分支直接返回 originFetch，不检查 isTauri
       expect(http.getFetchFunc()).toBeTypeOf('function');
@@ -63,7 +63,7 @@ describe('tauriCompat/http', () => {
       }));
 
       vi.resetModules();
-      const http = await import('@/utils/tauriCompat/http');
+      const http = await import('@/utils/webRuntime/http');
 
       // DEV 分支短路，不检查 isTauri
       expect(http.getFetchFunc()).toBeTypeOf('function');
@@ -80,7 +80,7 @@ describe('tauriCompat/http', () => {
       }));
 
       vi.resetModules();
-      const http = await import('@/utils/tauriCompat/http');
+      const http = await import('@/utils/webRuntime/http');
 
       expect(http.getFetchFunc()).toBe(mockTauriFetch);
       expect(http.getFetchFunc()).toBeTypeOf('function');
@@ -98,7 +98,7 @@ describe('tauriCompat/http', () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       vi.resetModules();
-      const http = await import('@/utils/tauriCompat/http');
+      const http = await import('@/utils/webRuntime/http');
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining('Failed to load Tauri fetch'),
@@ -120,7 +120,7 @@ describe('tauriCompat/http', () => {
       }));
 
       vi.resetModules();
-      const http = await import('@/utils/tauriCompat/http');
+      const http = await import('@/utils/webRuntime/http');
 
       expect(http.getFetchFunc()).not.toBe(mockTauriFetch);
       expect(http.getFetchFunc()).toBeTypeOf('function');
@@ -134,7 +134,7 @@ describe('tauriCompat/http', () => {
       mockIsTauri.mockReturnValue(false);
 
       vi.resetModules();
-      const http = await import('@/utils/tauriCompat/http');
+      const http = await import('@/utils/webRuntime/http');
 
       const func1 = http.getFetchFunc();
       const func2 = http.getFetchFunc();
@@ -157,7 +157,7 @@ describe('tauriCompat/http', () => {
       }));
 
       vi.resetModules();
-      const http = await import('@/utils/tauriCompat/http');
+      const http = await import('@/utils/webRuntime/http');
 
       const result = await http.fetch('https://example.com/api', { method: 'POST' });
 
@@ -177,7 +177,7 @@ describe('tauriCompat/http', () => {
       }));
 
       vi.resetModules();
-      const http = await import('@/utils/tauriCompat/http');
+      const http = await import('@/utils/webRuntime/http');
 
       const result = await http.fetch('https://example.com/api');
 

@@ -1,11 +1,11 @@
 /**
  * Mock 工具模块
  * 
- * 为 `@/utils/tauriCompat` 提供测试 Mock，隔离 Keyring 依赖。
+ * 为 `@/utils/webRuntime` 提供测试 Mock，隔离 Keyring 依赖。
  * 
  * 使用方法:
  * ```typescript
- * vi.mock("@/utils/tauriCompat", () => ({
+ * vi.mock("@/utils/webRuntime", () => ({
  *   getPassword: vi.fn(),
  *   setPassword: vi.fn(),
  *   isTauri: vi.fn(),

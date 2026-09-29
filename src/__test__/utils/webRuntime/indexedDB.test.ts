@@ -54,7 +54,7 @@ describe('initIndexedDB', () => {
     const fakeDB = { name: 'test-db' } as unknown as IDBDatabase;
     fakeRequest.result = fakeDB;
 
-    const { initIndexedDB } = await import('@/utils/tauriCompat/indexedDB');
+    const { initIndexedDB } = await import('@/utils/webRuntime/indexedDB');
     const promise = initIndexedDB('test-db', 'test-store', 'id');
 
     // 触发 success 事件
@@ -66,7 +66,7 @@ describe('initIndexedDB', () => {
   it('应该 reject 为包含 request.error 的 Error 当 error 事件触发', async () => {
     fakeRequest.error = 'VersionError' as unknown as DOMException;
 
-    const { initIndexedDB } = await import('@/utils/tauriCompat/indexedDB');
+    const { initIndexedDB } = await import('@/utils/webRuntime/indexedDB');
     const promise = initIndexedDB('test-db', 'test-store', 'id');
 
     // 触发 error 事件
@@ -82,7 +82,7 @@ describe('initIndexedDB', () => {
       createObjectStore: mockCreateObjectStore,
     } as unknown as IDBDatabase;
 
-    const { initIndexedDB } = await import('@/utils/tauriCompat/indexedDB');
+    const { initIndexedDB } = await import('@/utils/webRuntime/indexedDB');
     const promise = initIndexedDB('test-db', 'test-store', 'id');
 
     // 触发 upgradeneeded 事件，event.target.result 为 fakeDB
@@ -107,7 +107,7 @@ describe('initIndexedDB', () => {
       createObjectStore: mockCreateObjectStore,
     } as unknown as IDBDatabase;
 
-    const { initIndexedDB } = await import('@/utils/tauriCompat/indexedDB');
+    const { initIndexedDB } = await import('@/utils/webRuntime/indexedDB');
     const promise = initIndexedDB('test-db', 'existing-store', 'id');
 
     // 触发 upgradeneeded 事件
@@ -132,7 +132,7 @@ describe('initIndexedDB', () => {
       createObjectStore: mockCreateObjectStore,
     } as unknown as IDBDatabase;
 
-    const { initIndexedDB } = await import('@/utils/tauriCompat/indexedDB');
+    const { initIndexedDB } = await import('@/utils/webRuntime/indexedDB');
     const promise = initIndexedDB('test-db', 'test-store', ['chatId', 'modelId']);
 
     // 触发 upgradeneeded 事件

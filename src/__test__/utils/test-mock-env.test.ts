@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import { it, expect, beforeEach, vi } from 'vitest';
 import { initializeMasterKey } from '@/store/keyring/masterKey';
 
-// Mock @/utils/tauriCompat/env 模块中的 isTauri 函数
-vi.mock('@/utils/tauriCompat/env', () => ({
+// Mock @/utils/webRuntime/env 模块中的 isTauri 函数
+vi.mock('@/utils/webRuntime/env', () => ({
   isTauri: vi.fn(),
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
@@ -11,7 +11,7 @@ vi.mock('@/utils/tauriCompat/env', () => ({
   DERIVED_KEY_LENGTH: 256,
 }));
 
-import { isTauri } from '@/utils/tauriCompat/env';
+import { isTauri } from '@/utils/webRuntime/env';
 const mockIsTauri = vi.mocked(isTauri);
 
 beforeEach(async () => {

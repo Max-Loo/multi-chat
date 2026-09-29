@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { encrypt, decrypt } from '@/utils/tauriCompat/crypto-helpers';
+import { encrypt, decrypt } from '@/utils/webRuntime/crypto-helpers';
 
 describe('crypto-helpers', () => {
   let cryptoKey: CryptoKey;

@@ -4,7 +4,7 @@ import { renderHook } from '@testing-library/react';
 
 import { useNavigateToExternalSite } from '@/hooks/useNavigateToExternalSite';
 
-import * as tauriCompat from '@/utils/tauriCompat';
+import * as webRuntime from '@/utils/webRuntime';
 
 
 
@@ -16,7 +16,7 @@ describe('useNavigateToExternalSite', () => {
 
   beforeEach(() => {
 
-    shellOpenSpy = vi.spyOn(tauriCompat.shell, 'open').mockResolvedValue(undefined);
+    shellOpenSpy = vi.spyOn(webRuntime.shell, 'open').mockResolvedValue(undefined);
 
   });
 
@@ -98,7 +98,7 @@ describe('useNavigateToExternalSite', () => {
 
   describe('Tauri 兼容层测试', () => {
 
-    it('应正确调用 tauriCompat.shell.open', () => {
+    it('应正确调用 webRuntime.shell.open', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 

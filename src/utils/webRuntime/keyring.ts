@@ -360,7 +360,7 @@ const createKeyringAPI = (impl: KeyringCompat): KeyringPublicAPI => ({
  *
  * @example
  * ```typescript
- * import { keyring } from '@/utils/tauriCompat';
+ * import { keyring } from '@/utils/webRuntime';
  *
  * if (keyring.isSupported()) {
  *   await keyring.setPassword('com.multichat.app', 'master-key', 'my-secret-key');

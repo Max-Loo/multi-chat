@@ -5,22 +5,22 @@
  * @example
  * ```typescript
  * // 导入环境检测
- * import { isTauri } from '@/utils/tauriCompat';
+ * import { isTauri } from '@/utils/webRuntime';
  *
  * // 导入 Shell 插件 API
- * import { Command, shell } from '@/utils/tauriCompat';
+ * import { Command, shell } from '@/utils/webRuntime';
  *
  * // 导入 OS 插件 API
- * import { locale } from '@/utils/tauriCompat';
+ * import { locale } from '@/utils/webRuntime';
  *
  * // 导入 HTTP 插件 API
- * import { fetch, getFetchFunc, type RequestInfo } from '@/utils/tauriCompat';
+ * import { fetch, getFetchFunc, type RequestInfo } from '@/utils/webRuntime';
  *
  * // 导入 Store 插件 API
- * import { createLazyStore, type StoreCompat } from '@/utils/tauriCompat';
+ * import { createLazyStore, type StoreCompat } from '@/utils/webRuntime';
  *
  * // 导入 Keyring 插件 API
- * import { keyring, type KeyringPublicAPI } from '@/utils/tauriCompat';
+ * import { keyring, type KeyringPublicAPI } from '@/utils/webRuntime';
  *
  * if (isTauri()) {
  *   console.log('运行在 Tauri 桌面环境');

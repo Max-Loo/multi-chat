@@ -10,7 +10,7 @@
  * @example
  * ```typescript
  * // 直接使用 fetch
- * import { fetch } from '@/utils/tauriCompat';
+ * import { fetch } from '@/utils/webRuntime';
  *
  * const response = await fetch('https://api.example.com/data');
  * const data = await response.json();
@@ -19,7 +19,7 @@
  * @example
  * ```typescript
  * // 获取 fetch 函数实例（用于封装或注入第三方库）
- * import { getFetchFunc } from '@/utils/tauriCompat';
+ * import { getFetchFunc } from '@/utils/webRuntime';
  *
  * const fetchFunc = getFetchFunc();
  * const response = await fetchFunc('https://api.example.com/data');
@@ -28,7 +28,7 @@
  * @example
  * ```typescript
  * // 注入第三方库（如 Axios）
- * import { getFetchFunc } from '@/utils/tauriCompat';
+ * import { getFetchFunc } from '@/utils/webRuntime';
  * import axios from 'axios';
  *
  * const api = axios.create({
@@ -130,7 +130,7 @@ const _fetchInstance: FetchFunc = await createFetch();
  *
  * @example
  * ```typescript
- * import { fetch } from '@/utils/tauriCompat';
+ * import { fetch } from '@/utils/webRuntime';
  *
  * // GET 请求
  * const response = await fetch('https://api.example.com/data');
@@ -158,7 +158,7 @@ export const fetch = async (input: RequestInfo, init?: RequestInit): Promise<Res
  *
  * @example
  * ```typescript
- * import { getFetchFunc } from '@/utils/tauriCompat';
+ * import { getFetchFunc } from '@/utils/webRuntime';
  *
  * // 封装自定义请求方法
  * class ApiClient {
@@ -181,7 +181,7 @@ export const fetch = async (input: RequestInfo, init?: RequestInit): Promise<Res
  * @example
  * ```typescript
  * // 注入第三方库（如 Axios）
- * import { getFetchFunc } from '@/utils/tauriCompat';
+ * import { getFetchFunc } from '@/utils/webRuntime';
  * import axios from 'axios';
  *
  * const api = axios.create({
@@ -206,7 +206,7 @@ export const getFetchFunc = (): FetchFunc => {
  *
  * @example
  * ```typescript
- * import { fetch, type RequestInfo } from '@/utils/tauriCompat';
+ * import { fetch, type RequestInfo } from '@/utils/webRuntime';
  *
  * const options: RequestInit = {
  *   method: 'POST',

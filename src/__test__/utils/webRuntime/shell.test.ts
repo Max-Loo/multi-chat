@@ -1,5 +1,5 @@
 /**
- * tauriCompat/shell.ts 变异测试
+ * webRuntime/shell.ts 变异测试
  *
  * vi.unmock 绕过 setup/mocks.ts 的全局 mock，静态 import 获取真实模块
  * 测试覆盖真实的 WebShellCommand 和 WebShell 实现
@@ -8,10 +8,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 // 绕过 setup/mocks.ts 对 shell 模块的全局 mock
-vi.unmock('@/utils/tauriCompat/shell');
+vi.unmock('@/utils/webRuntime/shell');
 
 // 覆盖 env 模块的 mock，控制 isTauri 返回值
-vi.mock('@/utils/tauriCompat/env', () => ({
+vi.mock('@/utils/webRuntime/env', () => ({
   isTauri: vi.fn(() => false),
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
@@ -29,9 +29,9 @@ vi.mock('@tauri-apps/plugin-shell', () => ({
   open: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { Command, shell } from '@/utils/tauriCompat/shell';
+import { Command, shell } from '@/utils/webRuntime/shell';
 
-describe('tauriCompat/shell', () => {
+describe('webRuntime/shell', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });

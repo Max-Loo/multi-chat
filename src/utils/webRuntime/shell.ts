@@ -88,7 +88,7 @@ class WebShellCommand implements ShellCommandCompat {
  * 
  * @example
  * ```typescript
- * import { Command } from '@/utils/tauriCompat';
+ * import { Command } from '@/utils/webRuntime';
  * 
  * const cmd = Command.create('ls', ['-la']);
  * if (cmd.isSupported()) {

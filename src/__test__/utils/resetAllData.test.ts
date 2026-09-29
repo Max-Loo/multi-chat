@@ -4,16 +4,16 @@
  * 覆盖两个环境的清理逻辑和部分失败场景
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { keyring } from '@/utils/tauriCompat/keyring';
-import * as tauriEnv from '@/utils/tauriCompat/env';
+import { keyring } from '@/utils/webRuntime/keyring';
+import * as tauriEnv from '@/utils/webRuntime/env';
 
 // 使用 vi.hoisted 确保 mock 在 hoisted 阶段可用
 const { mockStoreMethods } = vi.hoisted(() => ({
   mockStoreMethods: globalThis.__createMemoryStorageMock(),
 }));
 
-vi.mock('@/utils/tauriCompat', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils/tauriCompat')>();
+vi.mock('@/utils/webRuntime', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/webRuntime')>();
   return {
     ...actual,
     createLazyStore: vi.fn().mockReturnValue(mockStoreMethods),

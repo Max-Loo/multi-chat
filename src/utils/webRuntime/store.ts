@@ -283,7 +283,7 @@ class WebStoreCompat implements StoreCompat {
  * 
  * @example
  * ```typescript
- * import { createLazyStore } from '@/utils/tauriCompat';
+ * import { createLazyStore } from '@/utils/webRuntime';
  * 
  * const store = createLazyStore('models.json');
  * await store.init();

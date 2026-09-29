@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { locale } from '@/utils/tauriCompat/os';
+import { locale } from '@/utils/webRuntime/os';
 
 /**
  * OS 兼容层测试套件
  *
- * 测试 src/utils/tauriCompat/os.ts 模块的功能
+ * 测试 src/utils/webRuntime/os.ts 模块的功能
  * 覆盖 locale() 函数的核心场景
  */
 describe('OS 兼容层', () => {
