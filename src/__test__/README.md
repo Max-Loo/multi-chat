@@ -16,7 +16,7 @@ src/__test__/
 │   ├── testing-utils.tsx        # 渲染和测试工具
 │   ├── mocks/                   # Mock 工厂
 │   │   ├── aiSdk.ts             # AI SDK Mock
-│   │   ├── webRuntime.ts       # Tauri 兼容层 Mock
+│   │   ├── webRuntime.ts       # webRuntime 模块 Mock
 │   │   ├── storage.ts           # 存储 Mock
 │   │   ├── fetch.ts             # Fetch API Mock
 │   │   ├── router.ts            # Router Mock
@@ -247,7 +247,7 @@ pnpm test:run
 
 ```typescript
 // Mock 工厂（从 helpers 导入）
-import { createTauriMocks, createStorageMocks } from '@/__test__/helpers/mocks';
+import { createStorageMocks } from '@/__test__/helpers/mocks';
 import { createMockModel } from '@/__test__/helpers/fixtures';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 
@@ -260,22 +260,15 @@ import { resetTestState } from '@/__test__/helpers/isolation';
 
 ## Mock 工厂使用指南
 
-### Tauri Mock
+### webRuntime Mock
 
 ```typescript
-import { createTauriMocks } from '@/__test__/helpers/mocks/tauri';
+// 通过 globalThis 工厂创建完整的 @/utils/webRuntime 模块 mock
+vi.mock('@/utils/webRuntime', () => globalThis.__createWebRuntimeModuleMock());
 
-describe('测试组件', () => {
-  const mocks = createTauriMocks({ isTauri: false });
-
-  beforeEach(() => {
-    mocks.windowMock.__TAURI__ = true;
-  });
-
-  afterEach(() => {
-    mocks.resetAll();
-  });
-});
+// 带外部 memoryStore 的 mock（用于测试中访问/清理数据）
+const memoryStore = new Map();
+vi.mock('@/utils/webRuntime', () => globalThis.__createWebRuntimeModuleMock(memoryStore));
 ```
 
 ### Redux Test State

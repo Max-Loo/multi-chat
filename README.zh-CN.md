@@ -5,7 +5,11 @@
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://max-loo.github.io/multi-chat/)
 [![Deploy to GitHub Pages](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml/badge.svg)](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml)
 
-一个基于 Tauri + React + TypeScript 的多模型聊天应用，支持同时与多个 AI 模型进行对话，方便对比不同模型的回答。
+一个基于 React + TypeScript 的多模型聊天应用，支持同时与多个 AI 模型进行对话，方便对比不同模型的回答。作为纯 Web 应用完全运行在浏览器中。
+
+> **⚠️ BREAKING（v0.6.0+）**：Tauri 桌面版已停止发布。本项目现仅提供 **Web 版**（GitHub Pages 部署）。桌面用户请转用 Web 版，并通过密钥导出/数据导出功能手动迁移数据（浏览器无法访问桌面端本地存储，无法自动迁移）。
+>
+> **CORS 说明**：所有 API 请求均由浏览器通过原生 `fetch` 直接发出。部分模型供应商可能不允许浏览器跨域请求（CORS），此时请求会失败并给出错误提示。
 
 ## 功能特点
 
@@ -60,9 +64,9 @@
 
 - 本地数据存储，保护隐私
 - API 密钥使用 AES-256-GCM 加密存储
-- 主密钥通过 `tauri-plugin-keyring` 安全存储到系统钥匙串
+- 主密钥加密后存储在 IndexedDB（加密密钥由 localStorage 种子经 PBKDF2 派生）
 - 敏感数据字段级加密，非敏感数据明文存储
-- 数据存储为 JSON 格式，便于备份和查看
+- 支持密钥导出/导入，便于备份与设备间迁移
 
 ## 技术栈
 
@@ -72,7 +76,6 @@
 - **路由**: React Router v7
 - **样式**: Tailwind CSS
 - **国际化**: i18next + react-i18next
-- **桌面框架**: Tauri 2
 - **构建工具**: Vite
 
 ## 快速开始
@@ -81,7 +84,6 @@
 
 - Node.js 18+
 - pnpm
-- Rust 1.70+ (用于构建 Tauri 应用)
 
 ### 安装依赖
 
@@ -97,21 +99,15 @@ pnpm install
 ### 开发模式
 
 ```bash
-# 启动 Tauri 桌面应用开发模式（同时启动前端和后端）
-pnpm tauri dev
-
-# 启动 Web 浏览器开发模式（仅前端）
-pnpm web:dev
+# 启动开发模式
+pnpm dev
 ```
 
 ### 构建应用
 
 ```bash
-# 构建 Tauri 桌面应用生产版本
-pnpm tauri build
-
-# 构建 Web 应用生产版本
-pnpm web:build
+# 构建生产版本（产出静态资源到 dist/）
+pnpm build
 ```
 
 ### 部署到 GitHub Pages
@@ -134,8 +130,6 @@ pnpm deploy:gh-pages
 4. `deploy-to-gh-pages.yml` workflow 触发自动部署
    - **build job**: 构建 Web 应用并上传 artifact
    - **deploy job**: 将 artifact 部署到 GitHub Pages
-
-同时，桌面应用构建（`build-and-release.yml`）也会并行触发，确保桌面和 Web 版本同步发布。
 
 **技术细节**:
 - 使用 GitHub Pages 官方 Actions（推荐方式）
@@ -234,14 +228,9 @@ multi-chat/
 │   │   └── keyring/           # 主密钥管理
 │   ├── types/                 # TypeScript 类型定义
 │   └── utils/                 # 工具函数
-│       ├── tauriCompat/       # Tauri 兼容层
+│       ├── webRuntime/        # Web 运行时模块（IndexedDB 存储、加密密钥环、fetch、语言检测）
 │       ├── crypto.ts          # 加密工具
 │       └── ...
-├── src-tauri/                 # Rust 后端代码
-│   ├── src/
-│   │   ├── lib.rs             # Tauri 命令定义
-│   │   └── main.rs            # 入口文件
-│   └── tauri.conf.json        # Tauri 配置
 ├── public/                    # 静态资源
 └── package.json               # 项目依赖和脚本
 ```
@@ -348,51 +337,43 @@ multi-chat/
 
 ### 数据持久化
 
-应用使用 @tauri-apps/plugin-store 插件进行数据持久化，数据存储位置：
+应用数据完全持久化在浏览器存储中：
 
-- **Windows**: `%APPDATA%\multi-chat`
-- **macOS**: `~/Library/Application Support/multi-chat`
-- **Linux**: `~/.config/multi-chat`
-
-#### 数据文件
-
-- `models.json`: 模型配置（API 密钥字段已加密）
-- `chats.json`: 聊天记录
+- **模型配置与聊天记录**: IndexedDB（`multi-chat-store` 数据库）
+- **主密钥**: IndexedDB（`multi-chat-keyring` 数据库，AES-256-GCM 加密）
+- **密钥派生种子与语言偏好**: `localStorage`
 
 #### 加密机制
 
 - **算法**: AES-256-GCM（认证加密）
 - **密钥管理**:
   - 主密钥由 Web Crypto API 生成（256-bit 随机密钥）
-  - 桌面端：存储在系统安全存储（macOS 钥匙串 / Windows DPAPI / Linux Secret Service）
-  - Web 环境：使用 IndexedDB 加密存储（与桌面端系统钥匙串对应）
-  - 使用 `tauri-plugin-keyring` 统一管理跨平台密钥存储
+  - 加密后存储在 IndexedDB；加密密钥由 localStorage 种子经 PBKDF2（100,000 次迭代）派生
+  - 清除浏览器数据会导致密钥丢失——请提前导出主密钥作为备份
 - **加密格式**: `enc:base64(ciphertext + auth_tag + nonce)`
-- **仅支持桌面端**: 不支持移动端（iOS/Android）
 
 ## 推荐开发环境
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- [VS Code](https://code.visualstudio.com/)
 
 ## 常见问题
 
-### Tauri 构建失败
+### 浏览器数据丢失 / 密钥丢失
 
-**问题**: 运行 `pnpm tauri build` 时报错
-
-**解决方案**:
-1. 确保 Rust 工具链已正确安装：`rustc --version`
-2. 确保 Tauri CLI 已正确安装：`pnpm tauri --version`
-3. 尝试清理缓存：`pnpm tauri build --clean`
-
-### Web 环境密钥丢失
-
-**问题**: Web 环境下清除浏览器数据后，无法解密之前的数据
+**问题**: 清除浏览器数据后，无法解密之前的数据
 
 **解决方案**:
-- Web 环境的密钥种子存储在 `localStorage` 中，清除浏览器数据会导致密钥丢失
+- 应用将密钥派生种子存储在 `localStorage` 中，清除浏览器数据会导致密钥丢失
 - 建议提前在设置页面导出主密钥作为备份，密钥丢失后可通过导入恢复
-- 重要的敏感数据建议使用桌面版处理
+
+### 模型供应商请求失败（CORS）
+
+**问题**: 浏览器中请求部分模型供应商失败
+
+**解决方案**:
+- 所有请求均从浏览器发出，受 CORS 策略约束
+- 若供应商不允许浏览器跨域请求，请求会失败并给出错误提示
+- 请检查供应商的 CORS 设置，或改用支持浏览器直连的供应商
 
 ## 许可证
 
