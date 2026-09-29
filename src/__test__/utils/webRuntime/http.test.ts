@@ -1,139 +1,32 @@
 /**
- * webRuntime/http.ts 跨平台 fetch 测试
+ * webRuntime/http.ts 单元测试
  *
- * 覆盖 createFetch() 三路环境分支、降级路径、实例一致性和请求委托
- * 使用 vi.stubEnv + vi.resetModules + 动态 import 模式
+ * 覆盖原生 fetch 薄封装的委托行为、实例一致性与 CORS 错误透传
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// 创建可变的 mock 函数
-const { mockIsTauri, mockTauriFetch } = vi.hoisted(() => ({
-  mockIsTauri: vi.fn<() => boolean>(() => false),
-  mockTauriFetch: vi.fn<(input: unknown, init?: unknown) => Promise<Response>>(),
-}));
-
-// 移除 setup.ts 对 http 模块的全局 mock，使动态 import 获取真实模块
+// 移除 setup.ts 对 http 模块的全局 mock，使导入获取真实模块
 vi.unmock('@/utils/webRuntime/http');
 
-// 覆盖 env 模块的 mock，使用可控的 mockIsTauri
-vi.mock('@/utils/webRuntime/env', () => ({
-  isTauri: mockIsTauri,
-}));
-
 describe('webRuntime/http', () => {
+  /** 保存原生 window.fetch，用于 after 恢复 */
+  const originalFetch = window.fetch;
+  /** 可控的 window.fetch mock */
+  let mockWindowFetch: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
-    mockIsTauri.mockReturnValue(false);
-    mockTauriFetch.mockReset();
+    mockWindowFetch = vi.fn<(input: RequestInfo, init?: RequestInit) => Promise<Response>>();
+    window.fetch = mockWindowFetch as unknown as typeof window.fetch;
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.restoreAllMocks();
-    vi.doUnmock('@tauri-apps/plugin-http');
+    window.fetch = originalFetch;
     vi.resetModules();
-  });
-
-  describe('三路环境分支', () => {
-    it('DEV 环境使用原生 fetch，不导入插件', async () => {
-      vi.stubEnv('DEV', true);
-      mockIsTauri.mockReturnValue(false);
-
-      // 设置 plugin-http mock 以验证 DEV 分支不使用它
-      vi.doMock('@tauri-apps/plugin-http', () => ({
-        fetch: mockTauriFetch,
-      }));
-
-      vi.resetModules();
-      const http = await import('@/utils/webRuntime/http');
-
-      // DEV 分支直接返回 originFetch，不检查 isTauri
-      expect(http.getFetchFunc()).toBeTypeOf('function');
-      expect(http.getFetchFunc()).not.toBe(mockTauriFetch);
-      expect(mockTauriFetch).not.toHaveBeenCalled();
-    });
-
-    it('DEV=true + isTauri=true 仍返回原生 fetch', async () => {
-      vi.stubEnv('DEV', true);
-      mockIsTauri.mockReturnValue(true);
-
-      // 设置 plugin-http mock 以验证 DEV 分支不使用它
-      vi.doMock('@tauri-apps/plugin-http', () => ({
-        fetch: mockTauriFetch,
-      }));
-
-      vi.resetModules();
-      const http = await import('@/utils/webRuntime/http');
-
-      // DEV 分支短路，不检查 isTauri
-      expect(http.getFetchFunc()).toBeTypeOf('function');
-      expect(http.getFetchFunc()).not.toBe(mockTauriFetch);
-      expect(mockTauriFetch).not.toHaveBeenCalled();
-    });
-
-    it('生产 + Tauri 环境动态导入插件 fetch', async () => {
-      vi.stubEnv('DEV', false);
-      mockIsTauri.mockReturnValue(true);
-
-      vi.doMock('@tauri-apps/plugin-http', () => ({
-        fetch: mockTauriFetch,
-      }));
-
-      vi.resetModules();
-      const http = await import('@/utils/webRuntime/http');
-
-      expect(http.getFetchFunc()).toBe(mockTauriFetch);
-      expect(http.getFetchFunc()).toBeTypeOf('function');
-    });
-
-    it('生产 + Tauri 插件导入失败降级到原生 fetch', async () => {
-      vi.stubEnv('DEV', false);
-      mockIsTauri.mockReturnValue(true);
-
-      // 用抛出异常的工厂模拟插件导入失败
-      vi.doMock('@tauri-apps/plugin-http', () => {
-        throw new Error('Module not found: @tauri-apps/plugin-http');
-      });
-
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      vi.resetModules();
-      const http = await import('@/utils/webRuntime/http');
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to load Tauri fetch'),
-        expect.any(Error),
-      );
-
-      // 降级到原生 fetch
-      expect(http.getFetchFunc()).toBeTypeOf('function');
-      expect(http.getFetchFunc()).not.toBe(mockTauriFetch);
-    });
-
-    it('生产 + Web 环境使用原生 fetch', async () => {
-      vi.stubEnv('DEV', false);
-      mockIsTauri.mockReturnValue(false);
-
-      // 设置 plugin-http mock 以验证 Web 分支不使用它
-      vi.doMock('@tauri-apps/plugin-http', () => ({
-        fetch: mockTauriFetch,
-      }));
-
-      vi.resetModules();
-      const http = await import('@/utils/webRuntime/http');
-
-      expect(http.getFetchFunc()).not.toBe(mockTauriFetch);
-      expect(http.getFetchFunc()).toBeTypeOf('function');
-      expect(mockTauriFetch).not.toHaveBeenCalled();
-    });
   });
 
   describe('实例一致性', () => {
     it('getFetchFunc 多次调用返回同一实例', async () => {
-      vi.stubEnv('DEV', true);
-      mockIsTauri.mockReturnValue(false);
-
-      vi.resetModules();
       const http = await import('@/utils/webRuntime/http');
 
       const func1 = http.getFetchFunc();
@@ -142,47 +35,62 @@ describe('webRuntime/http', () => {
       expect(func1).toBe(func2);
       expect(func1).toBeTypeOf('function');
     });
+
+    it('getFetchFunc 返回与导出 fetch 相同的函数实例', async () => {
+      const http = await import('@/utils/webRuntime/http');
+
+      expect(http.getFetchFunc()).toBe(http.fetch);
+    });
   });
 
   describe('请求委托', () => {
-    it('fetch 调用委托给内部 _fetchInstance 并转发返回值', async () => {
-      vi.stubEnv('DEV', false);
-      mockIsTauri.mockReturnValue(true);
-
+    it('fetch 调用委托给 window.fetch 并转发参数与返回值', async () => {
       const mockResponse = new Response('test body');
-      mockTauriFetch.mockResolvedValue(mockResponse);
+      mockWindowFetch.mockResolvedValue(mockResponse);
 
-      vi.doMock('@tauri-apps/plugin-http', () => ({
-        fetch: mockTauriFetch,
-      }));
-
-      vi.resetModules();
       const http = await import('@/utils/webRuntime/http');
 
       const result = await http.fetch('https://example.com/api', { method: 'POST' });
 
-      expect(mockTauriFetch).toHaveBeenCalledWith('https://example.com/api', { method: 'POST' });
+      expect(mockWindowFetch).toHaveBeenCalledWith('https://example.com/api', { method: 'POST' });
       expect(result).toBe(mockResponse);
     });
 
     it('fetch 无 init 参数时透传 undefined', async () => {
-      vi.stubEnv('DEV', false);
-      mockIsTauri.mockReturnValue(true);
-
       const mockResponse = new Response('ok');
-      mockTauriFetch.mockResolvedValue(mockResponse);
+      mockWindowFetch.mockResolvedValue(mockResponse);
 
-      vi.doMock('@tauri-apps/plugin-http', () => ({
-        fetch: mockTauriFetch,
-      }));
-
-      vi.resetModules();
       const http = await import('@/utils/webRuntime/http');
 
       const result = await http.fetch('https://example.com/api');
 
-      expect(mockTauriFetch).toHaveBeenCalledWith('https://example.com/api', undefined);
+      expect(mockWindowFetch).toHaveBeenCalledWith('https://example.com/api', undefined);
       expect(result).toBe(mockResponse);
+    });
+
+    it('getFetchFunc 获取的实例同样委托给 window.fetch', async () => {
+      const mockResponse = new Response('via getFetchFunc');
+      mockWindowFetch.mockResolvedValue(mockResponse);
+
+      const http = await import('@/utils/webRuntime/http');
+      const fetchFunc = http.getFetchFunc();
+
+      const result = await fetchFunc(new URL('https://example.com/api'));
+
+      expect(mockWindowFetch).toHaveBeenCalledWith(new URL('https://example.com/api'), undefined);
+      expect(result).toBe(mockResponse);
+    });
+  });
+
+  describe('错误透传（CORS 场景）', () => {
+    it('window.fetch 以 TypeError reject 时错误向上透传，可被调用方捕获', async () => {
+      // 浏览器 CORS 拦截表现为 fetch 以 TypeError reject
+      mockWindowFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+      const http = await import('@/utils/webRuntime/http');
+
+      await expect(http.fetch('https://cors-blocked.example.com/api')).rejects.toThrow(TypeError);
+      await expect(http.fetch('https://cors-blocked.example.com/api')).rejects.toThrow('Failed to fetch');
     });
   });
 });

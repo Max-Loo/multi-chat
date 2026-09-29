@@ -10,7 +10,7 @@ import 'fake-indexeddb/auto';
 import { createI18nMockReturn, mockI18n } from '@/__test__/helpers/mocks/i18n';
 import { createMemoryStorageMock } from '@/__test__/helpers/mocks/storage';
 import { createResponsiveMock } from '@/__test__/helpers/mocks/responsive';
-import { createTauriCompatModuleMock } from '@/__test__/helpers/mocks/webRuntime';
+import { createWebRuntimeModuleMock } from '@/__test__/helpers/mocks/webRuntime';
 import { createToastQueueModuleMock } from '@/__test__/helpers/mocks/toast';
 import { createScrollbarMock } from '@/__test__/helpers/mocks/scrollbar';
 import { createMarkdownItMock } from '@/__test__/helpers/mocks/markdown';
@@ -56,8 +56,8 @@ var __responsiveMock = createResponsiveMock;
 globalThis.__createResponsiveMock = __responsiveMock;
 
 // eslint-disable-next-line no-var
-var __webRuntimeModuleMock = createTauriCompatModuleMock;
-globalThis.__createTauriCompatModuleMock = __webRuntimeModuleMock;
+var __webRuntimeModuleMock = createWebRuntimeModuleMock;
+globalThis.__createWebRuntimeModuleMock = __webRuntimeModuleMock;
 
 // eslint-disable-next-line no-var
 var __toastModuleMock = createToastQueueModuleMock;

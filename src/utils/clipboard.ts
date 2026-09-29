@@ -31,7 +31,7 @@ function fallbackCopyToClipboard(text: string): void {
 }
 
 /**
- * 将文本复制到剪贴板，兼容所有主流浏览器及 Tauri webview
+ * 将文本复制到剪贴板，兼容所有主流浏览器
  * @param text 需要复制的文本
  */
 export async function copyToClipboard(text: string): Promise<void> {

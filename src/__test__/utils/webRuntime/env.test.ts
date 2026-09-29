@@ -16,25 +16,17 @@ beforeAll(async () => {
 
 describe('webRuntime/env', () => {
   // 保存原始全局变量，用于 afterEach 恢复
-  let originalTAURI: unknown;
   let originalVitest: unknown;
   let originalVITEST: unknown;
   let originalProcessVITEST: string | undefined;
 
   beforeEach(() => {
-    originalTAURI = (window as unknown as Record<string, unknown>).__TAURI__;
     originalVitest = (globalThis as Record<string, unknown>).vitest;
     originalVITEST = (globalThis as Record<string, unknown>).__VITEST__;
     originalProcessVITEST = process.env.VITEST;
   });
 
   afterEach(() => {
-    // 恢复 window.__TAURI__
-    if (originalTAURI === undefined) {
-      delete (window as unknown as Record<string, unknown>).__TAURI__;
-    } else {
-      (window as unknown as Record<string, unknown>).__TAURI__ = originalTAURI;
-    }
     // 恢复 vitest 全局变量
     (globalThis as Record<string, unknown>).vitest = originalVitest;
     (globalThis as Record<string, unknown>).__VITEST__ = originalVITEST;
@@ -43,28 +35,6 @@ describe('webRuntime/env', () => {
     } else {
       delete process.env.VITEST;
     }
-  });
-
-  describe('isTauri', () => {
-    it('应该返回 true 当 window 上存在 __TAURI__ 属性', () => {
-      (window as unknown as Record<string, unknown>).__TAURI__ = {};
-      expect(envModule.isTauri()).toBe(true);
-    });
-
-    it('应该返回 false 当 window 上不存在 __TAURI__ 属性', () => {
-      delete (window as unknown as Record<string, unknown>).__TAURI__;
-      expect(envModule.isTauri()).toBe(false);
-    });
-
-    it('应该返回 false 当 window 为 undefined', () => {
-      const savedWindow = globalThis.window;
-      try {
-        delete (globalThis as Record<string, unknown>).window;
-        expect(envModule.isTauri()).toBe(false);
-      } finally {
-        (globalThis as Record<string, unknown>).window = savedWindow;
-      }
-    });
   });
 
   describe('isTestEnvironment', () => {

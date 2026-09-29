@@ -135,7 +135,7 @@ export const migrateOldChatStorage = async (): Promise<void> => {
 
   const now = getCurrentTimestamp();
 
-  // 第一步：写入所有 chat_<id> key（Tauri 端先 set() 所有 key，最后一次 save()）
+  // 第一步：写入所有 chat_<id> key
   for (const chat of oldChats) {
     // 为缺少 updatedAt 的旧聊天补充当前时间戳
     if (chat.updatedAt === undefined) {

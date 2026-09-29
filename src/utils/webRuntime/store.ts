@@ -1,11 +1,8 @@
 /**
- * Tauri Store 插件兼容层
- * 提供统一的键值存储 API 封装，自动检测运行环境并选择合适的实现
- * 在 Tauri 环境使用原生实现，在 Web 环境使用 IndexedDB 实现
+ * Store 键值存储运行时模块
+ * 基于 IndexedDB 提供键值持久化能力，API 形状与既有调用方保持一致
  */
 
-import { LazyStore as TauriStore } from '@tauri-apps/plugin-store';
-import { isTauri } from './env';
 import { initIndexedDB } from './indexedDB';
 
 /**
@@ -16,7 +13,6 @@ const STORE_NAME = 'store';
 
 /**
  * Store 兼容接口
- * 提供与 Tauri Store 一致的 API
  */
 interface StoreCompat {
   init: () => Promise<void>;
@@ -30,97 +26,16 @@ interface StoreCompat {
 }
 
 /**
- * Tauri 环境的 Store 实现
- * 使用 @tauri-apps/plugin-store 的原生实现
- */
-class TauriStoreCompat implements StoreCompat {
-  private store: TauriStore;
-
-  constructor(filename: string) {
-    this.store = new TauriStore(filename, { autoSave: false, defaults: {} });
-  }
-
-  /**
-   * 初始化 Store
-   * @returns {Promise<void>}
-   */
-  async init(): Promise<void> {
-    await this.store.init();
-  }
-
-  /**
-   * 获取键值
-   * @param {string} key - 键名
-   * @returns {Promise<T | null>} 值或 null
-   */
-  async get<T>(key: string): Promise<T | null> {
-    const value = await this.store.get<T>(key);
-    return value ?? null;
-  }
-
-  /**
-   * 设置键值
-   * @param {string} key - 键名
-   * @param {unknown} value - 值
-   * @returns {Promise<void>}
-   */
-  async set(key: string, value: unknown): Promise<void> {
-    await this.store.set(key, value);
-  }
-
-  /**
-   * 删除键值
-   * @param {string} key - 键名
-   * @returns {Promise<void>}
-   */
-  async delete(key: string): Promise<void> {
-    await this.store.delete(key);
-  }
-
-  /**
-   * 获取所有键
-   * @returns {Promise<string[]>} 键数组
-   */
-  async keys(): Promise<string[]> {
-    return this.store.keys();
-  }
-
-  /**
-   * 保存更改到磁盘
-   * @returns {Promise<void>}
-   */
-  async save(): Promise<void> {
-    await this.store.save();
-  }
-
-  /**
-   * 关闭 Store（Tauri 环境为空操作）
-   */
-  close(): void {
-    // Tauri Store 不需要显式关闭
-  }
-
-  /**
-   * 检查功能是否可用
-   * @returns {boolean} 在 Tauri 环境始终返回 true
-   */
-  isSupported(): boolean {
-    return true;
-  }
-}
-
-/**
- * Web 环境的 Store 实现
+ * Store 实现
  * 使用 IndexedDB 实现键值存储
  */
 class WebStoreCompat implements StoreCompat {
   private db: IDBDatabase | null = null;
 
+  // filename 参数保留以保持既有调用方 API 形状
+  // Web 环境忽略此参数，使用固定的 IndexedDB 数据库名称
   // eslint-disable-next-line no-useless-constructor
-  constructor(_filename: string) {
-    // filename 参数保留以保持与 TauriStoreCompat 的接口一致性
-    // Web 环境忽略此参数，使用固定的 IndexedDB 数据库名称
-  }
+  constructor(_filename: string) {}
 
   /**
    * 初始化 IndexedDB 数据库
@@ -246,7 +161,7 @@ class WebStoreCompat implements StoreCompat {
 
   /**
    * 保存更改到磁盘
-   * 在 Web 环境中，IndexedDB 自动提交事务，此方法为空操作
+   * IndexedDB 自动提交事务，此方法为空操作
    * @returns {Promise<void>}
    */
   async save(): Promise<void> {
@@ -276,15 +191,14 @@ class WebStoreCompat implements StoreCompat {
 
 /**
  * 创建 Store 实例的工厂函数
- * 根据运行环境自动选择合适的实现
- * 
- * @param {string} filename - 存储文件名（Tauri 环境使用，Web 环境忽略）
- * @returns {StoreCompat} Store 兼容接口实例
- * 
+ *
+ * @param {string} filename - 存储文件名（保留参数，Web 环境忽略）
+ * @returns {StoreCompat} Store 接口实例
+ *
  * @example
  * ```typescript
  * import { createLazyStore } from '@/utils/webRuntime';
- * 
+ *
  * const store = createLazyStore('models.json');
  * await store.init();
  * await store.set('models', modelList);
@@ -292,15 +206,9 @@ class WebStoreCompat implements StoreCompat {
  * const models = await store.get<Model[]>('models');
  * ```
  */
-export const createLazyStore = (filename: string): StoreCompat => {
-  if (isTauri()) {
-    return new TauriStoreCompat(filename);
-  } else {
-    return new WebStoreCompat(filename);
-  }
-};
+export const createLazyStore = (filename: string): StoreCompat => new WebStoreCompat(filename);
 
 /**
- * 导出 Store 兼容接口类型供外部使用
+ * 导出 Store 接口类型供外部使用
  */
 export type { StoreCompat };

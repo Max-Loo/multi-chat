@@ -1,19 +1,18 @@
 /**
  * Crypto 与 MasterKey 集成测试
- * 
+ *
  * 测试目的：验证 crypto.ts 和 masterKey.ts 两个模块的集成场景
  * 测试范围：
  * - 使用生成的主密钥进行加密/解密
  * - 使用初始化的主密钥进行加密/解密
  * - 密钥重新生成后旧数据无法解密
  * - 密钥导出与加密操作兼容性
- * - Tauri 和 Web 环境集成行为
- * 
+ * - 密钥初始化与加密的集成行为
+ *
  * 测试策略：
  * - 使用 fake-indexeddb 模拟 IndexedDB
  * - 使用真实的 keyring 实现（WebKeyringCompat）
- * - Mock 环境检测（isTauri）以测试不同环境行为
- * 
+ *
  * 测试环境：Node.js + fake-indexeddb
  */
 
@@ -28,20 +27,6 @@ import {
   exportMasterKey,
 } from '@/store/keyring/masterKey';
 import { WebKeyringCompat } from '@/utils/webRuntime/keyring';
-
-// Mock @/utils/webRuntime/env 模块中的 isTauri 函数
-vi.mock('@/utils/webRuntime/env', () => ({
-  isTauri: vi.fn(),
-  isTestEnvironment: vi.fn(() => true),
-  getPBKDF2Iterations: vi.fn(() => 1000),
-  PBKDF2_ALGORITHM: 'SHA-256',
-  DERIVED_KEY_LENGTH: 256,
-}));
-
-import { isTauri } from '@/utils/webRuntime/env';
-
-// 使用 vi.mocked 获取类型安全的 Mock 函数
-const mockIsTauri = vi.mocked(isTauri);
 
 // Keyring 实例管理器
 const keyringManager: {
@@ -101,20 +86,11 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   beforeAll(async () => {
     // 清理 IndexedDB 和 localStorage
     await keyringManager.reset();
-
-    // 设置默认为 Web 环境
-    mockIsTauri.mockReturnValue(false);
   });
 
   beforeEach(() => {
     // 清除 spy 调用记录（保留 spy 本身）
     warnSpy.mockClear();
-
-    // 清除其他 Mock 状态（但不包括 isTauri）
-    mockIsTauri.mockClear();
-
-    // 设置默认为 Web 环境
-    mockIsTauri.mockReturnValue(false);
   });
 
   afterAll(() => {
@@ -346,14 +322,11 @@ describe('Crypto 与 MasterKey 集成测试', () => {
   });
 
   // ========================================
-  // 5. Tauri 和 Web 环境集成行为
+  // 5. 密钥初始化与加密集成行为
   // ========================================
 
-  describe('Tauri 和 Web 环境集成行为', () => {
-    it('Tauri 环境密钥初始化与加密：应输出系统存储警告', async () => {
-      // Given: Tauri 环境
-      mockIsTauri.mockReturnValue(true);
-
+  describe('密钥初始化与加密集成行为', () => {
+    it('密钥初始化与加密：应成功完成完整流程', async () => {
       // When: 初始化主密钥
       const { key: masterKey } = await initializeMasterKey();
 
@@ -362,66 +335,7 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(masterKey).toHaveLength(64);
 
       // When: 使用密钥加密明文
-      const plaintext = 'Tauri test';
-      const ciphertext = await encryptField(plaintext, masterKey);
-
-      // Then: 应成功加密
-      expect(ciphertext).toMatch(/^enc:/);
-    });
-
-    it('Web 环境密钥初始化与加密：应输出浏览器存储警告', async () => {
-      // Given: Web 环境
-      mockIsTauri.mockReturnValue(false);
-
-      // When: 初始化主密钥
-      const { key: masterKey } = await initializeMasterKey();
-
-      // Then: 密钥应该存在
-      expect(masterKey).toBeDefined();
-      expect(masterKey).toHaveLength(64);
-
-      // When: 使用密钥加密明文
-      const plaintext = 'Web test';
-      const ciphertext = await encryptField(plaintext, masterKey);
-
-      // Then: 应成功加密
-      expect(ciphertext).toMatch(/^enc:/);
-    });
-
-    it('Tauri 环境 Keyring 异常时加密失败：应抛出系统存储错误', async () => {
-      // Given: Tauri 环境
-      mockIsTauri.mockReturnValue(true);
-
-      // When: 初始化主密钥
-      // 注意：在测试环境中，Tauri Keyring API 不可用，所以会使用 Web 实现
-      // 此测试主要验证环境检测逻辑
-      const { key: masterKey } = await initializeMasterKey();
-
-      // Then: 应成功生成密钥
-      expect(masterKey).toBeDefined();
-      expect(masterKey).toHaveLength(64);
-
-      // When: 使用密钥加密明文
-      const plaintext = 'Tauri test';
-      const ciphertext = await encryptField(plaintext, masterKey);
-
-      // Then: 应成功加密
-      expect(ciphertext).toMatch(/^enc:/);
-    });
-
-    it('Web 环境 Keyring 异常时加密失败：应抛出浏览器存储错误', async () => {
-      // Given: Web 环境
-      mockIsTauri.mockReturnValue(false);
-
-      // When: 初始化主密钥（使用 fake-indexeddb，应该正常工作）
-      const { key: masterKey } = await initializeMasterKey();
-
-      // Then: 应成功生成密钥
-      expect(masterKey).toBeDefined();
-      expect(masterKey).toHaveLength(64);
-
-      // When: 使用密钥加密明文
-      const plaintext = 'Web test';
+      const plaintext = 'Integration test';
       const ciphertext = await encryptField(plaintext, masterKey);
 
       // Then: 应成功加密
@@ -450,11 +364,6 @@ describe('Crypto 与 MasterKey 集成测试', () => {
       expect(key2).toBeDefined();
       expect(key2).toHaveLength(64);
       expect(key2).not.toBe(key1);
-    });
-
-    it('环境检测 Mock 正常工作：使用 vi.mocked', () => {
-      // Then: Mock 函数应为 Vitest mock 函数
-      expect(vi.isMockFunction(mockIsTauri)).toBe(true);
     });
 
     it('添加清晰的断言错误消息：便于调试', async () => {

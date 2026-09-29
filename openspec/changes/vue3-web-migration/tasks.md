@@ -8,12 +8,12 @@
 ## 2. Phase 1：纯 Web 化（React 上移除 Tauri）
 
 - [ ] 2.1 新建分支 `feat/pure-web`；将 `src/utils/tauriCompat/` 更名为 `src/utils/webRuntime/`（含 `__mocks__`），全局替换导入路径 `@/utils/tauriCompat` → `@/utils/webRuntime`，验证 `pnpm tsc` 与测试通过
-- [ ] 2.2 收敛 `webRuntime/env.ts`：删除 `isTauri()`，保留 `isTestEnvironment()`、`getPBKDF2Iterations()` 与 PBKDF2 常量；更新对应测试（删除 isTauri 测试，见 specs/tauri-compat-env-testing delta），验证 `pnpm test:run` 通过
-- [ ] 2.3 收敛 `webRuntime/http.ts`：删除 `@tauri-apps/plugin-http` 动态导入与环境分支，`fetch`/`getFetchFunc` 收敛为原生 `window.fetch` 薄封装，保留导出形状与 `RequestInfo` 类型；更新 http 相关测试并通过
-- [ ] 2.4 收敛 `webRuntime/shell.ts` 与 `os.ts`：删除 Tauri 原生分支，`Command` 保持 Null Object、`shell.open()` 用 `window.open()`、`locale()` 用 `navigator.language`；`ChildProcess` 等类型改为项目内定义；更新测试并通过
-- [ ] 2.5 收敛 `webRuntime/store.ts`、`keyring.ts`、`keyringMigration.ts`、`crypto-helpers.ts`、`indexedDB.ts`：删除各 Tauri 分支与 `@tauri-plugin-keyring-api` 引用，Web 实现成为唯一路径；跑 keyring/crypto/storage 相关全部测试（`src/__test__` 对应用例）通过
-- [ ] 2.6 删除 `src-tauri/` 目录与 Tauri 配置（`tauri.conf.json`、capabilities 等）；从 `package.json` 移除 `@tauri-apps/*`、`@tauri-apps/cli`、`tauri-plugin-keyring-api` 依赖，删除 `tauri`/`web:dev`/`web:build:tauri` 脚本并将 `dev`/`build` 指向 Vite 命令；验证 `pnpm install && pnpm dev && pnpm build` 成功
-- [ ] 2.7 清理代码中残留的 Tauri 引用：全局搜索 `__TAURI__`、`@tauri-apps`、`isTauri`、`tauriCompat` 确认无匹配；`pnpm validate && pnpm test:basic:all` 全绿
+- [x] 2.2 收敛 `webRuntime/env.ts`：删除 `isTauri()`，保留 `isTestEnvironment()`、`getPBKDF2Iterations()` 与 PBKDF2 常量；更新对应测试（删除 isTauri 测试，见 specs/tauri-compat-env-testing delta），验证 `pnpm test:run` 通过
+- [x] 2.3 收敛 `webRuntime/http.ts`：删除 `@tauri-apps/plugin-http` 动态导入与环境分支，`fetch`/`getFetchFunc` 收敛为原生 `window.fetch` 薄封装，保留导出形状与 `RequestInfo` 类型；更新 http 相关测试并通过
+- [x] 2.4 收敛 `webRuntime/shell.ts` 与 `os.ts`：删除 Tauri 原生分支，`Command` 保持 Null Object、`shell.open()` 用 `window.open()`、`locale()` 用 `navigator.language`；`ChildProcess` 等类型改为项目内定义；更新测试并通过
+- [x] 2.5 收敛 `webRuntime/store.ts`、`keyring.ts`、`keyringMigration.ts`、`crypto-helpers.ts`、`indexedDB.ts`：删除各 Tauri 分支与 `@tauri-plugin-keyring-api` 引用，Web 实现成为唯一路径；跑 keyring/crypto/storage 相关全部测试（`src/__test__` 对应用例）通过
+- [x] 2.6 删除 `src-tauri/` 目录与 Tauri 配置（`tauri.conf.json`、capabilities 等）；从 `package.json` 移除 `@tauri-apps/*`、`@tauri-apps/cli`、`tauri-plugin-keyring-api` 依赖，删除 `tauri`/`web:dev`/`web:build:tauri` 脚本并将 `dev`/`build` 指向 Vite 命令；验证 `pnpm install && pnpm dev && pnpm build` 成功
+- [x] 2.7 清理代码中残留的 Tauri 引用：全局搜索 `__TAURI__`、`@tauri-apps`、`isTauri`、`tauriCompat` 确认无匹配；`pnpm validate && pnpm test:basic:all` 全绿
 - [ ] 2.8 更新文档：AGENTS.md（项目概述、架构、快速查找表中的 Tauri 描述改为纯 Web 运行时）、README.md 与 README.zh-CN.md（双语同步，标注 BREAKING：桌面版停止发布、CORS 约束说明）、`docs/design/cross-platform.md` 等相关 docs；验证 `pnpm lint:i18n` 通过
 - [ ] 2.9 用 `BASE_PATH=/multi-chat/ pnpm build && gh-pages` 流程在预发验证 gh-pages 部署可用（或验证 deploy 脚本 dry-run），确认子路径构建产物正确
 - [ ] 2.10 合并 Phase 1 分支至 main 并发布版本（`v0.6.0`），发布说明包含 BREAKING 声明与桌面用户迁移指引

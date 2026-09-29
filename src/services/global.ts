@@ -91,7 +91,7 @@ export const getDefaultAppLanguage = async (): Promise<LanguageResult> => {
       }
     }
 
-    // 第二优先级：通过 tauri 取系统的值
+    // 第二优先级：通过浏览器获取系统语言
     const systemLocale = await locale()
 
     if (systemLocale) {

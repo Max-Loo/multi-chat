@@ -55,7 +55,6 @@
     ".opencode",
     ".trae",
     ".vscode",
-    "src-tauri",
     "dist",
     "coverage",
     "docs",

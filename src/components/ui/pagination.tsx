@@ -34,7 +34,7 @@ const PaginationItem = React.forwardRef<
 ))
 PaginationItem.displayName = "PaginationItem"
 
-// 修改：底层元素从 <a> 改为 <button>，适配 Tauri 桌面应用
+// 修改：底层元素从 <a> 改为 <button>，避免页面跳转行为
 type PaginationLinkProps = {
   isActive?: boolean
 } & Pick<ButtonProps, "size"> &

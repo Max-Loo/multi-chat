@@ -3,7 +3,7 @@
  * 测试模型数据的加密存储和加载功能
  *
  * 使用真实实现：
- * - fake-indexeddb 模拟 Tauri store
+ * - fake-indexeddb 模拟 IndexedDB
  * - 真实的 Web Crypto API 加密/解密
  * - 真实的 masterKey 管理（IndexedDB + AES-256-GCM）
  */

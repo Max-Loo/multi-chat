@@ -33,7 +33,6 @@ vi.mock('@/utils/webRuntime/shell', () => ({
 
 vi.mock('@/utils/webRuntime/os', () => ({
   locale: vi.fn().mockResolvedValue('zh-CN'),
-  platform: vi.fn().mockResolvedValue('darwin'),
 }));
 
 vi.mock('@/utils/webRuntime/http', () => ({
@@ -56,7 +55,6 @@ vi.mock('@/utils/webRuntime/store', () => ({
 
 // Mock env 模块（必须在桶模块 mock 之前，因为 importOriginal 会触发 keyring/keyringMigration 加载 env）
 vi.mock('@/utils/webRuntime/env', () => ({
-  isTauri: vi.fn(() => false),
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
   PBKDF2_ALGORITHM: 'SHA-256' as const,

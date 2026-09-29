@@ -39,7 +39,7 @@ declare global {
    * 用于 vi.mock('@/utils/webRuntime') 创建完整的模块 mock 对象
    */
   // eslint-disable-next-line no-var
-  var __createTauriCompatModuleMock: typeof import('./helpers/mocks/webRuntime').createTauriCompatModuleMock;
+  var __createWebRuntimeModuleMock: typeof import('./helpers/mocks/webRuntime').createWebRuntimeModuleMock;
 
   /**
    * toast 模块 mock 工厂函数（由 setup.ts 注册到 globalThis）

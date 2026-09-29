@@ -1,32 +1,26 @@
 /**
- * Tauri 插件兼容层统一导出
- * 提供跨平台兼容的 Tauri 插件 API 封装
+ * Web 运行时模块统一导出
+ * 提供浏览器环境下的统一运行时 API
  *
  * @example
  * ```typescript
- * // 导入环境检测
- * import { isTauri } from '@/utils/webRuntime';
+ * // 导入测试环境检测
+ * import { isTestEnvironment } from '@/utils/webRuntime';
  *
- * // 导入 Shell 插件 API
- * import { Command, shell } from '@/utils/webRuntime';
+ * // 导入 Shell 功能 API（Command 为 Null Object 实现）
+ * import { Command, shell, type ChildProcess } from '@/utils/webRuntime';
  *
- * // 导入 OS 插件 API
+ * // 导入语言检测 API
  * import { locale } from '@/utils/webRuntime';
  *
- * // 导入 HTTP 插件 API
+ * // 导入 HTTP API
  * import { fetch, getFetchFunc, type RequestInfo } from '@/utils/webRuntime';
  *
- * // 导入 Store 插件 API
+ * // 导入 Store API
  * import { createLazyStore, type StoreCompat } from '@/utils/webRuntime';
  *
- * // 导入 Keyring 插件 API
+ * // 导入 Keyring API
  * import { keyring, type KeyringPublicAPI } from '@/utils/webRuntime';
- *
- * if (isTauri()) {
- *   console.log('运行在 Tauri 桌面环境');
- * } else {
- *   console.log('运行在 Web 浏览器环境');
- * }
  *
  * // 使用 OS API
  * const language = await locale();
@@ -58,30 +52,28 @@
  * ```
  */
 
-// 环境检测
-export { isTauri, isTestEnvironment, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
+// 环境检测与 PBKDF2 参数
+export { isTestEnvironment, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
 
-// Shell 插件兼容层
+// Shell 功能运行时模块（Command 为 Null Object 实现）
 export { Command, shell } from './shell';
+export type { ChildProcess } from './shell';
 
-// OS 插件兼容层
+// 浏览器语言检测模块
 export { locale } from './os';
 
-// HTTP 插件兼容层
+// HTTP 运行时模块
 export { fetch, getFetchFunc } from './http';
 export type { RequestInfo, FetchFunc } from './http';
 
-// Store 插件兼容层
+// Store 键值存储运行时模块
 export { createLazyStore } from './store';
 export type { StoreCompat } from './store';
 
-// Keyring 插件兼容层
+// Keyring 安全存储运行时模块
 export { keyring } from './keyring';
 export type { KeyringPublicAPI, KeyringCompat } from './keyring';
 
 // Keyring 迁移模块
 export { migrateKeyringV1ToV2, isMigrationToV2Complete } from './keyringMigration';
 export type { MigrationResult } from './keyringMigration';
-
-// 重新导出 Tauri 类型供外部使用
-export type { ChildProcess } from '@tauri-apps/plugin-shell';

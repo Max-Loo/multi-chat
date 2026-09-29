@@ -1,11 +1,10 @@
 /**
- * Tauri Keyring 插件兼容层
- * 提供统一的安全密钥存储 API 封装，自动检测运行环境并选择合适的实现
- * 在 Tauri 环境使用原生实现，在 Web 环境使用 IndexedDB + AES-256-GCM 加密实现
+ * Keyring 安全存储运行时模块
+ * 基于 IndexedDB + AES-256-GCM 加密实现，以受 KeyringPublicAPI 约束的
+ * keyring 实例作为统一入口
  */
 
-import { getPassword as tauriGetPassword, setPassword as tauriSetPassword, deletePassword as tauriDeletePassword } from 'tauri-plugin-keyring-api';
-import { isTauri, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
+import { getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
 import { initIndexedDB } from './indexedDB';
 import { encrypt, decrypt, type PasswordRecord } from './crypto-helpers';
 import { getCurrentTimestampMs } from '@/utils/utils';
@@ -13,7 +12,6 @@ import { bytesToBase64 } from '@/utils/crypto';
 
 /**
  * Keyring 兼容接口
- * 提供与 Tauri Keyring 一致的 API
  */
 interface KeyringCompat {
   setPassword: (service: string, user: string, password: string) => Promise<void>;
@@ -24,7 +22,7 @@ interface KeyringCompat {
 
 /**
  * Keyring 公开 API 接口
- * 受类型约束的统一入口，替代独立转发函数
+ * 受类型约束的统一入口
  */
 export interface KeyringPublicAPI extends KeyringCompat {
   resetState: () => void;
@@ -101,52 +99,7 @@ const deriveEncryptionKey = async (seed: string): Promise<CryptoKey> => {
 };
 
 /**
- * Tauri 环境的 Keyring 实现
- * 使用 tauri-plugin-keyring-api 的原生实现
- */
-class TauriKeyringCompat implements KeyringCompat {
-  /**
-   * 设置密码
-   * @param {string} service - 服务名
-   * @param {string} user - 用户名
-   * @param {string} password - 密码
-   * @returns {Promise<void>}
-   */
-  async setPassword(service: string, user: string, password: string): Promise<void> {
-    await tauriSetPassword(service, user, password);
-  }
-
-  /**
-   * 获取密码
-   * @param {string} service - 服务名
-   * @param {string} user - 用户名
-   * @returns {Promise<string | null>} 密码或 null
-   */
-  async getPassword(service: string, user: string): Promise<string | null> {
-    return tauriGetPassword(service, user);
-  }
-
-  /**
-   * 删除密码
-   * @param {string} service - 服务名
-   * @param {string} user - 用户名
-   * @returns {Promise<void>}
-   */
-  async deletePassword(service: string, user: string): Promise<void> {
-    await tauriDeletePassword(service, user);
-  }
-
-  /**
-   * 检查功能是否可用
-   * @returns {boolean} 在 Tauri 环境始终返回 true
-   */
-  isSupported(): boolean {
-    return true;
-  }
-}
-
-/**
- * Web 环境的 Keyring 实现
+ * Keyring 实现
  * 使用 IndexedDB + AES-256-GCM 加密实现
  */
 export class WebKeyringCompat implements KeyringCompat {
@@ -329,32 +282,6 @@ export class WebKeyringCompat implements KeyringCompat {
 }
 
 /**
- * Keyring 兼容层实例
- * 根据运行环境自动选择合适的实现
- */
-const keyringCompat: KeyringCompat = isTauri()
-  ? new TauriKeyringCompat()
-  : new WebKeyringCompat();
-
-/**
- * 创建 Keyring 公开 API 实例的工厂函数
- * 通过 duck typing 分发 resetState（Web 环境调用实际方法，Tauri 环境为空操作）
- * @param impl - Keyring 兼容层实例
- * @returns KeyringPublicAPI 实例
- */
-const createKeyringAPI = (impl: KeyringCompat): KeyringPublicAPI => ({
-  setPassword: (service, user, password) => impl.setPassword(service, user, password),
-  getPassword: (service, user) => impl.getPassword(service, user),
-  deletePassword: (service, user) => impl.deletePassword(service, user),
-  isSupported: () => impl.isSupported(),
-  resetState: () => {
-    if ('resetState' in impl) {
-      (impl as WebKeyringCompat).resetState();
-    }
-  },
-});
-
-/**
  * Keyring 公开 API 实例
  * 受 KeyringPublicAPI 接口约束的统一入口
  *
@@ -368,7 +295,7 @@ const createKeyringAPI = (impl: KeyringCompat): KeyringPublicAPI => ({
  * }
  * ```
  */
-export const keyring: KeyringPublicAPI = createKeyringAPI(keyringCompat);
+export const keyring: KeyringPublicAPI = new WebKeyringCompat();
 
 /**
  * 导出 Keyring 兼容接口类型供外部使用
