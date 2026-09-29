@@ -2,10 +2,10 @@
 
 ## 1. 阶段 1：移除 Tauri 运行时（独立可交付，先行合入 main）
 
-- [ ] 1.1 删除 `src-tauri/` 目录与 `@tauri-apps/*`、`tauri-plugin-keyring-api`、`@tauri-apps/cli` 依赖；`package.json` 中 `dev`/`build` 改为 `vite`/`vite build`，删除 `tauri`、`web:build:tauri` scripts；验证 `pnpm install && pnpm dev` 正常启动且 lockfile 无 tauri 条目
-- [ ] 1.2 按 design D2 溶解 `src/utils/tauriCompat/`：`keyring.ts`/`keyringMigration.ts` 迁至 `src/utils/keyring/`，`store.ts` 迁至 `src/utils/webStore/`，共享函数迁至 `src/utils/webCommon/`，删除 `http.ts`/`os.ts`/`shell.ts` 与 `isTauri()` 分支；验证 `pnpm tsc` 通过
-- [ ] 1.3 更新 16 个调用点（`config/initSteps.ts`、`services/chat/providerFactory.ts`、`services/modelRemote/index.ts`、`services/global.ts`、`store/keyring/masterKey.ts`、`store/storage/*`、`utils/resetAllData.ts`、`hooks/useNavigateToExternalSite.ts`）：网络请求改全局 `fetch`、外链改 `window.open`、语言检测改 `navigator.language`；验证各文件对应单测通过
-- [ ] 1.4 迁移测试 mock 基建：`src/utils/tauriCompat/__mocks__/` 与 `src/__test__/helpers/mocks/tauriCompat.ts` 改指向新模块；验证 `pnpm test:run && pnpm test:integration:run` 全绿
+- [x] 1.1 删除 `src-tauri/` 目录与 `@tauri-apps/*`、`tauri-plugin-keyring-api`、`@tauri-apps/cli` 依赖；`package.json` 中 `dev`/`build` 改为 `vite`/`vite build`，删除 `tauri`、`web:build:tauri` scripts；验证 `pnpm install && pnpm dev` 正常启动且 lockfile 无 tauri 条目
+- [x] 1.2 按 design D2 溶解 `src/utils/tauriCompat/`：`keyring.ts`/`keyringMigration.ts` 迁至 `src/utils/keyring/`，`store.ts` 迁至 `src/utils/webStore/`，共享函数迁至 `src/utils/webCommon/`，删除 `http.ts`/`os.ts`/`shell.ts` 与 `isTauri()` 分支；验证 `pnpm tsc` 通过
+- [x] 1.3 更新 16 个调用点（`config/initSteps.ts`、`services/chat/providerFactory.ts`、`services/modelRemote/index.ts`、`services/global.ts`、`store/keyring/masterKey.ts`、`store/storage/*`、`utils/resetAllData.ts`、`hooks/useNavigateToExternalSite.ts`）：网络请求改全局 `fetch`、外链改 `window.open`、语言检测改 `navigator.language`；验证各文件对应单测通过
+- [x] 1.4 迁移测试 mock 基建：`src/utils/tauriCompat/__mocks__/` 与 `src/__test__/helpers/mocks/tauriCompat.ts` 改指向新模块；验证 `pnpm test:run && pnpm test:integration:run` 全绿
 - [ ] 1.5 在 main 打 tag `last-react-tauri`（React + 纯 Web 状态），阶段 1 合入 main；验证 gh-pages 预览部署正常
 
 ## 2. 阶段 2：Vue 3 基础设施（`feat/vue3-web` 分支）
