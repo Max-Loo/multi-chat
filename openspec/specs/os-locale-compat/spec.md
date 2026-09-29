@@ -1,8 +1,10 @@
 # OS 插件 locale() API Web 兼容层规范
 
-本规范定义了 `@tauri-apps/plugin-os` 的 `locale()` API 在 Web 环境中的兼容层要求。
+## Purpose
 
-## ADDED Requirements
+定义界面语言检测 locale() API 的实现要求，确保应用能够依据浏览器或系统语言设置初始化界面语言。
+
+## Requirements
 
 ### Requirement: locale() 兼容层
 

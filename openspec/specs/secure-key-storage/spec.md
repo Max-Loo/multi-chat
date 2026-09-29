@@ -1,4 +1,10 @@
-## ADDED Requirements
+# 安全密钥存储规范
+
+## Purpose
+
+定义主密钥的生成、存储、读取与安全要求，确保用户加密数据在浏览器环境下的安全性与可恢复性。
+
+## Requirements
 
 ### Requirement: 使用 tauri-plugin-keyring 存储主密钥
 系统 SHALL 根据运行环境选择主密钥存储方式：Tauri 端使用 `tauri-plugin-keyring` 插件将主密钥存储到系统级安全存储，Web 端使用 Keyring 兼容层存储到 IndexedDB（加密存储）。keyring 仅负责存储，不负责生成密钥。
