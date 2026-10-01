@@ -26,8 +26,8 @@
 
 - [x] 4.1 创建迁移分支；引入 `vue`、`vue-router`、`pinia`、`@vitejs/plugin-vue`、`vue-tsc`、`@testing-library/vue`；验证最小 Vue 组件挂载渲染成功
 - [x] 4.2 调整 `vite.config.ts`（plugin-vue、manualChunks 更新为 vue/pinia/router 分组）与 `tsconfig`（移除 JSX 随 10.2 React 摘除后执行，当前以 `*.vue` 模块声明保证共存期 tsc 可用）；验证 `vue-tsc --noEmit` 通过
-- [ ] 4.3 i18n 改造：`services/i18n.ts` 移除 `initReactI18next`，实现 `useTranslation` 组合式函数（`languageChanged` 事件驱动响应式更新）；验证语言切换响应性单元测试通过
-- [ ] 4.4 实现主题 `useTheme` 组合式函数（`dark` class 策略 + localStorage 持久化 + 系统偏好跟随）；验证主题切换测试通过
+- [x] 4.3 i18n 改造：`services/i18n.ts` 移除 `initReactI18next`，实现 `useTranslation` 组合式函数（`languageChanged` 事件驱动响应式更新）；验证语言切换响应性单元测试通过
+- [x] 4.4 实现主题 `useTheme` 组合式函数（`dark` class 策略 + localStorage 持久化 + 系统偏好跟随）；验证主题切换测试通过
 
 ## 5. 阶段二：应用骨架
 
