@@ -10,7 +10,7 @@
  * - [ ] 预计清理时间：待定（根据迁移覆盖率数据调整）
  */
 
-import { isTauri, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
+import { getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
 import { initIndexedDB } from './indexedDB';
 import { encrypt, decrypt, type PasswordRecord } from './crypto-helpers';
 import { keyring } from './keyring';
@@ -279,11 +279,6 @@ const noMigrationNeeded = (): MigrationResult => {
  * @returns {Promise<MigrationResult>} 迁移结果
  */
 export const migrateKeyringV1ToV2 = async (): Promise<MigrationResult> => {
-  // Tauri 环境跳过迁移
-  if (isTauri()) {
-    return noMigrationNeeded();
-  }
-
   // 检查是否已完成迁移
   if (isMigrationToV2Complete()) {
     return noMigrationNeeded();

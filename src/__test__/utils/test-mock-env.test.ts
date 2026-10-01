@@ -2,17 +2,13 @@ import 'fake-indexeddb/auto';
 import { it, expect, beforeEach, vi } from 'vitest';
 import { initializeMasterKey } from '@/store/keyring/masterKey';
 
-// Mock @/utils/tauriCompat/env 模块中的 isTauri 函数
+// Mock @/utils/tauriCompat/env 模块
 vi.mock('@/utils/tauriCompat/env', () => ({
-  isTauri: vi.fn(),
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
   PBKDF2_ALGORITHM: 'SHA-256',
   DERIVED_KEY_LENGTH: 256,
 }));
-
-import { isTauri } from '@/utils/tauriCompat/env';
-const mockIsTauri = vi.mocked(isTauri);
 
 beforeEach(async () => {
   // 清理 IndexedDB
@@ -21,17 +17,12 @@ beforeEach(async () => {
     deleteReq.addEventListener('success', () => resolve());
     deleteReq.addEventListener('error', () => reject(deleteReq.error));
   });
-  
+
   // 清理 localStorage
   localStorage.clear();
-
-  // 设置默认为 Web 环境
-  mockIsTauri.mockReturnValue(false);
 });
 
-it('mock isTauri works', async () => {
-  expect(mockIsTauri()).toBe(false);
-  
+it('测试环境 mock 生效：主密钥可正常初始化', async () => {
   const { key } = await initializeMasterKey();
   expect(key).toHaveLength(64);
 });

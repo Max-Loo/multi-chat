@@ -12,11 +12,10 @@ docs/
 │   ├── chat-service.md        # 聊天服务层架构
 │   ├── lazy-loading.md        # 按需加载机制
 │   ├── i18n-system.md         # 国际化系统
-│   └── cross-platform.md      # 跨平台兼容层
+│   └── cross-platform.md      # 平台存储层
 │
 ├── conventions/               # 项目约定（最佳实践和使用规范）
-│   ├── timestamps.md          # 时间戳工具函数约定
-│   └── tauri-commands.md      # Tauri 命令添加指南
+│   └── timestamps.md          # 时间戳工具函数约定
 │
 ├── reference/                 # 参考文档（外部教程和指南）
 │
@@ -94,14 +93,6 @@ docs/
 - 毫秒级时间戳：性能测试、调试日志
 - 工具函数使用规范
 - 常见错误和注意事项
-
-### [tauri-commands.md](conventions/tauri-commands.md)
-Tauri 命令添加指南，说明如何在 Rust 后端定义命令并在前端调用。
-
-**关键内容**：
-- 3 步添加流程
-- 参数传递和错误处理
-- 异步命令和状态管理
 - 类型映射和测试建议
 
 ## 参考文档 (docs/reference/)
@@ -184,9 +175,8 @@ Tauri 命令添加指南，说明如何在 Rust 后端定义命令并在前端�
 | 聊天服务 | [chat-service.md](design/chat-service.md) |
 | 按需加载 | [lazy-loading.md](design/lazy-loading.md) |
 | 国际化 | [i18n-system.md](design/i18n-system.md) |
-| 跨平台兼容 | [cross-platform.md](design/cross-platform.md) |
+| 平台存储层 | [cross-platform.md](design/cross-platform.md) |
 | 时间戳约定 | [timestamps.md](conventions/timestamps.md) |
-| Tauri 命令 | [tauri-commands.md](conventions/tauri-commands.md) |
 
 ### 按模块查找
 
@@ -198,7 +188,6 @@ Tauri 命令添加指南，说明如何在 Rust 后端定义命令并在前端�
 | `src/services/i18n.ts` | [i18n-system.md](design/i18n-system.md) |
 | `src/utils/tauriCompat/` | [cross-platform.md](design/cross-platform.md) |
 | `src/utils/utils.ts` | [timestamps.md](conventions/timestamps.md) |
-| `src-tauri/src/lib.rs` | [tauri-commands.md](conventions/tauri-commands.md) |
 
 ## 相关资源
 

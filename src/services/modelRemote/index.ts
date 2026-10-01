@@ -1,4 +1,3 @@
-import { fetch } from "@/utils/tauriCompat/http";
 import { createLazyStore } from "@/utils/tauriCompat";
 import type { StoreCompat } from "@/utils/tauriCompat";
 import {

@@ -10,9 +10,6 @@ const packageJson = JSON.parse(
   readFileSync(path.resolve(__dirname, "./package.json"), "utf-8"),
 );
 
-// //@ts-expect-error process is a nodejs global
-const host = process.env.TAURI_DEV_HOST;
-
 /**
  * 从模块路径中提取实际包名，兼容 pnpm 存储路径格式
  * @param id 模块路径
@@ -319,14 +316,6 @@ export default defineConfig(async () => ({
             }
           }
 
-          // Tauri 插件特殊处理
-          if (
-            pkg.startsWith("@tauri-apps/plugin-") ||
-            pkg.startsWith("tauri-plugin-")
-          ) {
-            return "vendor-tauri";
-          }
-
           // 其他所有 node_modules 依赖
           return "vendor";
         },
@@ -334,26 +323,8 @@ export default defineConfig(async () => ({
     },
   },
 
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
-  clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
-    strictPort: true,
-    host: host || false,
-    hmr: host
-      ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
-    },
     proxy: {
       // 匹配 /deepseek/xxx
       "/deepseek": {

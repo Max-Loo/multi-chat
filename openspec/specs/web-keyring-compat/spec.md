@@ -1,33 +1,26 @@
-# Keyring 插件 Web 兼容层规范
+# Keyring 安全存储规范
 
-本规范定义了 `@tauri-plugin-keyring-api` 插件在 Web 环境中的降级和兼容层要求。
+本规范定义了 Keyring 安全密钥存储模块的要求。
 
 ## Purpose
 
-为 Keyring 插件提供 Web 环境的兼容层，使用 IndexedDB + AES-256-GCM 加密实现安全的密钥存储功能，确保应用在 Tauri 和 Web 环境中均能正常运行。
+使用 IndexedDB + AES-256-GCM 加密实现安全的密钥存储功能。
 
 ## Requirements
 
-### Requirement: Keyring 插件兼容层
-系统 SHALL 为 `@tauri-plugin-keyring-api` 提供统一的兼容层 API，以受约束的 `keyring` 实例形式导出，在 Tauri 和 Web 环境中均可用。
+### Requirement: Keyring 安全存储接口
+系统 SHALL 提供以受约束的 `keyring` 实例形式导出的统一 API。
 
-#### Scenario: Tauri 环境使用原生实现
-- **GIVEN** 应用运行在 Tauri 桌面环境
-- **WHEN** 调用 `keyring.setPassword()`、`keyring.getPassword()`、`keyring.deletePassword()`
-- **THEN** 系统调用 `@tauri-plugin-keyring-api` 的原生实现
-- **AND** 密钥存储到系统级安全存储（macOS Keychain、Windows DPAPI、Linux Secret Service）
-
-#### Scenario: Web 环境使用 IndexedDB 实现
-- **GIVEN** 应用运行在 Web 浏览器环境
+#### Scenario: 浏览器环境使用 IndexedDB 加密实现
+- **GIVEN** 应用运行在浏览器环境
 - **WHEN** 调用 `keyring.setPassword()`、`keyring.getPassword()`、`keyring.deletePassword()`
 - **THEN** 系统使用 IndexedDB 实现加密存储
 - **AND** 不抛出运行时错误
-- **AND** 返回类型与 Tauri 环境保持一致
 
-#### Scenario: API 一致性
+#### Scenario: API 稳定性
 - **WHEN** 使用 `keyring` 实例的 Keyring API
-- **THEN** 函数签名和行为与 `@tauri-plugin-keyring-api` 的原生 API 保持一致
-- **AND** 调用者无需修改代码即可在不同环境中运行
+- **THEN** 函数签名和行为与既有版本保持一致
+- **AND** 调用者无需修改代码即可随版本升级继续使用
 
 #### Scenario: 通过 barrel export 访问
 - **WHEN** 开发者使用 `import { keyring } from '@/utils/tauriCompat'`
@@ -199,29 +192,23 @@
 
 兼容层 SHALL 提供 `isSupported()` 方法，让调用者能够判断 Keyring 功能是否可用。
 
-#### Scenario: Tauri 环境 Keyring 可用
-- **GIVEN** 应用运行在 Tauri 桌面环境
-- **WHEN** 调用 Keyring 兼容层的 `isSupported()` 方法
-- **THEN** 方法返回 `true`
-- **AND** 表示功能完全可用
-
-#### Scenario: Web 环境 Keyring 可用
-- **GIVEN** 应用运行在 Web 浏览器环境
+#### Scenario: 浏览器环境 Keyring 可用
+- **GIVEN** 应用运行在浏览器环境
 - **AND** 浏览器支持 IndexedDB 和 Web Crypto API
-- **WHEN** 调用 Keyring 兼容层的 `isSupported()` 方法
+- **WHEN** 调用 Keyring 的 `isSupported()` 方法
 - **THEN** 方法返回 `true`
 - **AND** 表示功能可用（使用 IndexedDB + 加密）
 
-#### Scenario: Web 环境 Keyring 不可用
-- **GIVEN** 应用运行在 Web 浏览器环境
+#### Scenario: 浏览器环境 Keyring 不可用
+- **GIVEN** 应用运行在浏览器环境
 - **AND** 浏览器不支持 IndexedDB 或 Web Crypto API
-- **WHEN** 调用 Keyring 兼容层的 `isSupported()` 方法
+- **WHEN** 调用 Keyring 的 `isSupported()` 方法
 - **THEN** 方法返回 `false`
 - **AND** 表示 Keyring 功能不可用
 
 ### Requirement: 安全性考虑
 
-系统 SHALL 确保 Web 端的密钥存储满足安全性要求，尽管无法达到系统钥匙串的安全级别。
+系统 SHALL 确保浏览器端密钥存储满足安全性要求，尽管无法达到系统级凭据存储的安全级别。
 
 #### Scenario: 加密强度
 - **WHEN** 使用 AES-256-GCM 加密算法
@@ -237,20 +224,20 @@
 - **AND** 密钥派生不依赖 `navigator.userAgent` 或其他易变的浏览器属性
 
 #### Scenario: 种子明文存储的安全性权衡
-- **GIVEN** Web 环境无法像 Tauri 端使用系统钥匙串存储密钥
+- **GIVEN** 浏览器环境无法使用系统级凭据存储（如系统钥匙串）保存密钥
 - **WHEN** 设计加密密钥的持久化方案
 - **THEN** 系统 SHALL 采用"种子明文存储 + PBKDF2 派生"的方案
 - **AND** 安全性分析：
   - **攻击向量**: 攻击者需要同时获取 `localStorage`（种子）+ IndexedDB（加密主密钥）
   - **保护层**: PBKDF2 100,000 次迭代增加暴力破解难度
-  - **安全级别**: ⚠️ 低于 Tauri 端的系统钥匙串，但高于完全不加密
+  - **安全级别**: ⚠️ 低于系统级凭据存储，但高于完全不加密
   - **稳定性**: 不依赖 `navigator.userAgent`，跨浏览器版本数据可访问
-- **AND** 这是 Web 环境下安全性、可用性和稳定性的合理权衡
+- **AND** 这是浏览器环境下安全性、可用性和稳定性的合理权衡
 
 #### Scenario: 安全性警告
-- **WHEN** 用户在 Web 环境中使用应用
+- **WHEN** 用户使用应用
 - **THEN** 系统 SHALL 在首次使用时显示安全性提示
-- **AND** 提示内容："Web 版本的安全存储级别低于桌面版，建议在桌面版中处理敏感数据"
+- **AND** 提示内容：浏览器安全存储的安全级别低于系统级凭据存储，处理敏感数据时应采取额外防护
 - **AND** 用户可以选择"不再提示"
 
 ### Requirement: 浏览器兼容性
@@ -305,6 +292,6 @@ Keyring 兼容层 SHALL 遵循项目的模块化设计原则。
 
 #### Scenario: 类型定义
 - **WHEN** 定义 Keyring 兼容层类型
-- **THEN** 系统 SHALL 复用 `@tauri-plugin-keyring-api` 的官方类型定义
+- **THEN** 系统 SHALL 提供完整的 TypeScript 类型定义
 - **AND** 不创建重复的类型声明
 - **AND** 提供完整的 TypeScript 类型提示

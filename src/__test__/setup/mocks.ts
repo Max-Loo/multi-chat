@@ -23,31 +23,10 @@ vi.mock('@/utils/tauriCompat/shell', () => ({
   shell: {
     open: vi.fn().mockResolvedValue(undefined),
   },
-  Command: {
-    create: vi.fn().mockReturnValue({
-      execute: vi.fn().mockResolvedValue({ stdout: '', stderr: '' }),
-      isSupported: vi.fn().mockReturnValue(true),
-    }),
-  },
 }));
 
 vi.mock('@/utils/tauriCompat/os', () => ({
   locale: vi.fn().mockResolvedValue('zh-CN'),
-  platform: vi.fn().mockResolvedValue('darwin'),
-}));
-
-vi.mock('@/utils/tauriCompat/http', () => ({
-  fetch: vi.fn().mockResolvedValue({
-    ok: true,
-    json: vi.fn().mockResolvedValue({}),
-    text: vi.fn().mockResolvedValue(''),
-  }),
-  getFetchFunc: vi.fn().mockReturnValue(
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({}),
-    })
-  ),
 }));
 
 vi.mock('@/utils/tauriCompat/store', () => ({
@@ -56,7 +35,6 @@ vi.mock('@/utils/tauriCompat/store', () => ({
 
 // Mock env 模块（必须在桶模块 mock 之前，因为 importOriginal 会触发 keyring/keyringMigration 加载 env）
 vi.mock('@/utils/tauriCompat/env', () => ({
-  isTauri: vi.fn(() => false),
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
   PBKDF2_ALGORITHM: 'SHA-256' as const,
@@ -69,11 +47,8 @@ vi.mock('@/utils/tauriCompat', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/tauriCompat')>();
   return {
     ...actual,
-    Command: { create: vi.fn() },
     shell: { open: vi.fn() },
     locale: vi.fn(),
-    fetch: vi.fn(),
-    getFetchFunc: vi.fn(),
   };
 });
 

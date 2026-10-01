@@ -1,6 +1,6 @@
 # HTTP Fetch 跨平台兼容层 - 规范
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: 环境检测
 

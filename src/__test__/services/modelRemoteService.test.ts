@@ -16,7 +16,6 @@ import {
   RemoteDataError,
   RemoteDataErrorType,
 } from '@/services/modelRemote';
-import { fetch } from '@/utils/tauriCompat/http';
 import { createLazyStore } from '@/utils/tauriCompat/store';
 import { ALLOWED_REMOTE_MODEL_PROVIDERS, REMOTE_MODEL_NETWORK_CONFIG, REMOTE_MODEL_CACHE_CONFIG } from '@/services/modelRemote/config';
 import {
@@ -28,10 +27,7 @@ import {
 
 const API_URL = 'https://models.dev/api.json';
 
-// Mock tauriCompat/http for system boundary (network requests)
-vi.mock('@/utils/tauriCompat/http');
-
-// Mock tauriCompat/store for system boundary (file system storage)
+// Mock tauriCompat/store for system boundary (storage)
 vi.mock('@/utils/tauriCompat/store');
 
 // Mock constants to control test environment
@@ -44,7 +40,8 @@ vi.mock('@/services/modelRemote/config', async () => {
 });
 
 describe('modelRemoteService', () => {
-  const mockFetch = vi.mocked(fetch);
+  // 网络边界：stub 全局 fetch（模块内使用全局 fetch 发起请求）
+  const mockFetch = vi.fn();
   const mockCreateLazyStore = vi.mocked(createLazyStore);
 
   // Mock Store 实例
@@ -61,11 +58,13 @@ describe('modelRemoteService', () => {
 
   beforeEach(() => {
     mockCreateLazyStore.mockReturnValue(mockStore as ReturnType<typeof createLazyStore>);
+    vi.stubGlobal('fetch', mockFetch);
     mockFetch.mockClear();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   describe('fetchRemoteData', () => {

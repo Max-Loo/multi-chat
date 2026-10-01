@@ -1,47 +1,30 @@
 /**
- * Tauri 插件兼容层统一导出
- * 提供跨平台兼容的 Tauri 插件 API 封装
+ * Web 平台工具模块统一导出
+ * 提供浏览器环境下的平台能力封装（历史名称 tauriCompat 保留以减少路径变更）
  *
  * @example
  * ```typescript
  * // 导入环境检测
- * import { isTauri } from '@/utils/tauriCompat';
+ * import { isTestEnvironment } from '@/utils/tauriCompat';
  *
- * // 导入 Shell 插件 API
- * import { Command, shell } from '@/utils/tauriCompat';
+ * // 导入外部链接打开 API
+ * import { shell } from '@/utils/tauriCompat';
  *
- * // 导入 OS 插件 API
+ * // 导入 OS API
  * import { locale } from '@/utils/tauriCompat';
  *
- * // 导入 HTTP 插件 API
- * import { fetch, getFetchFunc, type RequestInfo } from '@/utils/tauriCompat';
- *
- * // 导入 Store 插件 API
+ * // 导入 Store API
  * import { createLazyStore, type StoreCompat } from '@/utils/tauriCompat';
  *
- * // 导入 Keyring 插件 API
+ * // 导入 Keyring API
  * import { keyring, type KeyringPublicAPI } from '@/utils/tauriCompat';
  *
- * if (isTauri()) {
- *   console.log('运行在 Tauri 桌面环境');
- * } else {
- *   console.log('运行在 Web 浏览器环境');
- * }
+ * // 使用外部链接打开 API
+ * await shell.open('https://example.com');
  *
  * // 使用 OS API
  * const language = await locale();
  * console.log(language); // "zh-CN" 或 "en-US"
- *
- * // 使用 Shell API
- * const cmd = Command.create('ls', ['-la']);
- * if (cmd.isSupported()) {
- *   const output = await cmd.execute();
- *   console.log(output.stdout);
- * }
- *
- * // 使用 HTTP API
- * const response = await fetch('https://api.example.com/data');
- * const data = await response.json();
  *
  * // 使用 Store API
  * const store = createLazyStore('models.json');
@@ -58,30 +41,23 @@
  * ```
  */
 
-// 环境检测
-export { isTauri, isTestEnvironment, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
+// 环境检测（仅测试环境检测，用于密钥派生迭代次数选择）
+export { isTestEnvironment, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
 
-// Shell 插件兼容层
-export { Command, shell } from './shell';
+// 外部链接打开模块
+export { shell } from './shell';
 
-// OS 插件兼容层
+// OS 模块（语言检测）
 export { locale } from './os';
 
-// HTTP 插件兼容层
-export { fetch, getFetchFunc } from './http';
-export type { RequestInfo, FetchFunc } from './http';
-
-// Store 插件兼容层
+// Store 模块
 export { createLazyStore } from './store';
 export type { StoreCompat } from './store';
 
-// Keyring 插件兼容层
+// Keyring 模块
 export { keyring } from './keyring';
 export type { KeyringPublicAPI, KeyringCompat } from './keyring';
 
 // Keyring 迁移模块
 export { migrateKeyringV1ToV2, isMigrationToV2Complete } from './keyringMigration';
 export type { MigrationResult } from './keyringMigration';
-
-// 重新导出 Tauri 类型供外部使用
-export type { ChildProcess } from '@tauri-apps/plugin-shell';

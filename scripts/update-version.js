@@ -95,21 +95,6 @@ console.log(`新版本: ${newVersion}`);
 packageJson.version = newVersion;
 fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
 
-// 更新Tauri配置文件
-const tauriConfigPath = path.join(__dirname, '../src-tauri/tauri.conf.json');
-const tauriConfig = JSON.parse(fs.readFileSync(tauriConfigPath, 'utf8'));
-tauriConfig.version = newVersion;
-fs.writeFileSync(tauriConfigPath, JSON.stringify(tauriConfig, null, 2) + '\n');
-
-// 更新Cargo.toml
-const cargoTomlPath = path.join(__dirname, '../src-tauri/Cargo.toml');
-let cargoToml = fs.readFileSync(cargoTomlPath, 'utf8');
-// 使用正则表达式替换版本号
-cargoToml = cargoToml.replace(/^version = ".*$/m, `version = "${newVersion}"`);
-fs.writeFileSync(cargoTomlPath, cargoToml);
-
 console.log('版本更新完成!');
 console.log(`已更新以下文件中的版本号:`);
 console.log(`- package.json`);
-console.log(`- src-tauri/tauri.conf.json`);
-console.log(`- src-tauri/Cargo.toml`);

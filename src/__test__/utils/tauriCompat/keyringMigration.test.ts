@@ -3,7 +3,6 @@ import { IDBFactory } from 'fake-indexeddb';
 
 // Mock @/utils/tauriCompat/env — 测试文件级别的 mock 确保 ./env 相对导入也被正确拦截
 vi.mock('@/utils/tauriCompat/env', () => ({
-  isTauri: vi.fn(() => false), // 默认返回 false（Web 环境）
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
   PBKDF2_ALGORITHM: 'SHA-256',
@@ -287,39 +286,6 @@ describe('Keyring 迁移模块测试套件', () => {
       // 所有结果应该一致
       expect(results[0].migrated).toBe(results[1].migrated);
       expect(results[1].migrated).toBe(results[2].migrated);
-    });
-  });
-
-  describe('4.7 测试场景：Tauri 环境跳过', () => {
-    afterEach(() => {
-      // 恢复 vi.doMock 对 env 模块的覆盖，防止污染后续测试
-      vi.doMock('@/utils/tauriCompat/env', () => ({
-        isTauri: vi.fn(() => false),
-        isTestEnvironment: vi.fn(() => true),
-        getPBKDF2Iterations: vi.fn(() => 1000),
-        PBKDF2_ALGORITHM: 'SHA-256',
-        DERIVED_KEY_LENGTH: 256,
-      }));
-    });
-
-    it('应该在 Tauri 环境中跳过迁移', async () => {
-      // 重新配置 mock 为 Tauri 环境
-      vi.doMock('@/utils/tauriCompat/env', () => ({
-        isTauri: vi.fn(() => true),
-        isTestEnvironment: vi.fn(() => true),
-        getPBKDF2Iterations: vi.fn(() => 1000),
-        PBKDF2_ALGORITHM: 'SHA-256',
-        DERIVED_KEY_LENGTH: 256,
-      }));
-
-      // 重新导入模块
-      vi.resetModules();
-      const { migrateKeyringV1ToV2 } = await import('@/utils/tauriCompat/keyringMigration');
-
-      const result = await migrateKeyringV1ToV2();
-
-      expect(result.migrated).toBe(false);
-      expect(result.reset).toBe(false);
     });
   });
 

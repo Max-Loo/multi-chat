@@ -96,59 +96,9 @@ describe('useNavigateToExternalSite', () => {
 
 
 
-  describe('Tauri 兼容层测试', () => {
+  describe('外部链接打开测试', () => {
 
-    it('应正确调用 tauriCompat.shell.open', () => {
-
-      const { result } = renderHook(() => useNavigateToExternalSite());
-
-
-
-      result.current.navToExternalSite('https://tauri-app.com');
-
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://tauri-app.com');
-
-    });
-
-
-
-    it('应在 Tauri 环境下使用 shell.open', () => {
-
-      vi.stubGlobal('__TAURI__', {
-
-        __scope: { platform: 'darwin' },
-
-      });
-
-
-
-      const { result } = renderHook(() => useNavigateToExternalSite());
-
-
-
-      result.current.navToExternalSite('https://tauri-app.com');
-
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://tauri-app.com');
-
-
-
-      vi.unstubAllGlobals();
-
-    });
-
-
-
-    it('应在 Web 环境下使用 shell.open（兼容层内部调用 window.open）', () => {
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 第三方库类型定义不完整
-      delete (window as any).__TAURI__;
-
-
+    it('应正确调用 shell.open 打开链接', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 

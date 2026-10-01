@@ -3,15 +3,6 @@ import { getProvider } from '@/services/chat/providerFactory';
 import { getProviderSDKLoader } from '@/services/chat/providerLoader';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
-// Mock tauriCompat 模块
-vi.mock('@/utils/tauriCompat', () => ({
-  getFetchFunc: () => {
-    return function fetch(): Promise<Response> {
-      return Promise.resolve(new Response());
-    };
-  },
-}));
-
 // Mock providerLoader 模块
 vi.mock('@/services/chat/providerLoader', () => ({
   getProviderSDKLoader: vi.fn(() => ({

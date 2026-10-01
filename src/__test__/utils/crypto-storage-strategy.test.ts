@@ -18,7 +18,6 @@ vi.mock('@/utils/tauriCompat', () => ({
     isSupported: vi.fn().mockReturnValue(true),
     resetState: vi.fn(),
   },
-  isTauri: vi.fn(),
 }));
 
 // Mock @/store/storage/modelStorage 模块

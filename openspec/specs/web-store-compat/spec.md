@@ -1,34 +1,27 @@
-# Store 插件 Web 兼容层规范
+# Store 键值存储规范
 
-本规范定义了 `@tauri-apps/plugin-store` 插件在 Web 环境中的降级和兼容层要求。
+本规范定义了 Store 键值存储模块的持久化要求。
 
 ## Purpose
 
-为 Store 插件提供 Web 环境的兼容层，使用 IndexedDB 实现数据持久化功能，确保应用在 Tauri 和 Web 环境中均能正常运行。
+使用 IndexedDB 实现键值数据持久化，为模型配置、聊天记录等业务数据提供统一存储接口。
 
 ## Requirements
 
-### Requirement: Store 插件兼容层
+### Requirement: Store 键值存储接口
 
-系统 SHALL 为 `@tauri-apps/plugin-store` 提供统一的兼容层 API，在 Tauri 和 Web 环境中均可用。
+系统 SHALL 通过 `createLazyStore` 工厂提供统一的键值存储 API，使用 IndexedDB 实现数据持久化。
 
-#### Scenario: Tauri 环境使用原生实现
-- **GIVEN** 应用运行在 Tauri 桌面环境
-- **WHEN** 调用兼容层 Store API（如 `Store.get()`、`Store.set()`、`Store.save()`）
-- **THEN** 系统调用 `@tauri-apps/plugin-store` 的原生实现
-- **AND** 返回实际的文件存储结果
+#### Scenario: 创建存储实例
+- **GIVEN** 应用需要持久化业务数据
+- **WHEN** 调用 `createLazyStore(filename)` 创建存储实例
+- **THEN** 系统返回实现 `StoreCompat` 接口的实例
+- **AND** 使用 IndexedDB 实现数据持久化，不抛出运行时错误
 
-#### Scenario: Web 环境使用 IndexedDB 实现
-- **GIVEN** 应用运行在 Web 浏览器环境
-- **WHEN** 调用兼容层 Store API（如 `Store.get()`、`Store.set()`、`Store.save()`）
-- **THEN** 系统使用 IndexedDB 实现数据持久化
-- **AND** 不抛出运行时错误
-- **AND** 返回类型与 Tauri 环境保持一致
-
-#### Scenario: API 一致性
-- **WHEN** 使用兼容层 Store API
-- **THEN** 函数签名和行为与 `@tauri-apps/plugin-store` 的原生 API 保持一致
-- **AND** 调用者无需修改代码即可在不同环境中运行
+#### Scenario: API 稳定性
+- **WHEN** 使用 Store API（`get`/`set`/`delete`/`keys`/`save`）
+- **THEN** 函数签名与既有版本保持一致
+- **AND** 调用者无需修改代码即可随版本升级继续使用
 
 ### Requirement: IndexedDB 数据存储
 
@@ -44,7 +37,7 @@
 - **GIVEN** IndexedDB 数据库已创建
 - **WHEN** 调用 `Store.get(key)` 方法
 - **THEN** 系统 SHALL 从 IndexedDB 中读取对应键的值
-- **AND** 返回值的类型与 Tauri 端保持一致（支持字符串、对象、数组等 JSON 可序列化类型）
+- **AND** 返回值的类型与既有版本保持一致（支持字符串、对象、数组等 JSON 可序列化类型）
 - **AND** 如果键不存在，返回 `null`
 
 #### Scenario: 写入键值
@@ -64,7 +57,7 @@
 - **GIVEN** IndexedDB 数据库已创建
 - **WHEN** 调用 `Store.save()` 方法
 - **THEN** 系统 SHALL 确保所有未提交的写入操作完成
-- **AND** 在 Tauri 环境中，此方法保存到文件；在 Web 环境中，此方法为空操作（IndexedDB 自动持久化）
+- **AND** IndexedDB 自动持久化，此方法为空操作
 - **AND** 方法始终返回成功的 Promise
 
 #### Scenario: 列出所有键
@@ -75,7 +68,7 @@
 
 ### Requirement: 数据类型兼容性
 
-兼容层 SHALL 确保 Web 端和 Tauri 端的数据类型兼容性，支持所有常用数据类型的序列化和反序列化。
+系统 SHALL 支持所有常用数据类型的序列化和反序列化。
 
 #### Scenario: 对象存储
 - **WHEN** 存储复杂对象（如包含嵌套属性的对象）
@@ -139,35 +132,19 @@
 
 兼容层 SHALL 提供 `isSupported()` 方法，让调用者能够判断 Store 功能是否可用。
 
-#### Scenario: Tauri 环境 Store 可用
-- **GIVEN** 应用运行在 Tauri 桌面环境
-- **WHEN** 调用 Store 兼容层的 `isSupported()` 方法
-- **THEN** 方法返回 `true`
-- **AND** 表示功能完全可用
-
-#### Scenario: Web 环境 Store 可用
-- **GIVEN** 应用运行在 Web 浏览器环境
+#### Scenario: 浏览器环境 Store 可用
+- **GIVEN** 应用运行在浏览器环境
 - **AND** 浏览器支持 IndexedDB
-- **WHEN** 调用 Store 兼容层的 `isSupported()` 方法
+- **WHEN** 调用 Store 的 `isSupported()` 方法
 - **THEN** 方法返回 `true`
 - **AND** 表示功能可用（使用 IndexedDB）
 
-#### Scenario: Web 环境 Store 不可用
-- **GIVEN** 应用运行在 Web 浏览器环境
+#### Scenario: 浏览器环境 Store 不可用
+- **GIVEN** 应用运行在浏览器环境
 - **AND** 浏览器不支持 IndexedDB（如隐私模式或旧版浏览器）
-- **WHEN** 调用 Store 兼容层的 `isSupported()` 方法
+- **WHEN** 调用 Store 的 `isSupported()` 方法
 - **THEN** 方法返回 `false`
 - **AND** 表示 Store 功能不可用
-
-### Requirement: 数据迁移
-
-系统 SHALL 支持从 Tauri 端迁移数据到 Web 端（如果需要）。
-
-#### Scenario: 手动数据导入导出
-- **WHEN** 用户需要从桌面版迁移数据到 Web 版
-- **THEN** 系统 SHALL 提供数据导出功能（导出为 JSON 文件）
-- **AND** 系统 SHALL 提供数据导入功能（从 JSON 文件导入到 IndexedDB）
-- **AND** 导入导出功能在两种环境中均可使用
 
 ### Requirement: 浏览器兼容性
 
@@ -215,6 +192,6 @@ Store 兼容层 SHALL 遵循项目的模块化设计原则。
 
 #### Scenario: 类型定义
 - **WHEN** 定义 Store 兼容层类型
-- **THEN** 系统 SHALL 复用 `@tauri-apps/plugin-store` 的官方类型定义
+- **THEN** 系统 SHALL 提供完整的 TypeScript 类型定义
 - **AND** 不创建重复的类型声明
 - **AND** 提供完整的 TypeScript 类型提示

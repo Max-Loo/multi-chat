@@ -1,11 +1,10 @@
 /**
- * Tauri Keyring 插件兼容层
- * 提供统一的安全密钥存储 API 封装，自动检测运行环境并选择合适的实现
- * 在 Tauri 环境使用原生实现，在 Web 环境使用 IndexedDB + AES-256-GCM 加密实现
+ * Keyring 安全存储模块
+ * 提供统一的安全密钥存储 API
+ * 使用 IndexedDB + AES-256-GCM 加密实现
  */
 
-import { getPassword as tauriGetPassword, setPassword as tauriSetPassword, deletePassword as tauriDeletePassword } from 'tauri-plugin-keyring-api';
-import { isTauri, getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
+import { getPBKDF2Iterations, PBKDF2_ALGORITHM, DERIVED_KEY_LENGTH } from './env';
 import { initIndexedDB } from './indexedDB';
 import { encrypt, decrypt, type PasswordRecord } from './crypto-helpers';
 import { getCurrentTimestampMs } from '@/utils/utils';
@@ -99,51 +98,6 @@ const deriveEncryptionKey = async (seed: string): Promise<CryptoKey> => {
     ['encrypt', 'decrypt']
   );
 };
-
-/**
- * Tauri 环境的 Keyring 实现
- * 使用 tauri-plugin-keyring-api 的原生实现
- */
-class TauriKeyringCompat implements KeyringCompat {
-  /**
-   * 设置密码
-   * @param {string} service - 服务名
-   * @param {string} user - 用户名
-   * @param {string} password - 密码
-   * @returns {Promise<void>}
-   */
-  async setPassword(service: string, user: string, password: string): Promise<void> {
-    await tauriSetPassword(service, user, password);
-  }
-
-  /**
-   * 获取密码
-   * @param {string} service - 服务名
-   * @param {string} user - 用户名
-   * @returns {Promise<string | null>} 密码或 null
-   */
-  async getPassword(service: string, user: string): Promise<string | null> {
-    return tauriGetPassword(service, user);
-  }
-
-  /**
-   * 删除密码
-   * @param {string} service - 服务名
-   * @param {string} user - 用户名
-   * @returns {Promise<void>}
-   */
-  async deletePassword(service: string, user: string): Promise<void> {
-    await tauriDeletePassword(service, user);
-  }
-
-  /**
-   * 检查功能是否可用
-   * @returns {boolean} 在 Tauri 环境始终返回 true
-   */
-  isSupported(): boolean {
-    return true;
-  }
-}
 
 /**
  * Web 环境的 Keyring 实现
@@ -329,17 +283,15 @@ export class WebKeyringCompat implements KeyringCompat {
 }
 
 /**
- * Keyring 兼容层实例
- * 根据运行环境自动选择合适的实现
+ * Keyring 实例
+ * 唯一的 Web（IndexedDB + AES-256-GCM）实现
  */
-const keyringCompat: KeyringCompat = isTauri()
-  ? new TauriKeyringCompat()
-  : new WebKeyringCompat();
+const keyringCompat: KeyringCompat = new WebKeyringCompat();
 
 /**
  * 创建 Keyring 公开 API 实例的工厂函数
- * 通过 duck typing 分发 resetState（Web 环境调用实际方法，Tauri 环境为空操作）
- * @param impl - Keyring 兼容层实例
+ * 通过 duck typing 分发 resetState（支持实例状态重置）
+ * @param impl - Keyring 实例
  * @returns KeyringPublicAPI 实例
  */
 const createKeyringAPI = (impl: KeyringCompat): KeyringPublicAPI => ({

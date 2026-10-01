@@ -1,4 +1,4 @@
-# Spec: Tauri Compat Shared Modules
+# Spec: Compat Shared Modules
 
 本规范定义了 tauriCompat 层中跨模块共享的基础设施：IndexedDB 初始化、加解密函数、类型导出、环境检测及 PBKDF2 常量。
 

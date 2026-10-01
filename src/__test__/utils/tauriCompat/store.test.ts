@@ -11,27 +11,6 @@ import { IDBFactory } from 'fake-indexeddb';
 // 绕过 setup/mocks.ts 对 store 模块的全局 mock
 vi.unmock('@/utils/tauriCompat/store');
 
-// 覆盖 env 模块的 mock，控制 isTauri 返回值
-vi.mock('@/utils/tauriCompat/env', () => ({
-  isTauri: vi.fn(() => false),
-  isTestEnvironment: vi.fn(() => true),
-  getPBKDF2Iterations: vi.fn(() => 1000),
-  PBKDF2_ALGORITHM: 'SHA-256' as const,
-  DERIVED_KEY_LENGTH: 256,
-}));
-
-// Mock @tauri-apps/plugin-store 防止 Tauri 路径导入失败
-vi.mock('@tauri-apps/plugin-store', () => ({
-  LazyStore: vi.fn().mockImplementation(() => ({
-    init: vi.fn().mockResolvedValue(undefined),
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(undefined),
-    delete: vi.fn().mockResolvedValue(undefined),
-    keys: vi.fn().mockResolvedValue([]),
-    save: vi.fn().mockResolvedValue(undefined),
-  })),
-}));
-
 import { createLazyStore } from '@/utils/tauriCompat/store';
 import type { StoreCompat } from '@/utils/tauriCompat/store';
 
