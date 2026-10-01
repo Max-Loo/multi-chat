@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import vue from "@vitejs/plugin-vue";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -39,6 +40,11 @@ const packageChunkMap: Record<string, string> = {
   // i18n
   i18next: "vendor-i18n",
   "react-i18next": "vendor-i18n",
+  // Vue 生态（阶段二迁移目标）
+  vue: "vendor-vue",
+  "vue-router": "vendor-vue",
+  pinia: "vendor-vue",
+  "@vue/devtools-api": "vendor-vue",
   // Zod
   zod: "vendor-zod",
   // Markdown
@@ -62,6 +68,7 @@ const scopeChunkMap: Record<string, string> = {
   "@tanstack": "vendor-tanstack",
   "@remix-run": "vendor-router",
   "@reduxjs": "vendor-redux",
+  "@vue": "vendor-vue",
 };
 
 /** highlight.js 预加载语言列表 */
@@ -93,6 +100,7 @@ export default defineConfig(async () => ({
         plugins: [["babel-plugin-react-compiler"]],
       },
     }),
+    vue(),
     tailwindcss(),
     visualizer({
       // open: true, // 自动打开浏览器

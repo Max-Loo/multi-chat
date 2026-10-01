@@ -27,7 +27,6 @@ const mockI18nInit = vi.hoisted(() => vi.fn());
 const mockI18nChangeLanguage = vi.hoisted(() => vi.fn());
 const mockI18nAddResourceBundle = vi.hoisted(() => vi.fn());
 const mockI18nGetResourceBundle = vi.hoisted(() => vi.fn());
-const mockInitReactI18next = vi.hoisted(() => vi.fn());
 const mockGetDefaultAppLanguage = vi.hoisted(() => vi.fn());
 const mockGetLanguageLabel = vi.hoisted(() => vi.fn((lang: string) => lang));
 
@@ -53,11 +52,6 @@ const mockToastQueue = vi.hoisted(() => ({
 // Mock i18next
 vi.mock("i18next", () => ({
   default: mockI18nInstance,
-}));
-
-// Mock react-i18next 的 initReactI18next
-vi.mock("react-i18next", () => ({
-  initReactI18next: mockInitReactI18next,
 }));
 
 // Mock @/services/global 中的函数
@@ -132,7 +126,6 @@ describe("i18n module", () => {
     mockI18nAddResourceBundle.mockClear();
     mockI18nGetResourceBundle.mockClear();
     mockGetDefaultAppLanguage.mockClear();
-    mockInitReactI18next.mockClear();
 
     // 设置默认语言 mock 返回值
     mockGetDefaultAppLanguage.mockResolvedValue("en");
