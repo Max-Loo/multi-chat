@@ -76,6 +76,10 @@
 
 `vite.config.ts`：`@vitejs/plugin-react` → `@vitejs/plugin-vue`；manualChunks 映射表更新（`vendor-vue`/`vendor-pinia`/`vendor-router` 取代 react/redux 组）；移除 `TAURI_DEV_HOST`。类型检查：`web:build` 中 `tsc` → `vue-tsc --noEmit`（SFC 类型检查）；`tsconfig` 移除 JSX 配置。
 
+### D8：pinia 4 组件外使用的插件安装（实施期发现，采纳）
+
+项目安装的 pinia 为 v4：`pinia.use()` 在 app 实例不存在（`_a == null`，组件外使用场景）时会把插件放入待安装队列，仅在 `app.use(pinia)` 时才真正安装。初始化流程与单元测试都在组件外使用 store，持久化/自动命名等插件会静默失效。`createAppPinia()` 工厂在无 app 时手动调用 `pinia.install(stub)` 冲刷队列（真实应用挂载时 `app.use(pinia)` 幂等，无害）。
+
 ## Risks / Trade-offs
 
 - [阶段二工作量大（约 189 组件 + 178 测试文件），周期长] → 按纵向切片推进（基础设施 → ui 基础组件 → Layout/导航 → Chat → Model → Setting），每切片独立可验证；服务/存储层全程复用。

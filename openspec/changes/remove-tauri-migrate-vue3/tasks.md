@@ -33,7 +33,7 @@
 
 - [ ] 5.1 重写 `main.ts` 四阶段入口（顶层 `await import(initSteps)` → 初始化控制器 Vue 组件 → `FatalErrorScreen` → 动态加载主应用）；验证初始化流程测试与错误界面测试通过
 - [ ] 5.2 `router/` 重写为 vue-router（chat/model/setting/404、路由懒加载、`BASE_URL` basename 处理、聊天选中 URL 同步）；验证路由测试（页面可达、刷新恢复会话、未匹配路由）通过
-- [ ] 5.3 Redux slices 迁移为 Pinia stores（appConfig/chatPage/chat/modelPage/modelProvider/model/settingPage 七个）+ middleware 行为映射（chat/model/appConfig）；验证既有 store 语义测试迁移后全部通过
+- [x] 5.3 Redux slices 迁移为 Pinia stores（appConfig/chatPage/chat/modelPage/modelProvider/model/settingPage 七个）+ middleware 行为映射（chat/model/appConfig）；验证既有 store 语义测试迁移后全部通过
 - [ ] 5.4 迁移 Layout/Sidebar/TopBar/BottomNav/MobileDrawer；验证导航、抽屉、响应式布局测试通过
 
 ## 6. 阶段二：UI 基础组件库（Reka UI）

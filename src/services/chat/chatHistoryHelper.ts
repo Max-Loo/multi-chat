@@ -1,6 +1,6 @@
 import type { ChatSliceState } from '@/store/slices/chatSlices';
 import { getCurrentTimestamp } from '@/utils/utils';
-import type { WritableDraft } from '@reduxjs/toolkit';
+
 import { ChatRoleEnum } from '@/types/chat';
 
 /**
@@ -62,7 +62,7 @@ function popContent(content: string | string[]): string | string[] {
  * @returns 位置索引，未找到返回 -1
  */
 export function findMessageIndex(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatSliceState,
   chatId: string,
   messageId: string,
 ): number {
@@ -85,7 +85,7 @@ export function findMessageIndex(
  * @returns 操作是否成功
  */
 export function commitEdit(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatSliceState,
   chatId: string,
   userMessageId: string,
   newContent: string,
@@ -135,7 +135,7 @@ export function commitEdit(
  * @returns 操作是否成功
  */
 export function rollbackEdit(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatSliceState,
   chatId: string,
   userMessageId: string,
 ): boolean {
@@ -178,7 +178,7 @@ export function rollbackEdit(
  * @returns 操作是否成功
  */
 export function commitRegenerate(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatSliceState,
   chatId: string,
   assistantMessageId: string,
   historyIndex?: number,
@@ -234,7 +234,7 @@ export function commitRegenerate(
  * @returns 操作是否成功
  */
 export function rollbackRegenerate(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatSliceState,
   chatId: string,
   assistantMessageId: string,
   historyIndex?: number,
@@ -298,7 +298,7 @@ export function rollbackRegenerate(
  * @returns 操作是否成功
  */
 export function updateHistoryContent(
-  state: WritableDraft<ChatSliceState>,
+  state: ChatSliceState,
   chatId: string,
   modelId: string,
   messageIndex: number,
