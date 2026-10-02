@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vue-tsc --noEmit && vite build",
     "deploy:gh-pages": "BASE_PATH=/multi-chat/ pnpm build && gh-pages -d dist",
     "lint": "oxlint",
     "lint:i18n": "node scripts/check-i18n.js",
@@ -29,22 +29,8 @@
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.24",
     "@ai-sdk/moonshotai": "^2.0.10",
-    "@radix-ui/react-alert-dialog": "^1.1.15",
-    "@radix-ui/react-avatar": "^1.1.11",
-    "@radix-ui/react-checkbox": "^1.3.3",
-    "@radix-ui/react-dialog": "^1.1.15",
-    "@radix-ui/react-dropdown-menu": "^2.1.16",
-    "@radix-ui/react-label": "^2.1.8",
-    "@radix-ui/react-popover": "^1.1.15",
-    "@radix-ui/react-progress": "^1.1.8",
-    "@radix-ui/react-radio-group": "^1.3.8",
-    "@radix-ui/react-select": "^2.2.6",
-    "@radix-ui/react-slot": "^1.2.4",
-    "@radix-ui/react-switch": "^1.2.6",
-    "@radix-ui/react-tooltip": "^1.2.8",
-    "@reduxjs/toolkit": "^2.11.2",
-    "@tanstack/react-form": "^1.28.4",
-    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/vue-form": "^1.33.5",
+    "@tanstack/vue-table": "^8.21.3",
     "ai": "^6.0.116",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -53,23 +39,17 @@
     "es-toolkit": "^1.45.1",
     "highlight.js": "^11.11.1",
     "i18next": "^25.8.14",
-    "lucide-react": "^0.577.0",
+    "lucide-vue-next": "^0.577.0",
     "markdown-it": "^14.1.1",
-    "next-themes": "^0.4.6",
+    "paneforge": "^1.0.2",
     "pinia": "^4.0.3",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-i18next": "^16.5.6",
-    "react-masonry-css": "^1.0.16",
-    "react-redux": "^9.2.0",
-    "react-resizable-panels": "^4.7.2",
-    "react-router-dom": "^7.13.1",
-    "sonner": "^2.0.7",
+    "reka-ui": "^2.10.5",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
     "virtua": "^0.48.8",
     "vue": "^3.5.43",
     "vue-router": "^5.3.1",
+    "vue-sonner": "^2.0.9",
     "zhipu-ai-provider": "^0.2.2"
   },
   "devDependencies": {
@@ -77,20 +57,15 @@
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@tailwindcss/vite": "^4.2.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@testing-library/vue": "^8.1.0",
     "@types/crypto-js": "^4.2.2",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^25.3.5",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.4",
     "@vitejs/plugin-vue": "^6.0.9",
     "@vitest/coverage-istanbul": "^4.1.5",
     "@vitest/ui": "^4.0.18",
     "autoprefixer": "^10.4.27",
-    "babel-plugin-react-compiler": "1.0.0",
     "fake-indexeddb": "^6.2.5",
     "gh-pages": "^6.3.0",
     "globals": "^17.4.0",
@@ -112,5 +87,14 @@
     "*.{ts,tsx,js,jsx,mjs}": [
       "oxlint --fix"
     ]
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "react-dom",
+        "svelte"
+      ]
+    }
   }
 }

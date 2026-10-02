@@ -8,7 +8,7 @@ import {
   rollbackRegenerate,
   updateHistoryContent,
 } from '@/services/chat/chatHistoryHelper';
-import type { ChatSliceState } from '@/store/slices/chatSlices';
+import type { ChatSliceState } from '@/stores/chatStore';
 import { ChatRoleEnum, type Chat, type StandardMessage } from '@/types/chat';
 import { createMockMessage, createUserMessage, createAssistantMessage } from '@/__test__/fixtures/chat';
 

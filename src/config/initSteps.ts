@@ -7,12 +7,9 @@
 import type { InitStep, ModelProviderStatus } from '@/services/initialization';
 import { initI18n, tSafely } from '@/services/i18n';
 import { initializeMasterKey } from '@/store/keyring/masterKey';
-import { store } from '@/store';
-import { initializeModels } from '@/store/slices/modelSlice';
-import { initializeChatList } from '@/store/slices/chatSlices';
+import { getAppPinia } from '@/stores/pinia';
+import { useModelStore, useChatStore, useAppConfigStore, useModelProviderStore } from '@/stores';
 import { migrateOldChatStorage } from '@/store/storage/chatStorage';
-import { initializeAppLanguage, initializeTransmitHistoryReasoning, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
-import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
 import { migrateKeyringV1ToV2 } from '@/utils/tauriCompat';
 
 /** "无可用供应商"错误的标识字符串 */
@@ -36,6 +33,13 @@ export type StepName = (typeof STEP_NAMES)[keyof typeof STEP_NAMES];
 
 // i18n 初始化失败的错误消息（使用英文常量，因为此时 i18n 肯定未就绪）
 const I18N_INIT_FAILED = 'Failed to initialize internationalization';
+
+// 初始化流程在组件外使用 store：获取应用级 Pinia 单例（与 main.ts 共享，保证数据互通）
+const pinia = getAppPinia();
+const modelStore = useModelStore(pinia);
+const chatStore = useChatStore(pinia);
+const appConfigStore = useAppConfigStore(pinia);
+const modelProviderStore = useModelProviderStore(pinia);
 
 /**
  * 初始化步骤列表
@@ -89,9 +93,12 @@ export const initSteps: InitStep[] = [
     critical: false,
     dependencies: [STEP_NAMES.masterKey],
     execute: async (context) => {
-      const { models, decryptionFailureCount } = await store.dispatch(initializeModels()).unwrap();
+      const models = await modelStore.initializeModels();
       context.setResult('models', models);
-      context.setResult('decryptionFailureCount', decryptionFailureCount);
+      context.setResult(
+        'decryptionFailureCount',
+        modelStore.decryptionFailureCount ?? 0,
+      );
       return models;
     },
     onError: (error) => ({
@@ -107,7 +114,8 @@ export const initSteps: InitStep[] = [
       // 先迁移旧格式存储
       await migrateOldChatStorage();
       // 再初始化聊天列表（只加载索引元数据）
-      const chatList = await store.dispatch(initializeChatList()).unwrap();
+      await chatStore.initializeChatList();
+      const chatList = chatStore.chatMetaList;
       context.setResult('chatList', chatList);
       return chatList;
     },
@@ -122,7 +130,7 @@ export const initSteps: InitStep[] = [
     critical: false,
     dependencies: [STEP_NAMES.i18n],
     execute: async (context) => {
-      const appLanguage = await store.dispatch(initializeAppLanguage()).unwrap();
+      const appLanguage = await appConfigStore.initializeAppLanguage();
       context.setResult('appLanguage', appLanguage);
       return appLanguage;
     },
@@ -136,7 +144,8 @@ export const initSteps: InitStep[] = [
     name: STEP_NAMES.transmitHistoryReasoning,
     critical: false,
     execute: async (context) => {
-      const transmitHistoryReasoning = await store.dispatch(initializeTransmitHistoryReasoning()).unwrap();
+      const transmitHistoryReasoning =
+        await appConfigStore.initializeTransmitHistoryReasoning();
       context.setResult('transmitHistoryReasoning', transmitHistoryReasoning);
       return transmitHistoryReasoning;
     },
@@ -150,7 +159,7 @@ export const initSteps: InitStep[] = [
     name: STEP_NAMES.autoNamingEnabled,
     critical: false,
     execute: async (context) => {
-      const autoNamingEnabled = await store.dispatch(initializeAutoNamingEnabled()).unwrap();
+      const autoNamingEnabled = await appConfigStore.initializeAutoNamingEnabled();
       context.setResult('autoNamingEnabled', autoNamingEnabled);
       return autoNamingEnabled;
     },
@@ -165,7 +174,8 @@ export const initSteps: InitStep[] = [
     critical: false,
     execute: async (context) => {
       try {
-        const modelProvider = await store.dispatch(initializeModelProvider()).unwrap();
+        await modelProviderStore.initializeModelProvider();
+        const modelProvider = modelProviderStore.providers;
         context.setResult('modelProvider', modelProvider);
 
         // 请求成功，设置成功状态
@@ -178,11 +188,8 @@ export const initSteps: InitStep[] = [
         return modelProvider;
       } catch (error) {
         // 请求失败，从 store 中获取错误状态
-        // 注意：虽然 rejectWithValue 的 payload 包含 error 字段，
-        // 但 unwrap() 会将其作为错误抛出，所以我们从 store 获取状态
-        const storeState = store.getState();
-        const modelProviderError = storeState.modelProvider.error;
-        const modelProviderLoading = storeState.modelProvider.loading;
+        const modelProviderError = modelProviderStore.error;
+        const modelProviderLoading = modelProviderStore.loading;
 
         const status: ModelProviderStatus = {
           hasError: !modelProviderLoading && !!modelProviderError,

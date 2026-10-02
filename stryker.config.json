@@ -1,6 +1,8 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "plugins": ["@stryker-mutator/vitest-runner"],
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
   "inPlace": true,
   "testRunner": "vitest",
   "vitest": {
@@ -10,33 +12,39 @@
   "mutate": [
     "src/services/chat/index.ts",
     "src/services/chat/providerLoader.ts",
-    "src/store/slices/chatSlices.ts",
-    "src/utils/crypto.ts",
-    "src/store/keyring/masterKey.ts",
     "src/services/chat/metadataCollector.ts",
     "src/services/modelRemote/index.ts",
-    "src/utils/resourceLoader.ts",
     "src/services/i18n.ts",
     "src/services/initialization/InitializationManager.ts",
     "src/services/toast/toastQueue.ts",
-    "src/store/slices/modelProviderSlice.ts",
+    "src/stores/chatStore.ts",
+    "src/stores/modelProviderStore.ts",
+    "src/store/keyring/masterKey.ts",
+    "src/utils/crypto.ts",
+    "src/utils/resourceLoader.ts",
     "src/utils/highlightLanguageManager.ts",
     "src/utils/tauriCompat/store.ts",
-    "src/utils/tauriCompat/http.ts",
-    "src/utils/tauriCompat/shell.ts",
     "src/utils/tauriCompat/keyring.ts",
     "src/utils/tauriCompat/keyringMigration.ts",
-    "src/hooks/useConfirm.tsx",
-    "src/hooks/useBasicModelTable.tsx",
-    "src/hooks/useResetDataDialog.tsx",
-    "src/hooks/useAdaptiveScrollbar.ts",
-    "src/hooks/useAutoResizeTextarea.ts",
-    "src/hooks/useMediaQuery.ts",
-    "src/hooks/useCreateChat.ts",
-    "src/hooks/useDebounce.ts",
-    "src/hooks/useScrollContainer.ts"
+    "src/composables/useConfirm.ts",
+    "src/composables/useBasicModelTable.ts",
+    "src/composables/useResetDataDialog.ts",
+    "src/composables/useAdaptiveScrollbar.ts",
+    "src/composables/useAutoResizeTextarea.ts",
+    "src/composables/useMediaQuery.ts",
+    "src/composables/useCreateChat.ts",
+    "src/composables/useDebounce.ts",
+    "src/composables/useDebouncedFilter.ts",
+    "src/composables/useScrollContainer.ts",
+    "src/composables/useNavigateToPage.ts",
+    "src/composables/useExistingChatList.ts",
+    "src/composables/useExistingModels.ts"
   ],
-  "reporters": ["html", "clear-text", "progress"],
+  "reporters": [
+    "html",
+    "clear-text",
+    "progress"
+  ],
   "thresholds": {
     "high": 80,
     "low": 60
@@ -44,7 +52,9 @@
   "concurrency": 6,
   "timeoutMS": 15000,
   "mutator": {
-    "excludedMutations": ["StringLiteral"]
+    "excludedMutations": [
+      "StringLiteral"
+    ]
   },
   "ignorePatterns": [
     ".agents",

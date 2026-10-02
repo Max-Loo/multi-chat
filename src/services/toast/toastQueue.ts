@@ -1,4 +1,4 @@
-import { toast, type ExternalToast } from "sonner";
+import { toast, type ExternalToast } from "vue-sonner";
 
 /**
  * 队列中的 Toast 执行动作

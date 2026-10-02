@@ -92,10 +92,22 @@ vi.mock('zhipu-ai-provider', () => ({
 }));
 
 // 全局 mock Skeleton 组件，消除多个测试文件的重复定义
+// class/style 经由 attrs 自动透传到根 div（inheritAttrs 默认行为）
 vi.mock('@/components/ui/skeleton', async () => {
-  const { createElement } = await import('react');
+  const { defineComponent, h } = await import('vue');
   return {
-    Skeleton: ({ className, variant, style }: Record<string, unknown>) =>
-      createElement('div', { 'data-testid': 'skeleton-item', className, 'data-variant': variant, style }),
+    default: defineComponent({
+      name: 'Skeleton',
+      props: {
+        variant: { type: String, default: 'text' },
+      },
+      setup(props) {
+        return () =>
+          h('div', {
+            'data-testid': 'skeleton-item',
+            'data-variant': props.variant,
+          });
+      },
+    }),
   };
 });

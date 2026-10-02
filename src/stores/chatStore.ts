@@ -22,7 +22,6 @@ import { USER_MESSAGE_ID_PREFIX } from '@/utils/constants';
 import { getCurrentTimestamp } from '@/utils/utils';
 import { useAppConfigStore } from './appConfigStore';
 import { useModelStore } from './modelStore';
-import type { ChatSliceState } from '@/store/slices/chatSlices';
 import {
   commitEdit as commitEditHelper,
   rollbackEdit as rollbackEditHelper,
@@ -113,6 +112,28 @@ export interface SendMessageArgs {
   message: string;
   model: Model;
   historyList: StandardMessage[];
+}
+
+/**
+ * 聊天状态形状（对应旧 Redux slice 的 state，供 chatHistoryHelper 等模块复用）
+ */
+export interface ChatSliceState {
+  /** 聊天元数据列表（从 chat_index 加载，过滤掉 isDeleted） */
+  chatMetaList: ChatMeta[];
+  /** 按需加载的完整聊天数据，key 是 chatId */
+  activeChatData: Record<string, Chat>;
+  /** 正在发送消息的聊天 ID 集合，防止发送中被释放 */
+  sendingChatIds: Record<string, boolean>;
+  /** 加载状态 */
+  loading: boolean;
+  /** 当前选中的要展示的聊天的 Id */
+  selectedChatId: string | null;
+  /** 操作错误信息 */
+  error: string | null;
+  /** 初始化错误信息 */
+  initializationError: string | null;
+  /** 当前正在运行中的聊天（还有网络传输）。chatId - modelId - history */
+  runningChat: Record<string, Record<string, RunningChatEntry>>;
 }
 
 export const useChatStore = defineStore('chat', {

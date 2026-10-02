@@ -18,6 +18,8 @@ export interface ModelStoreState {
   error: string | null;
   /** 初始化错误信息 */
   initializationError: string | null;
+  /** 初始化时解密失败的消息数量（对应旧 thunk 的返回字段，供恢复提示使用） */
+  decryptionFailureCount: number;
 }
 
 export const useModelStore = defineStore('models', {
@@ -26,6 +28,7 @@ export const useModelStore = defineStore('models', {
     loading: false,
     error: null,
     initializationError: null,
+    decryptionFailureCount: 0,
   }),
   actions: {
     /** 清除操作错误信息 */
@@ -67,6 +70,7 @@ export const useModelStore = defineStore('models', {
       try {
         const result = await loadModelsFromJson();
         this.models = result.models;
+        this.decryptionFailureCount = result.decryptionFailureCount ?? 0;
         return this.models;
       } catch (error) {
         this.initializationError =

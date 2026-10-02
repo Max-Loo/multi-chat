@@ -1,4 +1,4 @@
-import type { ChatSliceState } from '@/store/slices/chatSlices';
+import type { ChatSliceState } from '@/stores/chatStore';
 import { getCurrentTimestamp } from '@/utils/utils';
 
 import { ChatRoleEnum } from '@/types/chat';

@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import vue from "@vitejs/plugin-vue";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
@@ -25,26 +24,18 @@ function getPackageName(id: string): string | null {
 
 /** 包名精确匹配 → chunk 映射 */
 const packageChunkMap: Record<string, string> = {
-  // React 生态
-  react: "vendor-react",
-  "react-dom": "vendor-react",
-  scheduler: "vendor-react",
-  "loose-envify": "vendor-react",
-  // Redux 生态
-  "react-redux": "vendor-redux",
-  redux: "vendor-redux",
-  immer: "vendor-redux",
-  reselect: "vendor-redux",
-  // Router
-  "react-router": "vendor-router",
   // i18n
   i18next: "vendor-i18n",
-  "react-i18next": "vendor-i18n",
-  // Vue 生态（阶段二迁移目标）
+  // Vue 生态
   vue: "vendor-vue",
   "vue-router": "vendor-vue",
   pinia: "vendor-vue",
+  "vue-demi": "vendor-vue",
   "@vue/devtools-api": "vendor-vue",
+  "vue-sonner": "vendor-vue",
+  // Reka UI 与图标
+  "reka-ui": "vendor-vue",
+  "lucide-vue-next": "vendor-icons",
   // Zod
   zod: "vendor-zod",
   // Markdown
@@ -53,8 +44,6 @@ const packageChunkMap: Record<string, string> = {
   // AI SDK
   ai: "vendor-ai",
   "zhipu-ai-provider": "vendor-ai",
-  // Icons
-  "lucide-react": "vendor-icons",
   // UI 工具
   "class-variance-authority": "vendor-ui-utils",
   clsx: "vendor-ui-utils",
@@ -64,10 +53,7 @@ const packageChunkMap: Record<string, string> = {
 /** scope 前缀 → chunk 映射（匹配 @scope/package 格式） */
 const scopeChunkMap: Record<string, string> = {
   "@ai-sdk": "vendor-ai",
-  "@radix-ui": "vendor-radix",
   "@tanstack": "vendor-tanstack",
-  "@remix-run": "vendor-router",
-  "@reduxjs": "vendor-redux",
   "@vue": "vendor-vue",
 };
 
@@ -95,11 +81,6 @@ export default defineConfig(async () => ({
   // GitHub Pages 部署通过 BASE_PATH 环境变量设置子路径，默认使用根路径
   base: process.env.BASE_PATH || "/",
   plugins: [
-    react({
-      babel: {
-        plugins: [["babel-plugin-react-compiler"]],
-      },
-    }),
     vue(),
     tailwindcss(),
     visualizer({
@@ -132,28 +113,9 @@ export default defineConfig(async () => ({
     include: ["src/__test__/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist", "src/__test__/integration/**"],
 
-    // 使用 forks 池避免 react-redux ESM 模块初始化竞态
+    // 使用 forks 池避免模块初始化竞态
     pool: "forks",
     maxForks: 2,
-
-    // 优化依赖项预构建
-    deps: {
-      optimizer: {
-        web: {
-          // 预构建 CommonJS/ESM 模块以优化依赖解析速度
-          include: [
-            "use-sync-external-store",
-            "cookie",
-            "react",
-            "react-dom",
-            "react/jsx-runtime",
-            "react-redux",
-            "react-remove-scroll",
-            "@radix-ui/react-slot",
-          ],
-        },
-      },
-    },
 
     // 测试文件匹配模式
     testTimeout: 10000, // 10 秒超时
@@ -169,14 +131,14 @@ export default defineConfig(async () => ({
     coverage: {
       provider: "istanbul",
       reporter: ["text", "html", "json", "lcov"],
-      include: ["src/**/*.{ts,tsx}"],
+      include: ["src/**/*.{ts,tsx,vue}"],
       exclude: [
         "src/__test__/**",
         "src/__mock__/**",
-        "src/main.tsx",
+        "src/main.ts",
         "src/__test__/setup.ts",
         "src/@types/**",
-        "src/pages/Model/index.tsx",
+        "src/pages/Model/index.vue",
         // Tauri 兼容层（依赖系统 API，无法在 web 测试环境运行）
         "src/utils/tauriCompat/http.ts",
         "src/utils/tauriCompat/shell.ts",
@@ -184,33 +146,8 @@ export default defineConfig(async () => ({
         "src/utils/tauriCompat/store.ts",
         "src/utils/tauriCompat/env.ts",
         "src/utils/tauriCompat/__mocks__/**",
-        // shadcn/ui 自动生成的 UI 原子组件（无自定义逻辑）
-        "src/components/ui/sheet.tsx",
-        "src/components/ui/sonner.tsx",
-        "src/components/ui/skeleton.tsx",
-        "src/components/ui/progress.tsx",
-        "src/components/ui/avatar.tsx",
-        "src/components/ui/card.tsx",
-        "src/components/ui/dropdown-menu.tsx",
-        "src/components/ui/checkbox.tsx",
-        "src/components/ui/select.tsx",
-        "src/components/ui/table.tsx",
-        "src/components/ui/tooltip.tsx",
-        "src/components/ui/spinner.tsx",
-        "src/components/ui/dialog.tsx",
-        "src/components/ui/alert.tsx",
-        "src/components/ui/alert-dialog.tsx",
-        "src/components/ui/badge.tsx",
-        "src/components/ui/button.tsx",
-        "src/components/ui/data-table.tsx",
-        "src/components/ui/form.tsx",
-        "src/components/ui/input.tsx",
-        "src/components/ui/label.tsx",
-        "src/components/ui/popover.tsx",
-        "src/components/ui/radio-group.tsx",
-        "src/components/ui/resizable.tsx",
-        "src/components/ui/switch.tsx",
-        "src/components/ui/textarea.tsx",
+        // shadcn-vue 风格的 UI 原子组件（样式包装为主，交互逻辑由 Reka UI 承载并有专项测试）
+        "src/components/ui/**",
         // Canvas 动画（依赖 Canvas API，无法在 happy-dom 中测试）
         "src/components/AnimatedLogo/canvas-logo.ts",
         // 第三方库薄包装（clsx + twMerge 一行组合，不含业务逻辑）

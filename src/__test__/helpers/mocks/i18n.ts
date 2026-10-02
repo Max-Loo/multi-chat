@@ -180,10 +180,5 @@ export function createI18nMockReturn<T extends Record<string, unknown>>(zhResour
         changeLanguage: vi.fn(),
       },
     }),
-    initReactI18next: {
-      type: '3rdParty' as const,
-      init: vi.fn(),
-    },
-    I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
   };
 }
