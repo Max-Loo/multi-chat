@@ -64,5 +64,5 @@
 - [x] 10.2 删除残留 .tsx/JSX 文件与 `hooks/redux.ts`；验证 `grep -r "from \"react\"\|from 'react'" src/` 无匹配（src 下 0 个 .tsx、0 处 react 导入）
 - [x] 10.3 更新 `src/__test__/README.md` 测试规范与 mock 工厂文档，恢复 stryker 全量范围并复核覆盖率阈值；验证 `pnpm test:all` 按新配置可执行（stryker mutate 范围迁移至 stores/composables 路径；README 重写为 Vue 测试规范）
 - [x] 10.4 全量验证：`pnpm lint`、`pnpm lint:i18n`、`vue-tsc --noEmit`、`pnpm test:run`、`pnpm build` 全部通过（lint 0 错误、翻译完整、1030 测试通过、构建成功）
-- [ ] 10.5 浏览器冒烟走查 spec 验收场景：流式聊天、自动命名、模型管理与远程获取、设置即时生效、语言切换即时刷新、旧数据兼容读取（IndexedDB 既有聊天/模型/密钥可用）（已验证：发送/刷新恢复/语言切换/设置即时生效/旧数据兼容；待人工确认：流式 AI 回复内容渲染与自动命名——测试模型为 reasoning 形态返回空 content，服务层逻辑未改动且有测试覆盖，建议换纯文本模型复核）
+- [x] 10.5 浏览器冒烟走查 spec 验收场景：流式聊天、自动命名、模型管理与远程获取、设置即时生效、语言切换即时刷新、旧数据兼容读取（IndexedDB 既有聊天/模型/密钥可用）（已验证：发送/刷新恢复/语言切换/设置即时生效/旧数据兼容 + 真实浏览器 e2e 补验：流式 AI 回复内容逐步渲染（5 个递增采样点）、Markdown 粗体/代码块、自动命名（命名请求触发且标题更新）、刷新后会话/消息/代码块完整恢复、零 pageError；走查中发现并修复两个回归：PasswordInput 缺 v-model 同步致创建模型表单校验永远失败（4.1 任务附测试）、store.set 写入响应式 Proxy 抛 DataCloneError 致聊天数据持久化静默失败，已分别在 set 入口规范化）
 - [ ] 10.6 合并主干并验证 `deploy:gh-pages` 部署产物可访问（含 history 深链刷新回退）

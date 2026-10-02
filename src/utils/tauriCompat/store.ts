@@ -101,10 +101,16 @@ class WebStoreCompat implements StoreCompat {
   async set(key: string, value: unknown): Promise<void> {
     const db = this.ensureDb();
 
+    // 深度规范化：剥离 Vue 响应式 Proxy。IndexedDB structured clone 无法克隆
+    // Proxy（会抛 DataCloneError），调用方常直接传入 Pinia store 中的响应式对象；
+    // 本存储的值均为 JSON 语义数据，序列化规范化是安全的。undefined 语义上等同未存。
+    const normalizedValue =
+      value === undefined ? null : JSON.parse(JSON.stringify(value));
+
     return new Promise<void>((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readwrite');
       const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.put({ key, value });
+      const request = objectStore.put({ key, value: normalizedValue });
 
       request.addEventListener('success', () => {
         resolve();

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * 密码输入组件（对应旧版 password-input.tsx）
- * 提供带有显示/隐藏切换按钮的密码输入框，完全兼容 TanStack Form
+ * 提供带有显示/隐藏切换按钮的密码输入框，支持 v-model（与 TanStack Form 字段对接）
  */
 import { ref, computed, type InputHTMLAttributes } from 'vue';
 import { Eye, EyeOff } from 'lucide-vue-next';
@@ -9,9 +9,18 @@ import { cn } from '@/utils/utils';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/composables/useTranslation';
 
+/** 密码输入组件 props */
 const props = defineProps<{
+  /** 输入值（v-model，与 Form 字段同步） */
+  modelValue?: string;
   class?: InputHTMLAttributes['class'];
   disabled?: boolean;
+}>();
+
+/** 值变化事件（供 Form 字段 handleChange 监听） */
+const emit = defineEmits<{
+  /** 输入值变化 */
+  'update:modelValue': [value: string];
 }>();
 
 const { t } = useTranslation();
@@ -43,14 +52,21 @@ const buttonClasses = computed(() =>
     props.disabled && 'cursor-not-allowed opacity-50',
   ),
 );
+
+/** 输入处理：同步 v-model（缺失该同步会导致表单校验永远拿不到 apiKey） */
+const handleInput = (event: Event): void => {
+  emit('update:modelValue', (event.target as HTMLInputElement).value);
+};
 </script>
 
 <template>
   <div class="relative">
     <input
       :type="showPassword ? 'text' : 'password'"
+      :value="modelValue"
       :disabled="disabled"
       :class="inputClasses"
+      @input="handleInput"
     />
     <Button
       variant="link"

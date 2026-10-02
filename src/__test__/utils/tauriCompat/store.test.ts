@@ -174,4 +174,41 @@ describe('tauriCompat/store', () => {
       await expect(store.save()).resolves.toBeUndefined();
     });
   });
+
+  describe('WebStoreCompat.set：响应式对象规范化（Vue 迁移回归）', () => {
+    it('写入含 Vue 响应式 Proxy 的对象不抛 DataCloneError，且 get 读回纯数据', async () => {
+      // 浏览器实测发现：Pinia store 中的响应式对象直接 put 会抛
+      // "Failed to execute 'put' on 'IDBObjectStore': could not be cloned"，
+      // 导致聊天数据静默持久化失败、刷新后丢失
+      const { reactive } = await import('vue');
+      store = await createInitStore('reactive-set-test.json');
+
+      const chatData = reactive({
+        id: 'chat-1',
+        name: '测试会话',
+        chatModelList: [
+          { modelId: 'm1', chatHistoryList: [{ role: 'user', content: '你好' }] },
+        ],
+      });
+
+      await expect(store.set('chats/chat-1', chatData)).resolves.toBeUndefined();
+
+      const loaded = await store.get<typeof chatData>('chats/chat-1');
+      expect(loaded).toEqual({
+        id: 'chat-1',
+        name: '测试会话',
+        chatModelList: [
+          { modelId: 'm1', chatHistoryList: [{ role: 'user', content: '你好' }] },
+        ],
+      });
+      // 读回的是纯对象（非 Proxy）
+      expect(loaded).not.toBe(chatData);
+    });
+
+    it('写入 undefined 规范化为 null，get 语义仍为无数据', async () => {
+      store = await createInitStore('undefined-set-test.json');
+      await store.set('empty', undefined);
+      expect(await store.get('empty')).toBeNull();
+    });
+  });
 });
