@@ -295,19 +295,29 @@ onUnmounted(() => {
 });
 
 // 流式自动跟随：当用户在底部且有流式数据更新时，等待 DOM 更新后自动滚动到底部
-watch(runningChatData, () => {
-  if (isAtBottomSync && runningChatData.value) {
-    isStreaming = true;
-    requestAnimationFrame(() => {
-      scrollToBottom();
-    });
-  }
-});
+// deep: true —— 服务层流式更新仅替换 entry.history 属性（entry 对象引用不变），
+// 旧版 Redux 不可变更新会生成新引用，Vue 版需深度监听对齐触发时机
+watch(
+  runningChatData,
+  () => {
+    if (isAtBottomSync && runningChatData.value) {
+      isStreaming = true;
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    }
+  },
+  { deep: true },
+);
 
-// 内容变化时检测滚动状态
-watch([() => displayList.value.length, runningChatData], () => {
-  checkScrollStatus();
-});
+// 内容变化时检测滚动状态（同上需深度监听流式更新）
+watch(
+  [() => displayList.value.length, runningChatData],
+  () => {
+    checkScrollStatus();
+  },
+  { deep: true },
+);
 
 // Virtualizer 滚动事件处理
 const handleVirtualizerScroll = (_offset: number): void => {

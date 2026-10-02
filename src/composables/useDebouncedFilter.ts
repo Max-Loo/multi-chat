@@ -23,13 +23,14 @@ export function useDebouncedFilter<T>(
   predicate: (value: T, index: number, list: T[]) => unknown,
   debounceMs = 200,
 ): { filteredList: ComputedRef<T[]> } {
-  // 存储过滤后的列表状态
-  const filteredList: Ref<T[]> = ref([]);
-
   // 读取辅助
   const getText = (): string =>
     typeof text === 'function' ? text() : text.value;
   const getList = (): T[] => (typeof list === 'function' ? list() : list.value);
+
+  // 存储过滤后的列表状态
+  // 初始值为完整列表（与旧 React 版 useState(list) 对齐，避免首屏防抖窗口期内闪空）
+  const filteredList = ref([...getList()]) as Ref<T[]>;
 
   // 创建防抖过滤函数，避免在用户快速输入时频繁执行过滤操作
   const debouncedFilter = debounce(() => {

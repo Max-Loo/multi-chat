@@ -15,10 +15,17 @@ export function useDebounce<T>(
     typeof value === 'function' ? (value as () => T)() : value.value;
   const debouncedValue: Ref<T> = ref(getValue()) as Ref<T>;
 
+  // 待触发的定时器句柄：新变化到来时取消上一次（防抖语义，与旧 React 版 cleanup 对齐）
+  let timerId: ReturnType<typeof setTimeout> | null = null;
+
   watch(getValue, (newValue) => {
-    // 定时器：延迟同步最新值
-    setTimeout(() => {
+    // 取消上一次未触发的定时器，仅保留最后一次变化
+    if (timerId !== null) {
+      clearTimeout(timerId);
+    }
+    timerId = setTimeout(() => {
       debouncedValue.value = newValue;
+      timerId = null;
     }, delay);
   });
 

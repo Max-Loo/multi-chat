@@ -46,17 +46,17 @@
 
 - [x] 7.1 迁移 Chat 页面组件树（消息列表流式渲染、发送输入、消息操作、会话自动命名、聊天导出、自定义聊天组件）；验证流式渲染与消息操作测试通过（浏览器实测：发送消息、用户气泡渲染、复制/编辑/重新生成按钮、刷新恢复；流式渲染逻辑复用框架无关服务层）
 - [x] 7.2 迁移 Chat 相关 hooks 为 composables（useCreateChat/useCurrentSelectedChat/useExistingChatList/useSelectedChat/useIsSending/useBoard 等）；验证对应测试通过（对应 store/composable 测试套件全部通过）
-- [ ] 7.3 迁移 Chat 测试套件（`__test__/pages/Chat`、chat 面板与侧栏测试）；验证 `pnpm test:run` 中 chat 相关全部通过
+- [x] 7.3 迁移 Chat 测试套件（`__test__/pages/Chat`、chat 面板与侧栏测试）；验证 `pnpm test:run` 中 chat 相关全部通过（16 个测试文件 159 个用例全部通过：ChatPage/ChatSidebar/ChatButton/ToolsBar/Detail/Title/Grid/Splitter/PanelSkeleton/Header/Sender/ChatPanel/Content/Placeholder/composables/应用级 Sidebar；迁移中发现并修复两个 Vue 版迁移回归：useDebouncedFilter 初始值为空数组致首屏闪空、Detail 流式自动跟随 watch 缺深度监听致流式更新不触发跟随）
 
 ## 8. 阶段二：Model 页面纵向切片
 
 - [x] 8.1 迁移 Model 页面（供应商卡片与详情、`@tanstack/vue-table` 模型表格、`@tanstack/vue-form` 创建表单、远程模型获取入口）；验证模型管理交互测试通过（浏览器实测：模型表格、编辑/删除气泡、创建表单 zod 校验、Setting 供应商瀑布流远程数据）
-- [ ] 8.2 迁移 Model 测试套件；验证 `pnpm test:run` 中 model 相关全部通过
+- [x] 8.2 迁移 Model 测试套件；验证 `pnpm test:run` 中 model 相关全部通过（7 个测试文件 43 个用例全部通过：CreateModel/ModelHeader/ModelSidebar/ModelTable/ModelProviderDisplay/EditModelModal/ModelSelect；迁移中发现并修复两个 Vue 版迁移回归：ModelTable 删除确认气泡 trigger 用命名插槽致删除按钮不可渲染（UI 删除功能不可用）、ModelSelect 误用 error.value 致无错误时渲染崩溃）
 
 ## 9. 阶段二：Setting 页面纵向切片
 
 - [x] 9.1 迁移 Setting 页面（通用设置、语言/主题切换、密钥管理与恢复对话框、数据重置、dev toast 测试页）；验证设置变更即时生效测试通过（浏览器实测：语言切换即时生效于全站文案、供应商刷新、密钥导出对话框渲染）
-- [ ] 9.2 迁移 Setting 测试套件；验证 `pnpm test:run` 中 setting 相关全部通过
+- [x] 9.2 迁移 Setting 测试套件；验证 `pnpm test:run` 中 setting 相关全部通过（14 个测试文件 86 个用例全部通过：SettingPage/SettingSidebar/SettingHeader/GeneralSetting/LanguageSetting/AutoNamingSetting/ChatExportSetting/ModelProviderSetting/ErrorAlert/ProviderCard/ProviderHeader/ProviderGrid/ProviderCardDetails/ProviderCardSummary+Metadata/KeyManagementSetting；迁移中发现并修复第 4 个迁移回归：useDebounce 丢失定时器清理致防抖失效）
 
 ## 10. 阶段二：React 摘除与全量验证
 

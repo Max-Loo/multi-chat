@@ -26,7 +26,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
 
-// 处理校验时的报错相关信息
+// 处理校验时的报错相关信息（error 为普通值，与 FormLabel/FormMessage 用法一致）
 const { error } = useFormField();
 
 /** 选中值变化的回调（Reka 值类型为 AcceptableValue，此处收敛为 string） */
@@ -37,7 +37,7 @@ const onValueChange = (newValue: unknown): void => {
 const groupClass = computed(
   () => `
     flex flex-col rounded-md border border-gray-300
-    ${error.value ? 'border-red-500' : ''}
+    ${error ? 'border-red-500' : ''}
     ${props.className}
   `,
 );

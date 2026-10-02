@@ -88,6 +88,8 @@ const columns = computed<ColumnDef<Model, unknown>[]>(() => [
           () => h(Pencil),
         ),
         // 删除确认气泡
+        // 注意：Popover（PopoverRoot）只渲染默认插槽，trigger 必须并入 default，
+        // 否则删除按钮不会被渲染（迁移回归修复）
         h(
           Popover,
           {
@@ -96,7 +98,7 @@ const columns = computed<ColumnDef<Model, unknown>[]>(() => [
             'onUpdate:open': (value: boolean) => (deleteConfirmOpen.value = value),
           },
           {
-            trigger: () =>
+            default: () => [
               h(
                 PopoverTrigger,
                 { asChild: true },
@@ -114,7 +116,6 @@ const columns = computed<ColumnDef<Model, unknown>[]>(() => [
                     ),
                 },
               ),
-            default: () =>
               h(
                 PopoverContent,
                 { class: 'w-80', align: 'start' },
@@ -153,6 +154,7 @@ const columns = computed<ColumnDef<Model, unknown>[]>(() => [
                     ]),
                 },
               ),
+            ],
           },
         ),
       ]),
