@@ -152,7 +152,7 @@ describe('主密钥恢复功能集成测试', () => {
       const { importMasterKey } = await import('@/store/keyring/masterKey');
 
       // 需要 mock keyring
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/platform/keyring');
       vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
 
       // 无效格式应抛出错误
@@ -166,7 +166,7 @@ describe('主密钥恢复功能集成测试', () => {
 
     it('exportMasterKey 应返回当前密钥', async () => {
       const { exportMasterKey } = await import('@/store/keyring/masterKey');
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/platform/keyring');
 
       const testKey = 'b'.repeat(64);
       vi.spyOn(keyring, 'getPassword').mockResolvedValue(testKey);
@@ -177,7 +177,7 @@ describe('主密钥恢复功能集成测试', () => {
 
     it('导出后导入应恢复密钥', async () => {
       const { exportMasterKey, importMasterKey } = await import('@/store/keyring/masterKey');
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/platform/keyring');
 
       const originalKey = 'c'.repeat(64);
       vi.spyOn(keyring, 'getPassword').mockResolvedValue(originalKey);
@@ -194,7 +194,7 @@ describe('主密钥恢复功能集成测试', () => {
 
     it('importMasterKey 后应直接刷新页面', async () => {
       const { importMasterKey } = await import('@/store/keyring/masterKey');
-      const { keyring } = await import('@/utils/tauriCompat/keyring');
+      const { keyring } = await import('@/utils/platform/keyring');
 
       const validKey = 'd'.repeat(64);
       vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);

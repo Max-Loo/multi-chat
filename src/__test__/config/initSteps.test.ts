@@ -74,7 +74,7 @@ vi.mock('@/store/slices/modelProviderSlice', () => ({
   })),
 }));
 
-vi.mock('@/utils/tauriCompat', () => ({
+vi.mock('@/utils/platform', () => ({
   migrateKeyringV1ToV2: vi.fn().mockResolvedValue(false),
   createLazyStore: vi.fn().mockReturnValue({
     init: vi.fn().mockResolvedValue(undefined),

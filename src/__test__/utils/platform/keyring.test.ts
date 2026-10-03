@@ -1,0 +1,475 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+
+// Mock @/utils/platform/env（隔离测试环境检测）
+vi.mock('@/utils/platform/env', () => ({
+  isTestEnvironment: vi.fn(() => true),
+  getPBKDF2Iterations: vi.fn(() => 1000),
+  PBKDF2_ALGORITHM: 'SHA-256',
+  DERIVED_KEY_LENGTH: 256,
+}));
+
+/**
+ * Keyring 模块单元测试套件
+ *
+ * 测试 src/utils/platform/keyring.ts 模块的功能
+ * 覆盖密钥存储、加密/解密、错误处理等核心逻辑
+ */
+describe('Keyring 模块测试套件', () => {
+  // 全局 beforeEach：清理所有 Mock 和状态
+  beforeEach(() => {
+    localStorage.clear(); // 清理 localStorage
+  });
+
+  // 全局 afterEach：恢复所有 Mock 和重置模块缓存
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules(); // 在测试结束后重置模块缓存
+  });
+
+  describe('测试基础设施验证', () => {
+    it('应该正确配置 Vitest 和 happy-dom 环境', () => {
+      // 验证 Vitest 函数可用
+      expect(vi).toBeDefined();
+      expect(beforeEach).toBeDefined();
+      expect(afterEach).toBeDefined();
+
+      // 验证 happy-dom 提供的浏览器 API 可用
+      expect(window.localStorage).toBeDefined();
+      expect(window.crypto).toBeDefined();
+    });
+
+    it('应该正确清理和恢复 Mock', () => {
+      // 创建一个 Mock 函数
+      const mockFn = vi.fn();
+
+      // 调用 Mock 函数
+      mockFn('test');
+
+      // 验证 Mock 函数被调用
+      expect(mockFn).toHaveBeenCalledWith('test');
+
+      // vi.clearAllMocks() 会清除调用记录
+      vi.clearAllMocks();
+      expect(mockFn.mock.calls.length).toBe(0);
+    });
+  });
+
+  describe('密钥存储', () => {
+    beforeEach(() => {
+      // 使用 fake-indexeddb 替换全局 indexedDB
+      const indexedDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', indexedDB);
+
+      // 清理 localStorage
+      localStorage.clear();
+    });
+
+    afterEach(() => {
+      // 恢复全局变量
+      vi.unstubAllGlobals();
+    });
+
+    describe('基础设施', () => {
+      it('应该正确设置和读取种子', () => {
+        // 设置种子
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        // 读取种子
+        const retrievedSeed = localStorage.getItem('multi-chat-keyring-seed');
+        expect(retrievedSeed).toBe(seed);
+      });
+
+      it('应该在每个测试前清理 localStorage', () => {
+        // 第一个测试设置数据
+        localStorage.setItem('test-key', 'test-value');
+        expect(localStorage.getItem('test-key')).toBe('test-value');
+
+        // 数据会在下一个测试的 beforeEach 中被清理
+      });
+
+      it('应该正确初始化 IndexedDB', async () => {
+        // IndexedDB 已经在 beforeEach 中通过 fake-indexeddb 初始化
+        const request = indexedDB.open('test-db', 1);
+
+        await new Promise<void>((resolve, reject) => {
+          request.addEventListener('success', () => {
+            const db = request.result;
+            expect(db).toBeDefined();
+            db.close();
+            resolve();
+          });
+
+          request.addEventListener('error', () => {
+            reject(request.error);
+          });
+        });
+      });
+    });
+
+    describe('加密和解密', () => {
+      it('应该使用相同的种子派生相同的密钥', async () => {
+        // 设置固定的种子
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        // 使用相同的种子存储和读取密码
+        const { keyring } = await import('@/utils/platform/keyring');
+        const service = 'com.test.service';
+        const user = 'test-user';
+        const password = 'test-password';
+
+        await keyring.setPassword(service, user, password);
+        const retrievedPassword = await keyring.getPassword(service, user);
+
+        expect(retrievedPassword).toBe(password);
+      });
+
+      it('应该使用 AES-256-GCM 算法加密', async () => {
+        // 设置固定的种子
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+        const service = 'com.test.service';
+        const user = 'test-user';
+        const password = 'sensitive-password';
+
+        // 加密后的密码应该与原始密码不同
+        await keyring.setPassword(service, user, password);
+
+        // 从 IndexedDB 读取加密的数据
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('multi-chat-keyring', 1);
+          request.addEventListener('success', () => resolve(request.result));
+          request.addEventListener('error', () => reject(request.error));
+        });
+
+        const tx = db.transaction('keys', 'readonly');
+        const store = tx.objectStore('keys');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
+        const record = await new Promise<any>((resolve, reject) => {
+          const request = store.get([service, user]);
+          request.addEventListener('success', () => resolve(request.result));
+          request.addEventListener('error', () => reject(request.error));
+        });
+
+        expect(record).toBeDefined();
+        expect(record.encryptedPassword).toBeDefined();
+        expect(record.encryptedPassword).not.toBe(password);
+
+        db.close();
+      });
+
+      it('应该生成唯一的 IV（初始化向量）', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+
+        // 两次加密相同的密码
+        await keyring.setPassword('service1', 'user1', 'password');
+        await keyring.setPassword('service2', 'user2', 'password');
+
+        // 从 IndexedDB 读取两条记录
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('multi-chat-keyring', 1);
+          request.addEventListener('success', () => resolve(request.result));
+          request.addEventListener('error', () => reject(request.error));
+        });
+
+        const tx = db.transaction('keys', 'readonly');
+        const store = tx.objectStore('keys');
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
+        const record1 = await new Promise<any>((resolve) => {
+          const request = store.get(['service1', 'user1']);
+          request.addEventListener('success', () => resolve(request.result));
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
+        const record2 = await new Promise<any>((resolve) => {
+          const request = store.get(['service2', 'user2']);
+          request.addEventListener('success', () => resolve(request.result));
+        });
+
+        // IV 应该不同（每次加密都生成新的随机 IV）
+        expect(record1.iv).toBeDefined();
+        expect(record2.iv).toBeDefined();
+        expect(record1.iv).not.toBe(record2.iv);
+
+        db.close();
+      });
+
+      it('应该使用相同的密钥和 IV 解密', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+        const service = 'com.test.service';
+        const user = 'test-user';
+        const originalPassword = 'my-secret-password';
+
+        // 加密并存储密码
+        await keyring.setPassword(service, user, originalPassword);
+
+        // 解密并读取密码
+        const decryptedPassword = await keyring.getPassword(service, user);
+
+        // 解密后的密码应该与原始密码一致
+        expect(decryptedPassword).toBe(originalPassword);
+      });
+
+      it('应该完整加密并解密密码', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+        const testCases = [
+          { service: 'com.test.app1', user: 'user1', password: '' },
+          { service: 'com.test.app2', user: 'user2', password: 'short' },
+          { service: 'com.test.app3', user: 'user3', password: 'a'.repeat(1000) },
+          { service: 'com.test.app4', user: 'user4', password: '!@#$%^&*()_+-=[]{}|;:,.<>?' },
+        ];
+
+        for (const { service, user, password } of testCases) {
+          await keyring.setPassword(service, user, password);
+          const retrieved = await keyring.getPassword(service, user);
+          expect(retrieved).toBe(password);
+        }
+      });
+
+      it('应该加密包含特殊字符的密码', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+        const service = 'com.test.unicode';
+        const user = 'test-user';
+        const passwords = [
+          '中文密码测试',
+          '🔐🔑 Emoji password',
+          'Mïxëd chãrāctërs',
+          '\n\t\r\n',
+        ];
+
+        for (const password of passwords) {
+          await keyring.setPassword(service, user, password);
+          const retrieved = await keyring.getPassword(service, user);
+          expect(retrieved).toBe(password);
+        }
+      });
+    });
+
+    describe('IndexedDB 操作', () => {
+      it('应该加密密码后存储到 IndexedDB', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+        const service = 'com.test.service';
+        const user = 'test-user';
+        const password = 'test-password';
+
+        await keyring.setPassword(service, user, password);
+
+        // 从 IndexedDB 读取存储的数据
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('multi-chat-keyring', 1);
+          request.addEventListener('success', () => resolve(request.result));
+          request.addEventListener('error', () => reject(request.error));
+        });
+
+        const tx = db.transaction('keys', 'readonly');
+        const store = tx.objectStore('keys');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Reason: 第三方库类型定义不完整
+        const record = await new Promise<any>((resolve, reject) => {
+          const request = store.get([service, user]);
+          request.addEventListener('success', () => resolve(request.result));
+          request.addEventListener('error', () => reject(request.error));
+        });
+
+        expect(record).toBeDefined();
+        expect(record.service).toBe(service);
+        expect(record.user).toBe(user);
+        expect(record.encryptedPassword).toBeDefined();
+        expect(record.iv).toBeDefined();
+        expect(record.createdAt).toBeDefined();
+
+        db.close();
+      });
+
+      it('应该从 IndexedDB 读取加密记录并解密', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+        const service = 'com.test.service';
+        const user = 'test-user';
+        const originalPassword = 'my-secret-password';
+
+        // 先存储密码
+        await keyring.setPassword(service, user, originalPassword);
+
+        // 再读取密码
+        const retrievedPassword = await keyring.getPassword(service, user);
+
+        expect(retrievedPassword).toBe(originalPassword);
+      });
+
+      it('应该返回 null（当记录不存在）', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+
+        const result = await keyring.getPassword('nonexistent.service', 'nonexistent-user');
+
+        expect(result).toBeNull();
+      });
+
+      it('应该从 IndexedDB 删除记录', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+        const service = 'com.test.service';
+        const user = 'test-user';
+        const password = 'test-password';
+
+        // 存储密码
+        await keyring.setPassword(service, user, password);
+        expect(await keyring.getPassword(service, user)).toBe(password);
+
+        // 删除密码
+        await keyring.deletePassword(service, user);
+
+        // 验证密码已删除
+        expect(await keyring.getPassword(service, user)).toBeNull();
+      });
+
+      it('创建 → 读取 → 删除流程', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+        const service = 'com.test.lifecycle';
+        const user = 'test-user';
+        const password = 'lifecycle-test-password';
+
+        // 创建
+        await keyring.setPassword(service, user, password);
+        expect(await keyring.getPassword(service, user)).toBe(password);
+
+        // 读取
+        const retrieved = await keyring.getPassword(service, user);
+        expect(retrieved).toBe(password);
+
+        // 删除
+        await keyring.deletePassword(service, user);
+        expect(await keyring.getPassword(service, user)).toBeNull();
+      });
+
+      it('更新密钥（存储新密钥，读取验证）', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+        const service = 'com.test.update';
+        const user = 'test-user';
+        const oldPassword = 'old-password';
+        const newPassword = 'new-password';
+
+        // 存储旧密码
+        await keyring.setPassword(service, user, oldPassword);
+        expect(await keyring.getPassword(service, user)).toBe(oldPassword);
+
+        // 更新为新密码
+        await keyring.setPassword(service, user, newPassword);
+        expect(await keyring.getPassword(service, user)).toBe(newPassword);
+      });
+
+      it('并发存储多个密钥（不同的 service/user）', async () => {
+        const seed = 'dGVzdC1zZWVkLTMyLWJ5dGVz';
+        localStorage.setItem('multi-chat-keyring-seed', seed);
+
+        const { keyring } = await import('@/utils/platform/keyring');
+
+        // 并发存储多个密钥
+        const promises = [];
+        for (let i = 0; i < 5; i++) {
+          promises.push(keyring.setPassword(`service${i}`, `user${i}`, `password${i}`));
+        }
+        await Promise.all(promises);
+
+        // 验证所有密钥都能正确读取
+        for (let i = 0; i < 5; i++) {
+          const retrieved = await keyring.getPassword(`service${i}`, `user${i}`);
+          expect(retrieved).toBe(`password${i}`);
+        }
+      });
+    });
+  });
+
+  describe('API 一致性', () => {
+    it('应该提供完整的 keyring 接口', async () => {
+      // 导入模块
+      const module = await import('@/utils/platform/keyring');
+
+      // 验证 keyring 实例存在且包含所有方法
+      expect(module.keyring).toBeDefined();
+      expect(typeof module.keyring.setPassword).toBe('function');
+      expect(typeof module.keyring.getPassword).toBe('function');
+      expect(typeof module.keyring.deletePassword).toBe('function');
+      expect(typeof module.keyring.isSupported).toBe('function');
+      expect(typeof module.keyring.resetState).toBe('function');
+    });
+
+    it('keyring 方法的签名应该一致', async () => {
+      const module = await import('@/utils/platform/keyring');
+
+      // setPassword: (service: string, user: string, password: string) => Promise<void>
+      expect(module.keyring.setPassword.length).toBe(3);
+
+      // getPassword: (service: string, user: string) => Promise<string | null>
+      expect(module.keyring.getPassword.length).toBe(2);
+
+      // deletePassword: (service: string, user: string) => Promise<void>
+      expect(module.keyring.deletePassword.length).toBe(2);
+
+      // isSupported: () => boolean
+      expect(module.keyring.isSupported.length).toBe(0);
+    });
+  });
+
+  describe('keyring.isSupported', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.resetModules();
+    });
+
+    it('支持 IndexedDB + Crypto 时应该返回 true', async () => {
+      const indexedDB = new IDBFactory();
+      vi.stubGlobal('indexedDB', indexedDB);
+
+      const module = await import('@/utils/platform/keyring');
+      expect(module.keyring.isSupported()).toBe(true);
+    });
+
+    it('不支持 IndexedDB 时应该返回 false', async () => {
+      // 移除 IndexedDB 支持
+      vi.stubGlobal('indexedDB', undefined);
+
+      const module = await import('@/utils/platform/keyring');
+      const result = module.keyring.isSupported();
+
+      // 结果应该是 false（因为 IndexedDB 不可用）
+      expect(result).toBe(false);
+    });
+  });
+});

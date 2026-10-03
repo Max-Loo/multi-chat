@@ -41,7 +41,7 @@
 9. **src/__test__/components/ChatPanel.test.tsx** - 220ms (22 tests)
    - 聊天面板组件测试
 
-10. **src/__test__/utils/tauriCompat/keyring.test.ts** - 438ms (41 tests, 2 skipped)
+10. **src/__test__/utils/platform/keyring.test.ts** - 438ms (41 tests, 2 skipped)
     - Keyring 兼容层测试
 
 ### 性能观察

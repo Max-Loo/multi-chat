@@ -16,7 +16,7 @@ src/__test__/
 │   ├── testing-utils.tsx        # 渲染和测试工具
 │   ├── mocks/                   # Mock 工厂
 │   │   ├── aiSdk.ts             # AI SDK Mock
-│   │   ├── tauriCompat.ts       # Tauri 兼容层 Mock
+│   │   ├── platform.ts       # Tauri 兼容层 Mock
 │   │   ├── storage.ts           # 存储 Mock
 │   │   ├── fetch.ts             # Fetch API Mock
 │   │   ├── router.ts            # Router Mock

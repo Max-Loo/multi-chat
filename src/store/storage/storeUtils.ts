@@ -3,7 +3,7 @@
  * 提供通用的 Store 创建、保存和加载函数
  * 使用 Store 兼容层，自动适配 Tauri 和 Web 环境
  */
-import type { StoreCompat } from '@/utils/tauriCompat';
+import type { StoreCompat } from '@/utils/platform';
 
 /**
  * 通用的保存数据到 Store 函数

@@ -9,16 +9,16 @@
 
 - [ ] 2.1 `git mv src/utils/tauriCompat src/utils/platform`，全局替换导入路径 `@/utils/tauriCompat` → `@/utils/platform`（含测试与 `__mocks__`）；验证 `pnpm tsc` 通过且 `grep -r "tauriCompat" src/` 无结果
 - [ ] 2.2 `platform/http.ts` 删除 Tauri fetch 动态导入与环境分支，统一为原生 `window.fetch`（保留 `getFetchFunc`/`RequestInfo` 导出）；验证 http 测试删除 Tauri 用例后通过
-- [ ] 2.3 删除各模块 Tauri 分支：`store.ts` 仅留 IndexedDB 实现、`keyring.ts` 仅留加密实现、`os.ts` 的 `locale()` 直接读 `navigator.language`、`shell.ts` 删除 `Command` 保留 `open()`、`env.ts` 删除 `isTauri()`、`index.ts` 同步导出；验证对应模块单测通过
-- [ ] 2.4 按 design D9 更新 keyring 安全警告文案（浏览器本地存储说明 + 主密钥备份建议），保留"不再提示"标记逻辑；验证警告相关测试更新后通过
-- [ ] 2.5 删除 `src-tauri/` 目录；`package.json` 移除 `@tauri-apps/*`（5 个）、`tauri-plugin-keyring-api`、`@tauri-apps/cli`；脚本收敛为 `dev: vite`、`build: tsc && vite build`，删除 `tauri`/`web:build:tauri`/重复脚本；验证 `pnpm install && pnpm dev` 启动正常、`package.json` 无 tauri 依赖
-- [ ] 2.6 `vite.config.ts` 清理：移除 `TAURI_DEV_HOST`、`src-tauri` watch ignore、`vendor-tauri` chunk，覆盖率排除路径更新为 `platform/`；验证 `pnpm build` 成功且产物无 tauri 代码
-- [ ] 2.7 平移/修剪受影响测试（路径 mock、Tauri 环境用例删除）；验证 `pnpm test:run` 全绿
+- [x] 2.3 删除各模块 Tauri 分支：`store.ts` 仅留 IndexedDB 实现、`keyring.ts` 仅留加密实现、`os.ts` 的 `locale()` 直接读 `navigator.language`、`shell.ts` 删除 `Command` 保留 `open()`、`env.ts` 删除 `isTauri()`、`index.ts` 同步导出；验证对应模块单测通过
+- [x] 2.4 按 design D9 更新 keyring 安全警告文案（浏览器本地存储说明 + 主密钥备份建议），保留"不再提示"标记逻辑；验证警告相关测试更新后通过
+- [x] 2.5 删除 `src-tauri/` 目录；`package.json` 移除 `@tauri-apps/*`（5 个）、`tauri-plugin-keyring-api`、`@tauri-apps/cli`；脚本收敛为 `dev: vite`、`build: tsc && vite build`，删除 `tauri`/`web:build:tauri`/重复脚本；验证 `pnpm install && pnpm dev` 启动正常、`package.json` 无 tauri 依赖
+- [x] 2.6 `vite.config.ts` 清理：移除 `TAURI_DEV_HOST`、`src-tauri` watch ignore、`vendor-tauri` chunk，覆盖率排除路径更新为 `platform/`；验证 `pnpm build` 成功且产物无 tauri 代码
+- [x] 2.7 平移/修剪受影响测试（路径 mock、Tauri 环境用例删除）；验证 `pnpm test:run` 全绿
 
 ## 3. 阶段 1 验收与合并
 
 - [ ] 3.1 手工冒烟：聊天发送（流式渲染）、模型增删改与 apiKey 加密存储、设置与语言切换、主题切换、主密钥导出/导入、外部链接打开；并用迁移前版本产生的 IndexedDB 数据验证升级兼容（数据无损、可解密）；验收记录附于 PR 描述
-- [ ] 3.2 文档同步：AGENTS.md 更新技术栈与快速查找表（`src/utils/platform/`）、`docs/design/cross-platform.md` 重写为纯 Web 平台层设计、删除 `docs/conventions/tauri-commands.md`、更新 `docs/README.md` 索引；验证 `grep -rn "tauriCompat\|src-tauri" AGENTS.md docs/` 无过时引用
+- [x] 3.2 文档同步：AGENTS.md 更新技术栈与快速查找表（`src/utils/platform/`）、`docs/design/cross-platform.md` 重写为纯 Web 平台层设计、删除 `docs/conventions/tauri-commands.md`、更新 `docs/README.md` 索引；验证 `grep -rn "tauriCompat\|src-tauri" AGENTS.md docs/` 无过时引用
 - [ ] 3.3 提交阶段 1 PR 并合并到 main；验证 CI 通过、`pnpm deploy:gh-pages` 发布后线上版本可用
 
 ## 4. 阶段 2：Vue 工具链与应用骨架

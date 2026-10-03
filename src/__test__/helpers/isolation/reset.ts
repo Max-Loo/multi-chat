@@ -23,7 +23,7 @@ export interface ResetOptions {
 /**
  * 硬编码的数据库名称列表
  * 当 indexedDB.databases() 不可用时作为 fallback
- * 对应业务代码 src/utils/tauriCompat/store.ts 和 keyring.ts 中的定义
+ * 对应业务代码 src/utils/platform/store.ts 和 keyring.ts 中的定义
  */
 const FALLBACK_DB_NAMES = ['multi-chat-store', 'multi-chat-keyring'];
 

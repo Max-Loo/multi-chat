@@ -1,4 +1,4 @@
-import { shell } from "@/utils/tauriCompat"
+import { shell } from "@/utils/platform"
 
 /**
  * @description 利用打开外部浏览器网页
