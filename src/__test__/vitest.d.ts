@@ -34,12 +34,12 @@ declare global {
   var __createResponsiveMock: typeof import('./helpers/mocks/responsive').createResponsiveMock;
 
   /**
-   * tauriCompat 模块 mock 工厂函数（由 setup.ts 注册到 globalThis）
+   * webStorage 模块 mock 工厂函数（由 setup.ts 注册到 globalThis）
    *
-   * 用于 vi.mock('@/utils/tauriCompat') 创建完整的模块 mock 对象
+   * 用于 vi.mock('@/utils/webStorage') 创建完整的模块 mock 对象
    */
   // eslint-disable-next-line no-var
-  var __createTauriCompatModuleMock: typeof import('./helpers/mocks/tauriCompat').createTauriCompatModuleMock;
+  var __createWebStorageModuleMock: typeof import('./helpers/mocks/webStorage').createWebStorageModuleMock;
 
   /**
    * toast 模块 mock 工厂函数（由 setup.ts 注册到 globalThis）

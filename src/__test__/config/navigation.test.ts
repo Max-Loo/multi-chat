@@ -21,7 +21,6 @@ const REQUIRED_FIELDS: (keyof NavigationItem)[] = [
   'i18nKey',
   'path',
   'icon',
-  'IconComponent',
   'theme',
 ];
 

@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { interceptClickAToJump, getDefaultAppLanguage, getLanguageLabel, LOCAL_STORAGE_LANGUAGE_KEY } from '@/services/global';
-import { locale, shell } from '@/utils/tauriCompat';
+import { openExternal } from '@/utils/openExternal';
 
 describe('global.ts 模块测试', () => {
   // 保存全局事件监听器引用，用于测试后清理
@@ -14,15 +14,25 @@ describe('global.ts 模块测试', () => {
   // Spy 变量
   let openSpy: ReturnType<typeof vi.fn>;
 
+  /**
+   * stub 浏览器语言设置（navigator.language）
+   * @param lang BCP 47 语言标签
+   */
+  const setBrowserLanguage = (lang: string): void => {
+    vi.stubGlobal('navigator', Object.create(Object.getPrototypeOf(window.navigator), {
+      language: { value: lang, configurable: true, enumerable: true },
+    }));
+  };
+
   beforeEach(() => {
     // 清除 localStorage
     localStorage.clear();
 
-    // 默认 mock locale 返回 zh-CN
-    vi.mocked(locale).mockResolvedValue('zh-CN');
+    // 默认浏览器语言返回 zh-CN
+    setBrowserLanguage('zh-CN');
 
-    // Spy shell.open
-    openSpy = vi.mocked(shell.open);
+    // Spy openExternal
+    openSpy = vi.mocked(openExternal);
 
     // 清除 localStorage
     localStorage.clear();
@@ -58,6 +68,9 @@ describe('global.ts 模块测试', () => {
   afterEach(() => {
     // 清理全局事件监听器
     removeClickListener?.();
+
+    // 恢复被 stub 的全局对象（navigator.language）
+    vi.unstubAllGlobals();
 
     vi.restoreAllMocks();
   });
@@ -129,7 +142,7 @@ describe('global.ts 模块测试', () => {
     describe('无效缓存清理与降级测试', () => {
       it('应该删除无效缓存并降级到系统语言', async () => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'de'); // 德语不在支持列表中
-        vi.mocked(locale).mockResolvedValue('fr-FR');
+        setBrowserLanguage('fr-FR');
 
         const result = await getDefaultAppLanguage();
 
@@ -141,7 +154,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该删除无效缓存并降级到英文（系统语言不支持）', async () => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'de'); // 德语不在支持列表中
-        vi.mocked(locale).mockResolvedValue('de-DE'); // 系统语言也不在支持列表中
+        setBrowserLanguage('de-DE'); // 系统语言也不在支持列表中
 
         const result = await getDefaultAppLanguage();
 
@@ -153,7 +166,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该删除无效缓存并降级到英文（系统语言为空）', async () => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'invalid');
-        vi.mocked(locale).mockResolvedValue('');
+        setBrowserLanguage('');
 
         const result = await getDefaultAppLanguage();
 
@@ -167,7 +180,7 @@ describe('global.ts 模块测试', () => {
         // 注意：当前实现中有 zh-CN -> zh 的迁移规则
         // 这个测试验证如果没有迁移规则时的行为
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'zh-TW'); // 无迁移规则
-        vi.mocked(locale).mockResolvedValue('en-US'); // 系统语言为英语
+        setBrowserLanguage('en-US'); // 系统语言为英语
 
         const result = await getDefaultAppLanguage();
 
@@ -182,7 +195,7 @@ describe('global.ts 模块测试', () => {
     describe('系统语言检测测试', () => {
       it('应该返回支持的系统语言（无缓存时）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        vi.mocked(locale).mockResolvedValue('zh-CN');
+        setBrowserLanguage('zh-CN');
 
         const result = await getDefaultAppLanguage();
 
@@ -193,7 +206,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该正确提取系统语言的前缀（en-US -> en）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        vi.mocked(locale).mockResolvedValue('en-US');
+        setBrowserLanguage('en-US');
 
         const result = await getDefaultAppLanguage();
 
@@ -203,7 +216,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该处理不同格式的系统 locale（zh -> zh）', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        vi.mocked(locale).mockResolvedValue('zh');
+        setBrowserLanguage('zh');
 
         const result = await getDefaultAppLanguage();
 
@@ -213,7 +226,7 @@ describe('global.ts 模块测试', () => {
 
       it('应该在不支持的系统语言时回退到 en', async () => {
         localStorage.removeItem(LOCAL_STORAGE_LANGUAGE_KEY);
-        vi.mocked(locale).mockResolvedValue('de-DE');
+        setBrowserLanguage('de-DE');
 
         const result = await getDefaultAppLanguage();
 
@@ -228,7 +241,7 @@ describe('global.ts 模块测试', () => {
         const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
           throw new Error('localStorage access denied');
         });
-        vi.mocked(locale).mockResolvedValue('fr-FR');
+        setBrowserLanguage('fr-FR');
 
         const result = await getDefaultAppLanguage();
 
@@ -271,7 +284,7 @@ describe('global.ts 模块测试', () => {
         const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
           throw new Error('localStorage remove failed');
         });
-        vi.mocked(locale).mockResolvedValue('en-US');
+        setBrowserLanguage('en-US');
 
         const result = await getDefaultAppLanguage();
 
@@ -295,7 +308,7 @@ describe('global.ts 模块测试', () => {
 
       it('localStorage 优先级应该高于系统语言', async () => {
         localStorage.setItem(LOCAL_STORAGE_LANGUAGE_KEY, 'en');
-        vi.mocked(locale).mockResolvedValue('zh-CN');
+        setBrowserLanguage('zh-CN');
 
         const result = await getDefaultAppLanguage();
 
@@ -315,55 +328,6 @@ describe('global.ts 模块测试', () => {
       });
     });
 
-    describe('外层异常处理', () => {
-      it('locale 首次抛异常，catch 内 locale 返回支持的语言，应降级到系统语言', async () => {
-        vi.mocked(locale)
-          .mockRejectedValueOnce(new Error('locale failed'))
-          .mockResolvedValueOnce('zh-CN');
-
-        const result = await getDefaultAppLanguage();
-
-        expect(result.lang).toBe('zh');
-        expect(result.migrated).toBe(false);
-        expect(result.fallbackReason).toBe('system-lang');
-      });
-
-      it('locale 首次抛异常，catch 内 locale 返回不支持的语言，应降级到英文', async () => {
-        vi.mocked(locale)
-          .mockRejectedValueOnce(new Error('locale failed'))
-          .mockResolvedValueOnce('de-DE');
-
-        const result = await getDefaultAppLanguage();
-
-        expect(result.lang).toBe('en');
-        expect(result.migrated).toBe(false);
-        expect(result.fallbackReason).toBe('default');
-      });
-
-      it('locale 首次抛异常，catch 内 locale 也抛异常，应降级到英文', async () => {
-        vi.mocked(locale)
-          .mockRejectedValueOnce(new Error('locale failed'))
-          .mockRejectedValueOnce(new Error('locale failed again'));
-
-        const result = await getDefaultAppLanguage();
-
-        expect(result.lang).toBe('en');
-        expect(result.migrated).toBe(false);
-        expect(result.fallbackReason).toBe('default');
-      });
-
-      it('locale 首次抛异常，catch 内 locale 返回空字符串，应降级到英文', async () => {
-        vi.mocked(locale)
-          .mockRejectedValueOnce(new Error('locale failed'))
-          .mockResolvedValueOnce('');
-
-        const result = await getDefaultAppLanguage();
-
-        expect(result.lang).toBe('en');
-        expect(result.migrated).toBe(false);
-        expect(result.fallbackReason).toBe('default');
-      });
-    });
   });
 
   describe('getLanguageLabel', () => {

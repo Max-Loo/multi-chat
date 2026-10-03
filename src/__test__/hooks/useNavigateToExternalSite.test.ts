@@ -4,27 +4,24 @@ import { renderHook } from '@testing-library/react';
 
 import { useNavigateToExternalSite } from '@/hooks/useNavigateToExternalSite';
 
-import * as tauriCompat from '@/utils/tauriCompat';
+// Mock openExternal 模块，验证外链打开行为
+vi.mock('@/utils/openExternal', () => ({
+  openExternal: vi.fn(),
+}));
 
-
+import { openExternal } from '@/utils/openExternal';
 
 describe('useNavigateToExternalSite', () => {
 
-  let shellOpenSpy: ReturnType<typeof vi.spyOn>;
-
-
-
   beforeEach(() => {
 
-    shellOpenSpy = vi.spyOn(tauriCompat.shell, 'open').mockResolvedValue(undefined);
+    vi.mocked(openExternal).mockClear();
 
   });
 
 
 
   afterEach(() => {
-
-    shellOpenSpy.mockRestore();
 
     vi.restoreAllMocks();
 
@@ -34,7 +31,7 @@ describe('useNavigateToExternalSite', () => {
 
   describe('基础功能测试', () => {
 
-    it('应调用 shell.open() 打开链接', () => {
+    it('应调用 openExternal() 打开链接', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 
@@ -44,9 +41,9 @@ describe('useNavigateToExternalSite', () => {
 
 
 
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://example.com');
+      expect(openExternal).toHaveBeenCalledWith('https://example.com');
 
-      expect(shellOpenSpy).toHaveBeenCalledTimes(1);
+      expect(openExternal).toHaveBeenCalledTimes(1);
 
     });
 
@@ -66,13 +63,13 @@ describe('useNavigateToExternalSite', () => {
 
 
 
-      expect(shellOpenSpy).toHaveBeenCalledTimes(3);
+      expect(openExternal).toHaveBeenCalledTimes(3);
 
-      expect(shellOpenSpy).toHaveBeenNthCalledWith(1, 'https://example1.com');
+      expect(openExternal).toHaveBeenNthCalledWith(1, 'https://example1.com');
 
-      expect(shellOpenSpy).toHaveBeenNthCalledWith(2, 'https://example2.com');
+      expect(openExternal).toHaveBeenNthCalledWith(2, 'https://example2.com');
 
-      expect(shellOpenSpy).toHaveBeenNthCalledWith(3, 'https://example3.com');
+      expect(openExternal).toHaveBeenNthCalledWith(3, 'https://example3.com');
 
     });
 
@@ -88,7 +85,7 @@ describe('useNavigateToExternalSite', () => {
 
 
 
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://example.com?param1=value1&param2=value2');
+      expect(openExternal).toHaveBeenCalledWith('https://example.com?param1=value1&param2=value2');
 
     });
 
@@ -96,69 +93,19 @@ describe('useNavigateToExternalSite', () => {
 
 
 
-  describe('Tauri 兼容层测试', () => {
+  describe('openExternal 调用测试', () => {
 
-    it('应正确调用 tauriCompat.shell.open', () => {
-
-      const { result } = renderHook(() => useNavigateToExternalSite());
-
-
-
-      result.current.navToExternalSite('https://tauri-app.com');
-
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://tauri-app.com');
-
-    });
-
-
-
-    it('应在 Tauri 环境下使用 shell.open', () => {
-
-      vi.stubGlobal('__TAURI__', {
-
-        __scope: { platform: 'darwin' },
-
-      });
-
-
+    it('应正确调用 openExternal 传递目标地址', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 
 
 
-      result.current.navToExternalSite('https://tauri-app.com');
+      result.current.navToExternalSite('https://open-external.com');
 
 
 
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://tauri-app.com');
-
-
-
-      vi.unstubAllGlobals();
-
-    });
-
-
-
-    it('应在 Web 环境下使用 shell.open（兼容层内部调用 window.open）', () => {
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 第三方库类型定义不完整
-      delete (window as any).__TAURI__;
-
-
-
-      const { result } = renderHook(() => useNavigateToExternalSite());
-
-
-
-      result.current.navToExternalSite('https://web-app.com');
-
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://web-app.com');
+      expect(openExternal).toHaveBeenCalledWith('https://open-external.com');
 
     });
 
@@ -178,7 +125,7 @@ describe('useNavigateToExternalSite', () => {
 
 
 
-      expect(shellOpenSpy).toHaveBeenCalledWith('not-a-valid-url');
+      expect(openExternal).toHaveBeenCalledWith('not-a-valid-url');
 
     });
 
@@ -194,7 +141,7 @@ describe('useNavigateToExternalSite', () => {
 
 
 
-      expect(shellOpenSpy).toHaveBeenCalledWith('');
+      expect(openExternal).toHaveBeenCalledWith('');
 
     });
 

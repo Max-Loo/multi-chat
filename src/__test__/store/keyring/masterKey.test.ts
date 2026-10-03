@@ -4,13 +4,12 @@
  * 测试策略：
  * - 使用 keyring 实例 mock 隔离外部依赖
  * - 测试正常流程和错误处理
- * - 测试跨平台兼容性（Tauri vs Web 环境）
+ * - 测试浏览器环境下的密钥存储行为
  * - 测试安全警告和密钥导出功能
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { keyring } from '@/utils/tauriCompat/keyring';
-import * as tauriEnv from '@/utils/tauriCompat/env';
+import { keyring } from '@/utils/webStorage/keyring';
 import { toastQueue } from '@/services/toast';
 import { createToastSpies } from '@/__test__/helpers/mocks/toast';
 import {
@@ -45,9 +44,6 @@ describe('masterKey 完整测试套件', () => {
 
     // Mock verifyMasterKey 默认返回 null（无加密数据）
     vi.mocked(verifyMasterKey).mockResolvedValue(null);
-
-    // Mock isTauri（默认为 false）
-    vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
 
     // Mock toastQueue
     createToastSpies(toastQueue);
@@ -149,9 +145,8 @@ describe('masterKey 完整测试套件', () => {
       expect(key).toBeNull();
     });
 
-    it('应该抛出错误 当 getPassword 在 Web 环境失败', async () => {
+    it('应该抛出错误 当 getPassword 失败', async () => {
       const originalError = new Error('IndexedDB error');
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
       vi.spyOn(keyring, 'getPassword').mockRejectedValue(originalError);
 
       try {
@@ -164,35 +159,8 @@ describe('masterKey 完整测试套件', () => {
       }
     });
 
-    it('应该抛出错误 当 getPassword 在 Tauri 环境失败', async () => {
-      const originalError = new Error('Keychain error');
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyring, 'getPassword').mockRejectedValue(originalError);
-
-      try {
-        await getMasterKey();
-        expect.unreachable('应该抛出错误');
-      } catch (err) {
-        expect(err).toBeInstanceOf(Error);
-        expect((err as Error).message).toBe('无法访问系统安全存储，请检查钥匙串权限设置');
-        expect((err as Error).cause).toBe(originalError);
-      }
-    });
-  });
-
-  describe('storeMasterKey', () => {
-    it('应该成功存储密钥', async () => {
-      const testKey = 'b'.repeat(64);
-      vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
-      
-      await storeMasterKey(testKey);
-      
-      expect(keyring.setPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key', testKey);
-    });
-
-    it('应该抛出错误 当 setPassword 在 Web 环境失败', async () => {
+    it('应该抛出错误 当 setPassword 失败', async () => {
       const originalError = new Error('IndexedDB error');
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
       vi.spyOn(keyring, 'setPassword').mockRejectedValue(originalError);
 
       try {
@@ -203,35 +171,6 @@ describe('masterKey 完整测试套件', () => {
         expect((err as Error).message).toBe('浏览器不支持安全存储或存储空间不足');
         expect((err as Error).cause).toBe(originalError);
       }
-    });
-
-    it('应该抛出错误 当 setPassword 在 Tauri 环境失败', async () => {
-      const originalError = new Error('Keychain error');
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyring, 'setPassword').mockRejectedValue(originalError);
-
-      try {
-        await storeMasterKey('a'.repeat(64));
-        expect.unreachable('应该抛出错误');
-      } catch (err) {
-        expect(err).toBeInstanceOf(Error);
-        expect((err as Error).message).toBe('无法访问系统安全存储，请检查钥匙串权限设置');
-        expect((err as Error).cause).toBe(originalError);
-      }
-    });
-  });
-
-  describe('initializeMasterKey', () => {
-    it('应该返回已存在的密钥 当密钥已存在', async () => {
-      const existingKey = 'c'.repeat(64);
-      vi.spyOn(keyring, 'getPassword').mockResolvedValue(existingKey);
-
-      const result = await initializeMasterKey();
-
-      expect(result.key).toBe(existingKey);
-      expect(result.isNewlyGenerated).toBe(false);
-      expect(keyring.getPassword).toHaveBeenCalled();
-      expect(keyring.setPassword).not.toHaveBeenCalled();
     });
 
     it('应该生成并存储新密钥 当密钥不存在', async () => {
@@ -246,8 +185,7 @@ describe('masterKey 完整测试套件', () => {
       expect(keyring.setPassword).toHaveBeenCalledWith('com.multichat.app', 'master-key', result.key);
     });
 
-    it('应该在 Web 环境生成密钥时输出安全警告', async () => {
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
+    it('应该在新密钥生成时输出安全警告', async () => {
       vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
       vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -255,33 +193,15 @@ describe('masterKey 完整测试套件', () => {
       await initializeMasterKey();
       
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('A new master key has been generated and stored in browser secure storage')
+        expect.stringContaining('A new master key has been generated and stored in browser local storage')
       );
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining('Old encrypted data cannot be decrypted')
       );
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Security notice: The web version has a lower security level')
+        expect.stringContaining('Security notice: The key is stored only in this browser')
       );
       
-      consoleWarnSpy.mockRestore();
-    });
-
-    it('应该在 Tauri 环境生成密钥时输出警告', async () => {
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
-      vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      await initializeMasterKey();
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('system secure storage')
-      );
-      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('browser secure storage')
-      );
-
       consoleWarnSpy.mockRestore();
     });
 
@@ -304,14 +224,13 @@ describe('masterKey 完整测试套件', () => {
       localStorage.clear();
     });
 
-    it('应该在 Web 环境显示安全警告', async () => {
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
+    it('应该显示安全警告', async () => {
 
       await handleSecurityWarning();
 
       // 验证 toastQueue.warning 被调用且包含安全提示消息
       expect(toastQueue.warning).toHaveBeenCalledWith(
-        expect.stringContaining('web version has a lower security level'),
+        expect.stringContaining('stored only in this browser'),
         expect.objectContaining({
           duration: Infinity,
           action: expect.objectContaining({
@@ -321,17 +240,7 @@ describe('masterKey 完整测试套件', () => {
       );
     });
 
-    it('应该在 Tauri 环境不显示警告', async () => {
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-
-      await handleSecurityWarning();
-
-      // Tauri 环境下 toastQueue.warning 不应被调用
-      expect(toastQueue.warning).not.toHaveBeenCalled();
-    });
-
     it('不应该显示警告 当用户已确认过', async () => {
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
       localStorage.setItem('multi-chat-security-warning-dismissed', 'true');
 
       await handleSecurityWarning();
@@ -418,9 +327,8 @@ describe('masterKey 完整测试套件', () => {
     });
   });
 
-  describe('跨平台兼容性', () => {
-    it('应该在 Web 环境正常工作', async () => {
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(false);
+  describe('浏览器环境兼容性', () => {
+    it('应该在浏览器环境正常工作', async () => {
       vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
       vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
 
@@ -428,27 +336,6 @@ describe('masterKey 完整测试套件', () => {
 
       expect(result.key).toHaveLength(64);
       expect(result.isNewlyGenerated).toBe(true);
-    });
-
-    it('应该在 Tauri 环境正常工作', async () => {
-      vi.spyOn(tauriEnv, 'isTauri').mockReturnValue(true);
-      vi.spyOn(keyring, 'getPassword').mockResolvedValue(null);
-      vi.spyOn(keyring, 'setPassword').mockResolvedValue(undefined);
-
-      const result = await initializeMasterKey();
-
-      expect(result.key).toHaveLength(64);
-      expect(result.isNewlyGenerated).toBe(true);
-    });
-  });
-
-  describe('importMasterKeyWithValidation', () => {
-    it('应该返回格式错误 当密钥格式无效', async () => {
-      const result = await importMasterKeyWithValidation('invalid');
-
-      expect(result.success).toBe(false);
-      expect(result.keyMatched).toBeNull();
-      expect(result.error).toContain('密钥格式无效');
     });
 
     it('应该成功导入 当验证通过', async () => {

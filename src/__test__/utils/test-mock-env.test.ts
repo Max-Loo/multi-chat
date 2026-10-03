@@ -2,17 +2,16 @@ import 'fake-indexeddb/auto';
 import { it, expect, beforeEach, vi } from 'vitest';
 import { initializeMasterKey } from '@/store/keyring/masterKey';
 
-// Mock @/utils/tauriCompat/env 模块中的 isTauri 函数
-vi.mock('@/utils/tauriCompat/env', () => ({
-  isTauri: vi.fn(),
+// Mock @/utils/webStorage/env 模块（测试环境参数加速）
+vi.mock('@/utils/webStorage/env', () => ({
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
   PBKDF2_ALGORITHM: 'SHA-256',
   DERIVED_KEY_LENGTH: 256,
 }));
 
-import { isTauri } from '@/utils/tauriCompat/env';
-const mockIsTauri = vi.mocked(isTauri);
+import { getPBKDF2Iterations } from '@/utils/webStorage/env';
+const mockGetPBKDF2Iterations = vi.mocked(getPBKDF2Iterations);
 
 beforeEach(async () => {
   // 清理 IndexedDB
@@ -21,17 +20,17 @@ beforeEach(async () => {
     deleteReq.addEventListener('success', () => resolve());
     deleteReq.addEventListener('error', () => reject(deleteReq.error));
   });
-  
+
   // 清理 localStorage
   localStorage.clear();
 
-  // 设置默认为 Web 环境
-  mockIsTauri.mockReturnValue(false);
+  // 设置低迭代次数
+  mockGetPBKDF2Iterations.mockReturnValue(1000);
 });
 
-it('mock isTauri works', async () => {
-  expect(mockIsTauri()).toBe(false);
-  
+it('mock webStorage/env works', async () => {
+  expect(mockGetPBKDF2Iterations()).toBe(1000);
+
   const { key } = await initializeMasterKey();
   expect(key).toHaveLength(64);
 });

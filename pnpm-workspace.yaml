@@ -1,2 +1,5 @@
 allowBuilds:
   esbuild: true
+  vue-demi: true
+# 不自动安装可选 peer 依赖（virtua 的 react 可选 peer 会被拉入，纯 Vue 项目无需）
+autoInstallPeers: false

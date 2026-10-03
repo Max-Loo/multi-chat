@@ -14,7 +14,7 @@ vi.mock('react-i18next', () => globalThis.__mockI18n({
  * Mock sonner toast 模块
  * 提供 toast 提示的模拟实现
  */
-vi.mock('sonner', () => ({
+vi.mock('vue-sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),

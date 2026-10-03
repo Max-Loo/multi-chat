@@ -77,7 +77,7 @@ saveChatListMiddleware.startListening({
 // 监听 generateChatName 完成后移除锁
 saveChatListMiddleware.startListening({
   matcher: isAnyOf(generateChatName.fulfilled, generateChatName.rejected),
-  effect: async (action: any, _) => {
+  effect: async (action: any) => {
     if (action.meta?.arg?.chat?.id) {
       generatingTitleChatIds.delete(action.meta.arg.chat.id);
     }

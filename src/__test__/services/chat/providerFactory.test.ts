@@ -3,8 +3,8 @@ import { getProvider } from '@/services/chat/providerFactory';
 import { getProviderSDKLoader } from '@/services/chat/providerLoader';
 import { ModelProviderKeyEnum } from '@/utils/enums';
 
-// Mock tauriCompat 模块
-vi.mock('@/utils/tauriCompat', () => ({
+// Mock webStorage 模块
+vi.mock('@/utils/webStorage', () => ({
   getFetchFunc: () => {
     return function fetch(): Promise<Response> {
       return Promise.resolve(new Response());

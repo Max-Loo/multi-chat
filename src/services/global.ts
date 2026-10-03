@@ -1,5 +1,5 @@
 import { LOCAL_STORAGE_PREFIX, LANGUAGE_MIGRATION_MAP, SUPPORTED_LANGUAGE_SET, SUPPORTED_LANGUAGE_MAP } from '@/utils/constants';
-import { locale, shell } from '@/utils/tauriCompat';
+import { openExternal } from '@/utils/openExternal';
 
 /**
  * 语言检测结果接口
@@ -30,15 +30,23 @@ export const interceptClickAToJump = () => {
       // 判断是否是外部链接（非本地路由）
       if (url.origin !== window.location.origin) {
         event.preventDefault();
-        await shell.open(url.href);
+        openExternal(url.href);
       }
     }
   });
 }
 
 
-// 储存在本地的「语言」的 key
+/**
+ * 储存在本地的「语言」的 key
+ */
 export const LOCAL_STORAGE_LANGUAGE_KEY = LOCAL_STORAGE_PREFIX + 'language'
+
+/**
+ * 获取浏览器的语言设置
+ * @returns {string} BCP 47 语言标签（如 "zh-CN"、"en-US"）
+ */
+export const getBrowserLocale = (): string => navigator.language
 
 /**
  * 获取默认的应用语言
@@ -91,8 +99,8 @@ export const getDefaultAppLanguage = async (): Promise<LanguageResult> => {
       }
     }
 
-    // 第二优先级：通过 tauri 取系统的值
-    const systemLocale = await locale()
+    // 第二优先级：取浏览器的语言设置
+    const systemLocale = getBrowserLocale()
 
     if (systemLocale) {
       const systemLang = systemLocale.split('-')[0]
@@ -116,15 +124,13 @@ export const getDefaultAppLanguage = async (): Promise<LanguageResult> => {
     // 任何异常都降级到系统语言或英文
     console.warn(`Error getting default app language: ${error}`)
     try {
-      const systemLocale = await locale()
-      if (systemLocale) {
-        const systemLang = systemLocale.split('-')[0]
-        if (SUPPORTED_LANGUAGE_SET.has(systemLang)) {
-          return { 
-            lang: systemLang, 
-            migrated: false, 
-            fallbackReason: 'system-lang' 
-          }
+      const systemLocale = getBrowserLocale()
+      const systemLang = systemLocale.split('-')[0]
+      if (SUPPORTED_LANGUAGE_SET.has(systemLang)) {
+        return {
+          lang: systemLang,
+          migrated: false,
+          fallbackReason: 'system-lang'
         }
       }
     } catch (localeError) {

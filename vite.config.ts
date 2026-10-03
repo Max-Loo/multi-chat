@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import vue from "@vitejs/plugin-vue";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -9,9 +9,6 @@ import { readFileSync } from "fs";
 const packageJson = JSON.parse(
   readFileSync(path.resolve(__dirname, "./package.json"), "utf-8"),
 );
-
-// //@ts-expect-error process is a nodejs global
-const host = process.env.TAURI_DEV_HOST;
 
 /**
  * 从模块路径中提取实际包名，兼容 pnpm 存储路径格式
@@ -27,21 +24,16 @@ function getPackageName(id: string): string | null {
 
 /** 包名精确匹配 → chunk 映射 */
 const packageChunkMap: Record<string, string> = {
-  // React 生态
-  react: "vendor-react",
-  "react-dom": "vendor-react",
-  scheduler: "vendor-react",
-  "loose-envify": "vendor-react",
-  // Redux 生态
-  "react-redux": "vendor-redux",
-  redux: "vendor-redux",
-  immer: "vendor-redux",
-  reselect: "vendor-redux",
+  // Vue 生态
+  vue: "vendor-vue",
+  "vue-demi": "vendor-vue",
+  // Pinia 状态管理
+  pinia: "vendor-pinia",
   // Router
-  "react-router": "vendor-router",
+  "vue-router": "vendor-router",
   // i18n
   i18next: "vendor-i18n",
-  "react-i18next": "vendor-i18n",
+  "i18next-vue": "vendor-i18n",
   // Zod
   zod: "vendor-zod",
   // Markdown
@@ -51,7 +43,7 @@ const packageChunkMap: Record<string, string> = {
   ai: "vendor-ai",
   "zhipu-ai-provider": "vendor-ai",
   // Icons
-  "lucide-react": "vendor-icons",
+  "lucide-vue-next": "vendor-icons",
   // UI 工具
   "class-variance-authority": "vendor-ui-utils",
   clsx: "vendor-ui-utils",
@@ -61,10 +53,8 @@ const packageChunkMap: Record<string, string> = {
 /** scope 前缀 → chunk 映射（匹配 @scope/package 格式） */
 const scopeChunkMap: Record<string, string> = {
   "@ai-sdk": "vendor-ai",
-  "@radix-ui": "vendor-radix",
   "@tanstack": "vendor-tanstack",
-  "@remix-run": "vendor-router",
-  "@reduxjs": "vendor-redux",
+  "@vue": "vendor-vue",
 };
 
 /** highlight.js 预加载语言列表 */
@@ -91,11 +81,7 @@ export default defineConfig(async () => ({
   // GitHub Pages 部署通过 BASE_PATH 环境变量设置子路径，默认使用根路径
   base: process.env.BASE_PATH || "/",
   plugins: [
-    react({
-      babel: {
-        plugins: [["babel-plugin-react-compiler"]],
-      },
-    }),
+    vue(),
     tailwindcss(),
     visualizer({
       // open: true, // 自动打开浏览器
@@ -117,9 +103,7 @@ export default defineConfig(async () => ({
       // 配置 highlight.js 别名，用于动态导入
       "/@highlight.js": path.resolve(__dirname, "./node_modules/highlight.js"),
     },
-  },
-
-  // Vitest 测试配置
+  },  // Vitest 测试配置
   test: {
     environment: "happy-dom",
     globals: true,
@@ -127,7 +111,7 @@ export default defineConfig(async () => ({
     include: ["src/__test__/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist", "src/__test__/integration/**"],
 
-    // 使用 forks 池避免 react-redux ESM 模块初始化竞态
+    // 使用 forks 池获得稳定的测试隔离
     pool: "forks",
     maxForks: 2,
 
@@ -137,14 +121,11 @@ export default defineConfig(async () => ({
         web: {
           // 预构建 CommonJS/ESM 模块以优化依赖解析速度
           include: [
-            "use-sync-external-store",
-            "cookie",
-            "react",
-            "react-dom",
-            "react/jsx-runtime",
-            "react-redux",
-            "react-remove-scroll",
-            "@radix-ui/react-slot",
+            "vue",
+            "pinia",
+            "vue-router",
+            "vue-demi",
+            "@vueuse/core",
           ],
         },
       },
@@ -164,7 +145,16 @@ export default defineConfig(async () => ({
     coverage: {
       provider: "istanbul",
       reporter: ["text", "html", "json", "lcov"],
-      include: ["src/**/*.{ts,tsx}"],
+      // 覆盖率统计范围：框架无关层平移目录（UI 层 Vue 重写完成后在阶段 7 恢复全目录）
+      include: [
+        "src/services/**",
+        "src/store/storage/**",
+        "src/store/keyring/**",
+        "src/utils/**",
+        "src/config/**",
+        "src/types/**",
+        "src/locales/**/*.ts",
+      ],
       exclude: [
         "src/__test__/**",
         "src/__mock__/**",
@@ -172,13 +162,6 @@ export default defineConfig(async () => ({
         "src/__test__/setup.ts",
         "src/@types/**",
         "src/pages/Model/index.tsx",
-        // Tauri 兼容层（依赖系统 API，无法在 web 测试环境运行）
-        "src/utils/tauriCompat/http.ts",
-        "src/utils/tauriCompat/shell.ts",
-        "src/utils/tauriCompat/os.ts",
-        "src/utils/tauriCompat/store.ts",
-        "src/utils/tauriCompat/env.ts",
-        "src/utils/tauriCompat/__mocks__/**",
         // shadcn/ui 自动生成的 UI 原子组件（无自定义逻辑）
         "src/components/ui/sheet.tsx",
         "src/components/ui/sonner.tsx",
@@ -306,6 +289,11 @@ export default defineConfig(async () => ({
             return "vendor-highlight-core";
           }
 
+          // reka-ui（shadcn-vue 底层）单独分包
+          if (pkg === "reka-ui") {
+            return "vendor-reka-ui";
+          }
+
           // 精确包名匹配
           if (pkg in packageChunkMap) {
             return packageChunkMap[pkg];
@@ -319,14 +307,6 @@ export default defineConfig(async () => ({
             }
           }
 
-          // Tauri 插件特殊处理
-          if (
-            pkg.startsWith("@tauri-apps/plugin-") ||
-            pkg.startsWith("tauri-plugin-")
-          ) {
-            return "vendor-tauri";
-          }
-
           // 其他所有 node_modules 依赖
           return "vendor";
         },
@@ -334,26 +314,9 @@ export default defineConfig(async () => ({
     },
   },
 
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
-  clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
     strictPort: true,
-    host: host || false,
-    hmr: host
-      ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
-    },
     proxy: {
       // 匹配 /deepseek/xxx
       "/deepseek": {

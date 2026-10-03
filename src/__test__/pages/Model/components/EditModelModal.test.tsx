@@ -23,7 +23,7 @@ vi.mock('react-i18next', () =>
   }));
 
 // Mock sonner
-vi.mock('sonner', () => ({
+vi.mock('vue-sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),

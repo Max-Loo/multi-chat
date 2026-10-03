@@ -46,7 +46,7 @@ vi.mock("@/services/i18n", () => ({
 }))
 
 // Mock sonner toast - 在 factory 内部创建
-vi.mock("sonner", () => ({
+vi.mock("vue-sonner", () => ({
   toast: {
     error: vi.fn(),
     warning: vi.fn(),

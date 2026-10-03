@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 describe('Toast API 导出', () => {
   beforeEach(() => {
     vi.resetModules();
-    vi.doMock('sonner', () => ({
+    vi.doMock('vue-sonner', () => ({
       toast: {
         success: vi.fn(() => 'success-id'),
         error: vi.fn(() => 'error-id'),

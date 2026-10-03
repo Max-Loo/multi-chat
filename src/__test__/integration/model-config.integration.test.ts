@@ -29,7 +29,7 @@ import { getMasterKey, initializeMasterKey, storeMasterKey } from '@/store/keyri
 // 使用 vi.hoisted 确保 memoryStore 与 vi.mock 一起被提升，避免 TDZ 错误
 const memoryStore = vi.hoisted(() => new Map<string, unknown>());
 
-vi.mock('@/utils/tauriCompat', () => globalThis.__createTauriCompatModuleMock(memoryStore));
+vi.mock('@/utils/webStorage', () => globalThis.__createWebStorageModuleMock(memoryStore));
 
 // 不 mock modelStorage — 使用真实代码路径（加密 → 存储 → 解密）
 import { saveModelsToJson, loadModelsFromJson, resetModelsStore } from '@/store/storage/modelStorage';

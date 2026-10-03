@@ -5,7 +5,7 @@
  */
 
 import { vi, afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup } from '@testing-library/vue';
 
 // ========================================
 // 模块状态重置函数（首次调用时延迟加载）
@@ -34,7 +34,7 @@ function ensureResetFnsLoaded() {
     _providerLoaderReset = loader.resetForTest.bind(loader);
   } catch { /* 模块不可用 */ }
   try {
-    const { keyring } = require('@/utils/tauriCompat/keyring');
+    const { keyring } = require('@/utils/webStorage/keyring');
     _keyringResetState = keyring.resetState.bind(keyring);
   } catch { /* 模块不可用 */ }
   try {

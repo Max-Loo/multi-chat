@@ -31,7 +31,7 @@ function renderToastToDom(message: string) {
   }
 }
 
-vi.mock('sonner', () => ({
+vi.mock('vue-sonner', () => ({
   toast: Object.assign(renderToastToDom, {
     success: renderToastToDom,
     error: renderToastToDom,
