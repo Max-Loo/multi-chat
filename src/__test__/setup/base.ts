@@ -10,7 +10,7 @@ import 'fake-indexeddb/auto';
 import { createI18nMockReturn, mockI18n } from '@/__test__/helpers/mocks/i18n';
 import { createMemoryStorageMock } from '@/__test__/helpers/mocks/storage';
 import { createResponsiveMock } from '@/__test__/helpers/mocks/responsive';
-import { createTauriCompatModuleMock } from '@/__test__/helpers/mocks/tauriCompat';
+import { createTauriCompatModuleMock } from '@/__test__/helpers/mocks/platform';
 import { createToastQueueModuleMock } from '@/__test__/helpers/mocks/toast';
 import { createScrollbarMock } from '@/__test__/helpers/mocks/scrollbar';
 import { createMarkdownItMock } from '@/__test__/helpers/mocks/markdown';

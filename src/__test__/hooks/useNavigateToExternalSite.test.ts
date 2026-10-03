@@ -4,59 +4,41 @@ import { renderHook } from '@testing-library/react';
 
 import { useNavigateToExternalSite } from '@/hooks/useNavigateToExternalSite';
 
-import * as tauriCompat from '@/utils/tauriCompat';
-
-
-
 describe('useNavigateToExternalSite', () => {
 
-  let shellOpenSpy: ReturnType<typeof vi.spyOn>;
-
-
+  let windowOpenSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
 
-    shellOpenSpy = vi.spyOn(tauriCompat.shell, 'open').mockResolvedValue(undefined);
+    windowOpenSpy = vi.spyOn(window, 'open').mockReturnValue(null);
 
   });
 
-
-
   afterEach(() => {
 
-    shellOpenSpy.mockRestore();
+    windowOpenSpy.mockRestore();
 
     vi.restoreAllMocks();
 
   });
 
-
-
   describe('基础功能测试', () => {
 
-    it('应调用 shell.open() 打开链接', () => {
+    it('应调用 window.open() 在新标签页打开链接', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 
-
-
       result.current.navToExternalSite('https://example.com');
 
+      expect(windowOpenSpy).toHaveBeenCalledWith('https://example.com', '_blank', 'noopener,noreferrer');
 
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://example.com');
-
-      expect(shellOpenSpy).toHaveBeenCalledTimes(1);
+      expect(windowOpenSpy).toHaveBeenCalledTimes(1);
 
     });
-
-
 
     it('应支持多个URL连续打开', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
-
-
 
       result.current.navToExternalSite('https://example1.com');
 
@@ -64,142 +46,70 @@ describe('useNavigateToExternalSite', () => {
 
       result.current.navToExternalSite('https://example3.com');
 
+      expect(windowOpenSpy).toHaveBeenCalledTimes(3);
 
+      expect(windowOpenSpy).toHaveBeenNthCalledWith(1, 'https://example1.com', '_blank', 'noopener,noreferrer');
 
-      expect(shellOpenSpy).toHaveBeenCalledTimes(3);
+      expect(windowOpenSpy).toHaveBeenNthCalledWith(2, 'https://example2.com', '_blank', 'noopener,noreferrer');
 
-      expect(shellOpenSpy).toHaveBeenNthCalledWith(1, 'https://example1.com');
-
-      expect(shellOpenSpy).toHaveBeenNthCalledWith(2, 'https://example2.com');
-
-      expect(shellOpenSpy).toHaveBeenNthCalledWith(3, 'https://example3.com');
+      expect(windowOpenSpy).toHaveBeenNthCalledWith(3, 'https://example3.com', '_blank', 'noopener,noreferrer');
 
     });
-
-
 
     it('应支持带查询参数的URL', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 
-
-
       result.current.navToExternalSite('https://example.com?param1=value1&param2=value2');
 
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://example.com?param1=value1&param2=value2');
+      expect(windowOpenSpy).toHaveBeenCalledWith('https://example.com?param1=value1&param2=value2', '_blank', 'noopener,noreferrer');
 
     });
 
   });
 
+  describe('安全语义测试', () => {
 
-
-  describe('Tauri 兼容层测试', () => {
-
-    it('应正确调用 tauriCompat.shell.open', () => {
+    it('应使用 noopener,noreferrer 防止反向标签页劫持', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 
+      result.current.navToExternalSite('https://untrusted.com');
 
+      const [, target, features] = windowOpenSpy.mock.calls[0];
 
-      result.current.navToExternalSite('https://tauri-app.com');
+      expect(target).toBe('_blank');
 
+      expect(features).toContain('noopener');
 
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://tauri-app.com');
-
-    });
-
-
-
-    it('应在 Tauri 环境下使用 shell.open', () => {
-
-      vi.stubGlobal('__TAURI__', {
-
-        __scope: { platform: 'darwin' },
-
-      });
-
-
-
-      const { result } = renderHook(() => useNavigateToExternalSite());
-
-
-
-      result.current.navToExternalSite('https://tauri-app.com');
-
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://tauri-app.com');
-
-
-
-      vi.unstubAllGlobals();
-
-    });
-
-
-
-    it('应在 Web 环境下使用 shell.open（兼容层内部调用 window.open）', () => {
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Reason: 第三方库类型定义不完整
-      delete (window as any).__TAURI__;
-
-
-
-      const { result } = renderHook(() => useNavigateToExternalSite());
-
-
-
-      result.current.navToExternalSite('https://web-app.com');
-
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('https://web-app.com');
+      expect(features).toContain('noreferrer');
 
     });
 
   });
 
-
-
-  describe('错误处理测试', () => {
+  describe('边界情况测试', () => {
 
     it('应处理无效的URL', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 
-
-
       result.current.navToExternalSite('not-a-valid-url');
 
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('not-a-valid-url');
+      expect(windowOpenSpy).toHaveBeenCalledWith('not-a-valid-url', '_blank', 'noopener,noreferrer');
 
     });
-
-
 
     it('应处理空字符串', () => {
 
       const { result } = renderHook(() => useNavigateToExternalSite());
 
-
-
       result.current.navToExternalSite('');
 
-
-
-      expect(shellOpenSpy).toHaveBeenCalledWith('');
+      expect(windowOpenSpy).toHaveBeenCalledWith('', '_blank', 'noopener,noreferrer');
 
     });
 
   });
-
-
 
 });

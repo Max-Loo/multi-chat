@@ -2,11 +2,11 @@
  * 全量数据重置模块
  * 清除安全基础设施和业务数据，保留应用配置
  */
-import { keyring, SEED_STORAGE_KEY } from '@/utils/tauriCompat/keyring';
-import { KEYRING_VERSION_KEY } from '@/utils/tauriCompat/keyringMigration';
-import { KEYRING_DB_NAME, STORE_DB_NAME } from '@/utils/tauriCompat/keyringMigration';
-import { isTauri } from '@/utils/tauriCompat/env';
-import { createLazyStore } from '@/utils/tauriCompat';
+import { keyring, SEED_STORAGE_KEY } from '@/utils/platform/keyring';
+import { KEYRING_VERSION_KEY } from '@/utils/platform/keyringMigration';
+import { KEYRING_DB_NAME, STORE_DB_NAME } from '@/utils/platform/keyringMigration';
+import { isTauri } from '@/utils/platform/env';
+import { createLazyStore } from '@/utils/platform';
 import { KEYRING_SERVICE_NAME, KEYRING_ACCOUNT_NAME, SECURITY_WARNING_DISMISSED_KEY } from '@/store/keyring/masterKey';
 
 /** 需要清除的 localStorage key（Web 环境安全基础设施） */

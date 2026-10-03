@@ -16,7 +16,7 @@ src/__test__/
 │   ├── testing-utils.tsx        # 渲染和测试工具
 │   ├── mocks/                   # Mock 工厂
 │   │   ├── aiSdk.ts             # AI SDK Mock
-│   │   ├── tauriCompat.ts       # Tauri 兼容层 Mock
+│   │   ├── platform.ts         # 平台层 Mock
 │   │   ├── storage.ts           # 存储 Mock
 │   │   ├── fetch.ts             # Fetch API Mock
 │   │   ├── router.ts            # Router Mock
@@ -247,7 +247,8 @@ pnpm test:run
 
 ```typescript
 // Mock 工厂（从 helpers 导入）
-import { createTauriMocks, createStorageMocks } from '@/__test__/helpers/mocks';
+import { createStorageMocks } from '@/__test__/helpers/mocks';
+import { createTauriCompatModuleMock } from '@/__test__/helpers/mocks/platform';
 import { createMockModel } from '@/__test__/helpers/fixtures';
 import { createMockChat } from '@/__test__/helpers/mocks/chatSidebar';
 
@@ -260,20 +261,16 @@ import { resetTestState } from '@/__test__/helpers/isolation';
 
 ## Mock 工厂使用指南
 
-### Tauri Mock
+### 平台层 Mock
 
 ```typescript
-import { createTauriMocks } from '@/__test__/helpers/mocks/tauri';
+// 通过 globalThis 注册的 mock 工厂（由 setup/base.ts 注入），
+// 在测试文件中用于 vi.mock('@/utils/platform') 的工厂函数
+vi.mock('@/utils/platform', () => globalThis.__createTauriCompatModuleMock());
 
-describe('测试组件', () => {
-  const mocks = createTauriMocks({ isTauri: false });
-
-  beforeEach(() => {
-    mocks.windowMock.__TAURI__ = true;
-  });
-
-  afterEach(() => {
-    mocks.resetAll();
+describe('测试模块', () => {
+  it('使用内存存储隔离平台层依赖', () => {
+    // createLazyStore 等 API 已被 mock 为内存实现
   });
 });
 ```

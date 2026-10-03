@@ -27,10 +27,10 @@ import {
   initializeMasterKey,
   exportMasterKey,
 } from '@/store/keyring/masterKey';
-import { WebKeyringCompat } from '@/utils/tauriCompat/keyring';
+import { WebKeyringCompat } from '@/utils/platform/keyring';
 
-// Mock @/utils/tauriCompat/env 模块中的 isTauri 函数
-vi.mock('@/utils/tauriCompat/env', () => ({
+// Mock @/utils/platform/env 模块中的 isTauri 函数
+vi.mock('@/utils/platform/env', () => ({
   isTauri: vi.fn(),
   isTestEnvironment: vi.fn(() => true),
   getPBKDF2Iterations: vi.fn(() => 1000),
@@ -38,7 +38,7 @@ vi.mock('@/utils/tauriCompat/env', () => ({
   DERIVED_KEY_LENGTH: 256,
 }));
 
-import { isTauri } from '@/utils/tauriCompat/env';
+import { isTauri } from '@/utils/platform/env';
 
 // 使用 vi.mocked 获取类型安全的 Mock 函数
 const mockIsTauri = vi.mocked(isTauri);
@@ -77,8 +77,8 @@ const keyringManager: {
 };
 
 // Mock keyring 模块
-vi.mock('@/utils/tauriCompat/keyring', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils/tauriCompat/keyring')>();
+vi.mock('@/utils/platform/keyring', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/platform/keyring')>();
 
   return {
     ...actual,

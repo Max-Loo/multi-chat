@@ -6,8 +6,8 @@ import type { Model } from "@/types/model";
 import { encryptField, decryptField, isEncrypted } from "@/utils/crypto";
 import { getMasterKey } from "@/store/keyring/masterKey";
 import { saveToStore, loadFromStore } from "./storeUtils";
-import { createLazyStore } from "@/utils/tauriCompat";
-import type { StoreCompat } from "@/utils/tauriCompat";
+import { createLazyStore } from "@/utils/platform";
+import type { StoreCompat } from "@/utils/platform";
 
 /**
  * loadModelsFromJson 返回的结构化结果

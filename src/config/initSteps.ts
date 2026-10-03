@@ -13,7 +13,7 @@ import { initializeChatList } from '@/store/slices/chatSlices';
 import { migrateOldChatStorage } from '@/store/storage/chatStorage';
 import { initializeAppLanguage, initializeTransmitHistoryReasoning, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
 import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
-import { migrateKeyringV1ToV2 } from '@/utils/tauriCompat';
+import { migrateKeyringV1ToV2 } from '@/utils/platform';
 
 /** "无可用供应商"错误的标识字符串 */
 const NO_PROVIDERS_ERROR_MESSAGE = "无法获取模型供应商数据，请检查网络连接";

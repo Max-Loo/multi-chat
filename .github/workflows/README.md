@@ -36,11 +36,9 @@
 - Personal Access Token 有安全风险，请妥善保管
 - 建议设置合理的过期时间，定期更新
 - 如果 Token 过期，需要重新生成并更新 Repository Secret
-- 使用 PAT 创建的 tag 将会正确触发 `build-and-release.yml` workflow
+- 使用 PAT 创建的 tag 将会正确触发相关 workflow（桌面端发布 workflow 已随 Tauri 移除而删除）
 
 ## 工作流程
 
 1. `create-tag.yml` 被触发（当推送到 `feat/build-and-release` 分支）
 2. 创建新的 tag 并使用 PAT 推送
-3. `build-and-release.yml` 检测到新的 tag 推送并自动触发
-4. 开始构建和发布流程
