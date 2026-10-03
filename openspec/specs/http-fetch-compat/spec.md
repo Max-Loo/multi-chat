@@ -1,6 +1,10 @@
 # HTTP Fetch 跨平台兼容层 - 规范
 
-## ADDED Requirements
+## Purpose
+
+定义统一 Fetch API 的跨平台兼容层要求：按运行环境（开发/生产模式与 Tauri/Web 平台）选择底层 fetch 实现，并提供一致的类型定义、错误处理与模块导出契约。
+
+## Requirements
 
 ### Requirement: 环境检测
 

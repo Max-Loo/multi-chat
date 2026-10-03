@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Tauri 兼容层环境测试规范
+
+## Purpose
+
+定义环境检测相关单元测试的要求：`isTauri()` 环境检测、`isTestEnvironment()` 多策略检测与 `getPBKDF2Iterations()` 迭代次数的测试行为，以及测试间的全局变量隔离。
+
+## Requirements
 
 ### Requirement: isTauri 环境检测测试
 
