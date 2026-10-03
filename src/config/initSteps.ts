@@ -1,18 +1,17 @@
 /**
  * 初始化步骤配置
- * 
+ *
  * 定义应用的所有初始化步骤，包括依赖关系、错误处理和执行逻辑
  */
 
 import type { InitStep, ModelProviderStatus } from '@/services/initialization';
 import { initI18n, tSafely } from '@/services/i18n';
 import { initializeMasterKey } from '@/store/keyring/masterKey';
-import { store } from '@/store';
-import { initializeModels } from '@/store/slices/modelSlice';
-import { initializeChatList } from '@/store/slices/chatSlices';
+import { useModelsStore } from '@/store/models';
+import { useChatStore } from '@/store/chat';
+import { useAppConfigStore } from '@/store/appConfig';
+import { useModelProviderStore } from '@/store/modelProvider';
 import { migrateOldChatStorage } from '@/store/storage/chatStorage';
-import { initializeAppLanguage, initializeTransmitHistoryReasoning, initializeAutoNamingEnabled } from '@/store/slices/appConfigSlices';
-import { initializeModelProvider } from '@/store/slices/modelProviderSlice';
 import { migrateKeyringV1ToV2 } from '@/utils/webStorage';
 
 /** "无可用供应商"错误的标识字符串 */
@@ -89,7 +88,8 @@ export const initSteps: InitStep[] = [
     critical: false,
     dependencies: [STEP_NAMES.masterKey],
     execute: async (context) => {
-      const { models, decryptionFailureCount } = await store.dispatch(initializeModels()).unwrap();
+      const modelsStore = useModelsStore();
+      const { models, decryptionFailureCount } = await modelsStore.initializeModels();
       context.setResult('models', models);
       context.setResult('decryptionFailureCount', decryptionFailureCount);
       return models;
@@ -107,7 +107,8 @@ export const initSteps: InitStep[] = [
       // 先迁移旧格式存储
       await migrateOldChatStorage();
       // 再初始化聊天列表（只加载索引元数据）
-      const chatList = await store.dispatch(initializeChatList()).unwrap();
+      const chatStore = useChatStore();
+      const chatList = await chatStore.initializeChatList();
       context.setResult('chatList', chatList);
       return chatList;
     },
@@ -122,7 +123,8 @@ export const initSteps: InitStep[] = [
     critical: false,
     dependencies: [STEP_NAMES.i18n],
     execute: async (context) => {
-      const appLanguage = await store.dispatch(initializeAppLanguage()).unwrap();
+      const appConfigStore = useAppConfigStore();
+      const appLanguage = await appConfigStore.initializeAppLanguage();
       context.setResult('appLanguage', appLanguage);
       return appLanguage;
     },
@@ -136,7 +138,8 @@ export const initSteps: InitStep[] = [
     name: STEP_NAMES.transmitHistoryReasoning,
     critical: false,
     execute: async (context) => {
-      const transmitHistoryReasoning = await store.dispatch(initializeTransmitHistoryReasoning()).unwrap();
+      const appConfigStore = useAppConfigStore();
+      const transmitHistoryReasoning = await appConfigStore.initializeTransmitHistoryReasoning();
       context.setResult('transmitHistoryReasoning', transmitHistoryReasoning);
       return transmitHistoryReasoning;
     },
@@ -150,7 +153,8 @@ export const initSteps: InitStep[] = [
     name: STEP_NAMES.autoNamingEnabled,
     critical: false,
     execute: async (context) => {
-      const autoNamingEnabled = await store.dispatch(initializeAutoNamingEnabled()).unwrap();
+      const appConfigStore = useAppConfigStore();
+      const autoNamingEnabled = await appConfigStore.initializeAutoNamingEnabled();
       context.setResult('autoNamingEnabled', autoNamingEnabled);
       return autoNamingEnabled;
     },
@@ -164,35 +168,31 @@ export const initSteps: InitStep[] = [
     name: STEP_NAMES.modelProvider,
     critical: false,
     execute: async (context) => {
-      try {
-        const modelProvider = await store.dispatch(initializeModelProvider()).unwrap();
-        context.setResult('modelProvider', modelProvider);
+      const modelProviderStore = useModelProviderStore();
+      const modelProvider = await modelProviderStore.initializeModelProvider();
 
-        // 请求成功，设置成功状态
-        const status: ModelProviderStatus = {
-          hasError: false,
-          isNoProvidersError: false,
-        };
-        context.setResult('modelProviderStatus', status);
-
-        return modelProvider;
-      } catch (error) {
+      if (modelProvider === null) {
         // 请求失败，从 store 中获取错误状态
-        // 注意：虽然 rejectWithValue 的 payload 包含 error 字段，
-        // 但 unwrap() 会将其作为错误抛出，所以我们从 store 获取状态
-        const storeState = store.getState();
-        const modelProviderError = storeState.modelProvider.error;
-        const modelProviderLoading = storeState.modelProvider.loading;
-
         const status: ModelProviderStatus = {
-          hasError: !modelProviderLoading && !!modelProviderError,
-          isNoProvidersError: modelProviderError === NO_PROVIDERS_ERROR_MESSAGE,
+          hasError: !modelProviderStore.loading && !!modelProviderStore.error,
+          isNoProvidersError: modelProviderStore.error === NO_PROVIDERS_ERROR_MESSAGE,
         };
         context.setResult('modelProviderStatus', status);
 
-        // 重新抛出错误，让 onError 处理
-        throw error;
+        // 抛出错误，让 onError 处理
+        throw new Error(modelProviderStore.error ?? 'Failed to initialize model providers');
       }
+
+      context.setResult('modelProvider', modelProvider);
+
+      // 请求成功，设置成功状态
+      const status: ModelProviderStatus = {
+        hasError: false,
+        isNoProvidersError: false,
+      };
+      context.setResult('modelProviderStatus', status);
+
+      return modelProvider;
     },
     onError: (error) => ({
       severity: 'warning',

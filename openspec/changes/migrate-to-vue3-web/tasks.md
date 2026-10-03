@@ -25,8 +25,8 @@
 
 ## 4. Pinia 状态管理
 
-- [ ] 4.1 将 7 个 Redux slice 转写为 7 个 Pinia setup store（state→ref、reducers→actions、selectors→computed，行为逐条对照原 slice），验证 store 单测（转写自 chatSlices 等测试）通过
-- [ ] 4.2 将 3 个 Redux 监听中间件转写为各 store 内的持久化副作用（聊天保存、模型保存、语言保存），验证既有持久化相关测试（saveChatListMiddleware 等）的转写版通过
+- [x] 4.1 将 7 个 Redux slice 转写为 7 个 Pinia setup store（state→ref、reducers→actions、selectors→computed，行为逐条对照原 slice），验证 store 单测（转写自 chatSlices 等测试）通过
+- [x] 4.2 将 3 个 Redux 监听中间件转写为各 store 内的持久化副作用（聊天保存、模型保存、语言保存），验证既有持久化相关测试（saveChatListMiddleware 等）的转写版通过
 - [ ] 4.3 删除 `src/hooks/redux.ts`，全项目检索确认无 Redux 残留引用，验证 `pnpm tsc` 通过
 
 ## 5. shadcn-vue 组件库与基础 UI

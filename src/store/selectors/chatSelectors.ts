@@ -1,45 +1,41 @@
-import { createSelector } from "@reduxjs/toolkit";
-import type { RootState } from "@/store";
+import { computed } from "vue";
+import { useChatStore } from "@/store/chat";
 import type { ChatMeta } from "@/types/chat";
 
 /**
- * input selector：获取选中的聊天 ID
+ * 获取当前选中的聊天对象（从 activeChatData 中获取完整数据）
+ * 转写自 Redux memoized selector selectSelectedChat，以 computed 提供缓存语义
  */
-const selectSelectedChatId = (state: RootState) => state.chat.selectedChatId;
+export function useSelectedChat() {
+  const chatStore = useChatStore();
+
+  return computed(() =>
+    chatStore.selectedChatId
+      ? chatStore.activeChatData[chatStore.selectedChatId]
+      : undefined,
+  );
+}
 
 /**
- * input selector：获取聊天元数据列表
+ * 获取活跃聊天元数据列表
+ * 转写自 Redux memoized selector selectChatMetaList
  */
-const selectChatMetaListRaw = (state: RootState) => state.chat.chatMetaList;
+export function useChatMetaList() {
+  const chatStore = useChatStore();
+
+  return computed((): ChatMeta[] => chatStore.chatMetaList);
+}
 
 /**
- * input selector：获取活跃聊天数据
+ * 获取当前选中聊天的元数据
+ * 转写自 Redux memoized selector selectSelectedChatMeta
  */
-const selectActiveChatData = (state: RootState) => state.chat.activeChatData;
+export function useSelectedChatMeta() {
+  const chatStore = useChatStore();
 
-/**
- * memoized selector：获取当前选中的聊天对象
- * 从 activeChatData 中获取完整数据
- */
-export const selectSelectedChat = createSelector(
-  [selectSelectedChatId, selectActiveChatData],
-  (selectedChatId, activeChatData) =>
-    selectedChatId ? activeChatData[selectedChatId] : undefined,
-);
-
-/**
- * memoized selector：获取活跃聊天元数据列表
- */
-export const selectChatMetaList = createSelector(
-  [selectChatMetaListRaw],
-  (metaList): ChatMeta[] => metaList,
-);
-
-/**
- * memoized selector：获取当前选中聊天的元数据
- */
-export const selectSelectedChatMeta = createSelector(
-  [selectSelectedChatId, selectChatMetaListRaw],
-  (selectedChatId, metaList) =>
-    selectedChatId ? metaList.find(m => m.id === selectedChatId) : undefined,
-);
+  return computed(() =>
+    chatStore.selectedChatId
+      ? chatStore.chatMetaList.find(m => m.id === chatStore.selectedChatId)
+      : undefined,
+  );
+}
