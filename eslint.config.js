@@ -1,4 +1,6 @@
 import pluginVue from 'eslint-plugin-vue';
+import vueParser from 'vue-eslint-parser';
+import tsParser from '@typescript-eslint/parser';
 import globals from 'globals';
 
 /**
@@ -10,21 +12,26 @@ import globals from 'globals';
  */
 export default [
   {
+    ignores: ['dist/**', 'coverage/**', 'node_modules/**'],
+  },
+  {
     files: ['**/*.vue'],
     languageOptions: {
+      parser: vueParser,
+      parserOptions: {
+        parser: tsParser,
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
       globals: {
         ...globals.browser,
       },
+    },
+    plugins: {
+      vue: pluginVue,
     },
     rules: {
       ...pluginVue.configs['flat/recommended'].rules,
     },
   },
-  {
-    ignores: ['dist/**', 'coverage/**', 'node_modules/**'],
-  },
-  ...pluginVue.configs['flat/recommended'].map((config) => ({
-    ...config,
-    files: ['**/*.vue'],
-  })),
 ];
