@@ -5,9 +5,27 @@
  */
 
 import { ChatRoleEnum } from '@/types/chat';
-import type { Chat } from '@/types/chat';
-import { createMockPanelMessage } from './chatPanel';
+import type { Chat, StandardMessage } from '@/types/chat';
 import { generateId } from 'ai';
+
+/**
+ * 创建 Mock 聊天消息
+ * @param overrides 覆盖默认消息属性
+ * @returns Mock 消息对象
+ */
+export const createMockPanelMessage = (overrides?: Partial<StandardMessage>): StandardMessage => {
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    id: 'test-message-1',
+    role: ChatRoleEnum.USER,
+    content: 'Test message',
+    timestamp: now,
+    modelKey: 'test-model',
+    finishReason: null,
+    raw: null,
+    ...overrides,
+  };
+};
 
 /**
  * 创建 Mock Chat 对象

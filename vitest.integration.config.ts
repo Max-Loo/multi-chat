@@ -1,9 +1,9 @@
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [vue()],
   test: {
     // 集成测试配置
     setupFiles: ['./src/__test__/integration/setup.ts'],
@@ -12,7 +12,7 @@ export default defineConfig({
     maxConcurrency: 1,
     isolate: true,
 
-    // 使用 forks 池避免 react-redux ESM 模块初始化竞态
+    // 使用 forks 池获得稳定的测试隔离
     pool: 'forks',
     maxWorkers: 1, // 保持串行语义
 
@@ -28,16 +28,7 @@ export default defineConfig({
     deps: {
       optimizer: {
         web: {
-          include: [
-            'use-sync-external-store',
-            'cookie',
-            'react',
-            'react-dom',
-            'react/jsx-runtime',
-            'react-redux',
-            'react-remove-scroll',
-            '@radix-ui/react-slot',
-          ],
+          include: ['vue', 'pinia', 'vue-router', 'vue-demi', '@vueuse/core'],
         },
       },
     },

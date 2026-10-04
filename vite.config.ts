@@ -145,60 +145,25 @@ export default defineConfig(async () => ({
     coverage: {
       provider: "istanbul",
       reporter: ["text", "html", "json", "lcov"],
-      // 覆盖率统计范围：框架无关层平移目录（UI 层 Vue 重写完成后在阶段 7 恢复全目录）
-      include: [
-        "src/services/**",
-        "src/store/storage/**",
-        "src/store/keyring/**",
-        "src/utils/**",
-        "src/config/**",
-        "src/types/**",
-        "src/locales/**/*.ts",
-      ],
+      include: ["src/**/*.{ts,tsx,vue}"],
       exclude: [
         "src/__test__/**",
         "src/__mock__/**",
-        "src/main.tsx",
-        "src/__test__/setup.ts",
         "src/@types/**",
-        "src/pages/Model/index.tsx",
-        // shadcn/ui 自动生成的 UI 原子组件（无自定义逻辑）
-        "src/components/ui/sheet.tsx",
-        "src/components/ui/sonner.tsx",
-        "src/components/ui/skeleton.tsx",
-        "src/components/ui/progress.tsx",
-        "src/components/ui/avatar.tsx",
-        "src/components/ui/card.tsx",
-        "src/components/ui/dropdown-menu.tsx",
-        "src/components/ui/checkbox.tsx",
-        "src/components/ui/select.tsx",
-        "src/components/ui/table.tsx",
-        "src/components/ui/tooltip.tsx",
-        "src/components/ui/spinner.tsx",
-        "src/components/ui/dialog.tsx",
-        "src/components/ui/alert.tsx",
-        "src/components/ui/alert-dialog.tsx",
-        "src/components/ui/badge.tsx",
-        "src/components/ui/button.tsx",
-        "src/components/ui/data-table.tsx",
-        "src/components/ui/form.tsx",
-        "src/components/ui/input.tsx",
-        "src/components/ui/label.tsx",
-        "src/components/ui/popover.tsx",
-        "src/components/ui/radio-group.tsx",
-        "src/components/ui/resizable.tsx",
-        "src/components/ui/switch.tsx",
-        "src/components/ui/textarea.tsx",
+        "src/main.ts",
+        // shadcn-vue 自动生成的 UI 原子组件（无自定义逻辑）
+        "src/components/ui/**",
         // Canvas 动画（依赖 Canvas API，无法在 happy-dom 中测试）
         "src/components/AnimatedLogo/canvas-logo.ts",
         // 第三方库薄包装（clsx + twMerge 一行组合，不含业务逻辑）
         "src/utils/utils.ts",
         // 纯动态 import 映射（46 个 switch case，已被上层测试完整 mock）
         "src/utils/highlightLanguageIndex.ts",
-        // 仅用于测试的页面组件
+        // 仅用于开发环境手动测试的页面
         "src/pages/Setting/components/ToastTest/**",
       ],
       // 覆盖率阈值（分模块分级，汇总模式，Istanbul provider）
+      // 目录重映射：hooks → composables，其余与迁移前一致
       thresholds: {
         // 全局底线
         lines: 70,
@@ -206,7 +171,7 @@ export default defineConfig(async () => ({
         branches: 60,
         statements: 60,
         // 分模块阈值（汇总，非逐文件）
-        '**/src/hooks/**': {
+        '**/src/composables/**': {
           lines: 90,
           branches: 85,
         },

@@ -111,7 +111,7 @@ export async function* streamChatCompletion(
     if (error instanceof MetadataCollectionError) {
       console.warn('Metadata collection failed, but stream content is preserved:', error);
       // 不 yield 任何消息，保留已流式传输的内容
-      // 如果 yield 空内容，会覆盖 Redux store 中的完整内容
+      // 如果 yield 空内容，会覆盖 store 中的完整内容
       return;
     } else {
       throw error; // 非元数据错误正常抛出

@@ -3,7 +3,9 @@ import Resources from './translationResources';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
-    enableSelector: 'optimize';
+    // 字符串键模式：t('common.submit') 直接接受资源键并做类型校验
+    // （'optimize' 仅支持代理选择器调用，与项目内 tSafely/字符串键调用约定冲突）
+    enableSelector: false;
     defaultNS: 'translation';
     resources: Resources;
   }

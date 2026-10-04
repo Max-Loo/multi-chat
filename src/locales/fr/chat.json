@@ -41,6 +41,8 @@
   "copyFailed": "Échec de la copie",
   "editMessage": "Modifier le message",
   "editConfirm": "Confirmer la modification",
+  "previousVersion": "Version précédente",
+  "nextVersion": "Version suivante",
   "editCancel": "Annuler la modification",
   "regenerateMessage": "Régénérer",
   "moreActions": "Plus d'actions",

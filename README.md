@@ -5,7 +5,7 @@
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://max-loo.github.io/multi-chat/)
 [![Deploy to GitHub Pages](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml/badge.svg)](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml)
 
-A multi-model chat application built with Tauri + React + TypeScript, supporting simultaneous conversations with multiple AI models for easy comparison of responses.
+A pure-web multi-model chat application built with Vue 3 + TypeScript, supporting simultaneous conversations with multiple AI models for easy comparison of responses.
 
 ## Features
 
@@ -60,19 +60,18 @@ The app supports four levels of responsive layout that automatically adjust base
 
 - Local data storage to protect privacy
 - API keys encrypted with AES-256-GCM
-- Master key securely stored in system keychain via `tauri-plugin-keyring`
+- Master key stored locally in the browser (seed + PBKDF2 derivation + AES-256-GCM), with export backup support
 - Field-level encryption for sensitive data, plaintext storage for non-sensitive data
 - Data stored in JSON format for easy backup and inspection
 
 ## Tech Stack
 
-- **Frontend Framework**: React 19 + TypeScript
-- **UI Components**: shadcn/ui + Radix UI
-- **State Management**: Redux Toolkit
-- **Routing**: React Router v7
+- **Frontend Framework**: Vue 3 (Composition API) + TypeScript
+- **UI Components**: shadcn-vue (reka-ui)
+- **State Management**: Pinia
+- **Routing**: Vue Router
 - **Styling**: Tailwind CSS
-- **Internationalization**: i18next + react-i18next
-- **Desktop Framework**: Tauri 2
+- **Internationalization**: i18next + i18next-vue
 - **Build Tool**: Vite
 
 ## Getting Started
@@ -81,7 +80,7 @@ The app supports four levels of responsive layout that automatically adjust base
 
 - Node.js 18+
 - pnpm
-- Rust 1.70+ (for building the Tauri app)
+- A modern browser with IndexedDB and Web Crypto API support
 
 ### Install Dependencies
 
@@ -97,21 +96,15 @@ pnpm install
 ### Development Mode
 
 ```bash
-# Start Tauri desktop app development mode (starts both frontend and backend)
-pnpm tauri dev
-
-# Start web browser development mode (frontend only)
-pnpm web:dev
+# Start web development mode
+pnpm dev
 ```
 
 ### Build the Application
 
 ```bash
-# Build Tauri desktop app for production
-pnpm tauri build
-
-# Build web app for production
-pnpm web:build
+# Build web app for production (type check + static output to dist/)
+pnpm build
 ```
 
 ### Deploy to GitHub Pages
@@ -135,7 +128,7 @@ pnpm deploy:gh-pages
    - **build job**: Build the web app and upload artifact
    - **deploy job**: Deploy artifact to GitHub Pages
 
-Meanwhile, the desktop build (`build-and-release.yml`) is also triggered in parallel to ensure desktop and web versions are released simultaneously.
+Version tags only trigger the web deployment (the desktop build channel has been removed along with the pure-web migration).
 
 **Technical Details**:
 - Uses official GitHub Pages Actions (recommended approach)
@@ -146,7 +139,7 @@ Meanwhile, the desktop build (`build-and-release.yml`) is also triggered in para
 ### Other Common Commands
 
 ```bash
-# Run linting (using oxlint)
+# Run linting (oxlint for .ts/.js, eslint for .vue)
 pnpm lint
 
 # Update application version
@@ -205,43 +198,37 @@ pnpm test:all
 
 ```
 multi-chat/
-├── src/                        # React frontend code
+├── src/                        # Vue 3 frontend code
 │   ├── components/             # Shared components
-│   │   ├── ui/                # shadcn/ui components
-│   │   ├── FilterInput/       # Filter input component
-│   │   ├── Layout/            # Layout components
-│   │   └── Sidebar/           # Sidebar components
+│   │   ├── ui/                # shadcn-vue components
+│   │   ├── chat/              # Chat bubble components
+│   │   ├── DataTable/         # Generic data table
+│   │   └── Layout/            # Layout components
+│   ├── composables/           # Composable functions
 │   ├── pages/                 # Page components
 │   │   ├── Chat/              # Chat page
 │   │   ├── Model/             # Model management page
 │   │   └── Setting/           # Settings page
-│   ├── hooks/                 # Custom hooks
+│   ├── router/                # Vue Router route table
 │   ├── config/                # Configuration files
-│   │   └── initSteps.ts       # Initialization step config
-│   ├── locales/               # i18n language files
+│   │   └── initSteps.ts       # Initialization steps config
+│   ├── locales/               # Internationalization files
 │   │   ├── en/                # English language pack
 │   │   ├── zh/                # Chinese language pack
 │   │   └── fr/                # French language pack
 │   ├── services/              # Service layer
-│   │   ├── chat/              # Chat service (modular)
+│   │   ├── chat/              # Chat services (modular)
 │   │   ├── modelRemote/       # Remote model service
 │   │   ├── i18n.ts            # i18n configuration
 │   │   └── global.ts          # Global configuration
-│   ├── store/                 # Redux state management
-│   │   ├── slices/            # Redux slices
-│   │   ├── middleware/        # Middleware
+│   ├── store/                 # Pinia state management
 │   │   ├── storage/           # Data persistence
 │   │   └── keyring/           # Master key management
 │   ├── types/                 # TypeScript type definitions
 │   └── utils/                 # Utility functions
-│       ├── tauriCompat/       # Tauri compatibility layer
-│       ├── crypto.ts          # Crypto utilities
+│       ├── webStorage/        # Pure-web storage layer (IndexedDB)
+│       ├── crypto.ts          # Encryption utilities
 │       └── ...
-├── src-tauri/                 # Rust backend code
-│   ├── src/
-│   │   ├── lib.rs             # Tauri command definitions
-│   │   └── main.rs            # Entry file
-│   └── tauri.conf.json        # Tauri configuration
 ├── public/                    # Static assets
 └── package.json               # Project dependencies and scripts
 ```
@@ -275,7 +262,7 @@ Language files are located in the `src/locales/` directory, organized by languag
     - System language (if supported)
     - Default language (English)
 2. Language preference is stored in `localStorage` with the key `multi-chat-language`
-3. Uses `i18next` and `react-i18next` for internationalization
+3. Uses `i18next` and `i18next-vue` for internationalization
 
 **Language Code Auto-Migration**:
 - On app upgrade, if language codes have changed (e.g., `zh-CN` → `zh`), the system automatically migrates to the new code
@@ -289,7 +276,7 @@ Language files are located in the `src/locales/` directory, organized by languag
 - ✅ **Smart Caching**: In-flight load requests are cached to prevent race conditions during rapid switching
 
 **Auto-Persistence**:
-- ✅ Language changes are automatically synced to localStorage via Redux Middleware
+- ✅ Language changes are automatically synced to localStorage via Pinia store side effects
 - ✅ Silent degradation: localStorage write failures log a warning without affecting app operation
 
 **Message Queue Mechanism**:
@@ -330,7 +317,7 @@ The project uses the following tools to ensure code quality:
 
 1. Add the new provider enum in `src/utils/enums.ts`
 2. Register the corresponding Provider factory function in `src/services/chat/providerLoader.ts`
-3. Add the provider option in `src/pages/Model/CreateModel/components/ModelSidebar.tsx`
+3. Add the provider option in `src/pages/Model/CreateModel/components/ModelSidebar.vue`
 
 ### Code Conventions
 
@@ -348,42 +335,35 @@ The project uses the following tools to ensure code quality:
 
 ### Data Persistence
 
-The app uses the @tauri-apps/plugin-store plugin for data persistence. Data storage locations:
+The app is a pure-web application; all data is persisted only in the browser:
 
-- **Windows**: `%APPDATA%\multi-chat`
-- **macOS**: `~/Library/Application Support/multi-chat`
-- **Linux**: `~/.config/multi-chat`
-
-#### Data Files
-
-- `models.json`: Model configurations (API key fields are encrypted)
-- `chats.json`: Chat records
+- **IndexedDB**: `multi-chat-store` (model configs, chat history) and `multi-chat-keyring` (encrypted key data)
+- **localStorage**: lightweight config such as language, theme, and auto-naming (prefixed with `multi-chat-`)
 
 #### Encryption Mechanism
 
 - **Algorithm**: AES-256-GCM (authenticated encryption)
 - **Key Management**:
   - Master key generated by Web Crypto API (256-bit random key)
-  - Desktop: Stored in system secure storage (macOS Keychain / Windows DPAPI / Linux Secret Service)
-  - Web: Encrypted storage using IndexedDB (corresponding to desktop system keychain)
-  - Uses `tauri-plugin-keyring` for unified cross-platform key management
+  - The seed is stored in `localStorage` (`multi-chat-keyring-seed`), and the encryption key is derived via PBKDF2
+  - The encrypted master key is stored in IndexedDB
 - **Encryption Format**: `enc:base64(ciphertext + auth_tag + nonce)`
-- **Desktop Only**: Mobile platforms (iOS/Android) are not supported
+
+> **⚠️ Important**: The key lives only in this browser; clearing browser data makes the data unrecoverable. Export the master key in advance from "Settings → Key Management" as a backup. Local data from the previous desktop (Tauri) version is no longer accessible in the pure-web version.
 
 ## Recommended Development Environment
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- [VS Code](https://code.visualstudio.com/) + [Volar (Vue Language Features)](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
 
 ## FAQ
 
-### Tauri Build Failure
+### Browser Compatibility
 
-**Issue**: Error when running `pnpm tauri build`
+**Issue**: The app fails to start or shows an unsupported message
 
 **Solution**:
-1. Ensure Rust toolchain is properly installed: `rustc --version`
-2. Ensure Tauri CLI is properly installed: `pnpm tauri --version`
-3. Try clearing the cache: `pnpm tauri build --clean`
+1. Make sure the browser supports IndexedDB and the Web Crypto API (standard in modern browsers)
+2. IndexedDB may be restricted in private mode; prefer a regular browser window
 
 ### Web Environment Key Loss
 
@@ -392,7 +372,7 @@ The app uses the @tauri-apps/plugin-store plugin for data persistence. Data stor
 **Solution**:
 - The web environment stores the key seed in `localStorage`. Clearing browser data will result in key loss
 - It is recommended to export the master key in advance from the settings page as a backup. After key loss, it can be restored by importing
-- For important sensitive data, it is recommended to use the desktop version
+- Export the master key backup regularly to avoid data loss when clearing browser data
 
 ## License
 

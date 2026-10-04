@@ -19,7 +19,7 @@
     ↓
 Toast 队列 (初始化期间提示)
     ↓
-自动持久化 (Redux Middleware → localStorage)
+自动持久化 (Pinia store 副作用 → localStorage)
     ↓
 翻译完整性检查 (CI 集成)
 ```
@@ -63,7 +63,7 @@ Toast 队列 (初始化期间提示)
 - `initI18n()`: 初始化 i18n 配置
 - `changeAppLanguage(lang)`: 切换应用语言
 - `getInitI18nPromise()`: 获取初始化 Promise
-- `tSafely(key, fallback)`: 安全地获取翻译文本（用于非 React 环境）
+- `tSafely(key, fallback)`: 安全地获取翻译文本（用于非组件环境）
 
 **关键特性**：
 - 单例模式（避免重复初始化）
@@ -164,7 +164,7 @@ toastQueue.markReady();
 
 ## 4. 自动持久化
 
-### Redux Middleware
+### Pinia store 副作用
 
 监听语言变更 actions，自动同步到 localStorage：
 
@@ -293,7 +293,7 @@ npm run validate
 
 ### 安全翻译函数（tSafely）
 
-用于非 React 环境（如 Redux thunks、初始化代码）：
+用于非组件环境（如 store actions、初始化代码）：
 
 ```typescript
 import { tSafely } from '@/services/i18n';

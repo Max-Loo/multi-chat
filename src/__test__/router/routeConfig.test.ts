@@ -1,233 +1,166 @@
 /**
- * Router 配置测试
+ * vue-router 路由配置测试（转写自 React router/ 目录 4 个测试）
  *
- * 测试路由结构的正确性、路由路径定义、组件导入等
+ * 验证路由树结构、懒加载、重定向、兜底路由与导航行为
  */
 
 import { describe, it, expect } from 'vitest';
+import type { RouteRecordRaw } from 'vue-router';
+import { createAppRouter, default as appRouter } from '@/router';
+import { Layout } from '@/components/Layout';
 
-import router from '@/router/index';
-import { getAllRoutes, getRedirectRules } from '@/__test__/fixtures/router';
-import { getRootRoute, getRootChildren } from '@/__test__/helpers/mocks/router';
+/** 原始路由树（createRouter 保留的未扁平化定义） */
+function rawRoutes(): RouteRecordRaw[] {
+  return appRouter.options.routes as RouteRecordRaw[];
+}
 
 describe('Router 配置结构测试', () => {
-  describe('路由实例验证', () => {
-    it('应该成功创建路由实例', () => {
-      expect(router).toBeDefined();
-      expect(router).toHaveProperty('routes');
-    });
-
-    it('应该有根路由', () => {
-      const routes = router.routes;
-      expect(routes).toBeDefined();
-      expect(routes.length).toBeGreaterThan(0);
-      expect(routes[0].path).toBe('/');
-    });
+  it('应该成功创建路由实例', () => {
+    expect(appRouter).toBeDefined();
+    expect(typeof appRouter.push).toBe('function');
   });
 
-  describe('路由路径定义测试', () => {
-    it('应该包含所有必要的页面路由', () => {
-      const routes = getAllRoutes();
-      const expectedRoutes = ['/', '/chat', '/model', '/model/table', '/model/add', '/setting', '/setting/common', '/404'];
+  it('应该有根路由且根组件为 Layout', () => {
+    const root = rawRoutes().find((route) => route.path === '/');
 
-      expectedRoutes.forEach((route) => {
-        expect(routes).toContain(route);
-      });
-    });
+    expect(root).toBeDefined();
+    expect(root!.component).toBe(Layout);
   });
 
-  describe('路由组件导入测试', () => {
-    it('应该正确导入 Layout 组件作为根元素', () => {
-      const rootRoute = getRootRoute(router);
+  it('应该包含所有必要的页面路由', () => {
+    const root = rawRoutes().find((route) => route.path === '/')!;
+    const childPaths = root.children!.map((child) => child.path);
 
-      expect(rootRoute.element).toBeDefined();
-      expect(rootRoute.element?.type?.name).toBe('Layout');
-    });
-
-    it('应该为所有页面组件使用懒加载', () => {
-      const childRoutes = getRootChildren(router);
-
-      // 检查主要页面路由是否使用懒加载（chat, model, setting）
-      const lazyRoutePaths = ['chat', 'model', 'setting'];
-      lazyRoutePaths.forEach((path) => {
-        const route = childRoutes.find((r) => r.path === path);
-        expect(route).toBeDefined();
-        // React.lazy 组件会有 _payload 或 _ctor 属性
-        expect(route?.element?.type?._payload || route?.element?.type?._ctor).toBeDefined();
-      });
-    });
-  });
-
-  describe('嵌套路由结构测试', () => {
-    it('应该为 /model 路由配置子路由', () => {
-      const routes = getRootChildren(router);
-      const modelRoute = routes.find((r) => r.path === 'model');
-
-      expect(modelRoute).toBeDefined();
-      expect(modelRoute?.children).toBeDefined();
-      expect(modelRoute?.children?.length).toBeGreaterThan(0);
-    });
-
-    it('应该为 /setting 路由配置子路由', () => {
-      const routes = getRootChildren(router);
-      const settingRoute = routes.find((r) => r.path === 'setting');
-
-      expect(settingRoute).toBeDefined();
-      expect(settingRoute?.children).toBeDefined();
-      expect(settingRoute?.children?.length).toBeGreaterThan(0);
-    });
-
-    it('应该正确配置 model 子路由', () => {
-      const routes = getRootChildren(router);
-      const modelRoute = routes.find((r) => r.path === 'model');
-
-      expect(modelRoute).toBeDefined();
-      expect(modelRoute?.children).toBeDefined();
-
-      // 验证子路由路径
-      const childPaths = modelRoute?.children?.map((r) => r.path) ?? [];
-      expect(childPaths).toContain('table');
-      expect(childPaths).toContain('add');
-    });
-
-    it('应该正确配置 setting 子路由', () => {
-      const routes = getRootChildren(router);
-      const settingRoute = routes.find((r) => r.path === 'setting');
-
-      expect(settingRoute).toBeDefined();
-      expect(settingRoute?.children).toBeDefined();
-
-      // 验证子路由路径
-      const childPaths = settingRoute?.children?.map((r) => r.path) ?? [];
-      expect(childPaths).toContain('common');
-    });
-  });
-
-  describe('重定向规则测试', () => {
-    const redirectRules = getRedirectRules();
-
-    it.each(Object.entries(redirectRules))(
-      '应该配置重定向: %s -> %s',
-      (from, _to) => {
-        const routes = getRootChildren(router);
-
-        // 查找源路由
-        const sourceRoute = routes.find((r) => {
-          if (from === '*') return r.path === '*';
-          if (r.index === true && from === '/') return true;
-          return r.path === from.replace(/^\//, '').split('/')[0];
-        });
-
-        expect(sourceRoute).toBeDefined();
-
-        // 验证重定向
-        if (from === '/') {
-          // 根路由使用 index: true 和 Navigate
-          expect(sourceRoute?.index).toBe(true);
-          expect(sourceRoute?.element?.type?.name).toBe('Navigate');
-        } else if (from === '*') {
-          // 兜底路由
-          expect(sourceRoute?.path).toBe('*');
-        } else {
-          // 其他重定向
-          const parentPath = from.split('/')[1];
-          const parentRoute = routes.find((r) => r.path === parentPath);
-          const redirectRoute = parentRoute?.children?.find((r) => r.index === true);
-
-          expect(redirectRoute).toBeDefined();
-          expect(redirectRoute?.element?.type?.name).toBe('Navigate');
-        }
-      }
+    expect(childPaths).toEqual(
+      expect.arrayContaining([
+        '',
+        'chat',
+        'model',
+        'setting',
+        '/:pathMatch(.*)*',
+        '404',
+      ]),
     );
-
-    it('应该将根路由重定向到 /chat', () => {
-      const routes = getRootChildren(router);
-      const indexRoute = routes.find((r) => r.index === true);
-
-      expect(indexRoute).toBeDefined();
-      expect(indexRoute?.element?.type?.name).toBe('Navigate');
-      expect(indexRoute?.element?.props?.to).toBe('chat');
-    });
-
-    it('应该为 /model 的索引路由重定向到 /model/table', () => {
-      const routes = getRootChildren(router);
-      const modelRoute = routes.find((r) => r.path === 'model');
-
-      expect(modelRoute).toBeDefined();
-
-      const indexRoute = modelRoute?.children?.find((r) => r.index === true);
-      expect(indexRoute).toBeDefined();
-      expect(indexRoute?.element?.type?.name).toBe('Navigate');
-      expect(indexRoute?.element?.props?.to).toBe('table');
-    });
-
-    it('应该为 /setting 的索引路由重定向到 /setting/common', () => {
-      const routes = getRootChildren(router);
-      const settingRoute = routes.find((r) => r.path === 'setting');
-
-      expect(settingRoute).toBeDefined();
-
-      const indexRoute = settingRoute?.children?.find((r) => r.index === true);
-      expect(indexRoute).toBeDefined();
-      expect(indexRoute?.element?.type?.name).toBe('Navigate');
-      expect(indexRoute?.element?.props?.to).toBe('common');
-    });
   });
 
-  describe('404 错误处理测试', () => {
-    it('应该配置兜底路由处理未匹配的路径', () => {
-      const routes = getRootChildren(router);
-      const catchAllRoute = routes.find((r) => r.path === '*');
+  it('应该为所有页面组件使用懒加载（组件为动态导入函数）', () => {
+    const root = rawRoutes().find((route) => route.path === '/')!;
 
-      expect(catchAllRoute).toBeDefined();
-      expect(catchAllRoute?.element?.type?.name).toBe('Navigate');
-      expect(catchAllRoute?.element?.props?.to).toBe('/404');
-    });
-
-    it('应该定义 404 页面路由', () => {
-      const routes = getRootChildren(router);
-      const notFoundRoute = routes.find((r) => r.path === '404');
-
-      expect(notFoundRoute).toBeDefined();
-      expect(notFoundRoute?.element).toBeDefined();
-    });
+    for (const child of root.children!) {
+      if ('redirect' in child || child.path === '404') continue;
+      const component =
+        'component' in child ? child.component : undefined;
+      expect(typeof component).toBe('function');
+    }
   });
 
-  describe('路由层级结构测试', () => {
-    it('应该有正确的路由层级深度', () => {
-      const rootRoute = getRootRoute(router);
+  it('应该正确配置 model 子路由', () => {
+    const root = rawRoutes().find((route) => route.path === '/')!;
+    const model = root.children!.find((child) => child.path === 'model');
 
-      // 根路由
-      expect(rootRoute.path).toBe('/');
+    expect(model?.children?.map((child) => child.path)).toEqual([
+      '',
+      'table',
+      'add',
+    ]);
+  });
 
-      // 一级子路由（在 Layout 下）
-      const children = rootRoute.children ?? [];
-      expect(children.length).toBeGreaterThan(0);
+  it('应该正确配置 setting 子路由', () => {
+    const root = rawRoutes().find((route) => route.path === '/')!;
+    const setting = root.children!.find((child) => child.path === 'setting');
 
-      // 二级子路由（在 model 和 setting 下）
-      const modelRoute = children.find((r) => r.path === 'model');
-      expect(modelRoute?.children).toBeDefined();
+    const paths = setting?.children?.map((child) => child.path) ?? [];
+    expect(paths).toEqual(expect.arrayContaining(['', 'common', 'key-management']));
+  });
 
-      const settingRoute = children.find((r) => r.path === 'setting');
-      expect(settingRoute?.children).toBeDefined();
-    });
+  it('index 子路由应该重定向到默认子页面', () => {
+    const root = rawRoutes().find((route) => route.path === '/')!;
 
-    it('应该保持路由层级的一致性', () => {
-      const routes = getRootChildren(router);
+    const modelIndex = root
+      .children!.find((child) => child.path === 'model')!
+      .children!.find((child) => child.path === '');
+    const settingIndex = root
+      .children!.find((child) => child.path === 'setting')!
+      .children!.find((child) => child.path === '');
 
-      // 验证所有嵌套路由都有父路由
-      const nestedRoutePaths = ['/model/table', '/model/add', '/setting/common'];
+    expect(modelIndex?.redirect).toBe('/model/table');
+    expect(settingIndex?.redirect).toBe('/setting/common');
+  });
 
-      nestedRoutePaths.forEach((path) => {
-        const segments = path.split('/').filter(Boolean);
-        const childPath = segments[1];
+  it('开发环境应该包含 toast-test 路由', () => {
+    const root = rawRoutes().find((route) => route.path === '/')!;
+    const setting = root.children!.find((child) => child.path === 'setting');
 
-        const parentRoute = routes.find((r) => r.path === segments[0]);
-        expect(parentRoute).toBeDefined();
+    // 单元测试在 DEV 模式下运行
+    expect(
+      setting?.children?.some((child) => child.path === 'toast-test'),
+    ).toBe(import.meta.env.DEV);
+  });
 
-        const childRoute = parentRoute?.children?.find((r) => r.path === childPath);
-        expect(childRoute).toBeDefined();
-      });
-    });
+  it('不应该包含逐路由导航守卫（无权限限制）', () => {
+    const visit = (routes: RouteRecordRaw[]): void => {
+      for (const route of routes) {
+        expect(route.beforeEnter).toBeUndefined();
+        if (route.children) visit(route.children);
+      }
+    };
+    visit(rawRoutes());
+  });
+
+  it('除兜底路由外不应该包含动态参数路由', () => {
+    const dynamicRoutes: string[] = [];
+    const visit = (routes: RouteRecordRaw[]): void => {
+      for (const route of routes) {
+        if (route.path.includes(':') && route.path !== '/:pathMatch(.*)*') {
+          dynamicRoutes.push(route.path);
+        }
+        if (route.children) visit(route.children);
+      }
+    };
+    visit(rawRoutes());
+
+    expect(dynamicRoutes).toHaveLength(0);
+  });
+});
+
+describe('Router 集成测试（memory history）', () => {
+  it('应该导航到 /chat 并解析对应页面', async () => {
+    const router = createAppRouter();
+    await router.push('/chat');
+    await router.isReady();
+
+    expect(router.currentRoute.value.path).toBe('/chat');
+  });
+
+  it('根路径应该重定向到 /chat', async () => {
+    const router = createAppRouter();
+    await router.push('/');
+    await router.isReady();
+
+    expect(router.currentRoute.value.path).toBe('/chat');
+  });
+
+  it('/model 应该重定向到 /model/table', async () => {
+    const router = createAppRouter();
+    await router.push('/model');
+    await router.isReady();
+
+    expect(router.currentRoute.value.path).toBe('/model/table');
+  });
+
+  it('/setting 应该重定向到 /setting/common', async () => {
+    const router = createAppRouter();
+    await router.push('/setting');
+    await router.isReady();
+
+    expect(router.currentRoute.value.path).toBe('/setting/common');
+  });
+
+  it('未知路径应该重定向到 /404', async () => {
+    const router = createAppRouter();
+    await router.push('/no-such-page');
+    await router.isReady();
+
+    expect(router.currentRoute.value.path).toBe('/404');
   });
 });

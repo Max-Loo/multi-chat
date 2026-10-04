@@ -8,7 +8,7 @@
  * ```ts
  * // 可变对象（配合 vi.hoisted 使用）
  * const mockResponsive = vi.hoisted(() => globalThis.__createResponsiveMock());
- * vi.mock('@/hooks/useResponsive', () => ({ useResponsive: () => mockResponsive }));
+ * vi.mock('@/composables/useResponsive', () => ({ useResponsive: () => mockResponsive }));
  *
  * // 自定义初始值
  * const mockMobile = vi.hoisted(() => globalThis.__createResponsiveMock({ isMobile: true }));

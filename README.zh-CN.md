@@ -5,7 +5,7 @@
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://max-loo.github.io/multi-chat/)
 [![Deploy to GitHub Pages](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml/badge.svg)](https://github.com/Max-Loo/multi-chat/actions/workflows/deploy-to-gh-pages.yml)
 
-一个基于 Tauri + React + TypeScript 的多模型聊天应用，支持同时与多个 AI 模型进行对话，方便对比不同模型的回答。
+一个基于 Vue 3 + TypeScript 的纯 Web 多模型聊天应用，支持同时与多个 AI 模型进行对话，方便对比不同模型的回答。
 
 ## 功能特点
 
@@ -60,19 +60,18 @@
 
 - 本地数据存储，保护隐私
 - API 密钥使用 AES-256-GCM 加密存储
-- 主密钥通过 `tauri-plugin-keyring` 安全存储到系统钥匙串
+- 主密钥存储在浏览器本地（种子 + PBKDF2 派生 + AES-256-GCM），支持导出备份
 - 敏感数据字段级加密，非敏感数据明文存储
 - 数据存储为 JSON 格式，便于备份和查看
 
 ## 技术栈
 
-- **前端框架**: React 19 + TypeScript
-- **UI 组件库**: shadcn/ui + Radix UI
-- **状态管理**: Redux Toolkit
-- **路由**: React Router v7
+- **前端框架**: Vue 3（组合式 API）+ TypeScript
+- **UI 组件库**: shadcn-vue（reka-ui）
+- **状态管理**: Pinia
+- **路由**: Vue Router
 - **样式**: Tailwind CSS
-- **国际化**: i18next + react-i18next
-- **桌面框架**: Tauri 2
+- **国际化**: i18next + i18next-vue
 - **构建工具**: Vite
 
 ## 快速开始
@@ -81,7 +80,7 @@
 
 - Node.js 18+
 - pnpm
-- Rust 1.70+ (用于构建 Tauri 应用)
+- 支持 IndexedDB 与 Web Crypto API 的现代浏览器
 
 ### 安装依赖
 
@@ -97,21 +96,15 @@ pnpm install
 ### 开发模式
 
 ```bash
-# 启动 Tauri 桌面应用开发模式（同时启动前端和后端）
-pnpm tauri dev
-
-# 启动 Web 浏览器开发模式（仅前端）
-pnpm web:dev
+# 启动 Web 开发模式
+pnpm dev
 ```
 
 ### 构建应用
 
 ```bash
-# 构建 Tauri 桌面应用生产版本
-pnpm tauri build
-
-# 构建 Web 应用生产版本
-pnpm web:build
+# 构建 Web 应用生产版本（类型检查 + 静态资源输出到 dist/）
+pnpm build
 ```
 
 ### 部署到 GitHub Pages
@@ -135,7 +128,7 @@ pnpm deploy:gh-pages
    - **build job**: 构建 Web 应用并上传 artifact
    - **deploy job**: 将 artifact 部署到 GitHub Pages
 
-同时，桌面应用构建（`build-and-release.yml`）也会并行触发，确保桌面和 Web 版本同步发布。
+版本 tag 仅触发 Web 部署（桌面构建渠道已随纯 Web 化移除）。
 
 **技术细节**:
 - 使用 GitHub Pages 官方 Actions（推荐方式）
@@ -146,7 +139,7 @@ pnpm deploy:gh-pages
 ### 其他常用命令
 
 ```bash
-# 运行代码检查（使用 oxlint）
+# 运行代码检查（oxlint 负责 .ts/.js，eslint 负责 .vue）
 pnpm lint
 
 # 更新应用版本号
@@ -205,17 +198,18 @@ pnpm test:all
 
 ```
 multi-chat/
-├── src/                        # React 前端代码
+├── src/                        # Vue 3 前端代码
 │   ├── components/             # 公共组件
-│   │   ├── ui/                # shadcn/ui 组件
-│   │   ├── FilterInput/       # 过滤输入组件
-│   │   ├── Layout/            # 布局组件
-│   │   └── Sidebar/           # 侧边栏组件
+│   │   ├── ui/                # shadcn-vue 组件
+│   │   ├── chat/              # 聊天气泡组件
+│   │   ├── DataTable/         # 通用数据表格
+│   │   └── Layout/            # 布局组件
+│   ├── composables/           # 组合式函数
 │   ├── pages/                 # 页面组件
 │   │   ├── Chat/              # 聊天页面
 │   │   ├── Model/             # 模型管理页面
 │   │   └── Setting/           # 设置页面
-│   ├── hooks/                 # 自定义 Hooks
+│   ├── router/                # Vue Router 路由表
 │   ├── config/                # 配置文件
 │   │   └── initSteps.ts       # 初始化步骤配置
 │   ├── locales/               # 国际化语言文件
@@ -227,21 +221,14 @@ multi-chat/
 │   │   ├── modelRemote/       # 远程模型服务
 │   │   ├── i18n.ts            # 国际化配置
 │   │   └── global.ts          # 全局配置
-│   ├── store/                 # Redux 状态管理
-│   │   ├── slices/            # Redux 切片
-│   │   ├── middleware/        # 中间件
+│   ├── store/                 # Pinia 状态管理
 │   │   ├── storage/           # 数据持久化
 │   │   └── keyring/           # 主密钥管理
 │   ├── types/                 # TypeScript 类型定义
 │   └── utils/                 # 工具函数
-│       ├── tauriCompat/       # Tauri 兼容层
+│       ├── webStorage/        # 纯 Web 存储层（IndexedDB）
 │       ├── crypto.ts          # 加密工具
 │       └── ...
-├── src-tauri/                 # Rust 后端代码
-│   ├── src/
-│   │   ├── lib.rs             # Tauri 命令定义
-│   │   └── main.rs            # 入口文件
-│   └── tauri.conf.json        # Tauri 配置
 ├── public/                    # 静态资源
 └── package.json               # 项目依赖和脚本
 ```
@@ -275,7 +262,7 @@ multi-chat/
     - 系统语言（如果支持）
     - 默认语言（英文）
 2. 语言设置存储在 `localStorage` 中，键名为 `multi-chat-language`
-3. 使用 `i18next` 和 `react-i18next` 实现国际化功能
+3. 使用 `i18next` 和 `i18next-vue` 实现国际化功能
 
 **语言代码自动迁移**：
 - 应用升级时，如果语言代码发生变更（如 `zh-CN` → `zh`），系统会自动迁移到新的语言代码
@@ -289,7 +276,7 @@ multi-chat/
 - ✅ **智能缓存**：缓存进行中的加载请求，避免快速切换时的竞态条件
 
 **自动持久化**：
-- ✅ 语言变更通过 Redux Middleware 自动同步到 localStorage
+- ✅ 语言变更通过 Pinia store 副作用自动同步到 localStorage
 - ✅ 静默降级：localStorage 写入失败时记录警告，不影响应用运行
 
 **消息队列机制**：
@@ -330,7 +317,7 @@ multi-chat/
 
 1. 在 `src/utils/enums.ts` 中添加新的服务商枚举
 2. 在 `src/services/chat/providerLoader.ts` 中注册对应的 Provider 工厂函数
-3. 在 `src/pages/Model/CreateModel/components/ModelSidebar.tsx` 中添加服务商选项
+3. 在 `src/pages/Model/CreateModel/components/ModelSidebar.vue` 中添加服务商选项
 
 ### 代码规范
 
@@ -348,42 +335,35 @@ multi-chat/
 
 ### 数据持久化
 
-应用使用 @tauri-apps/plugin-store 插件进行数据持久化，数据存储位置：
+应用为纯 Web 应用，全部数据仅持久化在浏览器本地：
 
-- **Windows**: `%APPDATA%\multi-chat`
-- **macOS**: `~/Library/Application Support/multi-chat`
-- **Linux**: `~/.config/multi-chat`
-
-#### 数据文件
-
-- `models.json`: 模型配置（API 密钥字段已加密）
-- `chats.json`: 聊天记录
+- **IndexedDB**: `multi-chat-store`（模型配置、聊天记录）与 `multi-chat-keyring`（加密密钥数据）
+- **localStorage**: 语言、主题、自动命名等轻量配置（`multi-chat-` 前缀）
 
 #### 加密机制
 
 - **算法**: AES-256-GCM（认证加密）
 - **密钥管理**:
   - 主密钥由 Web Crypto API 生成（256-bit 随机密钥）
-  - 桌面端：存储在系统安全存储（macOS 钥匙串 / Windows DPAPI / Linux Secret Service）
-  - Web 环境：使用 IndexedDB 加密存储（与桌面端系统钥匙串对应）
-  - 使用 `tauri-plugin-keyring` 统一管理跨平台密钥存储
+  - 种子存储于 `localStorage`（`multi-chat-keyring-seed`），通过 PBKDF2 派生加密密钥
+  - 加密后的主密钥存储于 IndexedDB
 - **加密格式**: `enc:base64(ciphertext + auth_tag + nonce)`
-- **仅支持桌面端**: 不支持移动端（iOS/Android）
+
+> **⚠️ 重要提示**：密钥仅存于本浏览器，清除浏览器数据将导致数据无法恢复。请提前在「设置 → 密钥管理」导出主密钥作为备份。此前桌面版（Tauri）的本地数据在纯 Web 版本中不再可访问。
 
 ## 推荐开发环境
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- [VS Code](https://code.visualstudio.com/) + [Volar (Vue Language Features)](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
 
 ## 常见问题
 
-### Tauri 构建失败
+### 浏览器兼容性
 
-**问题**: 运行 `pnpm tauri build` 时报错
+**问题**: 应用无法启动或提示不支持
 
 **解决方案**:
-1. 确保 Rust 工具链已正确安装：`rustc --version`
-2. 确保 Tauri CLI 已正确安装：`pnpm tauri --version`
-3. 尝试清理缓存：`pnpm tauri build --clean`
+1. 确认浏览器支持 IndexedDB 与 Web Crypto API（现代浏览器的标准能力）
+2. 隐私模式下 IndexedDB 可能受限，建议使用常规模式
 
 ### Web 环境密钥丢失
 
@@ -392,7 +372,7 @@ multi-chat/
 **解决方案**:
 - Web 环境的密钥种子存储在 `localStorage` 中，清除浏览器数据会导致密钥丢失
 - 建议提前在设置页面导出主密钥作为备份，密钥丢失后可通过导入恢复
-- 重要的敏感数据建议使用桌面版处理
+- 建议定期导出主密钥备份，避免清除浏览器数据导致数据丢失
 
 ## 许可证
 

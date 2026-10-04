@@ -41,6 +41,8 @@
   "copyFailed": "复制失败",
   "editMessage": "编辑消息",
   "editConfirm": "确认编辑",
+  "previousVersion": "上一个版本",
+  "nextVersion": "下一个版本",
   "editCancel": "取消编辑",
   "regenerateMessage": "重新生成",
   "moreActions": "更多操作",

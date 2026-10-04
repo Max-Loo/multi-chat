@@ -85,31 +85,27 @@
 
 ## 项目概述
 
-Tauri + React + TypeScript 桌面应用程序，结合 Rust 后端和 React 前端。
+Vue 3 + TypeScript 纯 Web 应用（单页应用，可部署于任意静态服务器），多模型聊天工具。
 
 **技术栈**：
 
-- 前端：React 19 + TypeScript + Vite
-- 后端：Rust + Tauri 2.0
-- 通信：前端通过 `invoke()` 调用 Rust 函数
+- 前端：Vue 3（组合式 API）+ TypeScript + Vite
+- 状态管理：Pinia；路由：Vue Router
+- UI：shadcn-vue（reka-ui）+ Tailwind CSS
+- 国际化：i18next + i18next-vue
+- 数据持久化：IndexedDB + localStorage（纯浏览器本地，无桌面运行时）
 
 ## 架构
 
-**前端架构**：
-
-- 入口文件: `src/main.tsx`
-- 使用 React Compiler 优化
-- 国际化: i18next + react-i18next
-
-**后端架构**：
-
-- 入口: `src-tauri/src/lib.rs`
-- 命令定义: 使用 `#[tauri::command]`
-- 配置: `src-tauri/tauri.conf.json`
+- 入口文件: `src/main.ts`（initSteps 初始化 → 初始化动画 → 挂载主应用）
+- 组件：全部为 `.vue` 单文件组件 + 组合式 API
+- 状态：7 个 Pinia setup store（`src/store/`），持久化副作用内聚于各 store
+- 组合式函数：`src/composables/`（原 hooks 目录）
+- Lint 分工：oxlint 负责 `.ts/.js`，eslint + eslint-plugin-vue 负责 `.vue`（`pnpm lint` 聚合两者）
 
 ## 开发命令
 
-`pnpm install` | `pnpm tauri dev` | `pnpm tauri build` | `pnpm lint` | `pnpm tsc` | `pnpm test`
+`pnpm install` | `pnpm dev` | `pnpm build` | `pnpm lint` | `pnpm tsc` | `pnpm test`
 
 更多命令见 `package.json`，测试规范见 `src/__test__/README.md`
 
@@ -191,17 +187,16 @@ import { Model } from "../../types/model";
 
 - **[应用启动初始化流程](docs/design/initialization.md)** - InitializationManager 工作原理、依赖关系和三级错误处理
 - **[远程模型数据获取](docs/design/model-remote.md)** - models.dev API 架构、缓存策略和重试机制
+- **[纯 Web 存储层](src/utils/webStorage/)** - IndexedDB 存储、AES-256-GCM keyring 与 V1→V2 迁移（代码即文档，见模块内注释）
 - **[聊天服务层架构](docs/design/chat-service.md)** - 模块化聊天服务层，支持流式响应和元数据收集
 - **[按需加载机制](docs/design/lazy-loading.md)** - ResourceLoader<T> 类设计，减少初始 bundle 大小约 125KB
 - **[国际化系统](docs/design/i18n-system.md)** - 按需加载、缓存验证、Toast 队列、自动持久化、翻译完整性检查
-- **[跨平台兼容层](docs/design/cross-platform.md)** - Null Object 模式、环境检测、统一 API 设计
 
 ## 项目约定索引
 
 项目约定的详细文档已迁移到 `docs/conventions/` 目录，包含开发规范和最佳实践。
 
 - **[时间戳工具函数约定](docs/conventions/timestamps.md)** - 秒级 vs 毫秒级时间戳使用场景和工具函数使用规范
-- **[Tauri 命令添加指南](docs/conventions/tauri-commands.md)** - 在 Rust 后端定义命令并在前端调用的完整流程
 
 ## 快速查找表
 
@@ -212,7 +207,8 @@ import { Model } from "../../types/model";
 | 应用初始化配置   | `src/config/initSteps.ts`              |
 | 聊天服务       | `src/services/chat/`                   |
 | 远程模型数据获取 | `src/services/modelRemote/`            |
-| 跨平台兼容层     | `src/utils/tauriCompat/index.ts`       |
+| 纯 Web 存储层   | `src/utils/webStorage/index.ts`        |
+| 组合式函数       | `src/composables/`                     |
 | 主密钥管理       | `src/store/keyring/masterKey.ts`       |
 | 加密工具         | `src/utils/crypto.ts`                  |
 | 时间戳工具       | `src/utils/utils.ts`                   |
@@ -223,7 +219,6 @@ import { Model } from "../../types/model";
 
 ## 文件结构
 
-- `/src/` - React 前端代码
-- `/src-tauri/` - Rust 后端代码
+- `/src/` - Vue 3 前端代码
 - `/public/` - 静态资源
 - `/docs/` - 详细文档（design、conventions、reference）

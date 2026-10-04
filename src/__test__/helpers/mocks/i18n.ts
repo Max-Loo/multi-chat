@@ -157,9 +157,9 @@ export function mockI18n(keys?: Record<string, unknown>) {
 }
 
 /**
- * 创建 react-i18next mock 返回值
+ * 创建 i18n 绑定层 mock 返回值
  * @param zhResources 翻译资源对象，类型由调用方推断
- * @returns vi.mock('react-i18next') 的返回值
+ * @returns vi.mock('i18next-vue') 场景下 useTranslation 的等价 mock
  */
 export function createI18nMockReturn<T extends Record<string, unknown>>(zhResources: T) {
   return {
@@ -180,10 +180,5 @@ export function createI18nMockReturn<T extends Record<string, unknown>>(zhResour
         changeLanguage: vi.fn(),
       },
     }),
-    initReactI18next: {
-      type: '3rdParty' as const,
-      init: vi.fn(),
-    },
-    I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
   };
 }

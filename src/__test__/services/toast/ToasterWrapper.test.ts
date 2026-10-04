@@ -75,7 +75,7 @@ describe('ToasterWrapper', () => {
     });
 
     // 修改断点匹配并触发监听器
-    const listeners: Array<() => void> = {};
+    const listeners: Record<string, () => void> = {};
     mockMatchMedia.mockImplementation((query: string) => ({
       matches: query === '(max-width: 767px)',
       media: query,

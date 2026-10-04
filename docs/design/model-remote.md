@@ -14,7 +14,7 @@
 ### 数据流
 
 ```
-models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
+models.dev API → 远程数据获取层 → 供应商过滤层 → Pinia store
                   ↓
               缓存层
 ```
@@ -52,7 +52,7 @@ models.dev API → 远程数据获取层 → 供应商过滤层 → Redux store
 - 自动重试（默认 2 次，指数退避）
 - AbortSignal 支持（可取消请求）
 
-### 2. Redux 状态管理
+### 2. Pinia 状态管理
 
 **位置**：`src/store/slices/modelProviderSlice.ts`
 
@@ -176,12 +176,12 @@ enum RemoteDataErrorType {
 
 - **远程数据获取**：`src/services/modelRemote/index.ts`
 - **网络和缓存配置**：`src/services/modelRemote/config.ts`
-- **Redux 状态管理**：`src/store/slices/modelProviderSlice.ts`
+- **Pinia 状态管理**：`src/store/modelProvider.ts`
 - **缓存文件**：`remote-cache.json`（自动生成）
 
 ## 使用示例
 
-### 基本使用（通过 Redux）
+### 基本使用（通过 Pinia）
 
 ```typescript
 // 在应用初始化时
