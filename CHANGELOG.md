@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.13] - 2026-10-18
+
+### 🔧 杂项
+
+- **OpenSpec skills/commands 升级到 CLI 1.14.3**：6 个平台目录（`.agents` / `.claude` / `.opencode` / `.pi` / `.trae` / `.zcode`）下 102 个自动生成的文件同步更新
+  - 新增输出路径安全校验：产物输出路径在解析符号链接后仍须位于 `changeRoot` 内（校验父目录与已存在文件），否则停止并告知用户
+  - 产物补全增强：委托 skill/command 创建产物时，仅在其能写入已校验路径时调用，否则停止并告知用户
+  - verify 工作流增强 REMOVED 需求验证：先从主 spec（必要时经 git 历史）恢复需求基线，再搜索残留实现；无可用基线时标记 not verified，不得视为通过
+
+---
+
+## [0.5.12] - 2026-10-10
+
+### 🔧 杂项
+
+- **OpenSpec skills/commands 升级到 CLI 1.14.1**：6 个平台目录（`.agents` / `.claude` / `.opencode` / `.pi` / `.trae` / `.zcode`）下 117 个自动生成的文件同步更新
+  - verify 工作流新增 Not applicable / Not verified 区分，并补充 REMOVED / RENAMED 需求检查
+  - archive 工作流任务统计改用 CLI 数据，归档前新增 sync 结构校验
+  - continue 工作流支持补全因中断而部分写入的 glob 产物：检测缺失文件并仅补写缺失部分
+
+---
+
 ## [0.5.11] - 2026-09-21
 
 ### 📝 文档变更
