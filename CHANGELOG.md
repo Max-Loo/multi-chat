@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.14] - 2026-10-24
+
+### 🔧 杂项
+
+- **OpenSpec skills/commands 升级到 CLI 1.15.0**：6 个平台目录（`.agents` / `.claude` / `.opencode` / `.pi` / `.trae` / `.zcode`）下 77 个自动生成的文件同步更新
+  - verify 工作流更新 REMOVED 需求匹配规则：由近似名称扫描改为按规范化名称精确匹配（大小写敏感），与 OpenSpec 应用 REMOVED 块的规则保持一致；措辞相近的标题不再视为匹配，重命名需求应归入 RENAMED
+  - 基线恢复指引补充：主 spec 中近名 ADDED 需求已替换原需求的场景，也纳入从 git 历史恢复需求基线的触发条件
+
+---
+
 ## [0.5.13] - 2026-10-18
 
 ### 🔧 杂项
