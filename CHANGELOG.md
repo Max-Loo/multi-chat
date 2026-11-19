@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.16] - 2026-11-19
+
+### 🔧 杂项
+
+- **移除 `.trae` / `.zcode` 平台目录**：删除两个平台目录下全部 30 个文件（均为指向 `.agents/skills/` 单一来源的符号链接与命令），目录随之移除
+  - 删除 `.trae/skills/` 下 15 个符号链接（12 个 openspec skills + commit-draft / review-proposal / software-design-philosophy）及 `.trae/commands/review-proposal.md`
+  - 删除 `.zcode/skills/` 下 14 个符号链接（12 个 openspec skills + commit-draft / review-proposal）
+  - `.agents/skills/.openspec-target` 目标 agent 列表同步调整：移除 `trae` / `zcode`（own-files），新增 `agents` / `dsh`
+
+---
+
 ## [0.5.15] - 2026-11-19
 
 ### 🔧 杂项
