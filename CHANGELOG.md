@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.15] - 2026-11-19
+
+### 🔧 杂项
+
+- **OpenSpec skills 调整为 project scope 并同步生成产物**：6 个平台目录（`.agents` / `.claude` / `.opencode` / `.pi` / `.trae` / `.zcode`）下 170 个文件同步更新，skills 收敛为 `.agents/skills/` 单一来源
+  - `openspec/config.yaml` 新增 `skillsScope: project` 配置项，skills 由项目侧管理
+  - `.agents/skills/.openspec-target` 目标 agent 列表从 `codex` 扩展至 6 个（`claude` / `codex` / `opencode` / `pi` / `trae` / `zcode`），其中 `claude` / `trae` / `zcode` 为 own-files 模式
+  - 更新 `.agents/skills/` 下 13 个 openspec skill 定义：移除 `generatedBy` 元数据，移除各平台 slash command 硬编码引用（改为通用 skill 名称引用），blocked 状态提示改为展示缺失产物与 CLI 恢复步骤
+  - 删除 `.claude` / `.opencode` / `.pi` / `.trae` / `.zcode` 五个平台目录下的旧 opsx commands 与 skills 完整副本（约 2.8 万行）
+  - 新增 `.claude` / `.trae` / `.zcode` 三套 skills 符号链接，指向 `.agents/skills/` 单一来源
+
+---
+
 ## [0.5.14] - 2026-10-24
 
 ### 🔧 杂项
