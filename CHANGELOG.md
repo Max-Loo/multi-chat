@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.17] - 2026-11-24
+
+### 🔧 杂项
+
+- **增强 OpenSpec 归档冲突检查**：`openspec-archive-change` 工作流将归档目标名检查前置，避免冲突时已写入主 spec 才失败
+  - 归档前提前记录目标名 `<target-name>`：变更名已带 `YYYY-MM-DD-` 前缀则原样使用，否则叠加当前日期前缀；若归档目录已存在同名目标，在写入任何主 spec 前停止并报告冲突，保持 `changeRoot` 原位，并建议重命名现有归档或本变更
+  - 同步选项确认后、移动归档目录前再次校验目标名；移动步骤改为复用已记录的目标名，不再二次生成
+- **调整规划完成提示语**：`openspec-continue-change` 在规划完成时的提示从「先审查方案再开始实施」改为引导用户准备好后主动申请实施
+- **更新 `.gitignore`**：新增 `.worktrees` 与 `worktress` 忽略规则
+
+---
+
 ## [0.5.16] - 2026-11-19
 
 ### 🔧 杂项
