@@ -15,6 +15,7 @@ docs/
 │   └── cross-platform.md      # 跨平台兼容层
 │
 ├── conventions/               # 项目约定（最佳实践和使用规范）
+│   ├── doc-maintenance.md     # 文档维护约定
 │   ├── timestamps.md          # 时间戳工具函数约定
 │   └── tauri-commands.md      # Tauri 命令添加指南
 │
@@ -85,6 +86,14 @@ docs/
 ## 项目约定 (docs/conventions/)
 
 项目约定包含开发规范和最佳实践，指导开发者如何正确使用特定工具或模式。
+
+### [doc-maintenance.md](conventions/doc-maintenance.md)
+文档维护约定，规定 AGENTS.md 与 `docs/` 子文档的分工、内容取舍标准和同步规则。
+
+**关键内容**：
+- 内容分类规则和文档拆分决策树
+- 文档同步要求和 README 双语约束
+- 子文档索引登记流程
 
 ### [timestamps.md](conventions/timestamps.md)
 时间戳工具函数的使用约定，区分秒级和毫秒级时间戳的使用场景。
@@ -185,6 +194,7 @@ Tauri 命令添加指南，说明如何在 Rust 后端定义命令并在前端�
 | 按需加载 | [lazy-loading.md](design/lazy-loading.md) |
 | 国际化 | [i18n-system.md](design/i18n-system.md) |
 | 跨平台兼容 | [cross-platform.md](design/cross-platform.md) |
+| 文档维护 | [doc-maintenance.md](conventions/doc-maintenance.md) |
 | 时间戳约定 | [timestamps.md](conventions/timestamps.md) |
 | Tauri 命令 | [tauri-commands.md](conventions/tauri-commands.md) |
 
