@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.19] - 2026-11-28
+
+### 🔧 杂项
+
+- **`.claude/skills` 收敛为 `.agents` 符号链接并新增 openspec skill**：
+  - 删除 `.claude/skills/` 下逐个符号链接与实体 skill（explaining-code、health），`.claude/skills` 整体改为指向 `../.agents/skills` 的符号链接，skills 统一收敛管理
+  - 新增 `.agents/skills/openspec/`（含 SKILL.md 与 references/ 参考文档）
+- **CI Node 版本升级至 24**：`build-and-release.yml` 中 setup-node 的 node-version 由 22 升级为 24
+
+---
+
 ## [0.5.18] - 2026-11-25
 
 ### 📝 文档变更
